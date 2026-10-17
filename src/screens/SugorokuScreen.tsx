@@ -243,7 +243,7 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
           <Die value={die} rolling={rolling} disabled={rolling || rolled || hopping} onPress={roll} />
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={[s.dockText, { color: pal.fg }]}>{label}</Text>
-            {shakeOn && !rolled && !hopping && <ShakeHint pal={pal} />}
+            {shakeOn && !rolled && !hopping && st.cards < 3 && <ShakeHint pal={pal} />}
           </View>
         </View>
       </View>

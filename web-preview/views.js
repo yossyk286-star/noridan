@@ -355,18 +355,18 @@ function vControls() {
           <button class="vd ng" data-act="fail"><b>アウト</b><small>${esc(S.members[g.doer].name)}に罰</small></button>
           <button class="vd ok" data-act="clear" data-shake><b>セーフ！</b><small>→ ${nextLabel}</small></button>
         </div>
-        <p class="swipe-hint"><span>← アウト</span><button class="link" data-act="penOpen">他の人に罰をつける</button><span>セーフ →</span></p>
-        ${g.mode === "odai" || !g.done ? vNextUp() : ""}${shakeHint()}`;
+        <p class="swipe-hint">${earlyTurns() ? `<span>← アウト</span>` : ""}<button class="link" data-act="penOpen">他の人に罰をつける</button>${earlyTurns() ? `<span>セーフ →</span>` : ""}</p>${shakeHint()}`;
       }
       return `
         ${subs ? `<div class="sub-acts">${subs}</div>` : ""}
         ${vPenGrid()}
-        ${g.mode === "odai" || !g.done ? vNextUp() : ""}
         <button class="big ${g.add.size ? "has-pen" : ""}" data-act="next" ${!g.add.size && mustPick(g.card.tpl) ? "disabled" : "data-shake"}>${nextText(nextLabel)}</button>${shakeHint()}`;
     }
   }
 }
-const shakeHint = () => (S.shake && S.motionOk ? `<p class="hint">スマホを振っても進む</p>` : "");
+// 操作のヒントは最初の3枚だけ（慣れたら消えてスッキリ）
+const earlyTurns = () => (S.game?.cards ?? 0) < 3;
+const shakeHint = () => (S.shake && S.motionOk && earlyTurns() ? `<p class="hint">スマホを振っても進む</p>` : "");
 
 function cardClass(c) {
   if (c.bomb) return "bombc";
@@ -397,9 +397,8 @@ function vCard() {
     : g.phase === "offer" ? `<div class="coin-wrap"><div class="coin">倍</div></div>` : "";
   // 向かい合わせ：同じお題を上下逆さにもう1枚（仕掛け人だけが見る爆弾の中身は出さない）
   const dual = S.dual && g.phase !== "bombPeek" && g.phase !== "bombSet";
-  const no = g.mode === "odai" ? `No.${String(g.cards + 1).padStart(3, "0")}` : "";
   return `<div class="odai ${cardClass(c)} ${anim}" id="card">
-    <div class="head"><span>${cardTag(c) && g.phase === "play" ? `<i class="tag">${cardTag(c)}</i>` : ""}${esc(c.kind)}</span>${badge || `<span class="no">${no}</span>`}</div>
+    <div class="head"><span>${cardTag(c) && g.phase === "play" ? `<i class="tag">${cardTag(c)}</i>` : ""}${plainKind(c) ? "" : esc(c.kind)}</span>${badge}</div>
     ${c.solo && !needsPick(c.tpl) && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
     ${art}
     ${dual ? `<p class="txt mirror" aria-hidden="true" style="font-size:${fitSize(c.html, g.mode === "sugoroku", 0.74)}"><span>${c.html}</span></p><hr class="dual-line">` : ""}
@@ -452,6 +451,10 @@ function vMenu() {
   </div>`;
 }
 // ---------- 分かりやすさ ----------
+// 普通のお題は種類名を出さへん（地獄度は画面の色で分かる）。夜・緊急・押し付けなどの時だけ出す
+function plainKind(c) {
+  return !!c.kind && !c.kind.includes("（") && /^(\d+マス目・)?(アホお題|イジりお題|全員参加)/.test(c.kind);
+}
 // 札の種類タグ（誰が動くお題か）
 function cardTag(c) {
   if (!c || c.bomb || !c.tpl) return "";

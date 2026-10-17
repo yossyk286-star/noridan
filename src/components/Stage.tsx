@@ -242,14 +242,14 @@ export function OdaiCard({
           {!!cardTag(card) && art === undefined && (
             <Text style={[styles.tag, { color: neon ? look.edge : look.fg, borderColor: neon ? look.edge : look.fg }]}>{cardTag(card)}</Text>
           )}
-          <Text style={[styles.kind, { color: neon ? look.edge : look.fg, opacity: neon ? 1 : undefined, flexShrink: 1 }, textGlow]} numberOfLines={1}>{card.kind}</Text>
+          {!plainKind(card) && (
+            <Text style={[styles.kind, { color: neon ? look.edge : look.fg, opacity: neon ? 1 : undefined, flexShrink: 1 }, textGlow]} numberOfLines={1}>{card.kind}</Text>
+          )}
         </View>
         {doubled ? (
           <View style={[styles.badge, { backgroundColor: look.fg }]}>
             <Text style={[styles.badgeText, { color: look.bg }]}>倍プッシュ中</Text>
           </View>
-        ) : no ? (
-          <Text style={[styles.no, { color: look.fg }]}>No.{String(no).padStart(3, '0')}</Text>
         ) : null}
       </View>
       {art === 'bomb' && <BombArt />}
@@ -464,7 +464,9 @@ export function Controls({
   const all = members.map((_, i) => i);
   const others = othersOf(members, st.doer);
   const revTargets = others.filter((i) => !st.card.yoru || !members[i].ng);
-  const hint = shakeHint ? <ShakeHint pal={pal} /> : null;
+  // 操作のヒントは最初の3枚だけ（慣れたら消えてスッキリ）
+  const early = st.cards < 3;
+  const hint = shakeHint && early ? <ShakeHint pal={pal} /> : null;
   const verdict = canVerdict(flow);
 
   switch (st.phase) {
@@ -535,19 +537,17 @@ export function Controls({
                 <Verdict pal={pal} title="セーフ！" sub={`→ ${nextLabel}`} onPress={flow.clear} />
               </View>
               <View style={styles.swipeHint}>
-                <Text style={[styles.swipeHintText, { color: pal.muted }]}>← アウト</Text>
+                <Text style={[styles.swipeHintText, { color: pal.muted }]}>{early ? '← アウト' : ''}</Text>
                 <Tap onPress={flow.openPen} haptic={false}>
                   <Text style={[styles.link, { color: pal.fg }]}>他の人に罰をつける</Text>
                 </Tap>
-                <Text style={[styles.swipeHintText, { color: pal.muted }]}>セーフ →</Text>
+                <Text style={[styles.swipeHintText, { color: pal.muted }]}>{early ? 'セーフ →' : ''}</Text>
               </View>
-              {next != null && <NextUp pal={pal} name={members[next].name} color={colorOf(next)} />}
               {hint}
             </>
           ) : (
             <>
           <PenGrid pal={pal} members={members} flow={flow} />
-          {next != null && <NextUp pal={pal} name={members[next].name} color={colorOf(next)} />}
           <BigButton
             pal={pal}
             label={nextText(members, st.add, nextLabel, st.card.tpl)}
@@ -583,6 +583,11 @@ function Verdict({ pal, title, sub, ng, onPress }: { pal: Pal; title: string; su
       <Text style={[styles.verdictSub, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>{sub}</Text>
     </Tap>
   );
+}
+
+/** 普通のお題は種類名を出さへん（地獄度は画面の色で分かる）。夜・緊急・押し付けなどの時だけ出す */
+function plainKind(c: Card) {
+  return !!c.kind && !c.kind.includes('（') && /^(\d+マス目・)?(アホお題|イジりお題|全員参加)/.test(c.kind);
 }
 
 /** 札の種類タグ（誰が動くお題か） */
