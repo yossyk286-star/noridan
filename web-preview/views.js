@@ -257,13 +257,13 @@ function vPenGrid() {
   return `
   <div class="pen-grid-wrap">
     <p class="pen-q">できんかった人は？<span>タップで罰</span></p>
-    <div class="pen-grid">
+    <div class="pen-grid ${S.members.length > 6 ? "many" : ""}">
       ${S.members.map((m, i) => {
         const on = g.add.has(i);
         return `<button class="pen-tile ${i === g.doer ? "is-doer" : ""}" style="--mc:${colorOf(i)}" data-act="pen" data-i="${i}" aria-pressed="${on}">
           <span class="bar"></span>
           <span class="nm">${esc(m.name)}</span>
-          <span class="meta">${i === g.doer ? "いまの番" : ""}${g.rev[i] ? " ↺" : ""}<em>罰${g.pen[i]}</em></span>
+          <span class="meta">${i === g.doer ? `<span class="doer-lbl">いまの番</span>` : ""}${g.rev[i] ? " ↺" : ""}<em>罰${g.pen[i]}</em></span>
           ${on ? `<span class="stamp">罰</span>` : ""}
         </button>`;
       }).join("")}
@@ -470,7 +470,7 @@ function paintBoard() {
 function vRanks() {
   const g = S.game;
   const order = S.members.map((m, i) => ({ m, i, p: g.vpos[i] })).sort((a, b) => b.p - a.p);
-  return `<div class="sg-ranks" id="ranks">${order.map((o) => `
+  return `<div class="sg-ranks ${S.members.length > 6 ? "many" : ""}" id="ranks">${order.map((o) => `
     <div class="sg-rank ${o.i === g.cur ? "is-cur" : ""}" style="--mc:${colorOf(o.i)}">
       <span class="nm">${esc(o.m.name)}${g.skip[o.i] ? "<small>休</small>" : ""}</span>
       <span class="bar"><i style="width:${(o.p / GOAL) * 100}%"></i></span>
@@ -630,6 +630,7 @@ function render(anim) {
   app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : vResult();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
   overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : "";
+  if (onStage) fitCard();
   if (anim) { window.scrollTo(0, 0); cue(); speakNow(); }
   if (!onStage && sc !== "result") stopSpeak();
   syncWake();
@@ -652,6 +653,15 @@ function cue() {
   else if (c.alert) play("warn");
   else play("flip");
 }
+// 1画面に固定してるので、お題が札からはみ出す時は文字を小さくして収める
+function fitCard() {
+  document.querySelectorAll("#card .txt").forEach((t) => {
+    let px = parseFloat(getComputedStyle(t).fontSize);
+    let guard = 0;
+    while (t.scrollHeight > t.clientHeight + 1 && px > 13 && guard++ < 30) { px -= 1.5; t.style.fontSize = px + "px"; }
+  });
+}
+window.addEventListener("resize", () => { if (document.body.classList.contains("stage")) { document.querySelectorAll("#card .txt").forEach((t) => (t.style.fontSize = "")); render(); } });
 // 札が変わった時に声で読む
 function speakNow() {
   if (!S.voice) return;

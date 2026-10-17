@@ -13,9 +13,9 @@ import { Icon } from './Icon';
 type Pal = (typeof STAGE)[Level];
 
 /** お題の文章。名前はその人の色でマーカーを引く */
-export function SegText({ segments, style, underline }: { segments: Segment[]; style?: object; underline?: boolean }) {
+export function SegText({ segments, style, underline, fit }: { segments: Segment[]; style?: object; underline?: boolean; /** 札からはみ出す時は自動で縮める */ fit?: boolean }) {
   return (
-    <Text style={style}>
+    <Text style={style} {...(fit ? { adjustsFontSizeToFit: true, numberOfLines: 9, minimumFontScale: 0.45 } : null)}>
       {segments.map((s, i) => {
         if (!s.hl) return <Text key={i}>{s.text}</Text>;
         const col = s.who !== undefined ? colorOf(s.who) : '#ffd23f';
@@ -200,13 +200,13 @@ export function OdaiCard({
       {dual && (
         <>
           <View style={[styles.cardBody, styles.mirror]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            <SegText segments={card.segments} underline={ul} style={[styles.cardText, fitSize(card.segments, small, 0.74), { color: look.fg }, textGlow]} />
+            <SegText fit segments={card.segments} underline={ul} style={[styles.cardText, fitSize(card.segments, small, 0.74), { color: look.fg }, textGlow]} />
           </View>
           <View style={[styles.dualLine, { borderColor: look.fg }]} />
         </>
       )}
       <View style={styles.cardBody}>
-        <SegText segments={card.segments} underline={ul} style={[styles.cardText, fitSize(card.segments, small, dual ? 0.74 : 1), { color: look.fg }, textGlow]} />
+        <SegText fit segments={card.segments} underline={ul} style={[styles.cardText, fitSize(card.segments, small, dual ? 0.74 : 1), { color: look.fg }, textGlow]} />
       </View>
       </Animated.View>
     </Animated.View>
@@ -348,6 +348,7 @@ function PenGrid({ pal, members, flow }: { pal: Pal; members: Member[]; flow: Tu
       <View style={styles.penGrid}>
         {members.map((m, i) => {
           const on = st.add.has(i);
+          const many = members.length > 6; // 人数が多い時は4列で低めに（1画面に収める）
           return (
             <Tap
               key={i}
@@ -357,6 +358,7 @@ function PenGrid({ pal, members, flow }: { pal: Pal; members: Member[]; flow: Tu
               accessibilityLabel={`${m.name}に罰`}
               style={({ pressed }) => [
                 styles.penTile,
+                many && { width: '23.5%', minHeight: 46, paddingVertical: 5 },
                 { backgroundColor: on ? onRed : pal.chip, borderColor: on ? onRed : i === st.doer ? pal.fg : pal.chip },
                 pressed && { transform: [{ scale: 0.96 }] },
               ]}
@@ -364,7 +366,7 @@ function PenGrid({ pal, members, flow }: { pal: Pal; members: Member[]; flow: Tu
               <View style={[styles.penBar, { backgroundColor: colorOf(i) }]} />
               <Text style={[styles.penName, { color: on ? onText : pal.fg }]} numberOfLines={1}>{m.name}</Text>
               <Text style={[styles.penMeta, { color: on ? onText : pal.fg }]}>
-                {i === st.doer ? 'いまの番' : ''}{st.rev[i] ? ' ↺' : ''}{on ? '' : `  罰${st.pen[i]}`}
+                {i === st.doer && !many ? 'いまの番' : ''}{st.rev[i] ? ' ↺' : ''}{on ? '' : `  罰${st.pen[i]}`}
               </Text>
               {on && (
                 <View style={[styles.stamp, { borderColor: onText }]}>
@@ -546,7 +548,7 @@ const styles = StyleSheet.create({
   rule: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 2, borderStyle: 'dashed', borderRadius: 12, padding: 10 },
   ruleHead: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
   ruleText: { fontSize: 13, fontWeight: '700' },
-  card: { flex: 1, minHeight: 280, borderRadius: 22, borderWidth: 2, padding: 20, gap: 12 },
+  card: { flex: 1, minHeight: 0, overflow: 'hidden', borderRadius: 22, borderWidth: 2, padding: 20, gap: 12 },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, opacity: 0.85 },
   kind: { flex: 1, fontSize: 11, fontWeight: '900', letterSpacing: 2.5, opacity: 0.7 },
   no: { fontSize: 11, fontWeight: '900', letterSpacing: 1, opacity: 0.6, fontVariant: ['tabular-nums'] },

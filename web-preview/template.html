@@ -489,6 +489,31 @@ button:active:not(:disabled) { transform: scale(.95); transition-duration: .06s;
   .logo.is-night, .logo.is-deep, .night-title, .odai.yoru.in, .odai.deep.in { animation: none; }
   button, button:active:not(:disabled) { transition: none; }
 }
+
+/* ===== ゲーム中は1画面に固定（スクロールしない・引っ張っても動かない） ===== */
+html, body { overscroll-behavior: none; }
+body.stage { height: 100vh; height: 100dvh; overflow: hidden; }
+body.stage #app { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+body.stage #stage { min-height: 0; gap: 10px; }
+body.stage #stage .deck { min-height: 0; flex: 1 1 0; }
+body.stage .odai { min-height: 0; overflow: hidden; }
+body.stage .odai .txt { min-height: 0; overflow: hidden; }
+body.stage .odai .gacha { overflow-y: auto; min-height: 0; flex: 1; }
+/* すごろく：盤は残りの高さに収まるサイズに */
+body.stage .sugo2 .sg-board { width: min(100%, calc(100dvh - 360px - env(safe-area-inset-top, 0px))); margin-inline: auto; }
+/* 背の低いスマホ・人数が多い時は詰める */
+@media (max-height: 740px) {
+  body.stage .turn em { font-size: clamp(30px, 9vw, 40px); }
+  body.stage .turn .who { height: 40px; }
+  body.stage .pen-tile { min-height: 50px; }
+  body.stage .big { padding: 14px; font-size: 20px; }
+}
+body.stage .pen-grid.many .pen-tile { min-height: 46px; padding-block: 5px; }
+body.stage .pen-grid.many { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+body.stage .pen-grid.many .doer-lbl { display: none; }
+body.stage .sugo2:has(.sg-ranks.many) .sg-board { width: min(100%, calc(100dvh - 410px - env(safe-area-inset-top, 0px))); }
+@media (max-height: 740px) { body.stage .sg-sheet .deck { min-height: 160px; } }
+body.stage .sg-ranks.many { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

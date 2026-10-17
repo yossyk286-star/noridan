@@ -8,7 +8,7 @@ import type { Cell, Level, Member } from '../types';
 type Pal = (typeof STAGE)[Level];
 
 export const COLS = 6;
-const ROWS = Math.ceil(BOARD.length / COLS);
+export const ROWS = Math.ceil(BOARD.length / COLS);
 
 /** ヘビ型：偶数行は左→右、奇数行は右→左 */
 const cellXY = (i: number) => {
@@ -179,10 +179,12 @@ function Token({ name, color, x, y, active }: { name: string; color: string; x: 
 /** みんなの進み具合 */
 export function Ranks({ pal, members, vpos, skip, cur }: { pal: Pal; members: Member[]; vpos: number[]; skip: boolean[]; cur: number }) {
   const order = members.map((m, i) => ({ m, i, p: vpos[i] })).sort((a, b) => b.p - a.p);
+  // 人数が多い時は2列にして高さを抑える（1画面に収めるため）
+  const two = members.length > 6;
   return (
-    <View style={{ gap: 4 }}>
+    <View style={two ? { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 4 } : { gap: 4 }}>
       {order.map((o) => (
-        <View key={o.i} style={s.rank}>
+        <View key={o.i} style={[s.rank, two && { width: '47%' }]}>
           <Text style={[s.rankName, { color: pal.fg }, o.i === cur && { fontSize: 13 }]} numberOfLines={1}>
             {o.m.name}
             {skip[o.i] ? '（休）' : ''}

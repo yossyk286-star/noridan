@@ -5,7 +5,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
 import { BombBanner, Controls, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, ShakeHint, Turn, shakeAction } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
-import { Board, Die, Ranks, type Callout } from '../components/Board';
+import { Board, COLS, Die, ROWS, Ranks, type Callout } from '../components/Board';
 import { Flash } from '../components/Fx';
 import { BOARD, Decks, GOAL, fill, makeCard, nameSeg, othersOf, pick, usable } from '../lib/game';
 import { useTurnFlow } from '../lib/useTurnFlow';
@@ -49,6 +49,7 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
   const [done, setDone] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [area, setArea] = useState({ w: 0, h: 0 });
 
   const flow = useTurnFlow(members, decks, () => {
     if (done) {
@@ -219,12 +220,19 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
   const label = rolling ? 'コロコロ…' : hopping ? `${die}マス進む！` : skip[cur] ? '1回休み（タップで確認）' : 'タップで振る';
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
-      <ScrollView contentContainerStyle={[s.wrap, flipped && s.flipped]} scrollEnabled={!showSheet}>
+      {/* 1画面に固定（スクロールしない）。盤は残りの高さに収まるサイズにする */}
+      <View style={[s.wrap, flipped && s.flipped]}>
         <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} />
         <Turn pal={pal} name={members[st.doer].name} color={colorOf(st.doer)} pushed={st.doer !== cur} bomb={st.card.bomb} passed={st.card.passed} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
         <RuleBanner pal={pal} rule={rule} />
-        <Board pal={pal} members={members} vpos={vpos} cur={cur} callout={callout} />
+        <View style={s.boardArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+          {area.w > 0 && (
+            <View style={{ width: Math.min(area.w, (area.h * COLS) / ROWS) }}>
+              <Board pal={pal} members={members} vpos={vpos} cur={cur} callout={callout} />
+            </View>
+          )}
+        </View>
         <Ranks pal={pal} members={members} vpos={vpos} skip={skip} cur={cur} />
         <View style={s.dock}>
           <Die value={die} rolling={rolling} disabled={rolling || rolled || hopping} onPress={roll} />
@@ -233,7 +241,7 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
             {shakeOn && !rolled && !hopping && <ShakeHint pal={pal} />}
           </View>
         </View>
-      </ScrollView>
+      </View>
 
       {showSheet && (
         <>
@@ -284,7 +292,8 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
 }
 
 const s = StyleSheet.create({
-  wrap: { flexGrow: 1, padding: 16, paddingBottom: 28, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  boardArea: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center' },
+  wrap: { flex: 1, padding: 16, paddingBottom: 16, gap: 10, maxWidth: 560, width: '100%', alignSelf: 'center' },
   flipped: { transform: [{ rotate: '180deg' }] },
   dock: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 'auto', paddingTop: 4 },
   dockText: { fontFamily: F.display, fontSize: 22 },

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
@@ -69,12 +69,13 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
   const art = st.phase === 'bombSet' || st.phase === 'bombPeek' ? 'bomb' : st.phase === 'offer' ? 'coin' : undefined;
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
-      <ScrollView contentContainerStyle={[s.wrap, flipped && s.flipped]}>
+      {/* 1画面に固定（スクロールしない） */}
+      <View style={[s.wrap, flipped && s.flipped]}>
         <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} />
         <Turn pal={pal} name={members[st.doer].name} color={colorOf(st.doer)} pushed={st.doer !== cur} bomb={st.card.bomb} passed={st.card.passed} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
         <RuleBanner pal={pal} rule={rule} />
-        <DeckStack pal={pal}>
+        <DeckStack pal={pal} minHeight={0}>
           {st.phase === 'batsu' ? (
             <GachaCard pal={pal} members={members} items={st.gacha} />
           ) : (
@@ -89,7 +90,7 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
           )}
         </DeckStack>
         <Controls pal={pal} members={members} flow={flow} nextLabel="次へ" shakeHint={shakeOn} next={(cur + 1) % members.length} />
-      </ScrollView>
+      </View>
       <Frame color={colorOf(st.doer)} />
       <Flash trigger={flash} />
       <GameMenu
@@ -107,6 +108,6 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
 }
 
 const s = StyleSheet.create({
-  wrap: { flexGrow: 1, padding: 16, paddingBottom: 28, gap: 14, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  wrap: { flex: 1, padding: 16, paddingBottom: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
   flipped: { transform: [{ rotate: '180deg' }] },
 });
