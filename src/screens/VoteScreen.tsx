@@ -4,7 +4,8 @@ import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
-import { HandWho, Lead, ModeCard, NameTiles, Note, Outline, Prog } from '../components/ModeParts';
+import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog } from '../components/ModeParts';
+import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
@@ -21,19 +22,14 @@ type Props = {
   onQuit: () => void;
   onSettings: () => void;
   onFinish: (pen: number[], turns: number, stats: Stats) => void;
+  skipIntro?: boolean;
 };
-type Phase = 'q' | 'hand' | 'vote' | 'done' | 'reveal' | 'batsu';
+type Phase = 'intro' | 'q' | 'hand' | 'vote' | 'done' | 'reveal' | 'batsu';
 type Round = { q: string; good: boolean; night: 'yoru' | 'shinya' | false; cands: number[]; order: number[]; votes: (number | null)[]; no: number };
 
-export const VOTE_RULES: [string, string][] = [
-  ['質問', '「この中で一番○○なのは？」が出る。地獄度で質問の攻め具合が変わる'],
-  ['投票', 'スマホを回して、1人ずつ自分以外の誰かにこっそり1票。誰が誰に入れたかは出えへん'],
-  ['結果', 'イジる系の質問は票が一番多い人、褒める系の質問は一番少ない人が罰ガチャ。同票なら全員'],
-  ['夜モード', '夜・深夜は下ネタの質問も出る。下ネタNGの人は候補に出えへん'],
-];
 
 /** ぶっちゃけ投票：「この中で一番○○なのは？」に全員がこっそり投票。一番票を集めた人が罰 */
-export default function VoteScreen({ members, level, night, onQuit, onSettings, onFinish }: Props) {
+export default function VoteScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
   useKeepAwake();
   const n = members.length;
   const decks = useRef(new Decks()).current;
@@ -46,7 +42,7 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
     return { ...v, no, order: members.map((_, k) => (s0 + k) % n), votes: Array(n).fill(null) };
   };
   const [round, setRound] = useState<Round>(() => newRound(1));
-  const [phase, setPhase] = useState<Phase>('q');
+  const [phase, setPhase] = useState<Phase>(skipIntro ? 'q' : 'intro');
   const [k, setK] = useState(0);
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
   const [done, setDone] = useState(0); // 結果まで行った問題の数
@@ -133,6 +129,14 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
   let card: React.ReactNode = null;
   let controls: React.ReactNode = null;
   switch (phase) {
+    case 'intro':
+      card = (
+        <IntroCard pal={pal} mode="vote" tag={`${n}人`}>
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードの質問も出る` : undefined} />
+        </IntroCard>
+      );
+      controls = <BigButton pal={pal} label="1問目へ" onPress={() => setPhase('q')} />;
+      break;
     case 'q':
       card = (
         <ModeCard pal={pal}>
@@ -218,7 +222,7 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
         {controls}
       </View>
       <Frame color={frame} />
-      <RulesSheet visible={rules} custom={VOTE_RULES} onClose={() => setRules(false)} />
+      <RulesSheet visible={rules} custom={HELP.vote.rules} onClose={() => setRules(false)} />
       <GameMenu
         visible={menu}
         meta={`ぶっちゃけ投票・${LEVEL_LABEL[level]}・${done}問`}

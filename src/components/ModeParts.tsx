@@ -4,7 +4,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Tap } from './Tap';
 import { F, alpha, colorOf } from '../theme';
 import type { STAGE } from '../theme';
-import type { Level, Member } from '../types';
+import type { Level, Member, Mode } from '../types';
+import { HELP, boldParts } from '../lib/help';
 
 type Pal = (typeof STAGE)[Level];
 
@@ -21,6 +22,44 @@ export function Note({ fg, children }: { fg: string; children: React.ReactNode }
 }
 export function Lead({ fg, children }: { fg: string; children: React.ReactNode }) {
   return <Text style={[s.lead, { color: fg }]}>{children}</Text>;
+}
+
+const MODE_TITLE: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票' };
+
+/** 始める前の説明（どのモードも同じ形）。children に地獄度の説明や時間の選択を入れる */
+export function IntroCard({ pal, mode, tag, children }: { pal: Pal; mode: Mode; tag?: string; children?: React.ReactNode }) {
+  const fg = pal.cardFg;
+  return (
+    <ModeCard pal={pal}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={[s.introTitle, { color: fg }]}>{MODE_TITLE[mode]}</Text>
+        {!!tag && <Text style={[s.introTag, { color: fg, borderColor: alpha('#888888', 0.5) }]}>{tag}</Text>}
+      </View>
+      <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
+        {HELP[mode].how.map(([ic, t], k) => (
+          <View key={k} style={s.howRow}>
+            <Text style={s.howIc}>{ic}</Text>
+            <Text style={[s.howText, { color: fg }]}>
+              {boldParts(t).map((x, j) => (
+                <Text key={j} style={x.b ? s.howBold : undefined}>{x.t}</Text>
+              ))}
+            </Text>
+          </View>
+        ))}
+        {children}
+      </View>
+    </ModeCard>
+  );
+}
+
+/** 地獄度の説明の箱 */
+export function LevelBox({ pal, text, note }: { pal: Pal; text: string; note?: string }) {
+  return (
+    <View style={[s.lvBox, { backgroundColor: alpha(pal.cardEdge, 0.16) }]}>
+      <Text style={[s.lvText, { color: pal.cardFg }]}>{text}</Text>
+      {!!note && <Text style={[s.lvNote, { color: pal.cardFg }]}>{note}</Text>}
+    </View>
+  );
 }
 
 /** 大きい丸と名前（「〇〇だけ見て」など、スマホを渡す時の画面） */
@@ -146,6 +185,15 @@ const s = StyleSheet.create({
   wordRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 14, borderLeftWidth: 6 },
   wordName: { fontWeight: '900', fontSize: 15, flexShrink: 1 },
   word: { fontFamily: F.display, fontSize: 22 },
+  introTitle: { fontFamily: F.display, fontSize: 22 },
+  introTag: { fontSize: 11, fontWeight: '900', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
+  howRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  howIc: { width: 30, fontSize: 22, lineHeight: 28, textAlign: 'center' },
+  howText: { flex: 1, fontSize: 18, lineHeight: 27, fontWeight: '700' },
+  howBold: { fontWeight: '900' },
+  lvBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, gap: 2 },
+  lvText: { fontSize: 14, fontWeight: '900' },
+  lvNote: { fontSize: 12, fontWeight: '700', opacity: 0.75 },
   roul: { borderWidth: 2, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center', gap: 4 },
   roulDot: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   roulDotText: { fontFamily: F.display, fontSize: 20, color: '#141210' },

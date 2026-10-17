@@ -5,7 +5,8 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Tap } from '../components/Tap';
 import { BigButton, DeckStack, Frame, GachaCard, RulesSheet, ScoreBar } from '../components/Stage';
-import { HandWho, Lead, ModeCard, NameTiles, Note, Outline, Prog, Roulette } from '../components/ModeParts';
+import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, Roulette } from '../components/ModeParts';
+import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
@@ -25,15 +26,8 @@ type Props = {
 };
 type Phase = 'intro' | 'roul' | 'hand' | 'act' | 'timeup' | 'over' | 'low' | 'end';
 const SECS = [30, 60, 90];
-const LV_DESC: Record<Level, string> = { yurume: '動物やスポーツの簡単なお題', futsu: '「満員電車」「二日酔い」みたいなお題', jigoku: '「既読スルー」「月曜日の朝」みたいなむずいお題' };
+const LV_DESC: Record<Level, string> = { yurume: '簡単なお題', futsu: 'ふつうのお題', jigoku: 'むずいお題' };
 
-export const GESTURE_RULES: [string, string][] = [
-  ['演じる', '演じる人だけがお題を見て、声を出さずに体だけで伝える。口パクもなし'],
-  ['当てる', '当たったら当てた人の名前をタップ。当てた人と演じた人に1点ずつ'],
-  ['パス', '分からんお題は「パス」で次へ。制限時間いっぱいまで何問でも'],
-  ['終わり', '全員1回ずつ演じたら点数発表。点数が一番低い人が罰ガチャ（同点なら全員）'],
-  ['地獄度', 'ゆるめ＝簡単なお題、普通＝「満員電車」みたいなお題、地獄＝「既読スルー」みたいなむずいお題'],
-];
 
 /** 早押しジェスチャー：演じる人だけお題を見て体で伝える。当てた人と演じた人に1点。全員演じたら最下位が罰 */
 export default function GestureScreen({ members, level, night, onQuit, onSettings, onFinish }: Props) {
@@ -123,27 +117,17 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
   switch (phase) {
     case 'intro':
       card = (
-        <ModeCard pal={pal}>
-          <Text style={[s.title, { color: fg }]}>早押しジェスチャー</Text>
-          <View style={{ flex: 1, justifyContent: 'center', gap: 12 }}>
-            <Text style={[s.how, { color: fg }]}>1. 演じる人だけがお題を見て、声を出さずに体だけで伝える</Text>
-            <Text style={[s.how, { color: fg }]}>2. 当たったら、当てた人の名前をタップ。当てた人と演じた人に1点ずつ</Text>
-            <Text style={[s.how, { color: fg }]}>3. 分からんお題は「パス」。制限時間いっぱいまで何問でも</Text>
-            <Text style={[s.how, { color: fg }]}>4. 最初に演じる人はルーレットで決める。全員1回ずつ演じたら終わり、点数が一番低い人が罰</Text>
-            <View style={[s.lvBox, { backgroundColor: alpha(pal.cardEdge, 0.16) }]}>
-              <Text style={[s.lvText, { color: fg }]}>地獄度「{LEVEL_LABEL[level]}」：{LV_DESC[level]}</Text>
-              {!!night && !members.some((m) => m.ng) && <Text style={[s.small, { color: fg }]}>{night === 'shinya' ? '深夜' : '夜'}モードのお題も混ざる</Text>}
-            </View>
-            <Text style={[s.small, { color: fg, fontWeight: '900' }]}>1人の持ち時間</Text>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              {SECS.map((v) => (
-                <Tap key={v} onPress={() => { setSec(v); save('nd_gs_sec', v); }} style={[s.sec, { borderColor: alpha('#141210', 0.25) }, sec === v && { backgroundColor: fg, borderColor: fg }]}>
-                  <Text style={[s.secText, { color: sec === v ? pal.cardBg : fg }]}>{v}秒</Text>
-                </Tap>
-              ))}
-            </View>
+        <IntroCard pal={pal} mode="gesture" tag={`${n}人`}>
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${LV_DESC[level]}`} note={night && !members.some((m) => m.ng) ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る` : undefined} />
+          <Text style={[s.small, { color: fg, fontWeight: '900' }]}>1人の持ち時間</Text>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {SECS.map((v) => (
+              <Tap key={v} onPress={() => { setSec(v); save('nd_gs_sec', v); }} style={[s.sec, { borderColor: alpha('#141210', 0.25) }, sec === v && { backgroundColor: fg, borderColor: fg }]}>
+                <Text style={[s.secText, { color: sec === v ? pal.cardBg : fg }]}>{v}秒</Text>
+              </Tap>
+            ))}
           </View>
-        </ModeCard>
+        </IntroCard>
       );
       controls = <BigButton pal={pal} label="ルーレットで最初の人を決める" onPress={() => { setPicked(null); setPhase('roul'); }} />;
       break;
@@ -233,7 +217,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
         {controls}
       </View>
       <Frame color={phase === 'intro' ? C.muted : colorOf(actor)} />
-      <RulesSheet visible={rulesOpen} custom={GESTURE_RULES} onClose={() => setRulesOpen(false)} />
+      <RulesSheet visible={rulesOpen} custom={HELP.gesture.rules} onClose={() => setRulesOpen(false)} />
       <GameMenu
         visible={menu}
         meta={`早押しジェスチャー・${LEVEL_LABEL[level]}・${correct}問正解`}

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(join(here, p), 'utf8');
 const data = (f) => JSON.parse(read(`../src/data/${f}`));
-const DATA = { odai: data('odai.json'), events: data('events.json'), board: data('board.json'), batsu: data('batsu.json'), bombs: data('bombs.json'), ngwords: data('ngwords.json'), vote: data('vote.json'), ito: data('ito.json'), marks: data('marks.json').marks, gesture: data('gesture.json'), homeru: data('homeru.json') };
+const DATA = { odai: data('odai.json'), events: data('events.json'), board: data('board.json'), batsu: data('batsu.json'), bombs: data('bombs.json'), ngwords: data('ngwords.json'), vote: data('vote.json'), ito: data('ito.json'), marks: data('marks.json').marks, gesture: data('gesture.json'), homeru: data('homeru.json'), help: data('help.json') };
 
 const script = (read('script.js') + '\n' + read('views.js')).replace('/*DATA*/null', JSON.stringify(DATA));
 const page = read('template.html').replace('/*SCRIPT*/', () => script);

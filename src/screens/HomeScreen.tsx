@@ -5,6 +5,7 @@ import { C, F, LEVEL_LABEL, LEVEL_SUB, colorOf } from '../theme';
 import { Icon } from '../components/Icon';
 import { ALLOW_SHINYA } from '../lib/game';
 import { useSeen } from '../lib/coach';
+import { HELP } from '../lib/help';
 import { play } from '../lib/sound';
 import type { Level, Member, Mode, Night } from '../types';
 
@@ -100,8 +101,6 @@ function Gear({ onPress }: { onPress: () => void }) {
 
 function StepMembers({ members, isExample, night, groups, tease, onMembers, onSettings, onLogo, onNext }: Props & { tease: number; onLogo: () => void; onNext: () => void }) {
   const [name, setName] = useState('');
-  const [editing, setEditing] = useState<number | null>(null);
-  const [neta, setNeta] = useState('');
   const input = useRef<TextInput>(null);
   const ok = members.length >= 2;
   const others = (groups ?? []).filter((g) => g.map((m) => m.name).join() !== members.map((m) => m.name).join());
@@ -112,18 +111,9 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
     if (!n) return;
     const base = isExample ? [] : members;
     if (base.length >= MAX) return;
-    onMembers([...base, { name: n, neta: '' }]);
+    onMembers([...base, { name: n }]);
     setName('');
     setTimeout(() => input.current?.focus(), 0);
-  };
-  const startEdit = (i: number) => {
-    setEditing(i);
-    setNeta(members[i].neta);
-  };
-  const saveNeta = () => {
-    if (editing === null) return;
-    onMembers(members.map((m, j) => (j === editing ? { ...m, neta: neta.trim() } : m)));
-    setEditing(null);
   };
   const toggleNg = (i: number) => onMembers(members.map((m, j) => (j === i ? { ...m, ng: !m.ng } : m)));
   const logoColor = night === 'shinya' ? C.deep : night ? C.night : C.yuru;
@@ -186,46 +176,20 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
 
         {isExample && <Text style={s.note}>↓は例。自分らの名前に入れ替えてな</Text>}
 
-        {members.map((m, i) =>
-          editing === i ? (
-            <View key={`${m.name}-${i}`} style={[s.mem, { borderColor: C.yuru }]}>
-              <Dot i={i} name={m.name} />
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={s.memName}>{m.name}</Text>
-                <TextInput
-                  style={s.netaInput}
-                  value={neta}
-                  onChangeText={setNeta}
-                  maxLength={20}
-                  autoFocus
-                  placeholder="イジりネタ（例：すぐ寝る）"
-                  placeholderTextColor={C.muted}
-                  returnKeyType="done"
-                  onSubmitEditing={saveNeta}
-                />
-              </View>
-              <Tap style={s.okBtn} onPress={saveNeta}>
-                <Text style={s.okText}>完了</Text>
+        {members.map((m, i) => (
+          <View key={`${m.name}-${i}`} style={s.mem}>
+            <Dot i={i} name={m.name} />
+            <Text style={[s.memName, { flex: 1 }]} numberOfLines={1}>{m.name}</Text>
+            {night && (
+              <Tap onPress={() => toggleNg(i)} accessibilityState={{ selected: !!m.ng }} style={[s.ng, m.ng && s.ngOn]}>
+                <Text style={[s.ngText, m.ng && { color: C.ink }]}>{m.ng ? '下ネタNG' : '下ネタOK'}</Text>
               </Tap>
-            </View>
-          ) : (
-            <View key={`${m.name}-${i}`} style={s.mem}>
-              <Dot i={i} name={m.name} />
-              <Tap style={{ flex: 1 }} onPress={() => startEdit(i)} accessibilityLabel={`${m.name}のイジりネタを編集`}>
-                <Text style={s.memName}>{m.name}</Text>
-                <Text style={s.memNeta}>{m.neta ? m.neta : 'タップでイジりネタを追加'}</Text>
-              </Tap>
-              {night && (
-                <Tap onPress={() => toggleNg(i)} accessibilityState={{ selected: !!m.ng }} style={[s.ng, m.ng && s.ngOn]}>
-                  <Text style={[s.ngText, m.ng && { color: C.ink }]}>{m.ng ? '下ネタNG' : '下ネタOK'}</Text>
-                </Tap>
-              )}
-              <Tap onPress={() => onMembers(members.filter((_, j) => j !== i))} accessibilityLabel={`${m.name}を外す`} style={s.x}>
-                <Icon name="close" color={C.muted} size={18} />
-              </Tap>
-            </View>
-          ),
-        )}
+            )}
+            <Tap onPress={() => onMembers(members.filter((_, j) => j !== i))} accessibilityLabel={`${m.name}を外す`} style={s.x}>
+              <Icon name="close" color={C.muted} size={18} />
+            </Tap>
+          </View>
+        ))}
 
         {others.length > 0 && (
           <View style={{ gap: 8, marginTop: 6 }}>
@@ -293,14 +257,14 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       </View>
 
       <StepHead num="③" title="遊び方" />
-      <ModeCard icon="cards" title="アホお題" desc="出たお題を順番にやるだけ" onPress={() => onStart('odai')} />
-      <ModeCard icon="dice" title="すごろく" desc="サイコロで進む。1番にゴールで終了" onPress={() => onStart('sugoroku')} />
-      <ModeCard icon="grid" title="神経衰弱" desc="お題のマークが描かれたカードを揃える。点数が一番低い人が罰" onPress={() => onStart('memory')} />
-      <ModeCard icon="num" title="価値観ナンバー" desc="こっそり配られた数字をお題で表現して、小さい順に並べる" onPress={() => onStart('ito')} />
-      <ModeCard icon="hand" title="早押しジェスチャー" desc={members.length < 3 ? '3人から遊べる' : 'お題を体だけで伝えて当て合う。点数が一番低い人が罰'} disabled={members.length < 3} onPress={() => onStart('gesture')} />
-      <ModeCard icon="heart" title="褒め殺し" desc="30秒褒め続けて、笑ったら褒められた側、耐えたら褒めた側が罰" onPress={() => onStart('homeru')} />
-      <ModeCard icon="mute" title="NGワード" desc="自分だけ知らんNGワードを、言わされたらアウト" onPress={() => onStart('ngword')} />
-      <ModeCard icon="vote" title="ぶっちゃけ投票" desc={members.length < 3 ? '3人から遊べる' : '「一番○○なのは？」に匿名で投票して罰を決める'} disabled={members.length < 3} onPress={() => onStart('vote')} />
+      <ModeCard icon="cards" title="アホお題" desc={HELP.odai.desc} onPress={() => onStart('odai')} />
+      <ModeCard icon="dice" title="すごろく" desc={HELP.sugoroku.desc} onPress={() => onStart('sugoroku')} />
+      <ModeCard icon="grid" title="神経衰弱" desc={HELP.memory.desc} onPress={() => onStart('memory')} />
+      <ModeCard icon="num" title="価値観ナンバー" desc={HELP.ito.desc} onPress={() => onStart('ito')} />
+      <ModeCard icon="hand" title="早押しジェスチャー" desc={members.length < 3 ? '3人から遊べる' : HELP.gesture.desc} disabled={members.length < 3} onPress={() => onStart('gesture')} />
+      <ModeCard icon="heart" title="褒め殺し" desc={HELP.homeru.desc} onPress={() => onStart('homeru')} />
+      <ModeCard icon="mute" title="NGワード" desc={HELP.ngword.desc} onPress={() => onStart('ngword')} />
+      <ModeCard icon="vote" title="ぶっちゃけ投票" desc={members.length < 3 ? '3人から遊べる' : HELP.vote.desc} disabled={members.length < 3} onPress={() => onStart('vote')} />
 
       {night && (
         <View style={{ gap: 10 }}>
@@ -427,7 +391,6 @@ const s = StyleSheet.create({
   dot: { alignItems: 'center', justifyContent: 'center' },
   dotText: { color: C.ink, fontWeight: '900' },
   memName: { color: C.paper, fontSize: 17, fontWeight: '700' },
-  memNeta: { color: C.muted, fontSize: 12 },
   x: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   xText: { color: C.muted, fontSize: 20 },
   ng: { borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 999, paddingVertical: 6, paddingHorizontal: 10 },
@@ -442,9 +405,6 @@ const s = StyleSheet.create({
   plus: { width: 54, borderRadius: 14, backgroundColor: C.yuru, alignItems: 'center', justifyContent: 'center' },
   memHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   textBtn: { color: C.futsu, fontSize: 12, fontWeight: '900' },
-  netaInput: { color: C.paper, fontSize: 15, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', backgroundColor: 'rgba(247,243,234,0.08)' },
-  okBtn: { backgroundColor: C.yuru, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14 },
-  okText: { color: C.ink, fontWeight: '900' },
   group: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(247,243,234,0.16)' },
   groupText: { flex: 1, color: C.paper, fontWeight: '900', fontSize: 14 },
   addText: { color: C.ink, fontWeight: '900' },
@@ -566,10 +526,9 @@ function MembersGuide() {
   if (seen.members) return null;
   return (
     <View style={s.guide}>
-      <Text style={s.guideHead}>遊ぶメンバーを入れよう</Text>
-      <Text style={s.guideText}>1. 名前を入れて「＋」（何人でも）</Text>
-      <Text style={s.guideText}>2. 名前をタップでイジりネタを追加。お題に混ざる</Text>
-      <Text style={s.guideText}>3. 2人以上で次へ</Text>
+      <Text style={s.guideHead}>遊ぶ人の名前を入れよう</Text>
+      <Text style={s.guideText}>1. 名前を入れて「＋」を押す（12人まで）</Text>
+      <Text style={s.guideText}>2. 2人以上入れたら「遊ぶ」を押す</Text>
       <Tap onPress={() => markSeen('members')} style={s.guideBtn}>
         <Text style={s.guideBtnText}>わかった</Text>
       </Tap>
@@ -583,14 +542,10 @@ function ModeGuide() {
   if (seen.mode) return null;
   return (
     <View style={s.guide}>
-      <Text style={s.guideHead}>地獄度と遊び方を選ぼう</Text>
-      <Text style={s.guideText}>1. 迷ったら地獄度は「普通」</Text>
-      <Text style={s.guideText}>2. アホお題：好きなとこで「⋯」→結果発表</Text>
-      <Text style={s.guideText}>3. すごろく：1番にゴールしたら終了</Text>
-      <Text style={s.guideText}>4. 神経衰弱：揃えたお題に答えて点を稼ぐ</Text>
-      <Text style={s.guideText}>5. 価値観ナンバー：みんなで協力して数字を並べる</Text>
-      <Text style={s.guideText}>6. ジェスチャー・褒め殺し：体と口で勝負</Text>
-      <Text style={s.guideText}>7. NGワード・投票：スマホを回して遊ぶ</Text>
+      <Text style={s.guideHead}>遊び方を選ぼう</Text>
+      <Text style={s.guideText}>1. 地獄度はお題の攻め具合。迷ったら「普通」</Text>
+      <Text style={s.guideText}>2. 遊び方を押したら、まず説明が出る</Text>
+      <Text style={s.guideText}>3. やめたい時は「⋯」→結果発表</Text>
       <Tap onPress={() => markSeen('mode')} style={s.guideBtn}>
         <Text style={s.guideBtnText}>わかった</Text>
       </Tap>

@@ -3,8 +3,10 @@ import { StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
-import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar } from '../components/Stage';
+import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, BigButton } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
+import { IntroCard, LevelBox } from '../components/ModeParts';
+import { HELP } from '../lib/help';
 import { Flash } from '../components/Fx';
 import { CHANCE, Decks } from '../lib/game';
 import { useTurnFlow } from '../lib/useTurnFlow';
@@ -21,9 +23,11 @@ type Props = {
   /** 画面の外側（ノッチ部分）の色を合わせる */
   onBg?: (bg: string | null) => void;
   onFinish: (pen: number[], turns: number, stats: Stats) => void;
+  /** 「もう一回」の時は始める前の説明を出さへん */
+  skipIntro?: boolean;
 };
 
-export default function OdaiScreen({ members, level, night, onQuit, onSettings, onBg, onFinish }: Props) {
+export default function OdaiScreen({ members, level, night, onQuit, onSettings, onBg, onFinish, skipIntro }: Props) {
   useKeepAwake(); // ゲーム中は画面を消さない
   const basePal = STAGE[level];
   const decks = useRef(new Decks()).current;
@@ -36,6 +40,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
   const [flipped, setFlipped] = useState(false);
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
+  const [intro, setIntro] = useState(!skipIntro);
   /** ルール違反のシート（誰を選ぶか → 罰ガチャの結果） */
   const [ruleSheet, setRuleSheet] = useState<'pick' | GachaItem | null>(null);
 
@@ -61,7 +66,9 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
     startTurn(nc, turn + 1);
   });
 
-  useEffect(() => startTurn(0, 1), []);
+  useEffect(() => {
+    if (!intro) startTurn(0, 1);
+  }, [intro]);
 
   const flash = useStageCues(flow);
 
@@ -77,6 +84,25 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
   const pal = neon ? neonPal(st.card.kind.includes('深夜') ? C.deep : C.night) : basePal;
   useEffect(() => onBg?.(neon ? NEON_BG : null), [neon]);
   const art = st.phase === 'bombSet' || st.phase === 'bombPeek' ? 'bomb' : st.phase === 'offer' ? 'coin' : undefined;
+  // 始める前の説明（「もう一回」の時は出さへん）
+  if (intro)
+    return (
+      <View style={{ flex: 1, backgroundColor: basePal.bg }}>
+        <View style={s.wrap}>
+          <ScoreBar pal={basePal} members={members} pen={Array(members.length).fill(0)} rev={Array(members.length).fill(false)} doer={-1} onMenu={() => setMenu(true)} />
+          <View style={{ flex: 1 }}>
+            <IntroCard pal={basePal} mode="odai" tag={`${members.length}人`}>
+              <LevelBox pal={basePal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る` : undefined} />
+            </IntroCard>
+          </View>
+          <BigButton pal={basePal} label={`${members[0].name}からスタート`} onPress={() => setIntro(false)} />
+        </View>
+        <Frame color={C.muted} />
+        <GameMenu visible={menu} meta={'アホお題・' + LEVEL_LABEL[level]} rulesSub="アホお題の遊び方" flipped={false} onFlip={() => {}} onRules={() => setRules(true)} onEnd={onQuit} onSettings={onSettings} onQuit={onQuit} onClose={() => setMenu(false)} />
+        <RulesSheet visible={rules} night={!!night} custom={HELP.odai.rules} onClose={() => setRules(false)} />
+      </View>
+    );
+
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       {/* 1画面に固定（スクロールしない） */}
@@ -108,7 +134,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
       <Frame color={colorOf(st.doer)} />
       <Flash trigger={flash} />
       <RuleSheet members={members} rule={rule} state={ruleSheet} onPick={(i) => setRuleSheet(flow.rulePenalty(i))} onClose={() => setRuleSheet(null)} />
-      <RulesSheet visible={rules} night={!!night} onClose={() => setRules(false)} />
+      <RulesSheet visible={rules} night={!!night} custom={HELP.odai.rules} onClose={() => setRules(false)} />
       <GameMenu
         visible={menu}
         meta={`アホお題・${LEVEL_LABEL[level]}・${turn}ターン`}

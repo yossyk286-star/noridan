@@ -5,7 +5,8 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Tap } from '../components/Tap';
 import { BigButton, Frame, RulesSheet, ScoreBar } from '../components/Stage';
-import { HandWho, Lead, ModeCard, NameTiles, Note, Outline, Prog, WordList } from '../components/ModeParts';
+import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, WordList } from '../components/ModeParts';
+import { HELP } from '../lib/help';
 import { Skull, Angel } from '../components/Fx';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
@@ -27,14 +28,6 @@ type Phase = 'setup' | 'hand' | 'look' | 'play' | 'who' | 'confirm' | 'out' | 'e
 const MINUTES = [3, 5, 10, 15, 0];
 const NG_LV: Record<Level, string> = { yurume: 'たまにしか言わん言葉', futsu: 'そこそこ言う言葉', jigoku: '絶対言うてまう口ぐせ' };
 
-export const NG_RULES: [string, string][] = [
-  ['配る', 'スマホを回して、1人ずつ自分以外の全員のNGワードを見る。自分のワードは自分だけ知らん'],
-  ['地獄度', 'ゆるめ＝たまにしか言わん言葉、普通＝そこそこ言う言葉、地獄＝絶対言うてまう口ぐせ。夜・深夜は恋愛・下ネタのワードも混ざる'],
-  ['言わせる', '普通にしゃべって、相手がNGワードを言うように話を持っていく。話題に困ったら「話題を出す」'],
-  ['アウト', '言うてもうた人をタップ。ワードを発表して罰ガチャ。その人には新しいワードが配られる'],
-  ['忘れた時', '「ワードを見直す」→自分の名前を選ぶと、自分以外のワードをもう一回見られる（時計は止まる）'],
-  ['終わり', '制限時間が来るか、⋯→結果発表。アウトが一番多い人が戦犯'],
-];
 
 const fmt = (ms: number) => {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -136,18 +129,9 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
   switch (phase) {
     case 'setup':
       card = (
-        <ModeCard pal={pal}>
-          <Text style={[s.title, { color: fg }]}>NGワード</Text>
-          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', gap: 14 }}>
-            <Text style={[s.how, { color: fg }]}>1. スマホを回して、1人ずつ自分以外のNGワードをこっそり見る</Text>
-            <Text style={[s.how, { color: fg }]}>2. 自分のワードは自分だけ知らん。普通にしゃべって、相手にNGワードを言わせろ</Text>
-            <Text style={[s.how, { color: fg }]}>3. 言うてもうた人をタップ → アウトで罰ガチャ。その人には新しいワードが配られる</Text>
-            <Text style={[s.small, { color: fg }]}>ワードを忘れたら、ゲーム中の「ワードを見直す」でいつでも見られる</Text>
-            <View style={[s.lvBox, { backgroundColor: alpha(pal.cardEdge, 0.16) }]}>
-              <Text style={[s.lvText, { color: fg }]}>地獄度「{LEVEL_LABEL[level]}」：{NG_LV[level]}</Text>
-              {!!night && <Text style={[s.small, { color: fg }]}>{night === 'shinya' ? '深夜' : '夜'}モード：恋愛・下ネタのワードも混ざる</Text>}
-            </View>
-          <Text style={[s.small, { color: fg, fontWeight: '900', marginTop: 4 }]}>制限時間</Text>
+        <IntroCard pal={pal} mode="ngword" tag={`${n}人`}>
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${NG_LV[level]}`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのワードも出る` : undefined} />
+          <Text style={[s.small, { color: fg, fontWeight: '900' }]}>制限時間</Text>
           <View style={s.mins}>
             {MINUTES.map((m) => {
               const on = minutes === m;
@@ -158,8 +142,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
               );
             })}
           </View>
-          </ScrollView>
-        </ModeCard>
+        </IntroCard>
       );
       controls = <BigButton pal={pal} label="ワードを配る" onPress={deal} />;
       break;
@@ -288,7 +271,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
         {controls}
       </View>
       <Frame color={frame} />
-      <RulesSheet visible={rules} custom={NG_RULES} onClose={() => setRules(false)} />
+      <RulesSheet visible={rules} custom={HELP.ngword.rules} onClose={() => setRules(false)} />
       <GameMenu
         visible={menu}
         meta={`NGワード・${LEVEL_LABEL[level]}・アウト${pen.reduce((a, b) => a + b, 0)}回`}

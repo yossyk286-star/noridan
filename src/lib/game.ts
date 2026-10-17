@@ -22,7 +22,7 @@ const EVENTS = events as GameEvent[];
  */
 export const ALLOW_SHINYA = true;
 
-export const CHANCE = { event: 0.14, double: 0.2, minna: 0.18, neta: 0.22, bomb: 0.12, yoru: 0.35, lucky: 0.15 };
+export const CHANCE = { event: 0.14, double: 0.2, minna: 0.25, bomb: 0.12, yoru: 0.35, lucky: 0.15 };
 
 const rnd = (n: number) => Math.floor(Math.random() * n);
 export const pick = <T,>(a: T[]): T => a[rnd(a.length)];
@@ -36,27 +36,22 @@ const shuffle = <T,>(a: T[]): T[] => {
 };
 export const othersOf = (members: Member[], i: number) => members.map((_, j) => j).filter((j) => j !== i);
 
-/** {P}{X}{Y}{NETA} を埋めて表示用の部品にする */
-export function fill(tpl: string, members: Member[], p: number, opts: { needNeta?: boolean; noNg?: boolean } = {}): Segment[] {
+/** {P}{X}{Y} を埋めて表示用の部品にする */
+export function fill(tpl: string, members: Member[], p: number, opts: { noNg?: boolean } = {}): Segment[] {
   const others = othersOf(members, p).filter((i) => !opts.noNg || !members[i].ng);
-  let pool = opts.needNeta ? others.filter((i) => members[i].neta) : others;
-  if (!pool.length) pool = others;
-  const x = pick(pool);
+  const x = pick(others);
   const yPool = others.filter((i) => i !== x);
   const y = yPool.length ? pick(yPool) : x;
 
   const out: Segment[] = [];
-  const re = /\{(P|X|Y|NETA)\}/g;
+  const re = /\{(P|X|Y)\}/g;
   let last = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(tpl))) {
     if (m.index > last) out.push({ text: tpl.slice(last, m.index) });
     const key = m[1];
-    if (key === 'NETA') out.push({ text: members[x]?.neta || 'アレ' });
-    else {
-      const who = key === 'P' ? p : key === 'X' ? x : y;
-      out.push({ text: members[who]?.name ?? '誰か', hl: true, who });
-    }
+    const who = key === 'P' ? p : key === 'X' ? x : y;
+    out.push({ text: members[who]?.name ?? '誰か', hl: true, who });
     last = m.index + m[0].length;
   }
   if (last < tpl.length) out.push({ text: tpl.slice(last) });
@@ -85,9 +80,8 @@ export function makeCard(kind: string, tpl: string, members: Member[], p: number
   return {
     kind,
     tpl,
-    needNeta: extra.needNeta,
     noNg: extra.noNg,
-    segments: fill(tpl, members, p, { needNeta: extra.needNeta, noNg: extra.noNg }),
+    segments: fill(tpl, members, p, { noNg: extra.noNg }),
     solo: tpl.includes('{P}'),
     ...extra,
   };
@@ -140,13 +134,7 @@ export class Decks {
         if (tpl && canYoru(tpl, members, p)) return makeCard(deep ? '深夜お題' : '夜お題', tpl, members, p, { noNg: true, yoru: true });
       }
     }
-    const hasNeta = members.some((m, i) => i !== p && m.neta);
-    const r = Math.random();
-    if (hasNeta && r < CHANCE.neta) {
-      const t = this.str('neta', odai.neta, n);
-      if (t) return makeCard('イジりお題', t, members, p, { needNeta: true });
-    }
-    if (r < CHANCE.neta + CHANCE.minna) {
+    if (Math.random() < CHANCE.minna) {
       const t = this.str('minna', odai.minna, n);
       if (t) return makeCard('全員参加', t, members, p, { solo: false });
     }

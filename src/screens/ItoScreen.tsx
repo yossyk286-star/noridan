@@ -4,7 +4,8 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, Frame, GachaCard, RulesSheet, ScoreBar } from '../components/Stage';
-import { HandWho, ModeCard, NameTiles, Note, Outline, Prog } from '../components/ModeParts';
+import { HandWho, IntroCard, LevelBox, ModeCard, NameTiles, Note, Outline, Prog } from '../components/ModeParts';
+import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
@@ -27,13 +28,6 @@ type Topic = { t: string; lo: string; hi: string };
 type Phase = 'intro' | 'hand' | 'look' | 'talk' | 'who' | 'order' | 'reveal' | 'batsu';
 const TOPICS = itoJson as unknown as Record<string, Topic[]>;
 
-export const ITO_RULES: [string, string][] = [
-  ['数字', 'スマホを回して、1人ずつ自分だけの数字（1〜100）を見る。被りはなし'],
-  ['表現', 'お題（例：怖いもの）に合わせて、自分の数字っぽいものを1人ずつ言う。数字をそのまま言うのは反則'],
-  ['並べる', '話し合って、数字が小さい順に名前をタップ'],
-  ['答え合わせ', '隣どうしで順番が逆になってた2人が罰ガチャ。全員合ってたら全員セーフ'],
-  ['忘れた時', '「数字を見直す」→自分の名前を選ぶと、もう一回見られる'],
-];
 
 const shuffle = <T,>(a: T[]): T[] => {
   const b = a.slice();
@@ -151,20 +145,9 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
   switch (phase) {
     case 'intro':
       card = (
-        <ModeCard pal={pal}>
-          <Text style={[s.title, { color: fg }]}>価値観ナンバー</Text>
-          <View style={{ flex: 1, justifyContent: 'center', gap: 12 }}>
-            <Text style={[s.how, { color: fg }]}>1. スマホを回して、1人ずつ自分だけの数字（1〜100）をこっそり見る</Text>
-            <Text style={[s.how, { color: fg }]}>2. お題（例：怖いもの）に合わせて、自分の数字っぽいものを1人ずつ言う。数字が大きいほど怖いもの</Text>
-            <Text style={[s.how, { color: fg }]}>3. 話し合って、数字が小さい順に並べる</Text>
-            <Text style={[s.how, { color: fg }]}>4. 答え合わせで、順番が逆になってた2人が罰。全員合ってたら全員セーフ</Text>
-            <Text style={[s.small, { color: fg }]}>数字をそのまま言うのは反則。忘れたら「数字を見直す」でいつでも見られる</Text>
-            <View style={[s.lvBox, { backgroundColor: alpha(pal.cardEdge, 0.16) }]}>
-              <Text style={[s.lvText, { color: fg }]}>地獄度「{LEVEL_LABEL[level]}」のお題</Text>
-              {!!night && <Text style={[s.small, { color: fg }]}>{night === 'shinya' ? '深夜' : '夜'}モードのお題も混ざる{members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}</Text>}
-            </View>
-          </View>
-        </ModeCard>
+        <IntroCard pal={pal} mode="ito" tag="協力">
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
+        </IntroCard>
       );
       controls = <BigButton pal={pal} label="数字を配る" onPress={newRound} />;
       break;
@@ -301,7 +284,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
         {controls}
       </View>
       <Frame color={frame} />
-      <RulesSheet visible={rulesOpen} custom={ITO_RULES} onClose={() => setRulesOpen(false)} />
+      <RulesSheet visible={rulesOpen} custom={HELP.ito.rules} onClose={() => setRulesOpen(false)} />
       <GameMenu
         visible={menu}
         meta={`価値観ナンバー・${LEVEL_LABEL[level]}・${done}問`}

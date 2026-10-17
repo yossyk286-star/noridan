@@ -3,7 +3,7 @@ export type Level = 'yurume' | 'futsu' | 'jigoku';
 export type Night = false | 'yoru' | 'shinya';
 export type Mode = 'odai' | 'sugoroku' | 'memory' | 'ito' | 'gesture' | 'homeru' | 'ngword' | 'vote';
 
-export type Member = { name: string; neta: string; /** 夜モードで下ネタを振らない */ ng?: boolean };
+export type Member = { name: string; /** 夜モードで下ネタを振らない */ ng?: boolean };
 
 /** お題の表示用。hl=true の部分は名前として強調する */
 export type Segment = { text: string; hl?: boolean; /** 名前の場合、その人の番号（色分け用） */ who?: number };
@@ -14,7 +14,6 @@ export type Card = {
   alert?: boolean;
   /** 元のお題。リベンジで人を入れ替えるときに使う */
   tpl?: string;
-  needNeta?: boolean;
   /** その人がやるお題か（リベンジ・ダブルアップの対象） */
   solo?: boolean;
   /** 数ターン続くルールを出した緊急指令 */

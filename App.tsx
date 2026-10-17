@@ -25,12 +25,12 @@ import { C, NEON_BG, STAGE } from './src/theme';
 import type { Level, Member, Mode, Night } from './src/types';
 
 const EXAMPLE: Member[] = [
-  { name: 'よし', neta: 'すぐ寝る' },
-  { name: 'たく', neta: '遅刻常習犯' },
-  { name: 'まゆ', neta: '' },
+  { name: 'よし' },
+  { name: 'たく' },
+  { name: 'まゆ' },
 ];
 
-type Screen = { name: 'home'; step?: 1 | 2 } | { name: Mode; key: number } | { name: 'result'; mode: Mode; pen: number[]; turns: number; stats?: Stats; words?: string[]; scores?: number[] };
+type Screen = { name: 'home'; step?: 1 | 2 } | { name: Mode; key: number; again?: boolean } | { name: 'result'; mode: Mode; pen: number[]; turns: number; stats?: Stats; words?: string[]; scores?: number[] };
 
 export default function App() {
   useFonts({ DelaGothicOne_400Regular }); // 読み込み前はシステムフォントで表示
@@ -51,7 +51,7 @@ export default function App() {
     (async () => {
       const m = await load<Member[] | null>('nd_members', null);
       if (m) {
-        setMembers(m);
+        setMembers(m.map((x) => ({ name: x.name, ...(x.ng ? { ng: true } : {}) })));
         setIsExample(false);
       }
       setLevel(await load<Level>('nd_level', 'futsu'));
@@ -103,9 +103,9 @@ export default function App() {
     setGroups(next);
     save('nd_groups', next);
   };
-  const start = (mode: Mode) => {
+  const start = (mode: Mode, again = false) => {
     if (screen.name === 'home') rememberGroup();
-    setScreen({ name: mode, key: Date.now() });
+    setScreen({ name: mode, key: Date.now(), again });
   };
   const finish = (mode: Mode) => (pen: number[], turns: number, stats: Stats, words?: string[], scores?: number[]) => setScreen({ name: 'result', mode, pen, turns, stats: { ...stats }, words, scores });
   const home = () => {
@@ -159,10 +159,10 @@ export default function App() {
             />
           )}
           {screen.name === 'odai' && (
-            <OdaiScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('odai')} />
+            <OdaiScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('odai')} skipIntro={screen.again} />
           )}
           {screen.name === 'sugoroku' && (
-            <SugorokuScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('sugoroku')} />
+            <SugorokuScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('sugoroku')} skipIntro={screen.again} />
           )}
           {screen.name === 'memory' && (
             <MemoryScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('memory')} />
@@ -180,7 +180,7 @@ export default function App() {
             <NgWordScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('ngword')} />
           )}
           {screen.name === 'vote' && (
-            <VoteScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('vote')} />
+            <VoteScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('vote')} skipIntro={screen.again} />
           )}
           {screen.name === 'result' && (
             <ResultScreen
@@ -194,7 +194,7 @@ export default function App() {
               scores={screen.scores}
               level={level}
               onHome={home}
-              onAgain={() => start(screen.mode)}
+              onAgain={() => start(screen.mode, true)}
             />
           )}
         </Animated.View>

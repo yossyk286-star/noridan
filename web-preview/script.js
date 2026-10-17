@@ -2,7 +2,7 @@ const DATA = /*DATA*/null;
 const COLORS = ["#ffd23f", "#ff5d8f", "#4dd4ff", "#7cf06b", "#ff9a3c", "#b69cff", "#ffffff", "#ff4f4f", "#3cffc8", "#f5a3ff", "#c8ff3c", "#9ab0ff"];
 const LV = { yurume: "ゆるめ", futsu: "普通", jigoku: "地獄" };
 const GOAL = DATA.board.length - 1;
-const CHANCE = { event: 0.14, double: 0.2, minna: 0.18, neta: 0.22, bomb: 0.12, yoru: 0.35, lucky: 0.15 };
+const CHANCE = { event: 0.14, double: 0.2, minna: 0.25, bomb: 0.12, yoru: 0.35, lucky: 0.15 };
 
 // ---------- storage (best effort) ----------
 const store = {
@@ -10,14 +10,14 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 const EXAMPLE = [
-  { name: "よし", neta: "すぐ寝る" },
-  { name: "たく", neta: "遅刻常習犯" },
-  { name: "まゆ", neta: "" },
+  { name: "よし" },
+  { name: "たく" },
+  { name: "まゆ" },
 ];
 
 const S = {
   screen: "home",
-  members: store.get("nd_members", EXAMPLE),
+  members: (store.get("nd_members", EXAMPLE) || EXAMPLE).map((m) => ({ name: m.name, ...(m.ng ? { ng: true } : {}) })),
   isExample: store.get("nd_members", null) === null,
   level: store.get("nd_level", "futsu"),
   night: (() => { const v = store.get("nd_night", false); return v === true ? "yoru" : v; })(), // false | "yoru" | "shinya"
@@ -33,7 +33,6 @@ const S = {
   tut: store.get("nd_tut", false) ? null : 0, // 初回だけ遊び方
   flip: false,      // 上下反転
   menu: false,      // ゲーム中の「⋯」メニュー
-  editing: null,    // イジりネタを編集中のメンバー
   shareMsg: "",
   navKey: "",
 };
@@ -47,19 +46,16 @@ const colorOf = (i) => COLORS[i % COLORS.length];
 const nm = (i) => `<mark style="--mc:${colorOf(i)}">${esc(S.members[i]?.name ?? "誰か")}</mark>`;
 const others = (i) => S.members.map((_, j) => j).filter((j) => j !== i);
 
-// {P}{X}{Y}{NETA} を埋める
+// {P}{X}{Y} を埋める
 function fill(tpl, pIdx, opts = {}) {
   const ms = S.members;
   const os = others(pIdx).filter((i) => !opts.noNg || !ms[i].ng);
-  let pool = opts.needNeta ? os.filter((i) => ms[i].neta) : os;
-  if (!pool.length) pool = os;
-  const x = pick(pool);
+  const x = pick(os);
   const y = pick(os.filter((i) => i !== x));
   return esc(tpl)
     .replaceAll("{P}", nm(pIdx))
     .replaceAll("{X}", nm(x))
-    .replaceAll("{Y}", nm(y ?? x))
-    .replaceAll("{NETA}", esc(ms[x]?.neta || "アレ"));
+    .replaceAll("{Y}", nm(y ?? x));
 }
 const textOf = (t) => (typeof t === "string" ? t : t.text);
 // 3人以上おらんと成立せえへんお題（2人やと必ず引き分け・全員該当になる）
@@ -139,10 +135,7 @@ function drawOdai(p) {
       if (tpl && canYoru(tpl, p)) return makeCard(deep ? "深夜お題" : "夜お題", tpl, p, { noNg: true }, { yoru: true });
     }
   }
-  const hasNeta = S.members.some((m, i) => i !== p && m.neta);
-  const r = Math.random();
-  if (hasNeta && r < CHANCE.neta) { const t = draw("neta", DATA.odai.neta); if (t) return makeCard("イジりお題", t, p, { needNeta: true }); }
-  if (r < CHANCE.neta + CHANCE.minna) { const t = draw("minna", DATA.odai.minna); if (t) return makeCard("全員参加", t, p, {}, { solo: false }); }
+  if (Math.random() < CHANCE.minna) { const t = draw("minna", DATA.odai.minna); if (t) return makeCard("全員参加", t, p, {}, { solo: false }); }
   return makeCard(`アホお題・${LV[S.level]}`, draw(S.level, DATA.odai[S.level]), p);
 }
 // 「次の自分の番まで語尾が〜」みたいな、しばらく続く罰・お題
@@ -169,7 +162,7 @@ const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
 const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" ? "問" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
-function newGame(mode) {
+function newGame(mode, again = false) {
   const n = S.members.length;
   S.game = {
     mode, turn: 0, cur: 0, doer: 0,
@@ -185,11 +178,12 @@ function newGame(mode) {
   S.ruleSheet = null;
   S.screen = mode;
   if (mode === "ngword") { S.game.doer = -1; S.game.ng = { phase: "setup", minutes: store.get("nd_ng_min", 10), words: [], viewer: 0, dealing: false, out: null, res: null, left: 0, endAt: 0, topic: null }; render(true); return; }
-  if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "q", round: 0 }; startVoteRound(); render(true); return; }
+  if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "intro", round: 0 }; if (again) startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
   if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
   if (mode === "gesture") { S.game.doer = 0; S.game.gs = { phase: "intro", sec: store.get("nd_gs_sec", 60), score: Array(n).fill(0), actor: 0, acted: 0, word: null, got: 0, endAt: 0 }; render(true); return; }
   if (mode === "homeru") { S.game.doer = 0; S.game.hm = { phase: "intro", sec: 30, praiser: 0, target: 1, theme: null, endAt: 0, loser: null }; render(true); return; }
+  S.game.intro = !again; // 始める前の説明（「もう一回」の時は出さへん）
   if (mode === "odai") startOdaiTurn();
   else S.game.card = { kind: "すごろく", html: `${nm(0)}からスタート。サイコロ振れ！` };
   render(true);

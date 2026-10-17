@@ -262,7 +262,6 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       st.stats.notme[from]++;
       st.doer = to;
       st.card = makeCard(`${c.kind.replace(/（.*）$/, '')}（${members[from].name}は当てはまらん）`, c.tpl, members, to, {
-        needNeta: c.needNeta,
         noNg: c.noNg,
         yoru: c.yoru,
         passed: true,
@@ -287,7 +286,6 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       st.doer = i;
       const base = c.kind.replace(/（.*押し付け）$/, '');
       st.card = makeCard(`${base}（${members[from].name}から押し付け）`, c.tpl, members, i, {
-        needNeta: c.needNeta,
         noNg: c.noNg,
         yoru: c.yoru,
         alert: true,

@@ -4,7 +4,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, Frame, GachaCard, RuleBanner, RuleSheet, RulesSheet, ScoreBar } from '../components/Stage';
-import { Lead, ModeCard, Outline, Prog, Roulette } from '../components/ModeParts';
+import { IntroCard, Lead, ModeCard, Outline, Prog, Roulette } from '../components/ModeParts';
+import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
 import { Decks, PERSONAL, othersOf, pick } from '../lib/game';
 import { play } from '../lib/sound';
@@ -26,13 +27,6 @@ type Props = {
 type Phase = 'intro' | 'roul' | 'ready' | 'go' | 'batsu';
 const SEC = 30;
 
-export const HOMERU_RULES: [string, string][] = [
-  ['褒める', '番の人が、ランダムで選ばれた1人を30秒間ひたすら褒める。テーマはヒント'],
-  ['耐える', '褒められた人は真顔で耐える。笑ったり照れたりしたら褒められた人が罰'],
-  ['時間切れ', '30秒耐え切ったら褒めた人が罰。途中で褒めるのが限界になっても褒めた人が罰'],
-  ['交代', '順番に褒める人が交代。好きなとこで「⋯」→結果発表'],
-  ['続く罰', '「次の自分の番まで〜」の罰は上に出る。破ったら「違反者に罰」'],
-];
 const plain = (segs: Segment[]) => segs.map((x) => x.text).join('');
 
 /** 褒め殺し：番の人がランダムな1人を30秒褒める。笑ったら褒められた側、耐え切ったら褒めた側が罰 */
@@ -144,18 +138,7 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
   let controls: React.ReactNode = null;
   switch (phase) {
     case 'intro':
-      card = (
-        <ModeCard pal={pal}>
-          <Text style={[s.title, { color: fg }]}>褒め殺し</Text>
-          <View style={{ flex: 1, justifyContent: 'center', gap: 12 }}>
-            <Text style={[s.how, { color: fg }]}>1. 番の人が、ランダムで選ばれた1人を30秒間ひたすら褒める</Text>
-            <Text style={[s.how, { color: fg }]}>2. 褒められた人は真顔で耐えろ。笑ったり照れたりしたら褒められた人が罰</Text>
-            <Text style={[s.how, { color: fg }]}>3. 30秒耐え切ったら、褒めた人が罰</Text>
-            <Text style={[s.how, { color: fg }]}>4. 最初に褒める人はルーレットで決める。褒めるところのヒント（テーマ）も出る。順番に交代していく</Text>
-            <Text style={[s.small, { color: fg }]}>好きなとこで「⋯」→結果発表で終わり</Text>
-          </View>
-        </ModeCard>
-      );
+      card = <IntroCard pal={pal} mode="homeru" tag={`${SEC}秒`} />;
       controls = <BigButton pal={pal} label="ルーレットで最初の人を決める" onPress={() => { setPicked(null); setPhase('roul'); }} />;
       break;
     case 'roul':
@@ -227,7 +210,7 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
       </View>
       <Frame color={phase === 'intro' ? C.muted : phase === 'batsu' && loser != null ? colorOf(loser) : colorOf(praiser)} />
       <RuleSheet members={members} rule={rule} state={ruleSheet} onPick={(i) => setRuleSheet(rulePenalty(i))} onClose={() => setRuleSheet(null)} />
-      <RulesSheet visible={rulesOpen} custom={HOMERU_RULES} onClose={() => setRulesOpen(false)} />
+      <RulesSheet visible={rulesOpen} custom={HELP.homeru.rules} onClose={() => setRulesOpen(false)} />
       <GameMenu
         visible={menu}
         meta={`褒め殺し・${LEVEL_LABEL[level]}・${round}回`}

@@ -5,7 +5,8 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Tap } from '../components/Tap';
 import { BigButton, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, RuleSheet, RulesSheet, ScoreBar } from '../components/Stage';
-import { ModeCard } from '../components/ModeParts';
+import { IntroCard, LevelBox, ModeCard } from '../components/ModeParts';
+import { HELP } from '../lib/help';
 import { Skull } from '../components/Fx';
 import GameMenu from '../components/GameMenu';
 import { Decks, PERSONAL, makeCard } from '../lib/game';
@@ -27,14 +28,6 @@ type Phase = 'intro' | 'pick' | 'miss' | 'match' | 'skull' | 'fail' | 'over' | '
 const PAIRS = 7;
 const SKULLS = 2;
 
-export const MEMORY_RULES: [string, string][] = [
-  ['カード', '表にはお題に関係するマークだけ（📱ならスマホ系、💘なら恋愛系）。同じお題のカードが2枚ずつある'],
-  ['自分の番', '2枚めくる。揃ったらお題の全文が出て、答えたら+1点でもう1回。答えられへんかったら罰ガチャで次の人へ'],
-  ['ハズレ', '揃わへんかったら裏に戻して次の人へ。場所を覚えとけ'],
-  ['ドクロ', 'めくった瞬間に罰ガチャ。天使が出たら続けてめくれる'],
-  ['終わり', '全部揃ったら、点数が一番低い人が罰ガチャ（同点なら全員）'],
-  ['続く罰', '「次の自分の番まで〜」の罰やお題は上に出る。破ったら「違反者に罰」'],
-];
 
 const shuffle = <T,>(a: T[]): T[] => {
   const b = a.slice();
@@ -191,19 +184,9 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
   let controls: React.ReactNode = null;
   if (phase === 'intro') {
     body = (
-      <ModeCard pal={pal}>
-        <Text style={[s.title, { color: pal.cardFg }]}>神経衰弱</Text>
-        <View style={{ flex: 1, justifyContent: 'center', gap: 12 }}>
-          <Text style={[s.how, { color: pal.cardFg }]}>1. カードにはお題に関係するマークだけ（📱ならスマホ系、💘なら恋愛系）。同じお題の2枚を揃えろ</Text>
-          <Text style={[s.how, { color: pal.cardFg }]}>2. 揃ったらお題の全文が出る。答えたら+1点でもう1回、答えられへんかったら罰ガチャで次の人へ</Text>
-          <Text style={[s.how, { color: pal.cardFg }]}>3. ドクロはめくった瞬間に罰ガチャ。天使が出たら続けてめくれる</Text>
-          <Text style={[s.how, { color: pal.cardFg }]}>4. 全部揃ったら、点数が一番低い人が罰</Text>
-          <View style={[s.lvBox, { backgroundColor: alpha(pal.cardEdge, 0.16) }]}>
-            <Text style={[s.lvText, { color: pal.cardFg }]}>地獄度「{LEVEL_LABEL[level]}」のお題で遊ぶ</Text>
-            {!!night && <Text style={[s.small, { color: pal.cardFg }]}>{night === 'shinya' ? '深夜' : '夜'}モードのお題も混ざる{members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}</Text>}
-          </View>
-        </View>
-      </ModeCard>
+      <IntroCard pal={pal} mode="memory" tag={`${PAIRS}ペア`}>
+        <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
+      </IntroCard>
     );
     controls = <BigButton pal={pal} label={`${members[0].name}からスタート`} onPress={() => setPhase('pick')} />;
   } else if (phase === 'over' || phase === 'low' || phase === 'end') {
@@ -321,7 +304,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
         </View>
       </Modal>
       <RuleSheet members={members} rule={rule} state={ruleSheet} onPick={(i) => setRuleSheet(rulePenalty(i))} onClose={() => setRuleSheet(null)} />
-      <RulesSheet visible={rulesOpen} custom={MEMORY_RULES} onClose={() => setRulesOpen(false)} />
+      <RulesSheet visible={rulesOpen} custom={HELP.memory.rules} onClose={() => setRulesOpen(false)} />
       <GameMenu
         visible={menu}
         meta={`神経衰弱・${LEVEL_LABEL[level]}・${done}ペア`}

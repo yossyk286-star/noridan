@@ -10,6 +10,7 @@ import { CARD_LOOK, F, STAGE, alpha, colorOf } from '../theme';
 import type { Bomb, Card, GachaItem, Level, Member, Rule, Segment } from '../types';
 import { Angel, BombArt, Capsule, Coin, Fuse, Skull } from './Fx';
 import { Icon } from './Icon';
+import { HELP } from '../lib/help';
 
 type Pal = (typeof STAGE)[Level];
 
@@ -595,7 +596,7 @@ export function Who({ name, color, label, fg }: { name: string; color: string; l
 
 /** 普通のお題は種類名を出さへん（地獄度は画面の色で分かる）。夜・緊急・押し付けなどの時だけ出す */
 function plainKind(c: Card) {
-  return !!c.kind && !c.kind.includes('（') && /^(\d+マス目・)?(アホお題|イジりお題|全員参加)/.test(c.kind);
+  return !!c.kind && !c.kind.includes('（') && /^(\d+マス目・)?(アホお題|全員参加)/.test(c.kind);
 }
 
 /** 札の種類タグ（誰が動くお題か） */
@@ -610,14 +611,14 @@ export function cardTag(c: Card): string {
 
 /** 初めて出てきた仕組みだけ、札の下にひとこと説明（1回見たら二度と出えへん） */
 const COACH: Record<string, string> = {
-  double: '倍プッシュ：成功で誰かに罰、失敗で罰2倍',
-  bomb: '時限爆弾：仕掛け人だけNG行動を知ってる。爆発したら、やった人全員が罰',
+  double: '倍プッシュ：できたら誰かに罰、できんかったら罰2回',
+  bomb: '時限爆弾：仕掛け人だけがNG行動を知ってる。やった人は後で全員罰',
   rule: 'このルールは上に出しとく。破った人が出たら「違反者に罰」',
-  event: '緊急指令：アウトの人を下から選ぶ',
-  contest: '負けた人を下から選んでから次へ',
-  swipe: 'やったらセーフ、逃げたらアウト。スワイプでもOK',
+  event: '緊急指令：アウトの人を下で選ぶ',
+  contest: '負けた人を下で選んでから「次へ」',
+  swipe: 'できたらセーフ、できんかったらアウト。札を左右にスワイプでもOK',
   notme: '当てはまらん時は、罰なしで誰かに回せる',
-  pass: '夜お題は「無理！」で罰なしパスできる',
+  pass: '夜のお題は「無理！」で罰なしパスできる',
   revenge: 'リベンジ権 ↺：このお題を1回だけ誰かに押し付けられる',
 };
 export function Coach({ flow }: { flow: TurnFlow }) {
@@ -651,18 +652,8 @@ export function Coach({ flow }: { flow: TurnFlow }) {
 
 /** ルール早見表（⋯メニューから） */
 export function RulesSheet({ visible, night, onClose, custom }: { visible: boolean; night?: boolean; onClose: () => void; /** モードごとのルール（NGワード・投票） */ custom?: [string, string][] }) {
-  const items: [string, string][] = custom ? [...custom] : [
-    ['セーフ／アウト', 'やり切ったらセーフ、逃げたりできんかったらアウト。札を右・左にスワイプでもOK'],
-    ['罰ガチャ', 'アウトの人は罰ガチャで中身が決まる。だいたい7回に1回は天使が出て帳消し'],
-    ['リベンジ権 ↺', 'ドクロを引いた人がもらえる。次の自分のお題を1回だけ誰かに押し付けられる'],
-    ['倍プッシュ', 'たまに来る。お題を見る前に賭けて、成功したら誰かに罰、失敗したら罰2倍'],
-    ['緊急指令', '急に割り込むお題。数ターン続くルールは、破った人に「違反者に罰」でいつでも罰'],
-    ['続く罰・お題', '「次の自分の番まで語尾が〜」みたいな罰やお題は、その人の次の番まで上に出る。うっかり破ったら「違反者に罰」'],
-    ['時限爆弾', '仕掛け人だけがNG行動を知る。数ターン後に爆発して、やってた奴は全員罰'],
-    ['当てはまらん', '恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる（1枚1回）'],
-    ['本日の戦犯', '最後に罰が一番多い人を発表。称号もつく'],
-  ];
-  if (night && !custom) items.push(['夜モード', '夜お題は「無理！」で罰なしパス。下ネタNGの人には振られへん。罰も夜仕様になる']);
+  const items: [string, string][] = [...(custom ?? HELP.odai.rules)];
+  if (night) items.push(['夜モード', '夜・深夜のお題や罰も混ざる。下ネタNGの人には振られへん。夜お題は「無理！」で罰なしパス']);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.sheetBack} onPress={onClose}>
