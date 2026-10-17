@@ -1,0 +1,155 @@
+import odai from '../data/odai.json';
+import events from '../data/events.json';
+import batsu from '../data/batsu.json';
+import bombs from '../data/bombs.json';
+import boardJson from '../data/board.json';
+import { LEVEL_LABEL } from '../theme';
+import type { Card, Cell, GameEvent, Level, Member, Night, Rule, Segment } from '../types';
+
+export const BOARD = boardJson as Cell[];
+export const GOAL = BOARD.length - 1;
+const EVENTS = events as GameEvent[];
+
+/** 各要素が出る確率 */
+/**
+ * 深夜モードを出すか。App Store審査で引っかかったら false にしてビルド
+ * （Web版はそのままtrueでOK）
+ */
+export const ALLOW_SHINYA = true;
+
+export const CHANCE = { event: 0.14, double: 0.2, minna: 0.18, neta: 0.22, bomb: 0.12, yoru: 0.35, lucky: 0.15 };
+
+const rnd = (n: number) => Math.floor(Math.random() * n);
+export const pick = <T,>(a: T[]): T => a[rnd(a.length)];
+const shuffle = <T,>(a: T[]): T[] => {
+  const b = a.slice();
+  for (let i = b.length - 1; i > 0; i--) {
+    const j = rnd(i + 1);
+    [b[i], b[j]] = [b[j], b[i]];
+  }
+  return b;
+};
+export const othersOf = (members: Member[], i: number) => members.map((_, j) => j).filter((j) => j !== i);
+
+/** {P}{X}{Y}{NETA} を埋めて表示用の部品にする */
+export function fill(tpl: string, members: Member[], p: number, opts: { needNeta?: boolean; noNg?: boolean } = {}): Segment[] {
+  const others = othersOf(members, p).filter((i) => !opts.noNg || !members[i].ng);
+  let pool = opts.needNeta ? others.filter((i) => members[i].neta) : others;
+  if (!pool.length) pool = others;
+  const x = pick(pool);
+  const yPool = others.filter((i) => i !== x);
+  const y = yPool.length ? pick(yPool) : x;
+
+  const out: Segment[] = [];
+  const re = /\{(P|X|Y|NETA)\}/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(tpl))) {
+    if (m.index > last) out.push({ text: tpl.slice(last, m.index) });
+    const key = m[1];
+    if (key === 'NETA') out.push({ text: members[x]?.neta || 'アレ' });
+    else {
+      const who = key === 'P' ? p : key === 'X' ? x : y;
+      out.push({ text: members[who]?.name ?? '誰か', hl: true, who });
+    }
+    last = m.index + m[0].length;
+  }
+  if (last < tpl.length) out.push({ text: tpl.slice(last) });
+  return out;
+}
+
+export const nameSeg = (name: string, rest: string, who?: number): Segment[] => [{ text: name, hl: true, who }, { text: rest }];
+
+/** 人によっては当てはまらんお題（恋人・経験・その場の状況など）。この時だけ「当てはまらん」ボタンを出す */
+const SITUATIONAL = /元恋人|恋人|キス|初体験|ラブホ|ワンナイト|付き合|好きやった|ドキッとした相手|グイグイ|トイレ|親に|寝言|夢/;
+export const isSituational = (tpl?: string) => !!tpl && SITUATIONAL.test(tpl);
+
+/** お題テンプレからカードを作る */
+export function makeCard(kind: string, tpl: string, members: Member[], p: number, extra: Partial<Card> = {}): Card {
+  return {
+    kind,
+    tpl,
+    needNeta: extra.needNeta,
+    noNg: extra.noNg,
+    segments: fill(tpl, members, p, { needNeta: extra.needNeta, noNg: extra.noNg }),
+    solo: tpl.includes('{P}'),
+    ...extra,
+  };
+}
+
+/** 夜お題を出していいか（下ネタNGの人を巻き込まない） */
+function canYoru(tpl: string, members: Member[], p: number) {
+  // 全員参加の夜お題は、NGの人も指差される側に入ってしまうので出さない
+  if (tpl.startsWith('全員') && members.some((m) => m.ng)) return false;
+  const ok = othersOf(members, p).filter((i) => !members[i].ng).length;
+  if (tpl.includes('{Y}') && ok < 2) return false;
+  if (tpl.includes('{X}') && ok < 1) return false;
+  return true;
+}
+
+/** 3人以上おらんと成立せえへんお題（2人やと必ず引き分け・全員該当になる） */
+const NEEDS_3 = /少数派|被らんかった|多数決|一番指された|指差せ|一番似てない|一番低い点|ひとりぼっち|被ったら/;
+
+export function usable(t: string, n: number) {
+  if (NEEDS_3.test(t) && n < 3) return false;
+  if (t.includes('{Y}') && n < 3) return false;
+  if (t.includes('{X}') && n < 2) return false;
+  return true;
+}
+
+/** 同じお題が続かないための山札 */
+export class Decks {
+  private decks: Record<string, unknown[]> = {};
+
+  /** 人数的に使えるお題が無ければ undefined */
+  private draw<T>(key: string, list: T[], text: (t: T) => string, n: number): T | undefined {
+    let d = this.decks[key] as T[] | undefined;
+    if (!d || !d.length) d = this.decks[key] = shuffle(list.filter((t) => usable(text(t), n)));
+    return d.pop();
+  }
+  private str(key: string, list: string[], n: number): string | undefined {
+    return this.draw(key, list, (t) => t, n);
+  }
+
+  odai(level: Level, members: Member[], p: number, night: Night = false): Card {
+    const n = members.length;
+    // 夜は3回に1回くらい、深夜は毎回下ネタ（NGの人の番だけ普通のお題）
+    const shinya = night === 'shinya' && ALLOW_SHINYA;
+    const rate = shinya ? 1 : CHANCE.yoru;
+    if (night && !members[p].ng && Math.random() < rate) {
+      for (let k = 0; k < 4; k++) {
+        const deep = shinya && Math.random() < 0.6;
+        const tpl = deep ? this.str('shinya', odai.shinya, n) : this.str('yoru', odai.yoru, n);
+        if (tpl && canYoru(tpl, members, p)) return makeCard(deep ? '深夜お題' : '夜お題', tpl, members, p, { noNg: true, yoru: true });
+      }
+    }
+    const hasNeta = members.some((m, i) => i !== p && m.neta);
+    const r = Math.random();
+    if (hasNeta && r < CHANCE.neta) {
+      const t = this.str('neta', odai.neta, n);
+      if (t) return makeCard('イジりお題', t, members, p, { needNeta: true });
+    }
+    if (r < CHANCE.neta + CHANCE.minna) {
+      const t = this.str('minna', odai.minna, n);
+      if (t) return makeCard('全員参加', t, members, p, { solo: false });
+    }
+    return makeCard(`アホお題・${LEVEL_LABEL[level]}`, this.str(level, odai[level], n)!, members, p);
+  }
+
+  event(members: Member[], p: number): { card: Card; rule: Rule | null } {
+    const ev = this.draw('ev', EVENTS, (e) => e.text, members.length)!;
+    const card = makeCard('【緊急】割り込み', ev.text, members, p, { alert: true, solo: false });
+    return { card, rule: ev.turns ? { segments: card.segments, left: ev.turns } : null };
+  }
+
+  bomb(n: number): string {
+    return this.str('bomb', bombs, n)!;
+  }
+
+  /** 罰ガチャ。たまにラッキー（天使）で帳消し */
+  batsu(members: Member[], p: number): { segments: Segment[]; lucky: boolean } {
+    const lucky = Math.random() < CHANCE.lucky;
+    const tpl = (lucky ? this.str('lucky', batsu.lucky, members.length) : this.str('batsu', batsu.bad, members.length))!;
+    return { segments: fill(tpl, members, p), lucky };
+  }
+}

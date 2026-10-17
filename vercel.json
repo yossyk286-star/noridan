@@ -1,0 +1,6 @@
+{
+  "installCommand": "echo skip",
+  "buildCommand": "node web-preview/build.mjs --site",
+  "outputDirectory": "dist",
+  "framework": null
+}

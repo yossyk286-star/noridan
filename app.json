@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "ノリダン",
+    "slug": "noridan",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#111111",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yoshi.noridan"
+    },
+    "android": {
+      "package": "com.yoshi.noridan"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "ノリダン",
+      "shortName": "ノリダン",
+      "themeColor": "#111111",
+      "backgroundColor": "#111111"
+    }
+  }
+}
