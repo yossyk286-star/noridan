@@ -188,7 +188,7 @@ function vHome2() {
     <div class="modes">
       <button class="mode" data-act="start" data-m="odai"><i class="mode-ic">${ICON.cards}</i><b>アホお題</b><span>出たお題を順番にやるだけ</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="sugoroku"><i class="mode-ic">${ICON.dice}</i><b>すごろく</b><span>サイコロで進む。1番にゴールで終了</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="memory"><i class="mode-ic">${ICON.grid}</i><b>神経衰弱</b><span>お題の頭文字だけのカードを揃える。点数が一番低い人が罰</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="memory"><i class="mode-ic">${ICON.grid}</i><b>神経衰弱</b><span>お題のマークが描いたカードを揃える。点数が一番低い人が罰</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="ito"><i class="mode-ic">${ICON.num}</i><b>価値観ナンバー</b><span>こっそり配られた数字をお題で表現して、小さい順に並べる</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>自分だけ知らんNGワードを、言わされたらアウト</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : "「一番○○なのは？」に匿名で投票して罰を決める"}</span><em class="go">開始</em></button>
@@ -572,7 +572,7 @@ function vRules() {
     ["答え合わせ", "隣どうしで順番が逆になってた2人が罰ガチャ。全員合ってたら全員セーフ"],
     ["忘れた時", "「数字を見直す」→自分の名前を選ぶと、もう一回見られる"]);
   if (md === "memory") items.splice(0, items.length,
-    ["カード", "表にはお題の最初の1文字だけ。同じお題のカードが2枚ずつある"],
+    ["カード", "表にはお題に関係するマークだけ（📱ならスマホ系、💘なら恋愛系）。同じお題のカードが2枚ずつある"],
     ["自分の番", "2枚めくる。揃ったらお題の全文が出て、答えたら+1点でもう1回。答えられへんかったら罰ガチャで次の人へ"],
     ["ハズレ", "揃わへんかったら裏に戻して次の人へ。場所を覚えとけ"],
     ["ドクロ", "めくった瞬間に罰ガチャ。天使が出たら続けてめくれる"],
@@ -806,7 +806,7 @@ function vVote() {
 function vMmCell(c, k) {
   const g = S.game;
   if (c.gone) return `<div class="mm-card gone" ${c.owner != null && c.owner >= 0 ? `style="--mc:${colorOf(c.owner)}"` : ""}>${c.owner != null && c.owner >= 0 ? `<i></i>` : ""}</div>`;
-  if (c.up) return `<div class="mm-card up ${c.skull ? "skull" : ""} ${c.yoru ? "yoru" : ""}">${c.skull ? SKULL : `<b>${esc(c.ch)}</b>`}</div>`;
+  if (c.up) return `<div class="mm-card up ${c.skull ? "is-skull" : ""} ${c.yoru ? "yoru" : ""}">${c.skull ? SKULL : `<b>${esc(c.ch)}</b>`}</div>`;
   return `<button class="mm-card down" data-act="mmFlip" data-i="${k}" ${g.mm.phase !== "pick" ? "disabled" : ""} aria-label="カードをめくる"><span>?</span></button>`;
 }
 function vMmInfo() {
@@ -826,7 +826,7 @@ function vMemory() {
       <div class="head"><span class="who"><b>神経衰弱</b></span><span class="meta"><i class="tag">${MM_PAIRS}ペア</i></span></div>
       <div class="mid-body">
       <ol class="how">
-        <li>カードには<b>お題の最初の1文字</b>だけ。同じお題の2枚を揃えろ</li>
+        <li>カードには<b>お題に関係するマーク</b>だけ（📱ならスマホ系、💘なら恋愛系）。同じお題の2枚を揃えろ</li>
         <li>揃ったらお題の全文が出る。<b>答えたら+1点でもう1回</b>、答えられへんかったら罰ガチャで次の人へ</li>
         <li><b>ドクロ</b>はめくった瞬間に罰ガチャ。天使が出たら続けてめくれる</li>
         <li>全部揃ったら、<b>点数が一番低い人が罰</b></li>

@@ -28,7 +28,7 @@ const PAIRS = 7;
 const SKULLS = 2;
 
 export const MEMORY_RULES: [string, string][] = [
-  ['カード', '表にはお題の最初の1文字だけ。同じお題のカードが2枚ずつある'],
+  ['カード', '表にはお題に関係するマークだけ（📱ならスマホ系、💘なら恋愛系）。同じお題のカードが2枚ずつある'],
   ['自分の番', '2枚めくる。揃ったらお題の全文が出て、答えたら+1点でもう1回。答えられへんかったら罰ガチャで次の人へ'],
   ['ハズレ', '揃わへんかったら裏に戻して次の人へ。場所を覚えとけ'],
   ['ドクロ', 'めくった瞬間に罰ガチャ。天使が出たら続けてめくれる'],
@@ -46,7 +46,7 @@ const shuffle = <T,>(a: T[]): T[] => {
 };
 const plain = (segs: Segment[]) => segs.map((x) => x.text).join('');
 
-/** 神経衰弱：お題の頭文字だけのカードを揃えて、答えたら+1点。最後に点数が一番低い人が罰 */
+/** 神経衰弱：お題のマークが描いたカードを揃えて、答えたら+1点。最後に点数が一番低い人が罰 */
 export default function MemoryScreen({ members, level, night, onQuit, onSettings, onFinish }: Props) {
   useKeepAwake();
   const pal = STAGE[level];
@@ -194,7 +194,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
       <ModeCard pal={pal}>
         <Text style={[s.title, { color: pal.cardFg }]}>神経衰弱</Text>
         <View style={{ flex: 1, justifyContent: 'center', gap: 12 }}>
-          <Text style={[s.how, { color: pal.cardFg }]}>1. カードにはお題の最初の1文字だけ。同じお題の2枚を揃えろ</Text>
+          <Text style={[s.how, { color: pal.cardFg }]}>1. カードにはお題に関係するマークだけ（📱ならスマホ系、💘なら恋愛系）。同じお題の2枚を揃えろ</Text>
           <Text style={[s.how, { color: pal.cardFg }]}>2. 揃ったらお題の全文が出る。答えたら+1点でもう1回、答えられへんかったら罰ガチャで次の人へ</Text>
           <Text style={[s.how, { color: pal.cardFg }]}>3. ドクロはめくった瞬間に罰ガチャ。天使が出たら続けてめくれる</Text>
           <Text style={[s.how, { color: pal.cardFg }]}>4. 全部揃ったら、点数が一番低い人が罰</Text>
@@ -359,7 +359,7 @@ const s = StyleSheet.create({
   mc: { flex: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   down: { borderWidth: 3, borderColor: 'rgba(0,0,0,0.18)' },
   q: { fontFamily: F.display, fontSize: 26, color: 'rgba(0,0,0,0.35)' },
-  ch: { fontFamily: F.display, fontSize: 44 },
+  ch: { fontSize: 44 },
   gone: { borderWidth: 1.5, borderStyle: 'dashed' },
   ownerDot: { width: 14, height: 14, borderRadius: 7, opacity: 0.7 },
   foot: { textAlign: 'center', fontSize: 12, fontWeight: '700' },

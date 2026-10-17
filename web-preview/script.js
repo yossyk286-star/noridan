@@ -582,11 +582,17 @@ function voteReveal() {
 }
 
 // ---------- 神経衰弱 ----------
-// 裏向きのカードに「お題の最初の1文字」だけ。同じお題の2枚を揃えたら全文が出て、答えたら+1点でもう1回。
+// 裏向きのカードに「お題に関係するマーク」だけ（📱ならスマホ系のお題）。同じお題の2枚を揃えたら全文が出て、答えたら+1点でもう1回。
 // 答えられへんかったら罰ガチャ。ドクロはめくった瞬間に罰ガチャ（天使なら続けてめくれる）。最後に点数が一番低い人が罰
 const MM_PAIRS = 7, MM_SKULLS = 2;
-// 頭文字にできるお題：「{P}、」で始まって、次の文字が名前やカッコやないもの
-const mmOk = (t) => /^\{P\}、[^{「（]/.test(t) && usable(t);
+// マークにできるお題：「{P}、」で始まる1人用のお題で、マーク表のどれかの言葉が入ってるもの
+const MARK_RE = DATA.marks.map(([re, m]) => [new RegExp(re), m]);
+function markOf(t) {
+  const s = t.replace(/\{[PXY]\}/g, "誰か");
+  const hit = MARK_RE.find(([re]) => re.test(s));
+  return hit ? hit[1] : null;
+}
+const mmOk = (t) => /^\{P\}、/.test(t) && usable(t) && !!markOf(t);
 function mmDeal() {
   const g = S.game, n = S.members.length;
   g.doer = 0; g.cur = 0;
@@ -598,7 +604,7 @@ function mmDeal() {
   for (let k = 0; k < 400 && pairs.length < MM_PAIRS; k++) {
     const pool = pick(pools), t = pick(pool);
     if (!mmOk(t)) continue;
-    const ch = t[4];
+    const ch = markOf(t);
     if (used.has(ch)) continue;
     used.add(ch);
     pairs.push({ tpl: t, ch, yoru: pool === DATA.odai.yoru || pool === DATA.odai.shinya, deep: pool === DATA.odai.shinya });

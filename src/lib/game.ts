@@ -5,6 +5,7 @@ import bombs from '../data/bombs.json';
 import boardJson from '../data/board.json';
 import ngwords from '../data/ngwords.json';
 import voteJson from '../data/vote.json';
+import marksJson from '../data/marks.json';
 import { LEVEL_LABEL } from '../theme';
 import type { Card, Cell, GameEvent, Level, Member, Night, Rule, Segment } from '../types';
 
@@ -65,6 +66,14 @@ export const nameSeg = (name: string, rest: string, who?: number): Segment[] => 
 /** 人によっては当てはまらんお題（恋人・経験・その場の状況など）。この時だけ「当てはまらん」ボタンを出す */
 const SITUATIONAL = /元恋人|恋人|キス|初体験|ラブホ|ワンナイト|付き合|好きやった|ドキッとした相手|グイグイ|トイレ|親に|寝言|夢/;
 export const isSituational = (tpl?: string) => !!tpl && SITUATIONAL.test(tpl);
+
+/** 神経衰弱のマーク：お題の文にこの言葉が入ってたらそのマーク（上から順に） */
+const MARKS = (marksJson.marks as string[][]).map(([re, m]) => [new RegExp(re), m] as const);
+export function markOf(t: string): string | null {
+  const s = t.replace(/\{[PXY]\}/g, '誰か');
+  const hit = MARKS.find(([re]) => re.test(s));
+  return hit ? hit[1] : null;
+}
 
 /** 「次の自分の番まで語尾が〜」みたいな、しばらく続く罰・お題 */
 export const PERSONAL = /次の(自分の)?番まで/;
@@ -167,7 +176,7 @@ export class Decks {
     }
     return pick(words[this.level].filter((w) => !exclude.includes(w)));
   }
-  /** 神経衰弱のペア（頭文字が被らんように）。夜・深夜はお題も夜寄りに混ぜる（下ネタNGの人がおる時は混ぜへん） */
+  /** 神経衰弱のペア（マークが被らんように）。夜・深夜はお題も夜寄りに混ぜる（下ネタNGの人がおる時は混ぜへん） */
   memoryPairs(level: Level, night: Night, members: Member[], count = 7): { tpl: string; ch: string; yoru: boolean; deep: boolean }[] {
     const n = members.length;
     const anyNg = members.some((m) => m.ng);
@@ -179,9 +188,9 @@ export class Decks {
     for (let k = 0; k < 400 && out.length < count; k++) {
       const p = pick(pools);
       const t = pick(p.list);
-      if (!/^\{P\}、[^{「（]/.test(t) || !usable(t, n)) continue;
-      const ch = t[4];
-      if (used.has(ch)) continue;
+      if (!/^\{P\}、/.test(t) || !usable(t, n)) continue;
+      const ch = markOf(t);
+      if (!ch || used.has(ch)) continue;
       used.add(ch);
       out.push({ tpl: t, ch, yoru: p.yoru, deep: p.deep });
     }
