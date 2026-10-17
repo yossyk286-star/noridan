@@ -185,7 +185,8 @@ function vHome2() {
   </section>
   ${S.night ? `<section class="night-switch">
     <p class="h2">夜の深さ</p>
-    <div class="night-lv">
+    <div class="night-lv three">
+      <button data-act="nightPick" data-v="off">通常<small>夜モードをやめる</small></button>
       <button data-act="nightPick" data-v="yoru" aria-pressed="${S.night === "yoru"}">夜<small>たまに下ネタ</small></button>
       <button data-act="nightPick" data-v="shinya" aria-pressed="${S.night === "shinya"}">深夜<small>${S.night === "shinya" ? "全部下ネタ" : "？？？"}</small></button>
     </div>
@@ -998,6 +999,7 @@ function onClick(e) {
       break;
     }
     case "nightPick":
+      if (b.dataset.v === "off") { S.night = false; store.set("nd_night", false); render(); break; }
       if (b.dataset.v === "shinya" && S.night !== "shinya") { S.nightAsk = "shinya"; render(); window.scrollTo(0, 0); }
       else { S.night = b.dataset.v; store.set("nd_night", S.night); render(); }
       break;

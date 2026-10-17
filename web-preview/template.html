@@ -679,6 +679,8 @@ body.stage[data-level="jigoku"] { --acc: var(--blood); --card-edge: var(--blood)
 /* 倍プッシュのコイン・爆弾の絵は、お題の文と一緒に札の真ん中へ */
 .odai .coin-wrap, .odai .bomb-art { margin-top: auto; }
 .odai .coin-wrap + .txt, .odai .bomb-art + .txt { flex: 0 1 auto; margin-top: auto; margin-bottom: auto; }
+.night-lv.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+.night-lv button[data-v="off"] { border-color: rgba(247,243,234,.35); }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

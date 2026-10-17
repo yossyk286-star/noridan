@@ -300,19 +300,19 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
         <View style={{ gap: 10 }}>
           <Text style={s.h2}>夜の深さ</Text>
           <View style={s.row}>
-            {(['yoru', 'shinya'] as const).filter((v) => v === 'yoru' || ALLOW_SHINYA).map((v) => {
+            {(['off', 'yoru', 'shinya'] as const).filter((v) => v !== 'shinya' || ALLOW_SHINYA).map((v) => {
               const on = night === v;
-              const col = v === 'shinya' ? C.deep : C.night;
+              const col = v === 'shinya' ? C.deep : v === 'off' ? 'rgba(247,243,234,0.35)' : C.night;
               return (
                 <Tap
                   key={v}
                   // 深夜に入る時は確認画面をはさむ
-                  onPress={() => (v === 'shinya' && night !== 'shinya' ? onAskDeep() : onNight(v))}
+                  onPress={() => (v === 'off' ? onNight(false) : v === 'shinya' && night !== 'shinya' ? onAskDeep() : onNight(v))}
                   accessibilityState={{ selected: on }}
                   style={[s.nightLv, { borderColor: col }, on && { backgroundColor: col }]}
                 >
-                  <Text style={[s.nightLvText, on && { color: C.ink }]}>{v === 'yoru' ? '夜' : '深夜'}</Text>
-                  <Text style={[s.nightLvSub, on && { color: C.ink }]}>{v === 'yoru' ? 'たまに下ネタ' : night === 'shinya' ? '全部下ネタ' : '？？？'}</Text>
+                  <Text style={[s.nightLvText, on && { color: C.ink }]}>{v === 'off' ? '通常' : v === 'yoru' ? '夜' : '深夜'}</Text>
+                  <Text style={[s.nightLvSub, on && { color: C.ink }]}>{v === 'off' ? '夜モードをやめる' : v === 'yoru' ? 'たまに下ネタ' : night === 'shinya' ? '全部下ネタ' : '？？？'}</Text>
                 </Tap>
               );
             })}
