@@ -159,6 +159,15 @@ function vHome2() {
     <button class="icon-btn" data-act="sheet" aria-label="設定">${ICON.gear}</button>
   </div>
   <div class="mchips">${S.members.map((m, i) => `<span class="mchip">${dot(i)}${esc(m.name)}</span>`).join("")}</div>
+  ${S.seen.mode ? "" : `<div class="home-coach" role="note">
+    <b>つぎに：地獄度と遊び方を選ぼう</b>
+    <ol>
+      <li><b>地獄度</b>はお題の攻め具合。迷ったら「普通」。画面の色も変わる</li>
+      <li><b>アホお題</b>：出たお題を順番にやるだけ。やめたい時は右上の「⋯」→結果発表</li>
+      <li><b>すごろく</b>：サイコロで進んで、止まったマスのお題をやる。1番にゴールしたら終了</li>
+    </ol>
+    <button data-act="coachOk" data-k="mode">わかった</button>
+  </div>`}
   <section style="display:flex;flex-direction:column;gap:10px">
     <p class="h2">地獄度</p>
     <div class="levels">

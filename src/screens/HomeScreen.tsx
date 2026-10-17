@@ -267,6 +267,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
           </View>
         ))}
       </View>
+      <ModeGuide />
 
       <Text style={s.h2}>地獄度</Text>
       <View style={s.row}>
@@ -546,6 +547,23 @@ function MembersGuide() {
       <Text style={s.guideText}>2. 名前をタップするとイジりネタ（例：すぐ寝る）を足せる。お題に勝手に混ざる</Text>
       <Text style={s.guideText}>3. 2人以上入れたら、下のボタンで次へ</Text>
       <Tap onPress={() => markSeen('members')} style={s.guideBtn}>
+        <Text style={s.guideBtnText}>わかった</Text>
+      </Tap>
+    </View>
+  );
+}
+
+/** モード選択の初回だけ出す説明 */
+function ModeGuide() {
+  const { seen, markSeen } = useSeen();
+  if (seen.mode) return null;
+  return (
+    <View style={s.guide}>
+      <Text style={s.guideHead}>つぎに：地獄度と遊び方を選ぼう</Text>
+      <Text style={s.guideText}>1. 地獄度はお題の攻め具合。迷ったら「普通」。画面の色も変わる</Text>
+      <Text style={s.guideText}>2. アホお題：出たお題を順番にやるだけ。やめたい時は右上の「⋯」→結果発表</Text>
+      <Text style={s.guideText}>3. すごろく：サイコロで進んで、止まったマスのお題をやる。1番にゴールしたら終了</Text>
+      <Tap onPress={() => markSeen('mode')} style={s.guideBtn}>
         <Text style={s.guideBtnText}>わかった</Text>
       </Tap>
     </View>
