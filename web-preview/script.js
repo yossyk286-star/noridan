@@ -133,7 +133,8 @@ function drawOdai(p) {
   const rate = S.night === "shinya" ? 1 : CHANCE.yoru;
   if (S.night && okForYoru(p) && Math.random() < rate) {
     for (let k = 0; k < 4; k++) {
-      const deep = S.night === "shinya" && Math.random() < 0.6;
+      // 深夜×地獄は全部下ネタ（深夜お題だけ）。それ以外の深夜は6割が深夜お題、4割が夜お題
+      const deep = S.night === "shinya" && (S.level === "jigoku" || Math.random() < 0.6);
       const tpl = deep ? draw("shinya", DATA.odai.shinya) : draw("yoru", DATA.odai.yoru);
       if (tpl && canYoru(tpl, p)) return makeCard(deep ? "深夜お題" : "夜お題", tpl, p, { noNg: true }, { yoru: true });
     }
@@ -222,7 +223,7 @@ function drawBatsu(i) {
   let list = "bad";
   if (S.night && !S.members[i].ng) {
     const r = Math.random();
-    list = S.night === "shinya" ? (r < 0.65 ? "shinya" : r < 0.85 ? "yoru" : "bad") : r < 0.4 ? "yoru" : "bad";
+    list = S.night === "shinya" ? (S.level === "jigoku" || r < 0.65 ? "shinya" : r < 0.85 ? "yoru" : "bad") : r < 0.4 ? "yoru" : "bad";
   }
   if (list !== "bad") {
     const tpl = draw("batsu_" + list, DATA.batsu[list]);

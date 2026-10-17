@@ -118,7 +118,8 @@ export class Decks {
     const rate = shinya ? 1 : CHANCE.yoru;
     if (night && !members[p].ng && Math.random() < rate) {
       for (let k = 0; k < 4; k++) {
-        const deep = shinya && Math.random() < 0.6;
+        // 深夜×地獄は全部下ネタ（深夜お題だけ）。それ以外の深夜は6割が深夜お題、4割が夜お題
+        const deep = shinya && (level === 'jigoku' || Math.random() < 0.6);
         const tpl = deep ? this.str('shinya', odai.shinya, n) : this.str('yoru', odai.yoru, n);
         if (tpl && canYoru(tpl, members, p)) return makeCard(deep ? '深夜お題' : '夜お題', tpl, members, p, { noNg: true, yoru: true });
       }
@@ -149,6 +150,8 @@ export class Decks {
   /** 罰ガチャ。たまにラッキー（天使）で帳消し */
   /** 夜モードの状態（罰ガチャを過激にするかどうか）。画面側で毎回入れる */
   night: Night = false;
+  /** 地獄度（深夜×地獄は罰も全部深夜系） */
+  level: Level = 'futsu';
 
   /** 罰ガチャの中身。夜・深夜は罰も過激に（下ネタNGの人には普通の罰） */
   batsu(members: Member[], p: number): { segments: Segment[]; lucky: boolean; night?: 'yoru' | 'shinya' } {
@@ -156,7 +159,7 @@ export class Decks {
     let list: 'bad' | 'yoru' | 'shinya' = 'bad';
     if (this.night && !members[p].ng) {
       const r = Math.random();
-      list = this.night === 'shinya' && ALLOW_SHINYA ? (r < 0.65 ? 'shinya' : r < 0.85 ? 'yoru' : 'bad') : r < 0.4 ? 'yoru' : 'bad';
+      list = this.night === 'shinya' && ALLOW_SHINYA ? (this.level === 'jigoku' || r < 0.65 ? 'shinya' : r < 0.85 ? 'yoru' : 'bad') : r < 0.4 ? 'yoru' : 'bad';
     }
     if (list !== 'bad') {
       const tpl = this.str('batsu_' + list, batsu[list], members.length);

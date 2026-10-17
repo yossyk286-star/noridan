@@ -30,6 +30,7 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
   const basePal = STAGE[level];
   const decks = useRef(new Decks()).current;
   decks.night = night; // 夜・深夜は罰ガチャも過激に
+  decks.level = level;
   const [cur, setCur] = useState(0);
   const [turn, setTurn] = useState(1);
   const [rule, setRule] = useState<Rule | null>(null);
