@@ -158,7 +158,7 @@ function addRule(r) {
 }
 function drawEvent(p) {
   const ev = draw("ev", DATA.events);
-  const card = makeCard("【緊急】割り込み", ev.text, p, {}, { alert: true, solo: false, ruleCard: !!ev.turns });
+  const card = makeCard("緊急指令", ev.text, p, {}, { alert: true, solo: false, ruleCard: !!ev.turns });
   // 「次の自分の番まで〜」の指令も、その人の次の番まで上に出しておく（破ったら罰をつけられる）
   const personal = !ev.turns && PERSONAL.test(ev.text);
   if (personal) card.ruleCard = true;
@@ -200,7 +200,7 @@ function present(card) {
   if (card.solo && g.turn > 1 && Math.random() < CHANCE.double) {
     g.pending = card;
     g.phase = "offer";
-    g.card = { kind: "ダブルアップチャンス", html: `${nm(g.doer)}、お題を見る前に倍プッシュするか？` };
+    g.card = { kind: "倍プッシュのチャンス", html: `${nm(g.doer)}、お題を見る前に倍プッシュするか？` };
   } else {
     g.phase = "play";
     g.card = card;

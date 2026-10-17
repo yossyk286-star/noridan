@@ -146,7 +146,7 @@ export class Decks {
     const ev = this.draw('ev', EVENTS, (e) => e.text, members.length)!;
     // 「次の自分の番まで〜」の指令も、その人の次の番まで上に出しておく（破ったら罰をつけられる）
     const personal = !ev.turns && PERSONAL.test(ev.text);
-    const card = makeCard('【緊急】割り込み', ev.text, members, p, { alert: true, solo: false, ruleCard: !!ev.turns || personal });
+    const card = makeCard('緊急指令', ev.text, members, p, { alert: true, solo: false, ruleCard: !!ev.turns || personal });
     return { card, rule: ev.turns ? { segments: card.segments, left: ev.turns, card } : personal ? { segments: card.segments, left: members.length + 1, who: p, card } : null };
   }
 

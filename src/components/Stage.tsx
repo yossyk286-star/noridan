@@ -101,22 +101,6 @@ export function fitSize(segments: Segment[], small = false, scale = 1) {
   return { fontSize: size, lineHeight: Math.round(size * 1.4) };
 }
 
-export function Turn({
-  pal, name, color, pushed, bomb, passed,
-}: { pal: Pal; name: string; color: string; pushed?: boolean; bomb?: boolean; passed?: boolean }) {
-  return (
-    <View style={styles.turn}>
-      <View style={[styles.who, { backgroundColor: color, borderColor: pal.fg }]} />
-      <View style={{ flexShrink: 1 }}>
-        <Text style={[styles.turnLabel, { color: pal.fg }]}>{bomb ? '仕掛け人' : passed ? '代わりに回ってきた' : pushed ? 'リベンジで押し付けられた' : 'いまの番'}</Text>
-        <Text style={[styles.turnName, { color: pal.fg }]} numberOfLines={1} adjustsFontSizeToFit>
-          {name}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 /** 発動中のルール（新しい順に2つまで）。「違反者に罰」でいつでも罰をつけられる */
 export function RuleBanner({ pal, rules, members, hideCard, onViolate }: { pal: Pal; rules: Rule[]; members: Member[]; /** 今見てる札が出したルールは出さない */ hideCard?: Card | null; onViolate?: (r: Rule) => void }) {
   const list = rules.filter((r) => !(r.card && hideCard && r.card === hideCard)).reverse();
@@ -477,7 +461,6 @@ export function Controls({
   pal, members, flow, nextLabel, shakeHint, next,
 }: { pal: Pal; members: Member[]; flow: TurnFlow; nextLabel: string; shakeHint?: boolean; next?: number | null }) {
   const { st } = flow;
-  const all = members.map((_, i) => i);
   const others = othersOf(members, st.doer);
   const revTargets = others.filter((i) => !st.card.yoru || !members[i].ng);
   // 操作のヒントは最初の3枚だけ（慣れたら消えてスッキリ）
@@ -524,6 +507,8 @@ export function Controls({
           </View>
         );
       }
+      // 続くルールを出した指令は、今は誰も罰にならへん。上に出しといて、破った時に「違反者に罰」
+      if (st.card.ruleCard) return <BigButton pal={pal} label={`ルール開始 → ${nextLabel}`} onPress={flow.next} />;
       return (
         <View style={{ gap: 12 }}>
           {(st.card.yoru || st.card.solo) && (
@@ -631,7 +616,7 @@ export function cardTag(c: Card): string {
 const COACH: Record<string, string> = {
   double: '倍プッシュ：成功で誰かに罰、失敗で罰2倍',
   bomb: '時限爆弾：仕掛け人だけNG行動を知ってる。爆発したら、やった人全員が罰',
-  rule: 'ルールは数ターン続く。破った人は「違反者に罰」',
+  rule: 'このルールは上に出しとく。破った人が出たら「違反者に罰」',
   event: '緊急指令：アウトの人を下から選ぶ',
   contest: '負けた人を下から選んでから次へ',
   swipe: 'やったらセーフ、逃げたらアウト。スワイプでもOK',
@@ -748,8 +733,8 @@ export function SwipeCard({ enabled, flipped, onSwipe, children }: { enabled: bo
       {children}
       {enabled && (
         <>
-          <Animated.Text style={[styles.stamp, styles.stampOk, { opacity: okOp }]}>セーフ</Animated.Text>
-          <Animated.Text style={[styles.stamp, styles.stampNg, { opacity: ngOp }]}>アウト</Animated.Text>
+          <Animated.Text style={[styles.swStamp, styles.stampOk, { opacity: okOp }]}>セーフ</Animated.Text>
+          <Animated.Text style={[styles.swStamp, styles.stampNg, { opacity: ngOp }]}>アウト</Animated.Text>
         </>
       )}
     </Animated.View>
@@ -815,11 +800,6 @@ const styles = StyleSheet.create({
   pillText: { fontWeight: '900', fontSize: 13 },
   round: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   flipIcon: { fontSize: 18, fontWeight: '900' },
-  tag: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '900', letterSpacing: 2 },
-  turn: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  who: { width: 14, height: 54, borderRadius: 7, borderWidth: 2 },
-  turnLabel: { fontSize: 13, fontWeight: '900', letterSpacing: 1 },
-  turnName: { fontFamily: F.display, fontSize: 48, lineHeight: 56 },
   rule: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 2, borderStyle: 'dashed', borderRadius: 12, padding: 10 },
   ruleHead: { fontSize: 12, fontWeight: '900', letterSpacing: 0.3 },
   ruleText: { fontSize: 13, fontWeight: '700' },
@@ -866,7 +846,7 @@ const styles = StyleSheet.create({
   swipeHint: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   swipeHintText: { fontSize: 12, fontWeight: '900', letterSpacing: 0.3 },
   link: { fontSize: 12, fontWeight: '900', textDecorationLine: 'underline', opacity: 0.8, padding: 6 },
-  stamp: { position: 'absolute', top: 46, fontFamily: F.display, fontSize: 28, paddingHorizontal: 12, paddingVertical: 2, borderWidth: 4, borderRadius: 10, overflow: 'hidden' },
+  swStamp: { position: 'absolute', top: 46, fontFamily: F.display, fontSize: 28, paddingHorizontal: 12, paddingVertical: 2, borderWidth: 4, borderRadius: 10, overflow: 'hidden' },
   stampOk: { left: 18, color: '#1aa64b', borderColor: '#1aa64b', transform: [{ rotate: '-12deg' }] },
   stampNg: { right: 18, color: PEN_RED, borderColor: PEN_RED, transform: [{ rotate: '12deg' }] },
   mirror: { transform: [{ rotate: '180deg' }] },

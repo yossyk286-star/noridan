@@ -31,7 +31,7 @@ export default function SettingsSheet({ visible, shake, sound, dual, voice, nigh
           <ScrollView contentContainerStyle={{ gap: 12 }}>
             <View style={s.grip} />
             <Text style={s.title}>設定</Text>
-            <Toggle label="振ってルーレット" sub="振ったら次のお題・サイコロへ" on={shake} onPress={() => onShake(!shake)} />
+            <Toggle label="振って進む" sub="スマホを振ったら次のお題・サイコロへ" on={shake} onPress={() => onShake(!shake)} />
             <Toggle label="効果音" sub="めくる音・ガチャ・爆発" on={sound} onPress={() => onSound(!sound)} />
             <Toggle label="お題の読み上げ" sub="札が出たら声で読む（爆弾の中身は読まへん）" on={voice} onPress={() => onVoice(!voice)} />
             <Toggle label="向かい合わせ表示" sub="机の真ん中に置いて両側から読める" on={dual} onPress={() => onDual(!dual)} />

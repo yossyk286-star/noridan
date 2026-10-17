@@ -174,7 +174,7 @@ function vHome2() {
     <button data-act="coachOk" data-k="mode">わかった</button>
   </div>`}
   <section style="display:flex;flex-direction:column;gap:10px">
-    <p class="step-h"><span class="num">②</span>地獄度<small>お題の攻め具合</small></p>
+    <p class="step-h"><span class="num">②</span>地獄度<small>お題・罰の攻め具合</small></p>
     <div class="levels">
       ${Object.entries(LV).map(([k, v]) => `<button class="lv" data-act="lv" data-v="${k}" aria-pressed="${S.level === k}">${v}<small>${LV_SUB[k]}</small></button>`).join("")}
     </div>
@@ -184,7 +184,7 @@ function vHome2() {
     <div class="modes">
       <button class="mode" data-act="start" data-m="odai"><i class="mode-ic">${ICON.cards}</i><b>アホお題</b><span>出たお題を順番にやるだけ</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="sugoroku"><i class="mode-ic">${ICON.dice}</i><b>すごろく</b><span>サイコロで進む。1番にゴールで終了</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>自分だけ知らんNGワードを、言わされたらアウト。地獄度で言葉の言いやすさが変わる</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>自分だけ知らんNGワードを、言わされたらアウト</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : "「一番○○なのは？」に匿名で投票して罰を決める"}</span><em class="go">開始</em></button>
     </div>
   </section>
@@ -232,7 +232,7 @@ function vSheet() {
     <div class="sheet" role="dialog" aria-label="設定" data-stop>
       <div class="sheet-grip"></div>
       <h2>設定</h2>
-      <button class="toggle" data-act="shake" aria-pressed="${S.shake}"><span>振ってルーレット<small>振ったら次のお題・サイコロへ</small></span><b>${S.shake ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="shake" aria-pressed="${S.shake}"><span>振って進む<small>スマホを振ったら次のお題・サイコロへ</small></span><b>${S.shake ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="sound" aria-pressed="${S.sound}"><span>効果音<small>めくる音・ガチャ・爆発</small></span><b>${S.sound ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="voice" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="dual" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
@@ -372,6 +372,8 @@ function vControls() {
           <button class="choice" data-act="dLose">失敗…<small>罰2倍</small></button>
         </div>`;
       }
+      // 続くルールを出した指令は、今は誰も罰にならへん。上に出しといて、破った時に「違反者に罰」
+      if (g.card.ruleCard) return `<button class="big" data-act="next" data-shake>ルール開始 → ${nextLabel}</button>${shakeHint()}`;
       const subs = [
         g.card.solo && !g.card.passed && isSituational(g.card.tpl) ? `<button data-act="notme">当てはまらん → 誰かに回す</button>` : "",
         g.card.yoru ? `<button data-act="pass">無理！罰なしでパス</button>` : "",
@@ -508,7 +510,7 @@ function cardTag(c) {
 const COACH = {
   double: "倍プッシュ：成功で誰かに罰、失敗で罰2倍",
   bomb: "時限爆弾：仕掛け人だけNG行動を知ってる。爆発したら、やった人全員が罰",
-  rule: "ルールは数ターン続く。破った人は「違反者に罰」",
+  rule: "このルールは上に出しとく。破った人が出たら「違反者に罰」",
   event: "緊急指令：アウトの人を下から選ぶ",
   contest: "負けた人を下から選んでから次へ",
   swipe: "やったらセーフ、逃げたらアウト。スワイプでもOK",

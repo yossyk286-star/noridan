@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
@@ -12,7 +12,7 @@ import { useTurnFlow } from '../lib/useTurnFlow';
 import { useShake } from '../lib/useShake';
 import { useStageCues } from '../lib/useStageCues';
 import { play } from '../lib/sound';
-import { F, LEVEL_LABEL, STAGE, colorOf, C, NEON_BG, neonPal } from '../theme';
+import { LEVEL_LABEL, STAGE, colorOf, C, NEON_BG, neonPal } from '../theme';
 import type { Night, Card, Level, Member, Rule, GachaItem } from '../types';
 
 type Props = {
@@ -116,16 +116,18 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
       case 'swap': {
         const x = pick(othersOf(members, me));
         [p[me], p[x]] = [p[x], p[me]];
-        const [before, after] = c.text.split('{X}');
+        const [before, after] = (c as { text: string }).text.split('{X}');
         flow.show({ kind: `${head}・${c.label}`, segments: [{ text: before }, { text: members[x].name, hl: true, who: x }, { text: after ?? '' }] }, me);
         break;
       }
-      default:
-        if (!usable(c.text, members.length)) {
+      default: {
+        const text = 'text' in c ? c.text : '';
+        if (!usable(text, members.length)) {
           // 2人やと成立せんマス（指差しとか）は普通のお題に差し替え
           const o = decks.odai(level, members, me, night);
           flow.present({ ...o, kind: `${head}・${o.kind}` }, me, true);
-        } else flow.show(makeCard(`${head}・${c.label}`, c.text, members, me), me);
+        } else flow.show(makeCard(`${head}・${'label' in c ? c.label : ''}`, text, members, me), me);
+      }
     }
     setPos(p);
     setDone(finished);

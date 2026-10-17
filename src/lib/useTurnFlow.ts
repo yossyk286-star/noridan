@@ -6,7 +6,7 @@ import { newStats, type Why } from './titles';
 import type { Bomb, Card, GachaItem, Member, Phase, Rule, Segment } from '../types';
 
 const OFFER_CARD = (members: Member[], doer: number): Card => ({
-  kind: 'ダブルアップチャンス',
+  kind: '倍プッシュのチャンス',
   segments: nameSeg(members[doer].name, '、お題を見る前に倍プッシュするか？', doer),
 });
 
@@ -150,7 +150,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       st.card = card;
       rerender();
     },
-    /** お題カードを出す。たまにダブルアップチャンスを挟む */
+    /** お題カードを出す。たまに倍プッシュのチャンスを挟む */
     present(card: Card, doer: number, allowDouble: boolean) {
       st.doer = doer;
       st.double = false;
