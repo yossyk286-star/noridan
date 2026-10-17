@@ -60,7 +60,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--yuru); outl
 mark { background: none; color: inherit; }
 
 /* player-color frame around the whole screen */
-.frame { position: fixed; inset: 0; pointer-events: none; z-index: 5; box-shadow: inset 0 0 0 6px var(--pc), inset 0 0 38px color-mix(in srgb, var(--pc) 55%, transparent); transition: box-shadow .4s ease; }
+.frame { position: fixed; top: 0; left: 0; right: 0; height: var(--app-h, 100%); pointer-events: none; z-index: 5; box-shadow: inset 0 0 0 6px var(--pc), inset 0 0 38px color-mix(in srgb, var(--pc) 55%, transparent); transition: box-shadow .4s ease; }
 body:not(.stage) .frame { display: none; }
 
 /* ---------- shared bits ---------- */
@@ -492,8 +492,9 @@ button:active:not(:disabled) { transform: scale(.95); transition-duration: .06s;
 
 /* ===== ゲーム中は1画面に固定（スクロールしない・引っ張っても動かない） ===== */
 html, body { overscroll-behavior: none; }
-body.stage { height: 100vh; height: 100dvh; overflow: hidden; }
-body.stage #app { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+html:has(body.stage) { overflow: hidden; }
+body.stage { height: 100vh; height: var(--app-h, 100dvh); overflow: hidden; }
+body.stage #app { height: 100vh; height: var(--app-h, 100dvh); min-height: 0; overflow: hidden; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
 body.stage #stage { min-height: 0; gap: 10px; }
 body.stage #stage .deck { min-height: 0; flex: 1 1 0; }
 body.stage .odai { min-height: 0; overflow: hidden; }
@@ -1920,6 +1921,26 @@ function onClick(e) {
   }
 }
 app.addEventListener("click", onClick);
+
+// ---------- 画面の高さ ----------
+// ホーム画面に追加して全画面で開くと、iPhoneが高さを時計の分だけ短く数えることがある。
+// 時計の裏まで描いてる時（上の安全領域がある時）は、画面そのものの高さを使う
+function fixHeight() {
+  let h = window.innerHeight;
+  try {
+    const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;top:0;height:0;padding-top:env(safe-area-inset-top,0px);visibility:hidden";
+    document.body.appendChild(probe);
+    const top = probe.offsetHeight; probe.remove();
+    const portrait = window.innerHeight > window.innerWidth;
+    if (standalone && top > 0 && portrait) h = Math.max(h, screen.height);
+  } catch {}
+  document.documentElement.style.setProperty("--app-h", h + "px");
+}
+fixHeight();
+window.addEventListener("resize", fixHeight);
+window.addEventListener("orientationchange", () => setTimeout(fixHeight, 300));
 
 // ---------- 札のスワイプ：右でクリア、左で番の人に罰 ----------
 let drag = null;

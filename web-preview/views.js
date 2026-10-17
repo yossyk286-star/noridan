@@ -926,6 +926,26 @@ function onClick(e) {
 }
 app.addEventListener("click", onClick);
 
+// ---------- 画面の高さ ----------
+// ホーム画面に追加して全画面で開くと、iPhoneが高さを時計の分だけ短く数えることがある。
+// 時計の裏まで描いてる時（上の安全領域がある時）は、画面そのものの高さを使う
+function fixHeight() {
+  let h = window.innerHeight;
+  try {
+    const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;top:0;height:0;padding-top:env(safe-area-inset-top,0px);visibility:hidden";
+    document.body.appendChild(probe);
+    const top = probe.offsetHeight; probe.remove();
+    const portrait = window.innerHeight > window.innerWidth;
+    if (standalone && top > 0 && portrait) h = Math.max(h, screen.height);
+  } catch {}
+  document.documentElement.style.setProperty("--app-h", h + "px");
+}
+fixHeight();
+window.addEventListener("resize", fixHeight);
+window.addEventListener("orientationchange", () => setTimeout(fixHeight, 300));
+
 // ---------- 札のスワイプ：右でクリア、左で番の人に罰 ----------
 let drag = null;
 const canSwipe = () => {
