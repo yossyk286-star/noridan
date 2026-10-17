@@ -265,6 +265,8 @@ export function OdaiCard({
           <View style={[styles.dualLine, { borderColor: look.fg }]} />
         </>
       )}
+      {/* 上・絵と文の間・下の余白をそろえる */}
+      {art && <View style={{ flex: 1 }} />}
       <View style={[styles.cardBody, art && { flex: 0 }]}>
         <SegText fit segments={card.segments} underline={ul} style={[styles.cardText, fitSize(card.segments, small, dual ? 0.74 : 1), { color: look.fg }, textGlow]} />
       </View>
