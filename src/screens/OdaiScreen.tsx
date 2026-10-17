@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
-import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, Turn, shakeAction } from '../components/Stage';
+import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, shakeAction } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
 import { Flash } from '../components/Fx';
 import { CHANCE, Decks } from '../lib/game';
@@ -66,6 +66,12 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
   const flash = useStageCues(flow);
 
   const { st } = flow;
+  // 誰の番か（札の上に1行で出す）
+  const who = {
+    name: members[st.doer].name,
+    color: colorOf(st.doer),
+    label: st.card.bomb ? 'が仕掛け人' : st.card.passed ? 'に回ってきた' : st.doer !== cur ? 'に押し付けられた' : 'の番',
+  };
   // 夜お題の間だけ照明が落ちてネオン看板に
   const neon = !!st.card.yoru && st.phase !== 'batsu';
   const pal = neon ? neonPal(st.card.kind.includes('深夜') ? C.deep : C.night) : basePal;
@@ -76,7 +82,6 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
       {/* 1画面に固定（スクロールしない） */}
       <View style={[s.wrap, flipped && s.flipped]}>
         <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} />
-        <Turn pal={pal} name={members[st.doer].name} color={colorOf(st.doer)} pushed={st.doer !== cur} bomb={st.card.bomb} passed={st.card.passed} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
         {/* ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので） */}
         <RuleBanner pal={pal} rule={st.card.ruleCard && st.phase === 'play' ? null : rule} onViolate={() => setRuleSheet('pick')} />
@@ -92,6 +97,7 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
                 doubled={st.double && st.phase === 'play'}
                 art={art}
                 underline={level === 'jigoku'}
+                who={who}
               />
             </SwipeCard>
           )}

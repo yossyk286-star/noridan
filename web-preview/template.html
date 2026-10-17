@@ -621,6 +621,60 @@ body.stage.neon .coach { background: #1a1228; border: 1px solid var(--nc); }
 .home-coach b { color: var(--yuru); }
 .home-coach ol { margin: 0; padding-left: 1.3em; }
 .home-coach button { align-self: flex-end; padding: 8px 14px; border-radius: 999px; background: var(--yuru); color: var(--ink); font-size: 12px; font-weight: 900; }
+
+/* =====================================================================
+   v2：見やすさの土台
+   - 背景はどの地獄度も暗い色にそろえて、地獄度の色は札の縁と上の帯だけ
+   - 太い字体はお題と名前だけ。ほかは普通の太字・字間なし
+   - ボタンは「塗り（大事）」「枠（次に大事）」「文字リンク（たまに）」の3種類
+   ===================================================================== */
+body.stage[data-level] { --bg: #141210; --fg: var(--paper); --muted: rgba(247,243,234,.66); --chip: rgba(247,243,234,.08); --line: rgba(247,243,234,.2); }
+body.stage[data-level="yurume"] { --acc: var(--yuru); --card-edge: var(--yuru); }
+body.stage[data-level="futsu"]  { --acc: var(--futsu); --card-edge: var(--futsu); }
+body.stage[data-level="jigoku"] { --acc: var(--blood); --card-edge: var(--blood); --fg: var(--paper); --muted: rgba(247,243,234,.66); }
+.frame { box-shadow: inset 0 0 0 3px var(--pc); }
+.odai { box-shadow: 0 0 0 3px var(--card-edge); }
+/* 札の上の1行：誰の番か＋種類 */
+.odai .head { opacity: 1; letter-spacing: .02em; font-size: 12px; align-items: center; }
+.odai .head .meta { display: flex; align-items: center; gap: 6px; min-width: 0; opacity: .7; }
+.odai .head .kind { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.odai .head .tag { margin: 0; }
+.who { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+.who i { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--mc); box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 30%, transparent); }
+.who b { font-family: var(--display); font-weight: 400; font-size: 22px; line-height: 1.1; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who small { font-size: 13px; font-weight: 900; white-space: nowrap; }
+/* 文字：字間を詰めて、小さすぎ・薄すぎをなくす */
+.h2, .res-h2, .menu-meta { letter-spacing: .04em; font-size: 13px; }
+.catch { letter-spacing: .08em; }
+.step-dots { letter-spacing: .04em; font-size: 12px; }
+.pen-q span, .hint, .swipe-hint { letter-spacing: .02em; font-size: 12px; }
+.rule b { letter-spacing: .02em; }
+.big { font-family: var(--body); font-weight: 900; font-size: 19px; }
+.vd b { font-family: var(--body); font-weight: 900; font-size: 20px; }
+.choice.hot { font-family: var(--body); font-weight: 900; font-size: 17px; }
+.dice-txt b { font-family: var(--body); font-weight: 900; font-size: 18px; }
+.dice-txt .who b { font-family: var(--display); font-weight: 400; font-size: 20px; }
+.mode b { font-family: var(--body); font-weight: 900; font-size: 22px; }
+.mode .go { font-family: var(--body); font-weight: 900; font-style: normal; }
+.mode-ic { grid-row: 1 / span 2; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(20,18,16,.08); }
+.mode-ic svg { width: 24px; height: 24px; }
+.mode { grid-template-columns: auto minmax(0,1fr) auto; }
+.mode b, .mode span { grid-column: 2; }
+.mode .go { grid-column: 3; }
+/* ボタン：枠だけ（2番目に大事） */
+.sub-acts button, .sub-acts .revenge { background: transparent; border: 1.5px solid rgba(247,243,234,.35); border-radius: 12px; font-size: 14px; }
+.sub-acts .revenge { border-color: var(--acc, var(--fg)); }
+.choice { background: transparent; border: 1.5px solid rgba(247,243,234,.35); }
+.choice.hot { background: var(--fg); color: var(--bg); border-color: transparent; }
+.ghost { border-width: 1.5px; }
+.rule-out { background: transparent; color: #ff7a7a; border: 1.5px solid #ff7a7a; }
+.coach { background: #26221e; border: 1px solid rgba(255,210,63,.35); }
+.coach::before { background: #26221e; border-left: 1px solid rgba(255,210,63,.35); border-top: 1px solid rgba(255,210,63,.35); }
+/* 準備画面の番号つき見出し */
+.step-h { margin: 0; display: flex; align-items: baseline; gap: 8px; font-size: 18px; font-weight: 900; color: var(--paper); }
+.step-h .num { color: var(--yuru); }
+.step-h small { font-size: 12px; font-weight: 700; color: var(--muted); }
+.home-coach { font-size: 14px; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

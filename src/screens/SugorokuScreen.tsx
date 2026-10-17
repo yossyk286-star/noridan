@@ -3,7 +3,7 @@ import { Animated, Easing, ScrollView, StyleSheet, Text, View } from 'react-nati
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
-import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, ShakeHint, Turn, shakeAction } from '../components/Stage';
+import { BombBanner, Coach, Who, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, ShakeHint, shakeAction } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
 import { Board, COLS, Die, ROWS, Ranks, type Callout } from '../components/Board';
 import { Flash } from '../components/Fx';
@@ -216,6 +216,12 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
   }, [showSheet, flow.st.card]);
 
   const { st } = flow;
+  // 誰の番か（札の上に1行で出す）
+  const who = {
+    name: members[st.doer].name,
+    color: colorOf(st.doer),
+    label: st.card.bomb ? 'が仕掛け人' : st.card.passed ? 'に回ってきた' : st.doer !== cur ? 'に押し付けられた' : 'の番',
+  };
   // 夜お題の間だけ照明が落ちてネオン看板に
   const neon = !!st.card.yoru && st.phase !== 'batsu';
   const pal = neon ? neonPal(st.card.kind.includes('深夜') ? C.deep : C.night) : basePal;
@@ -227,7 +233,6 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
       {/* 1画面に固定（スクロールしない）。盤は残りの高さに収まるサイズにする */}
       <View style={[s.wrap, flipped && s.flipped]}>
         <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} />
-        <Turn pal={pal} name={members[st.doer].name} color={colorOf(st.doer)} pushed={st.doer !== cur} bomb={st.card.bomb} passed={st.card.passed} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
         {/* ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので） */}
         <RuleBanner pal={pal} rule={st.card.ruleCard && st.phase === 'play' ? null : rule} onViolate={() => setRuleSheet('pick')} />
@@ -243,6 +248,7 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
         <View style={s.dock}>
           <Die value={die} rolling={rolling} disabled={rolling || rolled || hopping} onPress={roll} />
           <View style={{ flex: 1, gap: 4 }}>
+            <Who name={members[cur].name} color={colorOf(cur)} label="の番" fg={pal.fg} />
             <Text style={[s.dockText, { color: pal.fg }]}>{label}</Text>
             {shakeOn && !rolled && !hopping && st.cards < 3 && <ShakeHint pal={pal} />}
           </View>
@@ -266,7 +272,7 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
                   <GachaCard pal={pal} members={members} items={st.gacha} />
                 ) : (
                   <SwipeCard enabled={canVerdict(flow)} flipped={flipped} onSwipe={(d) => (d > 0 ? flow.clear() : flow.fail())}>
-                    <OdaiCard pal={pal} card={st.card} doubled={st.double && st.phase === 'play'} art={art} underline={level === 'jigoku'} small />
+                    <OdaiCard pal={pal} card={st.card} doubled={st.double && st.phase === 'play'} art={art} underline={level === 'jigoku'} small who={who} />
                   </SwipeCard>
                 )}
               </DeckStack>
@@ -308,7 +314,7 @@ const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, paddingBottom: 16, gap: 10, maxWidth: 560, width: '100%', alignSelf: 'center' },
   flipped: { transform: [{ rotate: '180deg' }] },
   dock: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 'auto', paddingTop: 4 },
-  dockText: { fontFamily: F.display, fontSize: 22 },
+  dockText: { fontSize: 18, fontWeight: '900' },
   sheetBack: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
   sheet: {
     position: 'absolute', left: 0, right: 0, maxHeight: '88%', padding: 16, paddingBottom: 26, borderWidth: 4, maxWidth: 560, alignSelf: 'center', width: '100%',

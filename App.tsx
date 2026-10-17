@@ -143,7 +143,7 @@ export default function App() {
     <PrefsContext.Provider value={{ dual, voice }}>
     <SafeAreaProvider>
       <SafeAreaView style={[s.root, { backgroundColor: bg }]}>
-        <StatusBar style={onStage && level !== 'jigoku' && !stageBg ? 'dark' : 'light'} />
+        <StatusBar style="light" />
         <Animated.View style={[s.root, { opacity: slide.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }), transform: [{ translateX: slide.interpolate({ inputRange: [0, 1], outputRange: [dir.current * 28, 0] }) }] }]}>
           {screen.name === 'home' && (
             <HomeScreen

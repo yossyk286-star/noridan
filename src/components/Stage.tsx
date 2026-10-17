@@ -119,14 +119,14 @@ export function Turn({
 
 export function RuleBanner({ pal, rule, onViolate }: { pal: Pal; rule: Rule | null; onViolate?: () => void }) {
   if (!rule) return null;
-  const jigoku = pal.bg === STAGE.jigoku.bg;
+  const jigoku = !!pal.jigoku;
   return (
     <View style={[styles.rule, { borderColor: pal.muted }]}>
       <Text style={[styles.ruleHead, { color: pal.fg }]}>発動中 残り{rule.left}ターン</Text>
       <SegText segments={rule.segments} style={[styles.ruleText, { color: pal.fg, flex: 1 }]} />
       {onViolate && (
-        <Tap onPress={onViolate} style={[styles.ruleOut, { backgroundColor: jigoku ? pal.fg : PEN_RED }]}>
-          <Text style={[styles.ruleOutText, { color: jigoku ? '#000' : '#fff' }]}>違反者に罰</Text>
+        <Tap onPress={onViolate} style={[styles.ruleOut, { borderWidth: 1.5, borderColor: '#ff7a7a' }]}>
+          <Text style={[styles.ruleOutText, { color: '#ff7a7a' }]}>違反者に罰</Text>
         </Tap>
       )}
     </View>
@@ -222,8 +222,8 @@ function lookOf(pal: Pal, card: Card) {
 
 /** お題札 */
 export function OdaiCard({
-  pal, card, no, doubled, art, underline, small,
-}: { pal: Pal; card: Card; no?: number; doubled?: boolean; art?: 'bomb' | 'coin'; underline?: boolean; small?: boolean }) {
+  pal, card, no, doubled, art, underline, small, who,
+}: { pal: Pal; card: Card; no?: number; doubled?: boolean; art?: 'bomb' | 'coin'; underline?: boolean; small?: boolean; /** 札の上に出す「誰の番か」 */ who?: { name: string; color: string; label: string } }) {
   const anim = useFlipIn(card, card.alert);
   const look = lookOf(pal, card);
   // 向かい合わせ：同じお題を上下逆さにもう1枚（爆弾の中身は仕掛け人だけが見るので出さない）
@@ -238,7 +238,8 @@ export function OdaiCard({
     <Animated.View style={[styles.card, { backgroundColor: look.bg, borderColor: look.edge }, glow, anim]}>
       <Animated.View style={{ flex: 1, gap: 12, opacity: flick }}>
       <View style={styles.cardHead}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
+        {who && <Who {...who} fg={neon ? '#fff' : look.fg} />}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1, opacity: 0.85 }}>
           {!!cardTag(card) && art === undefined && (
             <Text style={[styles.tag, { color: neon ? look.edge : look.fg, borderColor: neon ? look.edge : look.fg }]}>{cardTag(card)}</Text>
           )}
@@ -394,8 +395,8 @@ const PEN_RED = '#e8202a';
 /** 罰をつける人を選ぶタイル。押すと赤くなって「罰」のハンコ */
 function PenGrid({ pal, members, flow }: { pal: Pal; members: Member[]; flow: TurnFlow }) {
   const { st } = flow;
-  const onRed = pal.bg === STAGE.jigoku.bg ? pal.fg : PEN_RED;
-  const onText = pal.bg === STAGE.jigoku.bg ? '#000' : '#fff';
+  const onRed = !!pal.jigoku ? pal.cardEdge : PEN_RED;
+  const onText = !!pal.jigoku ? '#000' : '#fff';
   return (
     <View style={{ gap: 8 }}>
       <View style={styles.penQRow}>
@@ -449,7 +450,7 @@ function nextText(members: Member[], add: Map<number, number>, base: string, tpl
 
 function Choice({ pal, title, sub, hot, onPress }: { pal: Pal; title: string; sub: string; hot?: boolean; onPress: () => void }) {
   return (
-    <Tap onPress={onPress} style={[styles.choice, { borderColor: pal.fg, backgroundColor: hot ? pal.fg : pal.chip }]}>
+    <Tap onPress={onPress} style={[styles.choice, { borderColor: hot ? 'transparent' : 'rgba(247,243,234,0.35)', backgroundColor: hot ? pal.fg : 'transparent', borderWidth: 1.5 }]}>
       <Text style={[hot ? styles.choiceHot : styles.choiceTitle, { color: hot ? pal.bg : pal.fg }]}>{title}</Text>
       <Text style={[styles.choiceSub, { color: hot ? pal.bg : pal.fg }]}>{sub}</Text>
     </Tap>
@@ -513,17 +514,17 @@ export function Controls({
           {(st.card.yoru || st.card.solo) && (
             <View style={styles.subActs}>
               {st.card.solo && !st.card.passed && isSituational(st.card.tpl) && (
-                <Tap onPress={flow.notMe} style={[styles.subBtn, { backgroundColor: pal.chip }]}>
+                <Tap onPress={flow.notMe} style={styles.subBtn}>
                   <Text style={[styles.subText, { color: pal.fg }]}>当てはまらん → 誰かに回す</Text>
                 </Tap>
               )}
               {st.card.yoru && (
-                <Tap onPress={flow.pass} style={[styles.subBtn, { backgroundColor: pal.chip }]}>
+                <Tap onPress={flow.pass} style={styles.subBtn}>
                   <Text style={[styles.subText, { color: pal.fg }]}>無理！罰なしでパス</Text>
                 </Tap>
               )}
               {st.card.solo && st.rev[st.doer] && (
-                <Tap onPress={flow.startRevenge} style={[styles.subBtn, styles.revenge, { borderColor: pal.fg }]}>
+                <Tap onPress={flow.startRevenge} style={[styles.subBtn, styles.revenge, { borderColor: pal.cardEdge }]}>
                   <Text style={[styles.subText, { color: pal.fg }]}>↺ リベンジ権を使う</Text>
                 </Tap>
               )}
@@ -565,10 +566,10 @@ export function Controls({
 
 /** やった／できんかった ボタン */
 function Verdict({ pal, title, sub, ng, onPress }: { pal: Pal; title: string; sub: string; ng?: boolean; onPress: () => void }) {
-  const jigoku = pal.bg === STAGE.jigoku.bg;
+  const jigoku = !!pal.jigoku;
   // 地獄度は両方赤になって見分けにくいので、セーフは枠だけにする
   const outline = !ng && (pal.neon || jigoku);
-  const bg = ng ? (jigoku ? pal.fg : PEN_RED) : outline ? 'transparent' : pal.fg;
+  const bg = ng ? (jigoku ? pal.cardEdge : PEN_RED) : outline ? 'transparent' : pal.fg;
   const fg = ng ? (jigoku ? '#000' : '#fff') : pal.neon ? '#fff' : jigoku ? pal.fg : pal.bg;
   return (
     <Tap
@@ -582,6 +583,17 @@ function Verdict({ pal, title, sub, ng, onPress }: { pal: Pal; title: string; su
       <Text style={[styles.verdictTitle, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>{title}</Text>
       <Text style={[styles.verdictSub, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>{sub}</Text>
     </Tap>
+  );
+}
+
+/** 誰の番か（札の上に1行） */
+export function Who({ name, color, label, fg }: { name: string; color: string; label: string; fg: string }) {
+  return (
+    <View style={styles.who}>
+      <View style={[styles.whoDot, { backgroundColor: color }]} />
+      <Text style={[styles.whoName, { color: fg }]} numberOfLines={1}>{name}</Text>
+      <Text style={[styles.whoLabel, { color: fg }]}>{label}</Text>
+    </View>
   );
 }
 
@@ -602,15 +614,15 @@ export function cardTag(c: Card): string {
 
 /** 初めて出てきた仕組みだけ、札の下にひとこと説明（1回見たら二度と出えへん） */
 const COACH: Record<string, string> = {
-  double: '倍プッシュ：お題を見る前に賭ける。成功したら誰かに罰を押し付け、失敗したら罰2倍',
-  bomb: '時限爆弾：仕掛け人だけがNG行動を知る。数ターン後に爆発して、それまでにやってた奴は全員罰',
-  rule: '緊急ルール：上の「発動中」の間ずっと続く。破った人を見つけたら「違反者に罰」',
-  event: '緊急指令：急に割り込んでくるお題。全員参加やから、アウトの人を下から選ぶ',
-  contest: '勝負のお題：負けた人を下から選んでから次へ',
-  swipe: 'やり切ったら「セーフ」、逃げたら「アウト」。札を右・左にスワイプでもOK',
-  notme: '当てはまらん：恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる',
-  pass: '夜お題は「無理！罰なしでパス」でパスできる',
-  revenge: 'リベンジ権 ↺：罰を食らった人のご褒美。今のお題を1回だけ誰かに押し付けられる',
+  double: '倍プッシュ：成功で誰かに罰、失敗で罰2倍',
+  bomb: '時限爆弾：仕掛け人だけNG行動を知ってる。爆発したら、やった人全員が罰',
+  rule: 'ルールは数ターン続く。破った人は「違反者に罰」',
+  event: '緊急指令：アウトの人を下から選ぶ',
+  contest: '負けた人を下から選んでから次へ',
+  swipe: 'やったらセーフ、逃げたらアウト。スワイプでもOK',
+  notme: '当てはまらん時は、罰なしで誰かに回せる',
+  pass: '夜お題は「無理！」で罰なしパスできる',
+  revenge: 'リベンジ権 ↺：このお題を1回だけ誰かに押し付けられる',
 };
 export function Coach({ flow }: { flow: TurnFlow }) {
   const { seen, markSeen } = useSeen();
@@ -744,8 +756,8 @@ export function shakeAction(flow: TurnFlow): (() => void) | null {
 export function BigButton({
   pal, label, onPress, disabled, danger,
 }: { pal: Pal; label: string; onPress: () => void; disabled?: boolean; danger?: boolean }) {
-  const jigoku = pal.bg === STAGE.jigoku.bg;
-  const bg = danger ? (jigoku ? pal.fg : PEN_RED) : pal.fg;
+  const jigoku = !!pal.jigoku;
+  const bg = danger ? (jigoku ? pal.cardEdge : PEN_RED) : pal.fg;
   const fg = danger ? (jigoku ? '#000' : '#fff') : pal.bg;
   // ネオン看板中は光る管のボタン
   const tube = pal.neon && !danger
@@ -767,7 +779,7 @@ export function BigButton({
 }
 
 const styles = StyleSheet.create({
-  frame: { borderWidth: 6, zIndex: 10, shadowOpacity: 0.8, shadowRadius: 20, shadowOffset: { width: 0, height: 0 } },
+  frame: { borderWidth: 3, zIndex: 10 },
   bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   score: { gap: 10, paddingVertical: 10, paddingLeft: 8, paddingRight: 10, alignItems: 'center' },
   av: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#141210' },
@@ -793,18 +805,22 @@ const styles = StyleSheet.create({
   turnLabel: { fontSize: 13, fontWeight: '900', letterSpacing: 1 },
   turnName: { fontFamily: F.display, fontSize: 48, lineHeight: 56 },
   rule: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 2, borderStyle: 'dashed', borderRadius: 12, padding: 10 },
-  ruleHead: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
+  ruleHead: { fontSize: 12, fontWeight: '900', letterSpacing: 0.3 },
   ruleText: { fontSize: 13, fontWeight: '700' },
-  card: { flex: 1, minHeight: 0, overflow: 'hidden', borderRadius: 22, borderWidth: 2, padding: 20, gap: 12 },
-  cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, opacity: 0.85 },
-  kind: { flex: 1, fontSize: 11, fontWeight: '900', letterSpacing: 2.5, opacity: 0.7 },
+  card: { flex: 1, minHeight: 0, overflow: 'hidden', borderRadius: 22, borderWidth: 3, padding: 20, gap: 12 },
+  cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  kind: { fontSize: 12, fontWeight: '900', letterSpacing: 0.3, opacity: 0.7 },
   no: { fontSize: 11, fontWeight: '900', letterSpacing: 1, opacity: 0.6, fontVariant: ['tabular-nums'] },
   badge: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
   badgeText: { fontSize: 11, fontWeight: '900' },
   cardBody: { flex: 1, justifyContent: 'center' },
+  who: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 1 },
+  whoDot: { width: 12, height: 12, borderRadius: 6 },
+  whoName: { fontFamily: F.display, fontSize: 22, lineHeight: 28, flexShrink: 1 },
+  whoLabel: { fontSize: 13, fontWeight: '900' },
   tag: { fontSize: 10, fontWeight: '900', letterSpacing: 1, borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden', opacity: 0.8 },
-  coach: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, backgroundColor: '#141210' },
-  coachArrow: { position: 'absolute', top: -6, left: 28, width: 12, height: 12, backgroundColor: '#141210', transform: [{ rotate: '45deg' }] },
+  coach: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, backgroundColor: '#26221e', borderWidth: 1, borderColor: 'rgba(255,210,63,0.35)' },
+  coachArrow: { position: 'absolute', top: -7, left: 28, width: 12, height: 12, backgroundColor: '#26221e', borderLeftWidth: 1, borderTopWidth: 1, borderColor: 'rgba(255,210,63,0.35)', transform: [{ rotate: '45deg' }] },
   coachText: { flex: 1, color: '#f7f3ea', fontSize: 13, fontWeight: '700', lineHeight: 20 },
   coachBtn: { borderRadius: 999, backgroundColor: '#ffd23f', paddingVertical: 8, paddingHorizontal: 12 },
   coachBtnText: { color: '#141210', fontSize: 12, fontWeight: '900' },
@@ -829,10 +845,10 @@ const styles = StyleSheet.create({
   sheetBig: { borderRadius: 16, backgroundColor: '#f7f3ea', padding: 16, alignItems: 'center' },
   sheetBigText: { fontFamily: F.display, fontSize: 20, color: '#141210' },
   verdict: { flex: 1, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 8, alignItems: 'center', gap: 2, shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
-  verdictTitle: { fontFamily: F.display, fontSize: 21, lineHeight: 26 },
+  verdictTitle: { fontSize: 20, fontWeight: '900', lineHeight: 26 },
   verdictSub: { fontSize: 12, fontWeight: '900', opacity: 0.8 },
   swipeHint: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  swipeHintText: { fontSize: 11, fontWeight: '900', letterSpacing: 1 },
+  swipeHintText: { fontSize: 12, fontWeight: '900', letterSpacing: 0.3 },
   link: { fontSize: 12, fontWeight: '900', textDecorationLine: 'underline', opacity: 0.8, padding: 6 },
   stamp: { position: 'absolute', top: 46, fontFamily: F.display, fontSize: 28, paddingHorizontal: 12, paddingVertical: 2, borderWidth: 4, borderRadius: 10, overflow: 'hidden' },
   stampOk: { left: 18, color: '#1aa64b', borderColor: '#1aa64b', transform: [{ rotate: '-12deg' }] },
@@ -850,7 +866,7 @@ const styles = StyleSheet.create({
   gachaText: { fontFamily: F.display, fontSize: 22, lineHeight: 32 },
   penQRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   penQ: { fontSize: 16, fontWeight: '900' },
-  penQSub: { fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+  penQSub: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
   penGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   penTile: { width: '31.5%', minHeight: 64, borderRadius: 14, borderWidth: 2, paddingVertical: 8, paddingRight: 8, paddingLeft: 16, justifyContent: 'center', overflow: 'hidden' },
   penBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 7 },
@@ -866,19 +882,19 @@ const styles = StyleSheet.create({
   chipN: { fontSize: 11, opacity: 0.7 },
   choices: { flexDirection: 'row', gap: 10 },
   choice: { flex: 1, borderRadius: 16, borderWidth: 2, paddingVertical: 16, paddingHorizontal: 10, alignItems: 'center', gap: 4 },
-  choiceHot: { fontFamily: F.display, fontSize: 19 },
+  choiceHot: { fontSize: 17, fontWeight: '900' },
   choiceTitle: { fontWeight: '900', fontSize: 15 },
   choiceSub: { fontSize: 11, fontWeight: '700', opacity: 0.75, textAlign: 'center' },
   subActs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  subBtn: { borderRadius: 999, paddingVertical: 10, paddingHorizontal: 14 },
-  revenge: { borderWidth: 2, borderStyle: 'dashed' },
+  subBtn: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1.5, borderColor: 'rgba(247,243,234,0.35)' },
+  revenge: { borderWidth: 1.5 },
   subText: { fontWeight: '900', fontSize: 14 },
   ghost: { borderWidth: 2, borderRadius: 14, padding: 14, alignItems: 'center' },
   ghostText: { fontWeight: '900' },
-  hint: { textAlign: 'center', fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
   big: {
     paddingVertical: 18, borderRadius: 16, alignItems: 'center',
     shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4,
   },
-  bigText: { fontFamily: F.display, fontSize: 22 },
+  bigText: { fontSize: 19, fontWeight: '900' },
 });

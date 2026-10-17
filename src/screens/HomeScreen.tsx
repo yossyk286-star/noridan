@@ -158,6 +158,14 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
         <Steps n={1} label="メンバー" />
         <MembersGuide />
 
+        <View style={s.memHead}>
+          <StepHead num="①" title="メンバー" sub={`${members.length}人`} />
+          {isExample && (
+            <Tap onPress={() => onMembers([])} hitSlop={8}>
+              <Text style={s.textBtn}>例を全部消す</Text>
+            </Tap>
+          )}
+        </View>
         <View style={s.row}>
           <TextInput
             ref={input}
@@ -176,14 +184,6 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
           </Tap>
         </View>
 
-        <View style={s.memHead}>
-          <Text style={s.h2}>今日のメンバー {members.length}人</Text>
-          {isExample && (
-            <Tap onPress={() => onMembers([])} hitSlop={8}>
-              <Text style={s.textBtn}>例を全部消す</Text>
-            </Tap>
-          )}
-        </View>
         {isExample && <Text style={s.note}>↓は例。自分らの名前に入れ替えてな</Text>}
 
         {members.map((m, i) =>
@@ -269,7 +269,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       </View>
       <ModeGuide />
 
-      <Text style={s.h2}>地獄度</Text>
+      <StepHead num="②" title="地獄度" sub="お題の攻め具合" />
       <View style={s.row}>
         {LEVELS.map((l) => {
           const on = level === l;
@@ -292,9 +292,9 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
         })}
       </View>
 
-      <Text style={s.h2}>何で遊ぶ？</Text>
-      <ModeCard title="アホお題" desc="スマホを回して、出たお題をやるだけ" onPress={() => onStart('odai')} />
-      <ModeCard title="すごろく" desc="あるあるマスを進む。1番にゴールで終了" onPress={() => onStart('sugoroku')} />
+      <StepHead num="③" title="遊び方" />
+      <ModeCard icon="cards" title="アホお題" desc="出たお題を順番にやるだけ" onPress={() => onStart('odai')} />
+      <ModeCard icon="dice" title="すごろく" desc="サイコロで進む。1番にゴールで終了" onPress={() => onStart('sugoroku')} />
 
       {night && (
         <View style={{ gap: 10 }}>
@@ -324,9 +324,23 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
   );
 }
 
-function ModeCard({ title, desc, onPress }: { title: string; desc: string; onPress: () => void }) {
+/** 準備画面の番号つき見出し（① メンバー → ② 地獄度 → ③ 遊び方） */
+function StepHead({ num, title, sub }: { num: string; title: string; sub?: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+      <Text style={s.stepNum}>{num}</Text>
+      <Text style={s.stepTitle}>{title}</Text>
+      {!!sub && <Text style={s.stepSub}>{sub}</Text>}
+    </View>
+  );
+}
+
+function ModeCard({ icon, title, desc, onPress }: { icon: 'cards' | 'dice'; title: string; desc: string; onPress: () => void }) {
   return (
     <Tap onPress={onPress} style={({ pressed }) => [s.mode, { transform: [{ translateY: pressed ? 4 : 0 }] }]}>
+      <View style={s.modeIc}>
+        <Icon name={icon} color={C.ink} size={24} />
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={s.modeTitle}>{title}</Text>
         <Text style={s.modeDesc}>{desc}</Text>
@@ -391,14 +405,18 @@ const s = StyleSheet.create({
   wrap: { padding: 16, paddingBottom: 40, gap: 14, maxWidth: 560, width: '100%', alignSelf: 'center' },
   top: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   logo: { fontFamily: F.display, fontSize: 84, lineHeight: 92 },
-  catch: { color: C.muted, fontWeight: '900', fontSize: 13, letterSpacing: 4, marginTop: 4 },
+  catch: { color: C.muted, fontWeight: '900', fontSize: 13, letterSpacing: 1, marginTop: 4 },
   iconBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(247,243,234,0.08)', alignItems: 'center', justifyContent: 'center' },
   iconText: { color: C.paper, fontSize: 22, fontWeight: '900' },
   steps: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center' },
   stepBar: { width: 22, height: 4, borderRadius: 2, backgroundColor: 'rgba(247,243,234,0.16)' },
   stepOn: { backgroundColor: C.yuru },
   stepLabel: { color: C.muted, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
-  h2: { color: C.muted, fontSize: 12, fontWeight: '900', letterSpacing: 3 },
+  h2: { color: C.muted, fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
+  stepNum: { color: C.yuru, fontSize: 18, fontWeight: '900' },
+  stepTitle: { color: C.paper, fontSize: 18, fontWeight: '900' },
+  stepSub: { color: C.muted, fontSize: 12, fontWeight: '700' },
+  modeIc: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(20,18,16,0.08)', alignItems: 'center', justifyContent: 'center' },
   mem: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, paddingRight: 6, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 12 },
   dot: { alignItems: 'center', justifyContent: 'center' },
   dotText: { color: C.ink, fontWeight: '900' },
@@ -440,7 +458,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.paper, borderRadius: 16, padding: 18,
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4,
   },
-  modeTitle: { fontFamily: F.display, fontSize: 28, color: C.ink },
+  modeTitle: { fontSize: 22, fontWeight: '900', color: C.ink },
   modeDesc: { fontSize: 12, color: '#5d564c', lineHeight: 18 },
   go: { backgroundColor: C.ink, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 14 },
   goText: { fontFamily: F.display, fontSize: 15, color: C.paper },
@@ -542,10 +560,10 @@ function MembersGuide() {
   if (seen.members) return null;
   return (
     <View style={s.guide}>
-      <Text style={s.guideHead}>はじめに：遊ぶメンバーを入れよう</Text>
-      <Text style={s.guideText}>1. 名前を入れて「＋」。続けて何人でも入れられる</Text>
-      <Text style={s.guideText}>2. 名前をタップするとイジりネタ（例：すぐ寝る）を足せる。お題に勝手に混ざる</Text>
-      <Text style={s.guideText}>3. 2人以上入れたら、下のボタンで次へ</Text>
+      <Text style={s.guideHead}>遊ぶメンバーを入れよう</Text>
+      <Text style={s.guideText}>1. 名前を入れて「＋」（何人でも）</Text>
+      <Text style={s.guideText}>2. 名前をタップでイジりネタを追加。お題に混ざる</Text>
+      <Text style={s.guideText}>3. 2人以上で次へ</Text>
       <Tap onPress={() => markSeen('members')} style={s.guideBtn}>
         <Text style={s.guideBtnText}>わかった</Text>
       </Tap>
@@ -559,10 +577,10 @@ function ModeGuide() {
   if (seen.mode) return null;
   return (
     <View style={s.guide}>
-      <Text style={s.guideHead}>つぎに：地獄度と遊び方を選ぼう</Text>
-      <Text style={s.guideText}>1. 地獄度はお題の攻め具合。迷ったら「普通」。画面の色も変わる</Text>
-      <Text style={s.guideText}>2. アホお題：出たお題を順番にやるだけ。やめたい時は右上の「⋯」→結果発表</Text>
-      <Text style={s.guideText}>3. すごろく：サイコロで進んで、止まったマスのお題をやる。1番にゴールしたら終了</Text>
+      <Text style={s.guideHead}>地獄度と遊び方を選ぼう</Text>
+      <Text style={s.guideText}>1. 迷ったら地獄度は「普通」</Text>
+      <Text style={s.guideText}>2. アホお題：好きなとこで「⋯」→結果発表</Text>
+      <Text style={s.guideText}>3. すごろく：1番にゴールしたら終了</Text>
       <Tap onPress={() => markSeen('mode')} style={s.guideBtn}>
         <Text style={s.guideBtnText}>わかった</Text>
       </Tap>

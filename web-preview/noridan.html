@@ -621,6 +621,60 @@ body.stage.neon .coach { background: #1a1228; border: 1px solid var(--nc); }
 .home-coach b { color: var(--yuru); }
 .home-coach ol { margin: 0; padding-left: 1.3em; }
 .home-coach button { align-self: flex-end; padding: 8px 14px; border-radius: 999px; background: var(--yuru); color: var(--ink); font-size: 12px; font-weight: 900; }
+
+/* =====================================================================
+   v2：見やすさの土台
+   - 背景はどの地獄度も暗い色にそろえて、地獄度の色は札の縁と上の帯だけ
+   - 太い字体はお題と名前だけ。ほかは普通の太字・字間なし
+   - ボタンは「塗り（大事）」「枠（次に大事）」「文字リンク（たまに）」の3種類
+   ===================================================================== */
+body.stage[data-level] { --bg: #141210; --fg: var(--paper); --muted: rgba(247,243,234,.66); --chip: rgba(247,243,234,.08); --line: rgba(247,243,234,.2); }
+body.stage[data-level="yurume"] { --acc: var(--yuru); --card-edge: var(--yuru); }
+body.stage[data-level="futsu"]  { --acc: var(--futsu); --card-edge: var(--futsu); }
+body.stage[data-level="jigoku"] { --acc: var(--blood); --card-edge: var(--blood); --fg: var(--paper); --muted: rgba(247,243,234,.66); }
+.frame { box-shadow: inset 0 0 0 3px var(--pc); }
+.odai { box-shadow: 0 0 0 3px var(--card-edge); }
+/* 札の上の1行：誰の番か＋種類 */
+.odai .head { opacity: 1; letter-spacing: .02em; font-size: 12px; align-items: center; }
+.odai .head .meta { display: flex; align-items: center; gap: 6px; min-width: 0; opacity: .7; }
+.odai .head .kind { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.odai .head .tag { margin: 0; }
+.who { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+.who i { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--mc); box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 30%, transparent); }
+.who b { font-family: var(--display); font-weight: 400; font-size: 22px; line-height: 1.1; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who small { font-size: 13px; font-weight: 900; white-space: nowrap; }
+/* 文字：字間を詰めて、小さすぎ・薄すぎをなくす */
+.h2, .res-h2, .menu-meta { letter-spacing: .04em; font-size: 13px; }
+.catch { letter-spacing: .08em; }
+.step-dots { letter-spacing: .04em; font-size: 12px; }
+.pen-q span, .hint, .swipe-hint { letter-spacing: .02em; font-size: 12px; }
+.rule b { letter-spacing: .02em; }
+.big { font-family: var(--body); font-weight: 900; font-size: 19px; }
+.vd b { font-family: var(--body); font-weight: 900; font-size: 20px; }
+.choice.hot { font-family: var(--body); font-weight: 900; font-size: 17px; }
+.dice-txt b { font-family: var(--body); font-weight: 900; font-size: 18px; }
+.dice-txt .who b { font-family: var(--display); font-weight: 400; font-size: 20px; }
+.mode b { font-family: var(--body); font-weight: 900; font-size: 22px; }
+.mode .go { font-family: var(--body); font-weight: 900; font-style: normal; }
+.mode-ic { grid-row: 1 / span 2; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(20,18,16,.08); }
+.mode-ic svg { width: 24px; height: 24px; }
+.mode { grid-template-columns: auto minmax(0,1fr) auto; }
+.mode b, .mode span { grid-column: 2; }
+.mode .go { grid-column: 3; }
+/* ボタン：枠だけ（2番目に大事） */
+.sub-acts button, .sub-acts .revenge { background: transparent; border: 1.5px solid rgba(247,243,234,.35); border-radius: 12px; font-size: 14px; }
+.sub-acts .revenge { border-color: var(--acc, var(--fg)); }
+.choice { background: transparent; border: 1.5px solid rgba(247,243,234,.35); }
+.choice.hot { background: var(--fg); color: var(--bg); border-color: transparent; }
+.ghost { border-width: 1.5px; }
+.rule-out { background: transparent; color: #ff7a7a; border: 1.5px solid #ff7a7a; }
+.coach { background: #26221e; border: 1px solid rgba(255,210,63,.35); }
+.coach::before { background: #26221e; border-left: 1px solid rgba(255,210,63,.35); border-top: 1px solid rgba(255,210,63,.35); }
+/* 準備画面の番号つき見出し */
+.step-h { margin: 0; display: flex; align-items: baseline; gap: 8px; font-size: 18px; font-weight: 900; color: var(--paper); }
+.step-h .num { color: var(--yuru); }
+.step-h small { font-size: 12px; font-weight: 700; color: var(--muted); }
+.home-coach { font-size: 14px; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
@@ -1139,6 +1193,8 @@ const play = (k) => { if (S.sound) try { SFX[k](); } catch {} };
 
 // ---------- icons ----------
 const ICON = {
+  cards: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="13" height="17" rx="2.5"/><path d="M3.5 7.5v11A2.5 2.5 0 0 0 6 21h9"/><path d="M10 9h5M10 13h5"/></svg>`,
+  dice: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>`,
   book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/><path d="M9 7h6M9 11h6"/></svg>`,
   gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,
   flip: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M7 4 3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4"/></svg>`,
@@ -1211,20 +1267,20 @@ function vHome1() {
   <div class="home-top">${logoBlock()}<button class="icon-btn" data-act="sheet" aria-label="設定">${ICON.gear}</button></div>
   <div class="step-dots"><i class="on"></i><i></i><span>メンバー</span></div>
   ${S.seen.members ? "" : `<div class="home-coach" role="note">
-    <b>はじめに：遊ぶメンバーを入れよう</b>
+    <b>遊ぶメンバーを入れよう</b>
     <ol>
-      <li>名前を入れて「＋」。続けて何人でも入れられる</li>
-      <li>名前をタップすると<b>イジりネタ</b>（例：すぐ寝る）を足せる。お題に勝手に混ざる</li>
-      <li>2人以上入れたら、下のボタンで次へ</li>
+      <li>名前を入れて「＋」（何人でも）</li>
+      <li>名前をタップで<b>イジりネタ</b>を追加。お題に混ざる</li>
+      <li>2人以上で次へ</li>
     </ol>
     <button data-act="coachOk" data-k="members">わかった</button>
   </div>`}
+  <div class="mem-head"><p class="step-h"><span class="num">①</span>メンバー<small>${ms.length}人</small></p>${S.isExample ? `<button class="text-btn" data-act="clearAll">例を全部消す</button>` : ""}</div>
   <form class="add1" id="addForm">
     <input id="inName" maxlength="10" placeholder="名前を入れて＋（続けて入れられる）" autocomplete="off" enterkeyhint="done">
     <button class="add-btn" type="submit" aria-label="追加">${ICON.plus}</button>
   </form>
   <section class="members" aria-label="メンバー">
-    <div class="mem-head"><p class="h2">今日のメンバー ${ms.length}人</p>${S.isExample ? `<button class="text-btn" data-act="clearAll">例を全部消す</button>` : ""}</div>
     ${S.isExample ? `<p class="note">↓は例。自分らの名前に入れ替えてな</p>` : ""}
     ${ms.map((m, i) => S.editing === i ? `
       <form class="mem editing" id="netaForm" data-i="${i}">
@@ -1257,25 +1313,25 @@ function vHome2() {
   </div>
   <div class="mchips">${S.members.map((m, i) => `<span class="mchip">${dot(i)}${esc(m.name)}</span>`).join("")}</div>
   ${S.seen.mode ? "" : `<div class="home-coach" role="note">
-    <b>つぎに：地獄度と遊び方を選ぼう</b>
+    <b>地獄度と遊び方を選ぼう</b>
     <ol>
-      <li><b>地獄度</b>はお題の攻め具合。迷ったら「普通」。画面の色も変わる</li>
-      <li><b>アホお題</b>：出たお題を順番にやるだけ。やめたい時は右上の「⋯」→結果発表</li>
-      <li><b>すごろく</b>：サイコロで進んで、止まったマスのお題をやる。1番にゴールしたら終了</li>
+      <li>迷ったら地獄度は「普通」</li>
+      <li><b>アホお題</b>：好きなとこで「⋯」→結果発表</li>
+      <li><b>すごろく</b>：1番にゴールしたら終了</li>
     </ol>
     <button data-act="coachOk" data-k="mode">わかった</button>
   </div>`}
   <section style="display:flex;flex-direction:column;gap:10px">
-    <p class="h2">地獄度</p>
+    <p class="step-h"><span class="num">②</span>地獄度<small>お題の攻め具合</small></p>
     <div class="levels">
       ${Object.entries(LV).map(([k, v]) => `<button class="lv" data-act="lv" data-v="${k}" aria-pressed="${S.level === k}">${v}<small>${LV_SUB[k]}</small></button>`).join("")}
     </div>
   </section>
   <section style="display:flex;flex-direction:column;gap:10px">
-    <p class="h2">何で遊ぶ？</p>
+    <p class="step-h"><span class="num">③</span>遊び方</p>
     <div class="modes">
-      <button class="mode" data-act="start" data-m="odai"><b>アホお題</b><span>スマホを回して、出たお題をやるだけ</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="sugoroku"><b>すごろく</b><span>あるあるマスを進む。1番にゴールで終了</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="odai"><i class="mode-ic">${ICON.cards}</i><b>アホお題</b><span>出たお題を順番にやるだけ</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="sugoroku"><i class="mode-ic">${ICON.dice}</i><b>すごろく</b><span>サイコロで進む。1番にゴールで終了</span><em class="go">開始</em></button>
     </div>
   </section>
   ${S.night ? `<section class="night-switch">
@@ -1516,7 +1572,7 @@ function vCard() {
   // 向かい合わせ：同じお題を上下逆さにもう1枚（仕掛け人だけが見る爆弾の中身は出さない）
   const dual = S.dual && g.phase !== "bombPeek" && g.phase !== "bombSet";
   return `<div class="odai ${cardClass(c)} ${anim}" id="card">
-    <div class="head"><span>${cardTag(c) && g.phase === "play" ? `<i class="tag">${cardTag(c)}</i>` : ""}${plainKind(c) ? "" : esc(c.kind)}</span>${badge}</div>
+    <div class="head">${vWho()}<span class="meta">${plainKind(c) ? "" : `<span class="kind">${esc(c.kind)}</span>`}${cardTag(c) && g.phase === "play" ? `<i class="tag">${cardTag(c)}</i>` : ""}${badge}</span></div>
     ${c.solo && !needsPick(c.tpl) && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
     ${art}
     ${dual ? `<p class="txt mirror" aria-hidden="true" style="font-size:${fitSize(c.html, g.mode === "sugoroku", 0.74)}"><span>${c.html}</span></p><hr class="dual-line">` : ""}
@@ -1538,10 +1594,11 @@ function vRule() {
   const same = g.card?.ruleCard && g.phase === "play";
   return bomb + (r && !same ? `<div class="rule"><b>発動中 残り${r.left}ターン</b><span>${r.html}</span><button class="rule-out" data-act="ruleOpen">違反者に罰</button></div>` : "");
 }
-function vTurn() {
+// 誰の番か（札の上に1行でまとめる）
+function vWho() {
   const g = S.game;
-  const label = g.card?.bomb ? "仕掛け人" : g.card?.passed ? "代わりに回ってきた" : g.doer !== g.cur ? "リベンジで押し付けられた" : "いまの番";
-  return `<div class="turn"><span class="who"></span><div style="min-width:0"><small>${label}</small><em>${esc(S.members[g.doer].name)}</em></div></div>`;
+  const label = g.card?.bomb ? "が仕掛け人" : g.card?.passed ? "に回ってきた" : g.doer !== g.cur ? "に押し付けられた" : "の番";
+  return `<span class="who" style="--mc:${colorOf(g.doer)}"><i></i><b>${esc(S.members[g.doer].name)}</b><small>${label}</small></span>`;
 }
 // 上のバー：左に罰スコアの顔アイコン列、右に「⋯」メニューだけ
 function vBar() {
@@ -1586,15 +1643,15 @@ function cardTag(c) {
 }
 // 初めて出てきた仕組みだけ、札の下にひとこと説明（1回見たら二度と出えへん）
 const COACH = {
-  double: "倍プッシュ：お題を見る前に賭ける。成功したら誰かに罰を押し付け、失敗したら罰2倍",
-  bomb: "時限爆弾：仕掛け人だけがNG行動を知る。数ターン後に爆発して、それまでにやってた奴は全員罰",
-  rule: "緊急ルール：上の「発動中」の間ずっと続く。破った人を見つけたら「違反者に罰」",
-  event: "緊急指令：急に割り込んでくるお題。全員参加やから、アウトの人を下から選ぶ",
-  contest: "勝負のお題：負けた人を下から選んでから次へ",
-  swipe: "やり切ったら「セーフ」、逃げたら「アウト」。札を右・左にスワイプでもOK",
-  notme: "当てはまらん：恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる",
-  pass: "夜お題は「無理！罰なしでパス」でパスできる",
-  revenge: "リベンジ権 ↺：罰を食らった人のご褒美。今のお題を1回だけ誰かに押し付けられる",
+  double: "倍プッシュ：成功で誰かに罰、失敗で罰2倍",
+  bomb: "時限爆弾：仕掛け人だけNG行動を知ってる。爆発したら、やった人全員が罰",
+  rule: "ルールは数ターン続く。破った人は「違反者に罰」",
+  event: "緊急指令：アウトの人を下から選ぶ",
+  contest: "負けた人を下から選んでから次へ",
+  swipe: "やったらセーフ、逃げたらアウト。スワイプでもOK",
+  notme: "当てはまらん時は、罰なしで誰かに回せる",
+  pass: "夜お題は「無理！」で罰なしパスできる",
+  revenge: "リベンジ権 ↺：このお題を1回だけ誰かに押し付けられる",
 };
 function coachKey() {
   const g = S.game, c = g.card || {};
@@ -1680,7 +1737,6 @@ function vOdai() {
   const g = S.game;
   return `<div id="stage" class="${S.flip ? "flipped" : ""}">
     ${vBar()}
-    ${vTurn()}
     ${vRule()}
     <div class="deck">${vCard()}</div>
     ${vCoach()}
@@ -1759,13 +1815,12 @@ function vSugo() {
   const label = g.rolling ? "コロコロ…" : g.hopping ? `${g.die}マス進む！` : g.skip[g.cur] ? "1回休み（タップで確認）" : "タップで振る";
   return `<div id="stage" class="sugo2 ${S.flip ? "flipped" : ""}">
     ${vBar()}
-    ${vTurn()}
     ${vRule()}
     ${vBoard()}
     ${vRanks()}
     <div class="dice-dock">
       <button class="die3d ${g.rolling ? "roll" : ""}" id="die" data-act="roll" data-shake ${busy || g.rolled ? "disabled" : ""} aria-label="サイコロを振る">${dieFace(g.die)}</button>
-      <div class="dice-txt"><b>${label}</b>${!busy && !g.rolled ? shakeHint().replace('class="hint"', 'class="hint" style="margin:0;text-align:left"') : ""}</div>
+      <div class="dice-txt"><span class="who" style="--mc:${colorOf(g.cur)}"><i></i><b>${esc(S.members[g.cur].name)}</b><small>の番</small></span><b>${label}</b>${!busy && !g.rolled ? shakeHint().replace('class="hint"', 'class="hint" style="margin:0;text-align:left"') : ""}</div>
     </div>
   </div>
   ${sheet ? `<div class="sg-sheet-back"></div><div class="sg-sheet ${S.flip ? "flipped" : ""}">

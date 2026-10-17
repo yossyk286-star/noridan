@@ -17,12 +17,12 @@ export const C = {
 export const LEVEL_LABEL: Record<Level, string> = { yurume: 'ゆるめ', futsu: '普通', jigoku: '地獄' };
 export const LEVEL_SUB: Record<Level, string> = { yurume: '初手はこれ', futsu: 'いつもの', jigoku: '覚悟しろ' };
 
-/** 地獄度ごとの画面の色。背景色そのものが地獄度を表す */
-export type Pal = { bg: string; fg: string; muted: string; chip: string; cardBg: string; cardFg: string; cardEdge: string; /** ネオン看板の時の管の色 */ neon?: string };
+/** 地獄度ごとの画面の色。背景はどれも暗い色にそろえて、地獄度の色は札の縁だけに使う（見やすさ優先） */
+export type Pal = { bg: string; fg: string; muted: string; chip: string; cardBg: string; cardFg: string; cardEdge: string; /** ネオン看板の時の管の色 */ neon?: string; /** 地獄（赤黒の配色） */ jigoku?: boolean };
 export const STAGE: Record<Level, Pal> = {
-  yurume: { bg: C.yuru, fg: C.ink, muted: 'rgba(20,18,16,0.6)', chip: 'rgba(20,18,16,0.12)', cardBg: C.cream, cardFg: C.ink, cardEdge: 'transparent' },
-  futsu: { bg: C.futsu, fg: C.ink, muted: 'rgba(20,18,16,0.62)', chip: 'rgba(20,18,16,0.12)', cardBg: C.cream, cardFg: C.ink, cardEdge: 'transparent' },
-  jigoku: { bg: C.jigoku, fg: C.blood, muted: 'rgba(255,42,42,0.65)', chip: 'rgba(255,42,42,0.14)', cardBg: '#170b0b', cardFg: C.blood, cardEdge: 'rgba(255,42,42,0.55)' },
+  yurume: { bg: C.ink, fg: C.paper, muted: 'rgba(247,243,234,0.66)', chip: 'rgba(247,243,234,0.08)', cardBg: C.cream, cardFg: C.ink, cardEdge: C.yuru },
+  futsu: { bg: C.ink, fg: C.paper, muted: 'rgba(247,243,234,0.66)', chip: 'rgba(247,243,234,0.08)', cardBg: C.cream, cardFg: C.ink, cardEdge: C.futsu },
+  jigoku: { bg: C.ink, fg: C.paper, muted: 'rgba(247,243,234,0.66)', chip: 'rgba(247,243,234,0.08)', cardBg: '#170b0b', cardFg: C.blood, cardEdge: C.blood, jigoku: true },
 };
 
 /** 夜モード：夜お題・深夜お題が出たら店の照明が落ちてネオン看板になる */
