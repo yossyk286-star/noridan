@@ -16,7 +16,7 @@ type Pal = (typeof STAGE)[Level];
 /** お題の文章。名前はその人の色でマーカーを引く */
 export function SegText({ segments, style, underline, fit }: { segments: Segment[]; style?: object; underline?: boolean; /** 札からはみ出す時は自動で縮める */ fit?: boolean }) {
   return (
-    <Text style={style} {...(fit ? { adjustsFontSizeToFit: true, numberOfLines: 9, minimumFontScale: 0.45 } : null)}>
+    <Text style={style} lineBreakStrategyIOS="standard" {...(fit ? { adjustsFontSizeToFit: true, numberOfLines: 9, minimumFontScale: 0.45 } : null)}>
       {segments.map((s, i) => {
         if (!s.hl) return <Text key={i}>{s.text}</Text>;
         const col = s.who !== undefined ? colorOf(s.who) : '#ffd23f';
@@ -239,19 +239,19 @@ export function OdaiCard({
       <Animated.View style={{ flex: 1, gap: 12, opacity: flick }}>
       <View style={styles.cardHead}>
         {who && <Who {...who} fg={neon ? '#fff' : look.fg} />}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1, opacity: 0.85 }}>
-          {!!cardTag(card) && art === undefined && (
-            <Text style={[styles.tag, { color: neon ? look.edge : look.fg, borderColor: neon ? look.edge : look.fg }]}>{cardTag(card)}</Text>
-          )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1, marginLeft: 'auto', opacity: 0.85 }}>
           {!plainKind(card) && (
-            <Text style={[styles.kind, { color: neon ? look.edge : look.fg, opacity: neon ? 1 : undefined, flexShrink: 1 }, textGlow]} numberOfLines={1}>{card.kind}</Text>
+            <Text style={[styles.kind, { color: neon ? look.edge : look.fg, opacity: neon ? 1 : undefined, flexShrink: 1 }, textGlow]} numberOfLines={1}>{card.kind.match(/（(.*)）$/)?.[1] ?? card.kind}</Text>
           )}
+          {!!cardTag(card) && art === undefined && (
+            <Text style={[styles.tag, { color: neon ? look.edge : look.fg, borderColor: neon ? look.edge : look.fg }]} numberOfLines={1}>{cardTag(card)}</Text>
+          )}
+          {doubled ? (
+            <View style={[styles.badge, { backgroundColor: look.fg, flexShrink: 0 }]}>
+              <Text style={[styles.badgeText, { color: look.bg }]} numberOfLines={1}>倍プッシュ中</Text>
+            </View>
+          ) : null}
         </View>
-        {doubled ? (
-          <View style={[styles.badge, { backgroundColor: look.fg }]}>
-            <Text style={[styles.badgeText, { color: look.bg }]}>倍プッシュ中</Text>
-          </View>
-        ) : null}
       </View>
       {/* コイン・爆弾の絵はお題の文と一緒に札の真ん中へ */}
       {art && <View style={{ flex: 1 }} />}
@@ -479,7 +479,7 @@ export function Controls({
     case 'offer':
       return (
         <View style={styles.choices}>
-          <Choice pal={pal} hot title="倍プッシュ" sub="成功で誰かに罰／失敗で罰2倍" onPress={() => flow.chooseDouble(true)} />
+          <Choice pal={pal} hot title="倍プッシュ" sub="成功→押し付け／失敗→罰2倍" onPress={() => flow.chooseDouble(true)} />
           <Choice pal={pal} title="普通に見る" sub="いつも通り" onPress={() => flow.chooseDouble(false)} />
         </View>
       );
@@ -813,17 +813,17 @@ const styles = StyleSheet.create({
   ruleHead: { fontSize: 12, fontWeight: '900', letterSpacing: 0.3 },
   ruleText: { fontSize: 13, fontWeight: '700' },
   card: { flex: 1, minHeight: 0, overflow: 'hidden', borderRadius: 22, borderWidth: 3, padding: 20, gap: 12 },
-  cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  cardHead: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', columnGap: 8, rowGap: 6 },
   kind: { fontSize: 12, fontWeight: '900', letterSpacing: 0.3, opacity: 0.7 },
   no: { fontSize: 11, fontWeight: '900', letterSpacing: 1, opacity: 0.6, fontVariant: ['tabular-nums'] },
   badge: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
   badgeText: { fontSize: 11, fontWeight: '900' },
   cardBody: { flex: 1, justifyContent: 'center' },
-  who: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 1 },
+  who: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0, maxWidth: '100%' },
   whoDot: { width: 12, height: 12, borderRadius: 6 },
   whoName: { fontFamily: F.display, fontSize: 22, lineHeight: 28, flexShrink: 1 },
   whoLabel: { fontSize: 13, fontWeight: '900' },
-  tag: { fontSize: 10, fontWeight: '900', letterSpacing: 1, borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden', opacity: 0.8 },
+  tag: { flexShrink: 0, fontSize: 10, fontWeight: '900', letterSpacing: 1, borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden', opacity: 0.8 },
   coach: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, backgroundColor: '#26221e', borderWidth: 1, borderColor: 'rgba(255,210,63,0.35)' },
   coachArrow: { position: 'absolute', top: -7, left: 28, width: 12, height: 12, backgroundColor: '#26221e', borderLeftWidth: 1, borderTopWidth: 1, borderColor: 'rgba(255,210,63,0.35)', transform: [{ rotate: '45deg' }] },
   coachText: { flex: 1, color: '#f7f3ea', fontSize: 13, fontWeight: '700', lineHeight: 20 },

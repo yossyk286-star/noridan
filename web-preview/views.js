@@ -346,7 +346,7 @@ function vControls() {
   switch (g.phase) {
     case "offer":
       return `<div class="choices">
-        <button class="choice hot" data-act="double" data-v="1">倍プッシュ<small>成功で誰かに罰／失敗で罰2倍</small></button>
+        <button class="choice hot" data-act="double" data-v="1">倍プッシュ<small>成功→押し付け／失敗→罰2倍</small></button>
         <button class="choice" data-act="double" data-v="0">普通に見る<small>いつも通り</small></button>
       </div>`;
     case "revenge":
@@ -423,7 +423,7 @@ function vCard() {
   // 向かい合わせ：同じお題を上下逆さにもう1枚（仕掛け人だけが見る爆弾の中身は出さない）
   const dual = S.dual && g.phase !== "bombPeek" && g.phase !== "bombSet";
   return `<div class="odai ${cardClass(c)} ${anim}" id="card">
-    <div class="head">${vWho()}<span class="meta">${plainKind(c) ? "" : `<span class="kind">${esc(c.kind)}</span>`}${cardTag(c) && g.phase === "play" ? `<i class="tag">${cardTag(c)}</i>` : ""}${badge}</span></div>
+    <div class="head">${vWho()}<span class="meta">${plainKind(c) ? "" : `<span class="kind">${esc(shortKind(c.kind))}</span>`}${cardTag(c) && g.phase === "play" ? `<i class="tag">${cardTag(c)}</i>` : ""}${badge}</span></div>
     ${c.solo && !needsPick(c.tpl) && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
     ${art}
     ${dual ? `<p class="txt mirror" aria-hidden="true" style="font-size:${fitSize(c.html, g.mode === "sugoroku", 0.74)}"><span>${c.html}</span></p><hr class="dual-line">` : ""}
@@ -479,6 +479,11 @@ function vMenu() {
   </div>`;
 }
 // ---------- 分かりやすさ ----------
+// 押し付け・当てはまらんの時は（）の中だけ出す（「〜の番」と同じ情報が並ばんように）
+function shortKind(k) {
+  const m = k.match(/（(.*)）$/);
+  return m ? m[1] : k;
+}
 // 普通のお題は種類名を出さへん（地獄度は画面の色で分かる）。夜・緊急・押し付けなどの時だけ出す
 function plainKind(c) {
   return !!c.kind && !c.kind.includes("（") && /^(\d+マス目・)?(アホお題|イジりお題|全員参加)/.test(c.kind);
@@ -798,6 +803,7 @@ async function shareResult() {
 }
 
 // ---------- render ----------
+document.documentElement.lang = "ja"; // 日本語の改行ルール（小さい「ッ」などを行頭に置かへん）を効かせる
 const app = document.getElementById("app");
 const overlay = document.getElementById("overlay");
 let lastSoundKey = "";

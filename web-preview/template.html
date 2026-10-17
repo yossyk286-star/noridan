@@ -681,6 +681,16 @@ body.stage[data-level="jigoku"] { --acc: var(--blood); --card-edge: var(--blood)
 .odai .coin-wrap + .txt, .odai .bomb-art + .txt { flex: 0 1 auto; margin-top: auto; margin-bottom: auto; }
 .night-lv.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
 .night-lv button[data-v="off"] { border-color: rgba(247,243,234,.35); }
+/* 札の上の行：名前は切らさず、種類・タグ・バッジは入りきらん時だけ2行目へ */
+.odai .head { flex-wrap: wrap; row-gap: 6px; }
+.odai .head .who { flex: 1 0 auto; white-space: nowrap; max-width: 100%; overflow: hidden; }
+.odai .head .who b { min-width: 0; flex-shrink: 1; }
+.odai .head .who small { flex: none; }
+/* 日本語の改行ルール：小さい「ュ」「ッ」や「。」が行の頭に来んようにする */
+.odai .txt, .gacha-txt p, .rule-pen, .mini-card b, .coach span, .rule span { line-break: strict; }
+.odai .head .meta { margin-left: auto; flex: 0 1 auto; max-width: 100%; }
+.tag, .badge { white-space: nowrap; flex: none; }
+.pen-tile .nm { font-size: 15px; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
