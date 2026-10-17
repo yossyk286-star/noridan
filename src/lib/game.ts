@@ -179,6 +179,7 @@ export function penHead(tpl?: string): string {
   if (/黙秘/.test(s)) return "黙秘した人は？";
   if (/一番指された人/.test(s)) return "一番指された人は？";
   if (/一番似てない/.test(s)) return "一番似てなかった人は？";
+  if (/詰まったら/.test(s)) return "詰まった人は？";
   const ok = (w: string) => w && !w.includes("{") && !/^(と|なら|どっち|も|なっ)/.test(w);
   let m = s.match(/([^。、！？「」\s]+?)(?:が|は)罰/);
   if (m) {
