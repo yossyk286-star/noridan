@@ -3,13 +3,12 @@ import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
-import { BombBanner, Coach, Who, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, ShakeHint, shakeAction } from '../components/Stage';
+import { BombBanner, Coach, Who, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
 import { Board, COLS, Die, ROWS, Ranks, type Callout } from '../components/Board';
 import { Flash } from '../components/Fx';
 import { BOARD, Decks, GOAL, fill, makeCard, nameSeg, othersOf, pick, usable } from '../lib/game';
 import { useTurnFlow } from '../lib/useTurnFlow';
-import { useShake } from '../lib/useShake';
 import { useStageCues } from '../lib/useStageCues';
 import { play } from '../lib/sound';
 import { LEVEL_LABEL, STAGE, colorOf, C, NEON_BG, neonPal } from '../theme';
@@ -18,7 +17,6 @@ import type { Night, Card, Level, Member, Rule, GachaItem } from '../types';
 type Props = {
   members: Member[];
   level: Level;
-  shake: boolean;
   night: Night;
   onQuit: () => void;
   onSettings: () => void;
@@ -28,7 +26,7 @@ type Props = {
 };
 
 
-export default function SugorokuScreen({ members, level, shake, night, onQuit, onSettings, onBg, onFinish }: Props) {
+export default function SugorokuScreen({ members, level, night, onQuit, onSettings, onBg, onFinish }: Props) {
   useKeepAwake(); // ゲーム中は画面を消さない
   const basePal = STAGE[level];
   const decks = useRef(new Decks()).current;
@@ -209,7 +207,6 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
     }, 75);
   };
 
-  const shakeOn = useShake(shake, () => (rolled ? shakeAction(flow)?.() : roll()));
   const flash = useStageCues(flow, !rolled && !hopping);
 
   // お題札が下からせり上がる
@@ -255,7 +252,6 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
           <View style={{ flex: 1, gap: 4 }}>
             <Who name={members[cur].name} color={colorOf(cur)} label="の番" fg={pal.fg} />
             <Text style={[s.dockText, { color: pal.fg }]}>{label}</Text>
-            {shakeOn && !rolled && !hopping && st.cards < 3 && <ShakeHint pal={pal} />}
           </View>
         </View>
       </View>
@@ -287,7 +283,6 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
                 members={members}
                 flow={flow}
                 nextLabel={done ? '結果発表へ' : '次の人へ'}
-                shakeHint={shakeOn}
                 next={done ? null : (cur + 1) % n}
               />
             </ScrollView>

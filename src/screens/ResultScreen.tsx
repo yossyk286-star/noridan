@@ -24,11 +24,13 @@ type Props = {
   onAgain: () => void;
   /** NGワードの時：最後のみんなのワード */
   words?: string[];
+  /** 神経衰弱の点数 */
+  scores?: number[];
 };
 
-const MODE_LABEL: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', ngword: 'NGワード', vote: 'ぶっちゃけ投票' };
+const MODE_LABEL: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ngword: 'NGワード', vote: 'ぶっちゃけ投票' };
 
-export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onAgain, words }: Props) {
+export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onAgain, words, scores }: Props) {
   const rows = members.map((m, i) => ({ m, i, n: pen[i] ?? 0 })).sort((a, b) => b.n - a.n);
   const top = rows[0]?.n ?? 0;
   const who = top === 0 ? '該当者なし' : rows.filter((r) => r.n === top).map((r) => r.m.name).join('・');
@@ -62,7 +64,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       <Text style={s.brand}>ノリダン</Text>
       <Text style={s.head}>本日の戦犯</Text>
       <Text style={s.sub}>
-        {mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' ? '問' : 'ターン'}`}
+        {mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' ? '問' : mode === 'memory' ? 'ペア' : 'ターン'}`}
       </Text>
 
       <View style={s.mvp}>
@@ -87,6 +89,17 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       )}
 
       <View>
+        {mode === 'memory' && !!scores?.length && (
+          <View style={{ gap: 8 }}>
+            <Text style={s.h2}>神経衰弱の点数</Text>
+            {members.map((m, j) => ({ m, j })).sort((a, b) => scores[b.j] - scores[a.j]).map(({ m, j }) => (
+              <View key={j} style={[s.ngRow, { borderLeftColor: colorOf(j) }]}>
+                <Text style={s.ngName} numberOfLines={1}>{m.name}</Text>
+                <Text style={s.ngWord}>{scores[j]}点</Text>
+              </View>
+            ))}
+          </View>
+        )}
         {mode === 'ngword' && !!words?.length && (
           <View style={{ gap: 8 }}>
             <Text style={s.h2}>みんなのNGワード</Text>
@@ -136,7 +149,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
 }
 
 /** 結果画面のひとこと。夜モードに入ってない人には噂として隠しモードをにおわせる */
-const TIPS = ['罰ガチャの天使はだいたい7回に1回', 'リベンジ権は罰を食らった人だけのご褒美', '倍プッシュは勝てば誰かに罰、負けたら罰2倍', 'スマホを振っても次のお題に進める', '設定の「向かい合わせ表示」で机の真ん中に置ける'];
+const TIPS = ['罰ガチャの天使はだいたい7回に1回', 'リベンジ権は罰を食らった人だけのご褒美', '倍プッシュは勝てば誰かに罰、負けたら罰2倍', '設定の「向かい合わせ表示」で机の真ん中に置ける'];
 function resultTip(night: Night) {
   if (!night && Math.random() < 0.6) return '噂：ロゴを3回連打すると、何かが起きるらしい';
   if (night === 'yoru' && ALLOW_SHINYA && Math.random() < 0.6) return '噂：夜の、さらに奥があるらしい';

@@ -167,6 +167,26 @@ export class Decks {
     }
     return pick(words[this.level].filter((w) => !exclude.includes(w)));
   }
+  /** 神経衰弱のペア（頭文字が被らんように）。夜・深夜はお題も夜寄りに混ぜる（下ネタNGの人がおる時は混ぜへん） */
+  memoryPairs(level: Level, night: Night, members: Member[], count = 7): { tpl: string; ch: string; yoru: boolean; deep: boolean }[] {
+    const n = members.length;
+    const anyNg = members.some((m) => m.ng);
+    const pools: { list: string[]; yoru: boolean; deep: boolean }[] = [{ list: odai[level], yoru: false, deep: false }];
+    if (night && !anyNg) pools.push({ list: odai.yoru, yoru: true, deep: false });
+    if (night === 'shinya' && ALLOW_SHINYA && !anyNg) pools.push({ list: odai.shinya, yoru: true, deep: true }, { list: odai.shinya, yoru: true, deep: true });
+    const used = new Set<string>();
+    const out: { tpl: string; ch: string; yoru: boolean; deep: boolean }[] = [];
+    for (let k = 0; k < 400 && out.length < count; k++) {
+      const p = pick(pools);
+      const t = pick(p.list);
+      if (!/^\{P\}、[^{「（]/.test(t) || !usable(t, n)) continue;
+      const ch = t[4];
+      if (used.has(ch)) continue;
+      used.add(ch);
+      out.push({ tpl: t, ch, yoru: p.yoru, deep: p.deep });
+    }
+    return out;
+  }
   /** NGワード中に話題に困った時の振りネタ */
   ngTopic(): string {
     return this.str('ngt', ngwords.topics, 99)!;

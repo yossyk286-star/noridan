@@ -3,12 +3,11 @@ import { StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
-import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, shakeAction } from '../components/Stage';
+import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
 import { Flash } from '../components/Fx';
 import { CHANCE, Decks } from '../lib/game';
 import { useTurnFlow } from '../lib/useTurnFlow';
-import { useShake } from '../lib/useShake';
 import { useStageCues } from '../lib/useStageCues';
 import { LEVEL_LABEL, STAGE, colorOf, C, NEON_BG, neonPal } from '../theme';
 import type { Night, Level, Member, Rule, GachaItem } from '../types';
@@ -16,7 +15,6 @@ import type { Night, Level, Member, Rule, GachaItem } from '../types';
 type Props = {
   members: Member[];
   level: Level;
-  shake: boolean;
   night: Night;
   onQuit: () => void;
   onSettings: () => void;
@@ -25,7 +23,7 @@ type Props = {
   onFinish: (pen: number[], turns: number, stats: Stats) => void;
 };
 
-export default function OdaiScreen({ members, level, shake, night, onQuit, onSettings, onBg, onFinish }: Props) {
+export default function OdaiScreen({ members, level, night, onQuit, onSettings, onBg, onFinish }: Props) {
   useKeepAwake(); // ゲーム中は画面を消さない
   const basePal = STAGE[level];
   const decks = useRef(new Decks()).current;
@@ -65,7 +63,6 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
 
   useEffect(() => startTurn(0, 1), []);
 
-  const shakeOn = useShake(shake, () => shakeAction(flow)?.());
   const flash = useStageCues(flow);
 
   const { st } = flow;
@@ -106,7 +103,7 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
           )}
         </DeckStack>
         <Coach flow={flow} />
-        <Controls pal={pal} members={members} flow={flow} nextLabel="次へ" shakeHint={shakeOn} next={(cur + 1) % members.length} />
+        <Controls pal={pal} members={members} flow={flow} nextLabel="次へ" next={(cur + 1) % members.length} />
       </View>
       <Frame color={colorOf(st.doer)} />
       <Flash trigger={flash} />

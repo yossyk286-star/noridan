@@ -7,12 +7,10 @@ import type { Night } from '../types';
 
 type Props = {
   visible: boolean;
-  shake: boolean;
   sound: boolean;
   dual: boolean;
   voice: boolean;
   night: Night;
-  onShake: (on: boolean) => void;
   onSound: (on: boolean) => void;
   onDual: (on: boolean) => void;
   onVoice: (on: boolean) => void;
@@ -22,7 +20,7 @@ type Props = {
 };
 
 /** 歯車から開く設定。夜モードはONの時だけ出る（隠しコマンドなので存在は書かない） */
-export default function SettingsSheet({ visible, shake, sound, dual, voice, night, onShake, onSound, onDual, onVoice, onNight, onTutorial, onClose }: Props) {
+export default function SettingsSheet({ visible, sound, dual, voice, night, onSound, onDual, onVoice, onNight, onTutorial, onClose }: Props) {
   const { resetSeen } = useSeen();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -31,7 +29,6 @@ export default function SettingsSheet({ visible, shake, sound, dual, voice, nigh
           <ScrollView contentContainerStyle={{ gap: 12 }}>
             <View style={s.grip} />
             <Text style={s.title}>設定</Text>
-            <Toggle label="振って進む" sub="スマホを振ったら次のお題・サイコロへ" on={shake} onPress={() => onShake(!shake)} />
             <Toggle label="効果音" sub="めくる音・ガチャ・爆発" on={sound} onPress={() => onSound(!sound)} />
             <Toggle label="お題の読み上げ" sub="札が出たら声で読む（爆弾の中身は読まへん）" on={voice} onPress={() => onVoice(!voice)} />
             <Toggle label="向かい合わせ表示" sub="机の真ん中に置いて両側から読める" on={dual} onPress={() => onDual(!dual)} />

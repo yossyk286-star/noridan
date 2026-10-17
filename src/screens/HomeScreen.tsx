@@ -295,6 +295,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       <StepHead num="③" title="遊び方" />
       <ModeCard icon="cards" title="アホお題" desc="出たお題を順番にやるだけ" onPress={() => onStart('odai')} />
       <ModeCard icon="dice" title="すごろく" desc="サイコロで進む。1番にゴールで終了" onPress={() => onStart('sugoroku')} />
+      <ModeCard icon="grid" title="神経衰弱" desc="お題の頭文字だけのカードを揃える。点数が一番低い人が罰" onPress={() => onStart('memory')} />
       <ModeCard icon="mute" title="NGワード" desc="自分だけ知らんNGワードを、言わされたらアウト" onPress={() => onStart('ngword')} />
       <ModeCard icon="vote" title="ぶっちゃけ投票" desc={members.length < 3 ? '3人から遊べる' : '「一番○○なのは？」に匿名で投票して罰を決める'} disabled={members.length < 3} onPress={() => onStart('vote')} />
 
@@ -337,7 +338,7 @@ function StepHead({ num, title, sub }: { num: string; title: string; sub?: strin
   );
 }
 
-function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'mute' | 'vote'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
+function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'mute' | 'vote'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Tap onPress={onPress} disabled={disabled} style={({ pressed }) => [s.mode, { opacity: disabled ? 0.45 : 1, transform: [{ translateY: pressed ? 4 : 0 }] }]}>
       <View style={s.modeIc}>
@@ -583,7 +584,8 @@ function ModeGuide() {
       <Text style={s.guideText}>1. 迷ったら地獄度は「普通」</Text>
       <Text style={s.guideText}>2. アホお題：好きなとこで「⋯」→結果発表</Text>
       <Text style={s.guideText}>3. すごろく：1番にゴールしたら終了</Text>
-      <Text style={s.guideText}>4. NGワード・投票：スマホを回して遊ぶ</Text>
+      <Text style={s.guideText}>4. 神経衰弱：揃えたお題に答えて点を稼ぐ</Text>
+      <Text style={s.guideText}>5. NGワード・投票：スマホを回して遊ぶ</Text>
       <Tap onPress={() => markSeen('mode')} style={s.guideBtn}>
         <Text style={s.guideBtnText}>わかった</Text>
       </Tap>

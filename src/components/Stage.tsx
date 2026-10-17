@@ -458,14 +458,13 @@ function Choice({ pal, title, sub, hot, onPress }: { pal: Pal; title: string; su
 
 /** カードの下の操作部分。いまの段階（phase）で中身が変わる */
 export function Controls({
-  pal, members, flow, nextLabel, shakeHint, next,
-}: { pal: Pal; members: Member[]; flow: TurnFlow; nextLabel: string; shakeHint?: boolean; next?: number | null }) {
+  pal, members, flow, nextLabel, next,
+}: { pal: Pal; members: Member[]; flow: TurnFlow; nextLabel: string; next?: number | null }) {
   const { st } = flow;
   const others = othersOf(members, st.doer);
   const revTargets = others.filter((i) => !st.card.yoru || !members[i].ng);
   // 操作のヒントは最初の3枚だけ（慣れたら消えてスッキリ）
   const early = st.cards < 3;
-  const hint = shakeHint && early ? <ShakeHint pal={pal} /> : null;
   const verdict = canVerdict(flow);
 
   switch (st.phase) {
@@ -491,7 +490,6 @@ export function Controls({
       return (
         <View style={{ gap: 8 }}>
           <BigButton pal={pal} label={`${st.gacha.every((g) => g.lucky) ? 'ラッキー！' : '受け入れた'} → ${nextLabel}`} onPress={flow.accept} />
-          {hint}
         </View>
       );
     case 'bombSet':
@@ -544,7 +542,6 @@ export function Controls({
                 </Tap>
                 <Text style={[styles.swipeHintText, { color: pal.muted }]}>{early ? 'セーフ →' : ''}</Text>
               </View>
-              {hint}
             </>
           ) : (
             <>
@@ -556,7 +553,6 @@ export function Controls({
             disabled={!st.add.size && mustPick(st.card.tpl)}
             danger={st.add.size > 0}
           />
-          {hint}
             </>
           )}
         </View>
@@ -739,19 +735,6 @@ export function SwipeCard({ enabled, flipped, onSwipe, children }: { enabled: bo
       )}
     </Animated.View>
   );
-}
-
-export function ShakeHint({ pal }: { pal: Pal }) {
-  return <Text style={[styles.hint, { color: pal.muted }]}>スマホを振っても進む</Text>;
-}
-
-/** 振った時に押されるボタン（いまの段階で一番メインの操作） */
-export function shakeAction(flow: TurnFlow): (() => void) | null {
-  const { st } = flow;
-  if (st.phase === 'batsu') return flow.accept;
-  if (canVerdict(flow)) return flow.clear; // 振ったら「やった！」
-  if (st.phase === 'play' && !st.double) return !st.add.size && mustPick(st.card.tpl) ? null : flow.next;
-  return null; // 選択が要る場面（ダブルアップ・リベンジ・爆弾）は振っても進めない
 }
 
 export function BigButton({

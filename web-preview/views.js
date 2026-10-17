@@ -57,6 +57,7 @@ const ICON = {
   edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>`,
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v7h16v-7M12 3v12M7 8l5-5 5 5"/></svg>`,
   users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.5-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.5 3.5 5.4"/></svg>`,
+  grid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M15.5 16.5h3M17 15v3"/></svg>`,
   mute: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M9 8.5l6 4M15 8.5l-6 4"/></svg>`,
   vote: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h16v7H4z"/><path d="M8 13V5h8v8"/><path d="M10 9l1.5 1.5L14 8"/></svg>`,
   next: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>`,
@@ -169,6 +170,7 @@ function vHome2() {
       <li>迷ったら地獄度は「普通」</li>
       <li><b>アホお題</b>：好きなとこで「⋯」→結果発表</li>
       <li><b>すごろく</b>：1番にゴールしたら終了</li>
+      <li><b>神経衰弱</b>：揃えたお題に答えて点を稼ぐ</li>
       <li><b>NGワード・投票</b>：スマホを回して遊ぶ</li>
     </ol>
     <button data-act="coachOk" data-k="mode">わかった</button>
@@ -184,6 +186,7 @@ function vHome2() {
     <div class="modes">
       <button class="mode" data-act="start" data-m="odai"><i class="mode-ic">${ICON.cards}</i><b>アホお題</b><span>出たお題を順番にやるだけ</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="sugoroku"><i class="mode-ic">${ICON.dice}</i><b>すごろく</b><span>サイコロで進む。1番にゴールで終了</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="memory"><i class="mode-ic">${ICON.grid}</i><b>神経衰弱</b><span>お題の頭文字だけのカードを揃える。点数が一番低い人が罰</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>自分だけ知らんNGワードを、言わされたらアウト</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : "「一番○○なのは？」に匿名で投票して罰を決める"}</span><em class="go">開始</em></button>
     </div>
@@ -232,7 +235,6 @@ function vSheet() {
     <div class="sheet" role="dialog" aria-label="設定" data-stop>
       <div class="sheet-grip"></div>
       <h2>設定</h2>
-      <button class="toggle" data-act="shake" aria-pressed="${S.shake}"><span>振って進む<small>スマホを振ったら次のお題・サイコロへ</small></span><b>${S.shake ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="sound" aria-pressed="${S.sound}"><span>効果音<small>めくる音・ガチャ・爆発</small></span><b>${S.sound ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="voice" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="dual" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
@@ -272,7 +274,7 @@ const TUT = [
   {
     step: "3 / 3",
     title: "たまに起きること",
-    text: "この4つは突然やってくる。初めて出た時は画面にひとこと説明が出るから安心してな。スマホを<b>振っても</b>次に進める。",
+    text: "この4つは突然やってくる。初めて出た時は画面にひとこと説明が出るから安心してな。",
     art: () => `<div class="tut-icons">
       <div><b>倍プッシュ</b><span>お題を見る前に賭ける。勝てば誰かに罰</span></div>
       <div><b>時限爆弾</b><span>仕掛け人だけが知るNG行動。やったら爆発で罰</span></div>
@@ -360,7 +362,7 @@ function vControls() {
     case "push":
       return vChips("成功！罰を押し付ける相手をタップ", "pushTo", others(g.doer), false);
     case "batsu":
-      return `<button class="big" data-act="accept" data-shake>${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → ${nextLabel}</button>${shakeHint()}`;
+      return `<button class="big" data-act="accept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → ${nextLabel}</button>`;
     case "bombSet":
       return `<button class="big" data-act="bombPeek">${esc(S.members[g.doer].name)}が見る</button>`;
     case "bombPeek":
@@ -373,7 +375,7 @@ function vControls() {
         </div>`;
       }
       // 続くルールを出した指令は、今は誰も罰にならへん。上に出しといて、破った時に「違反者に罰」
-      if (g.card.ruleCard) return `<button class="big" data-act="next" data-shake>ルール開始 → ${nextLabel}</button>${shakeHint()}`;
+      if (g.card.ruleCard) return `<button class="big" data-act="next">ルール開始 → ${nextLabel}</button>`;
       const subs = [
         g.card.solo && !g.card.passed && isSituational(g.card.tpl) ? `<button data-act="notme">当てはまらん → 誰かに回す</button>` : "",
         g.card.yoru ? `<button data-act="pass">無理！罰なしでパス</button>` : "",
@@ -385,20 +387,19 @@ function vControls() {
         ${subs ? `<div class="sub-acts">${subs}</div>` : ""}
         <div class="verdict">
           <button class="vd ng" data-act="fail"><b>アウト</b><small>${esc(S.members[g.doer].name)}に罰</small></button>
-          <button class="vd ok" data-act="clear" data-shake><b>セーフ！</b><small>→ ${nextLabel}</small></button>
+          <button class="vd ok" data-act="clear"><b>セーフ！</b><small>→ ${nextLabel}</small></button>
         </div>
-        <p class="swipe-hint">${earlyTurns() ? `<span>← アウト</span>` : ""}<button class="link" data-act="penOpen">他の人に罰をつける</button>${earlyTurns() ? `<span>セーフ →</span>` : ""}</p>${shakeHint()}`;
+        <p class="swipe-hint">${earlyTurns() ? `<span>← アウト</span>` : ""}<button class="link" data-act="penOpen">他の人に罰をつける</button>${earlyTurns() ? `<span>セーフ →</span>` : ""}</p>`;
       }
       return `
         ${subs ? `<div class="sub-acts">${subs}</div>` : ""}
         ${vPenGrid()}
-        <button class="big ${g.add.size ? "has-pen" : ""}" data-act="next" ${!g.add.size && mustPick(g.card.tpl) ? "disabled" : "data-shake"}>${nextText(nextLabel)}</button>${shakeHint()}`;
+        <button class="big ${g.add.size ? "has-pen" : ""}" data-act="next" ${!g.add.size && mustPick(g.card.tpl) ? "disabled" : ""}>${nextText(nextLabel)}</button>`;
     }
   }
 }
 // 操作のヒントは最初の3枚だけ（慣れたら消えてスッキリ）
 const earlyTurns = () => (S.game?.cards ?? 0) < 3;
-const shakeHint = () => (S.shake && S.motionOk && earlyTurns() ? `<p class="hint">スマホを振っても進む</p>` : "");
 
 function cardClass(c) {
   if (c.bomb) return "bombc";
@@ -479,9 +480,9 @@ function vMenu() {
       <div class="sheet-grip"></div>
       <p class="menu-meta">${esc(modeLine(g))}</p>
       <button class="menu-item" data-act="flip">${ICON.flip}<span>上下反転<small>向かいの人に見せる</small></span><b>${S.flip ? "ON" : "OFF"}</b></button>
-      <button class="menu-item" data-act="rules">${ICON.book}<span>ルール早見表<small>${g.mode === "ngword" || g.mode === "vote" ? "このモードの遊び方" : "倍プッシュ・時限爆弾・リベンジ権…"}</small></span></button>
+      <button class="menu-item" data-act="rules">${ICON.book}<span>ルール早見表<small>${g.mode === "ngword" || g.mode === "vote" || g.mode === "memory" ? "このモードの遊び方" : "倍プッシュ・時限爆弾・リベンジ権…"}</small></span></button>
       <button class="menu-item" data-act="end">${ICON.flag}<span>結果発表<small>ここで終わって戦犯を発表</small></span></button>
-      <button class="menu-item" data-act="sheet">${ICON.gear}<span>設定<small>振る・効果音・遊び方</small></span></button>
+      <button class="menu-item" data-act="sheet">${ICON.gear}<span>設定<small>効果音・読み上げ・遊び方</small></span></button>
       <button class="menu-item danger" data-act="home">${ICON.exit}<span>ゲームをやめる<small>罰の記録は消える</small></span></button>
       <button class="ghost" data-act="menuClose">閉じる</button>
     </div>
@@ -561,6 +562,13 @@ function vRules() {
     ["アウト", "言うてもうた人をタップ。ワードを発表して罰ガチャ。その人には新しいワードが配られる"],
     ["忘れた時", "「ワードを見直す」→自分の名前を選ぶと、自分以外のワードをもう一回見られる（時計は止まる）"],
     ["終わり", "制限時間が来るか、⋯→結果発表。アウトが一番多い人が戦犯"]);
+  if (md === "memory") items.splice(0, items.length,
+    ["カード", "表にはお題の最初の1文字だけ。同じお題のカードが2枚ずつある"],
+    ["自分の番", "2枚めくる。揃ったらお題の全文が出て、答えたら+1点でもう1回。答えられへんかったら罰ガチャで次の人へ"],
+    ["ハズレ", "揃わへんかったら裏に戻して次の人へ。場所を覚えとけ"],
+    ["ドクロ", "めくった瞬間に罰ガチャ。天使が出たら続けてめくれる"],
+    ["終わり", "全部揃ったら、点数が一番低い人が罰ガチャ（同点なら全員）"],
+    ["続く罰", "「次の自分の番まで〜」の罰やお題は上に出る。破ったら「違反者に罰」"]);
   if (md === "vote") items.splice(0, items.length,
     ["質問", "「この中で一番○○なのは？」が出る。地獄度で質問の攻め具合が変わる"],
     ["投票", "スマホを回して、1人ずつ自分以外の誰かにこっそり1票。誰が誰に入れたかは出えへん"],
@@ -577,7 +585,7 @@ function vRules() {
   </div>`;
 }
 // 結果発表の罰の内訳
-const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード" };
+const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード", mfail: "答えられへん", skull: "ドクロ", mlow: "最下位" };
 function whyText(i) {
   const w = S.game.st?.why?.[i];
   if (!w) return "";
@@ -773,7 +781,7 @@ function vVoteControls() {
     case "vote": return `<p class="hint">押したらすぐ次の人へ。誰に入れたかは出えへん</p>`;
     case "done": return `<button class="big" data-act="vReveal">結果発表</button>`;
     case "reveal": return `<button class="big has-pen" data-act="vGacha">${vt.top.map(mName).join("・")}に罰ガチャ</button>`;
-    case "batsu": return `<button class="big" data-act="vNext" data-shake>${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次の質問</button>`;
+    case "batsu": return `<button class="big" data-act="vNext">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次の質問</button>`;
   }
   return "";
 }
@@ -783,6 +791,85 @@ function vVote() {
     <div class="deck">${vVoteCard()}</div>
     ${vVoteControls()}
   </div>`;
+}
+
+// ---------- 神経衰弱（画面） ----------
+function vMmCell(c, k) {
+  const g = S.game;
+  if (c.gone) return `<div class="mm-card gone" ${c.owner != null && c.owner >= 0 ? `style="--mc:${colorOf(c.owner)}"` : ""}>${c.owner != null && c.owner >= 0 ? `<i></i>` : ""}</div>`;
+  if (c.up) return `<div class="mm-card up ${c.skull ? "skull" : ""} ${c.yoru ? "yoru" : ""}">${c.skull ? SKULL : `<b>${esc(c.ch)}</b>`}</div>`;
+  return `<button class="mm-card down" data-act="mmFlip" data-i="${k}" ${g.mm.phase !== "pick" ? "disabled" : ""} aria-label="カードをめくる"><span>?</span></button>`;
+}
+function vMmInfo() {
+  const g = S.game, mm = g.mm;
+  const hint = mm.phase === "pick" ? (mm.open.length ? "もう1枚めくれ" : "2枚めくれ") : mm.phase === "miss" ? "ハズレ…場所を覚えとけ" : "";
+  return `<div class="mm-info">
+    <span class="who" style="--mc:${colorOf(g.doer)}"><i></i><b>${esc(S.members[g.doer].name)}</b><small>の番</small></span>
+    <span class="mm-hint">${hint}</span>
+  </div>
+  <div class="mm-scores">${S.members.map((m, i) => `<span class="${i === g.doer ? "on" : ""}" style="--mc:${colorOf(i)}"><i></i>${esc(m.name)}<b>${mm.score[i]}</b></span>`).join("")}</div>`;
+}
+function vMemory() {
+  const g = S.game, mm = g.mm;
+  if (mm.phase === "intro") return `<div id="stage" class="${S.flip ? "flipped" : ""}">
+    ${vBar()}
+    <div class="deck"><div class="odai mode-card mid" id="card">
+      <div class="head"><span class="who"><b>神経衰弱</b></span><span class="meta"><i class="tag">${MM_PAIRS}ペア</i></span></div>
+      <div class="mid-body">
+      <ol class="how">
+        <li>カードには<b>お題の最初の1文字</b>だけ。同じお題の2枚を揃えろ</li>
+        <li>揃ったらお題の全文が出る。<b>答えたら+1点でもう1回</b>、答えられへんかったら罰ガチャで次の人へ</li>
+        <li><b>ドクロ</b>はめくった瞬間に罰ガチャ。天使が出たら続けてめくれる</li>
+        <li>全部揃ったら、<b>点数が一番低い人が罰</b></li>
+      </ol>
+      <p class="ng-lv">地獄度「${LV[S.level]}」のお題で遊ぶ${S.night ? `<small>${S.night === "shinya" ? "深夜" : "夜"}モードのお題も混ざる${S.members.some((m) => m.ng) ? "（下ネタNGの人がおるので今回は混ぜへん）" : ""}</small>` : ""}</p>
+      </div>
+    </div></div>
+    <button class="big" data-act="mmStart">${esc(S.members[0].name)}からスタート</button>
+  </div>`;
+  const ended = mm.phase === "over" || mm.phase === "end" || mm.phase === "low";
+  const sheet = mm.phase === "match" || mm.phase === "fail" || mm.phase === "skull" || mm.phase === "low";
+  let controls = "";
+  if (mm.phase === "miss") controls = `<button class="big" data-act="mmNext">覚えた → ${esc(S.members[(g.cur + 1) % S.members.length].name)}の番</button>`;
+  else if (mm.phase === "over") { const low = mmLowest(); controls = `<button class="big has-pen" data-act="mmLow">${low.map((i) => esc(S.members[i].name)).join("・")}に罰ガチャ</button>`; }
+  else if (mm.phase === "end") controls = `<button class="big" data-act="end">結果発表</button>`;
+  else controls = `<p class="hint mm-foot">${mm.done} / ${mm.pairs} ペア揃った</p>`;
+  const body = ended ? vMmOver() : `<div class="mm-grid">${mm.cards.map(vMmCell).join("")}</div>`;
+  return `<div id="stage" class="mm ${S.flip ? "flipped" : ""}">
+    ${vBar()}
+    ${vRule()}
+    ${vMmInfo()}
+    ${body}
+    ${controls}
+  </div>
+  ${sheet ? `<div class="sg-sheet-back"></div><div class="sg-sheet ${S.flip ? "flipped" : ""}">${vMmSheet()}</div>` : ""}`;
+}
+function vMmOver() {
+  const g = S.game, mm = g.mm, low = mmLowest();
+  const rows = S.members.map((m, i) => ({ m, i, v: mm.score[i] })).sort((a, b) => b.v - a.v);
+  return `<div class="deck"><div class="odai mode-card" id="card">
+    <div class="head"><span class="who"><b>全部揃った！</b></span><span class="meta"><i class="tag">点数</i></span></div>
+    <ul class="vbars">${rows.map((r, k) => `<li class="${low.includes(r.i) ? "top" : ""}" style="--mc:${colorOf(r.i)};--d:${(0.15 + (rows.length - k) * 0.12).toFixed(2)}s"><span class="nm">${esc(r.m.name)}</span><span class="bar"><i style="--w:${Math.max(...mm.score) ? (r.v / Math.max(...mm.score)) * 100 : 0}%"></i></span><b>${r.v}</b>${low.includes(r.i) ? `<span class="stamp">罰</span>` : ""}</li>`).join("")}</ul>
+    <p class="vote-rule bad">点数が一番低い人が罰</p>
+  </div></div>`;
+}
+function vMmSheet() {
+  const g = S.game, mm = g.mm;
+  if (mm.phase === "match") {
+    const c = mm.card;
+    return `<div class="deck"><div class="odai ${c.kind.includes("深夜") ? "deep" : c.yoru ? "yoru" : ""} ${S.anim ? "in" : ""}" id="card">
+      <div class="head">${vWho()}<span class="meta"><i class="tag">揃った！</i></span></div>
+      <p class="txt" style="font-size:${fitSize(c.html, true)}"><span>${c.html}</span></p>
+    </div></div>
+    <div class="verdict">
+      <button class="vd ng" data-act="mmNo"><b>答えられへん</b><small>罰ガチャ</small></button>
+      <button class="vd ok" data-act="mmYes"><b>答えた！</b><small>+1点でもう1回</small></button>
+    </div>`;
+  }
+  const lucky = g.gacha.every((x) => x.lucky);
+  const label = mm.phase === "low" ? "結果発表へ" : mm.phase === "skull" && lucky ? "続けてめくる" : mm.done >= mm.pairs ? "点数発表へ" : `${esc(S.members[(g.cur + 1) % S.members.length].name)}の番へ`;
+  return `<div class="deck">${mm.phase === "skull" ? vCard().replace('<span>罰ガチャ</span>', '<span>ドクロをめくった！</span>') : vCard()}</div>
+    <button class="big" data-act="mmAccept">${lucky ? "ラッキー！" : "受け入れた"} → ${label}</button>`;
 }
 
 // ---------- すごろく盤 ----------
@@ -860,8 +947,8 @@ function vSugo() {
     ${vBoard()}
     ${vRanks()}
     <div class="dice-dock">
-      <button class="die3d ${g.rolling ? "roll" : ""}" id="die" data-act="roll" data-shake ${busy || g.rolled ? "disabled" : ""} aria-label="サイコロを振る">${dieFace(g.die)}</button>
-      <div class="dice-txt"><span class="who" style="--mc:${colorOf(g.cur)}"><i></i><b>${esc(S.members[g.cur].name)}</b><small>の番</small></span><b>${label}</b>${!busy && !g.rolled ? shakeHint().replace('class="hint"', 'class="hint" style="margin:0;text-align:left"') : ""}</div>
+      <button class="die3d ${g.rolling ? "roll" : ""}" id="die" data-act="roll" ${busy || g.rolled ? "disabled" : ""} aria-label="サイコロを振る">${dieFace(g.die)}</button>
+      <div class="dice-txt"><span class="who" style="--mc:${colorOf(g.cur)}"><i></i><b>${esc(S.members[g.cur].name)}</b><small>の番</small></span><b>${label}</b></div>
     </div>
   </div>
   ${sheet ? `<div class="sg-sheet-back"></div><div class="sg-sheet ${S.flip ? "flipped" : ""}">
@@ -882,6 +969,7 @@ function vResult() {
   <p class="res-sub">${esc(modeLine(g))}</p>
   <div class="mvp"><small>MVP（悪い意味で）</small><b>${esc(who)}</b><span>${top.n === 0 ? "全員セーフ。平和すぎる" : `罰 ${top.n}回`}</span></div>
   ${(() => { const ts = titles(); return ts.length ? `<h2 class="res-h2">称号</h2><ul class="titles">${ts.map((t, k) => `<li style="--d:${(0.3 + k * 0.12).toFixed(2)}s"><small>${esc(t.title)}</small><b>${esc(titleNames(t))}</b><span>${esc(t.desc)}</span></li>`).join("")}</ul>` : ""; })()}
+  ${g.mode === "memory" && g.mm ? `<h2 class="res-h2">神経衰弱の点数</h2><ul class="ng-list res">${S.members.map((m, j) => ({ m, j })).sort((a, b) => g.mm.score[b.j] - g.mm.score[a.j]).map(({ m, j }) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${g.mm.score[j]}点</b></li>`).join("")}</ul>` : ""}
   ${g.mode === "ngword" && g.ng?.words.length ? `<h2 class="res-h2">みんなのNGワード</h2><ul class="ng-list res">${S.members.map((m, j) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${esc(g.ng.words[j])}</b></li>`).join("")}</ul>` : ""}
   <h2 class="res-h2">罰ランキング</h2>
   <ol class="rank">${rows.map((r, k) => `<li><span class="no">${k + 1}</span><i class="pc" style="background:${colorOf(r.i)}"></i><span class="nm">${esc(r.m.name)}${whyText(r.i) ? `<small>${esc(whyText(r.i))}</small>` : ""}</span><span class="ct">${r.n}</span></li>`).join("")}</ol>
@@ -893,7 +981,7 @@ function vResult() {
 }
 
 // 結果画面のひとこと。夜モードに入ってない人には噂として隠しモードをにおわせる
-const TIPS = ["罰ガチャの天使はだいたい7回に1回", "リベンジ権は罰を食らった人だけのご褒美", "倍プッシュは勝てば誰かに罰、負けたら罰2倍", "スマホを振っても次のお題に進める", "設定の「向かい合わせ表示」で机の真ん中に置ける"];
+const TIPS = ["罰ガチャの天使はだいたい7回に1回", "リベンジ権は罰を食らった人だけのご褒美", "倍プッシュは勝てば誰かに罰、負けたら罰2倍", "設定の「向かい合わせ表示」で机の真ん中に置ける"];
 let tipCache = null;
 function resultTip() {
   if (tipCache && tipCache.key === S.game) return tipCache.t;
@@ -1011,11 +1099,11 @@ function render(anim) {
   S.anim = !!anim;
   // 画面が変わった時だけスライドして入ってくる
   const key = sc === "home" ? (S.nightAsk ? "night" : "home" + S.step) : sc;
-  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, ngword: 2, vote: 2, result: 3 };
+  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, memory: 2, ngword: 2, vote: 2, result: 3 };
   const moved = S.navKey && S.navKey !== key;
   const dir = moved && ORDER[key] < ORDER[S.navKey] ? "back" : "fwd";
   S.navKey = key;
-  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : vResult();
+  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "memory" ? vMemory() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : vResult();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
   overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   if (onStage) { fixHeight(); fitCard(); }
@@ -1032,6 +1120,7 @@ function cue() {
   const sc = S.screen;
   if (sc === "result") { play("fanfare"); return; }
   if (sc === "ngword") { const p = S.game.ng.phase; play(p === "out" ? (S.game.ng.res.lucky ? "lucky" : "boom") : p === "over" ? "alarm" : p === "confirm" ? "warn" : "flip"); if (p === "out" && !S.game.ng.res.lucky) boomFlash(); return; }
+  if (sc === "memory") { const p = S.game.mm.phase; play(p === "skull" ? "boom" : p === "fail" || p === "low" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "match" ? "coin" : p === "miss" ? "warn" : p === "over" ? "fanfare" : "flip"); if (p === "skull") boomFlash(); return; }
   if (sc === "vote") { const p = S.game.vt.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? "fanfare" : "flip"); return; }
   if (sc !== "odai" && sc !== "sugoroku") return;
   const g = S.game, c = g.card || {};
@@ -1059,6 +1148,7 @@ function speakNow() {
     const g = S.game, m = Math.max(...g.pen);
     speak(m === 0 ? "本日の戦犯は、該当者なし。平和すぎる" : `本日の戦犯は、${S.members.filter((_, i) => g.pen[i] === m).map((x) => x.name).join("と")}。罰${m}回`);
   } else if (S.screen === "odai" || S.screen === "sugoroku") speak(cardSpeech());
+  else if (S.screen === "memory") { const mm = S.game.mm; if (mm.phase === "match") speak(plain(mm.card.html)); else if (S.game.phase === "batsu") speak(cardSpeech()); }
   else if (S.screen === "vote") { const vt = S.game.vt; if (vt.phase === "q") speak(vt.q); else if (vt.phase === "batsu") speak(cardSpeech()); }
   // NGワードは絶対に読み上げへん（ワードがバレる）
 }
@@ -1137,7 +1227,6 @@ function onClick(e) {
     // settings / tutorial
     case "sheet": S.menu = false; S.sheet = true; render(); break;
     case "sheetClose": S.sheet = false; render(); break;
-    case "shake": S.shake = !S.shake; store.set("nd_shake", S.shake); render(); break;
     case "sound": S.sound = !S.sound; store.set("nd_sound", S.sound); render(); if (S.sound) play("pop"); break;
     case "voice": S.voice = !S.voice; store.set("nd_voice", S.voice); render(); if (S.voice) speak("読み上げオン"); else stopSpeak(); break;
     case "dual": S.dual = !S.dual; store.set("nd_dual", S.dual); render(); break;
@@ -1206,6 +1295,20 @@ function onClick(e) {
     case "ngNew": g.ng.phase = "eyes"; render(true); break;
     case "ngEyes": g.ng.words[g.ng.out] = ngPick(g.ng.words, g.ng.out); g.ng.phase = "newword"; render(true); break;
     case "ngHide": ngPlay(); render(true); break;
+
+    // 神経衰弱
+    case "mmStart": g.mm.phase = "pick"; render(true); break;
+    case "mmFlip": mmFlip(i); render(g.mm.phase !== "pick"); if (g.mm.phase === "pick") play("tick"); break;
+    case "mmNext": g.mm.cards.forEach((c) => { if (!c.gone) c.up = false; }); mmNextPlayer(); render(true); break;
+    case "mmYes": mmAnswer(true); render(true); break;
+    case "mmNo": mmAnswer(false); render(true); break;
+    case "mmAccept": mmAfterBatsu(); render(true); break;
+    case "mmLow": {
+      const low = mmLowest();
+      g.add = new Map(low.map((t) => [t, 1])); g.addReason = "mlow";
+      g.gacha = low.map((t) => ({ i: t, n: 1, ...drawBatsu(t) }));
+      g.phase = "batsu"; g.mm.phase = "low"; render(true); break;
+    }
 
     // ぶっちゃけ投票
     case "vStart": g.vt.phase = "hand"; render(true); break;
@@ -1360,29 +1463,5 @@ const endDrag = () => {
 window.addEventListener("pointerup", endDrag);
 window.addEventListener("pointercancel", endDrag);
 overlay.addEventListener("click", onClick);
-
-// ---------- 振ってルーレット ----------
-// iPhoneは許可が要るので、ゲーム開始のタップで1回だけ聞く。使えない環境ではボタンで進める
-function askMotion() {
-  try {
-    if (S.shake && typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
-      DeviceMotionEvent.requestPermission().catch(() => {});
-    }
-  } catch {}
-}
-let lastShake = 0;
-window.addEventListener("devicemotion", (e) => {
-  if (!S.shake || !(S.screen === "odai" || S.screen === "sugoroku" || S.screen === "vote")) return;
-  const a = e.accelerationIncludingGravity;
-  if (!a || a.x == null) return;
-  S.motionOk = true; // センサーが生きてる時だけ「振っても進む」を出す
-  const force = Math.hypot(a.x, a.y, a.z);
-  const now = Date.now();
-  if (force > 24 && now - lastShake > 1200) {
-    lastShake = now;
-    const b = document.querySelector("[data-shake]:not([disabled])");
-    if (b) { if (navigator.vibrate) navigator.vibrate(40); b.click(); }
-  }
-});
 
 render();

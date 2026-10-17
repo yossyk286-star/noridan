@@ -20,7 +20,6 @@ const S = {
   members: store.get("nd_members", EXAMPLE),
   isExample: store.get("nd_members", null) === null,
   level: store.get("nd_level", "futsu"),
-  shake: store.get("nd_shake", true),
   night: (() => { const v = store.get("nd_night", false); return v === true ? "yoru" : v; })(), // false | "yoru" | "shinya"
   nightAsk: false,  // false | "yoru" | "shinya"（確認画面）
   whisper: Math.random() < 0.35,
@@ -152,7 +151,7 @@ const PERSONAL = /次の(自分の)?番まで/;
 function untilNext(i) { const n = S.members.length; return (((i - S.game.cur + n) % n) || n) + 1; }
 function addRule(r) {
   const g = S.game;
-  if (!g || (g.mode !== "odai" && g.mode !== "sugoroku")) return;
+  if (!g || (g.mode !== "odai" && g.mode !== "sugoroku" && g.mode !== "memory")) return;
   if (r.who != null) r = { ...r, html: r.html.replace(/次の(自分の)?番まで[、,]?/, "") }; // 「〇〇の次の番まで」は見出しに出すので本文からは省く
   g.rules = [...g.rules.filter((x) => x.html !== r.html), r].slice(-4);
 }
@@ -166,10 +165,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", ngword: "NGワード", vote: "ぶっちゃけ投票" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ngword: "NGワード", vote: "ぶっちゃけ投票" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" ? "問" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" ? "問" : g.mode === "memory" ? "ペア" : "ターン"}`;
 function newGame(mode) {
   const n = S.members.length;
   S.game = {
@@ -187,7 +186,7 @@ function newGame(mode) {
   S.screen = mode;
   if (mode === "ngword") { S.game.doer = -1; S.game.ng = { phase: "setup", minutes: store.get("nd_ng_min", 10), words: [], viewer: 0, dealing: false, out: null, res: null, left: 0, endAt: 0, topic: null }; render(true); return; }
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "q", round: 0 }; startVoteRound(); render(true); return; }
-  askMotion();
+  if (mode === "memory") { mmDeal(); render(true); return; }
   if (mode === "odai") startOdaiTurn();
   else S.game.card = { kind: "すごろく", html: `${nm(0)}からスタート。サイコロ振れ！` };
   render(true);
@@ -579,4 +578,100 @@ function voteReveal() {
   const goal = vt.good ? Math.min(...cv) : Math.max(...cv);
   vt.top = vt.cands.filter((i) => c[i] === goal);
   g.vt.phase = "reveal";
+}
+
+// ---------- 神経衰弱 ----------
+// 裏向きのカードに「お題の最初の1文字」だけ。同じお題の2枚を揃えたら全文が出て、答えたら+1点でもう1回。
+// 答えられへんかったら罰ガチャ。ドクロはめくった瞬間に罰ガチャ（天使なら続けてめくれる）。最後に点数が一番低い人が罰
+const MM_PAIRS = 7, MM_SKULLS = 2;
+// 頭文字にできるお題：「{P}、」で始まって、次の文字が名前やカッコやないもの
+const mmOk = (t) => /^\{P\}、[^{「（]/.test(t) && usable(t);
+function mmDeal() {
+  const g = S.game, n = S.members.length;
+  g.doer = 0; g.cur = 0;
+  // 夜・深夜はお題も夜寄りに混ぜる（下ネタNGの人がおる時は、誰が揃えるか分からんので混ぜへん）
+  const pools = [DATA.odai[S.level]];
+  if (S.night && !S.members.some((m) => m.ng)) pools.push(DATA.odai.yoru);
+  if (S.night === "shinya" && !S.members.some((m) => m.ng)) pools.push(DATA.odai.shinya, DATA.odai.shinya);
+  const used = new Set(), pairs = [];
+  for (let k = 0; k < 400 && pairs.length < MM_PAIRS; k++) {
+    const pool = pick(pools), t = pick(pool);
+    if (!mmOk(t)) continue;
+    const ch = t[4];
+    if (used.has(ch)) continue;
+    used.add(ch);
+    pairs.push({ tpl: t, ch, yoru: pool === DATA.odai.yoru || pool === DATA.odai.shinya, deep: pool === DATA.odai.shinya });
+  }
+  const cards = [];
+  pairs.forEach((p, id) => { cards.push({ id, ...p }, { id, ...p }); });
+  for (let k = 0; k < MM_SKULLS; k++) cards.push({ id: -1 - k, skull: true, ch: "" });
+  g.mm = { phase: "intro", cards: shuffle(cards).map((c) => ({ ...c, up: false, gone: false, owner: null })), open: [], score: Array(n).fill(0), pairs: pairs.length, done: 0, card: null, res: null, turns: 0 };
+  g.turn = 0;
+}
+function mmNextPlayer() {
+  const g = S.game;
+  tickRule();
+  g.cur = (g.cur + 1) % S.members.length;
+  g.doer = g.cur;
+  g.mm.turns++;
+  g.mm.open = [];
+  g.mm.phase = "pick";
+}
+function mmFlip(k) {
+  const g = S.game, mm = g.mm, c = mm.cards[k];
+  if (mm.phase !== "pick" || c.up || c.gone) return;
+  c.up = true;
+  mm.open.push(k);
+  if (c.skull) {
+    // ドクロ：その場で罰ガチャ。開いてた1枚目は裏に戻す
+    c.gone = true;
+    mm.open.filter((x) => x !== k).forEach((x) => (mm.cards[x].up = false));
+    mm.open = [];
+    g.add = new Map([[g.doer, 1]]); g.addReason = "skull";
+    g.gacha = [{ i: g.doer, n: 1, ...drawBatsu(g.doer) }];
+    g.phase = "batsu"; mm.phase = "skull";
+    return;
+  }
+  if (mm.open.length < 2) return;
+  const [a, b] = mm.open.map((x) => mm.cards[x]);
+  if (a.id === b.id) {
+    // 揃った！お題の全文を出す（{P}はめくった人）
+    mm.card = makeCard(a.deep ? "深夜お題" : a.yoru ? "夜お題" : `アホお題・${LV[S.level]}`, a.tpl, g.doer, { noNg: a.yoru }, { yoru: a.yoru });
+    mm.phase = "match";
+  } else mm.phase = "miss";
+}
+// 揃ったお題の結果。答えたら+1点でもう1回、答えられへんかったら罰ガチャで次の人へ
+function mmAnswer(ok) {
+  const g = S.game, mm = g.mm;
+  mm.open.forEach((x) => { mm.cards[x].gone = true; mm.cards[x].owner = ok ? g.doer : -1; });
+  mm.done++; g.turn = mm.done;
+  if (ok) {
+    mm.score[g.doer]++;
+    // 「次の自分の番まで〜」のお題は上に出す
+    if (PERSONAL.test(mm.card.tpl)) addRule({ html: mm.card.html, left: untilNext(g.doer), who: g.doer });
+    mm.open = []; mm.card = null;
+    mm.phase = mm.done >= mm.pairs ? "over" : "pick";
+  } else {
+    mm.open = [];
+    g.add = new Map([[g.doer, 1]]); g.addReason = "mfail";
+    g.gacha = [{ i: g.doer, n: 1, ...drawBatsu(g.doer) }];
+    g.phase = "batsu"; mm.phase = "fail";
+  }
+}
+// 罰ガチャを受け入れた後
+function mmAfterBatsu() {
+  const g = S.game, mm = g.mm;
+  const lucky = g.gacha.every((x) => x.lucky);
+  applyAdds();
+  g.gacha = []; g.phase = "play";
+  if (mm.phase === "low") { mm.phase = "end"; return; }
+  if (mm.done >= mm.pairs) { mm.phase = "over"; return; }
+  // ドクロで天使が出たら、そのまま続けてめくれる
+  if (mm.phase === "skull" && lucky) { mm.phase = "pick"; mm.open = []; return; }
+  mmNextPlayer();
+}
+// 全部揃ったら、点数が一番低い人が罰ガチャ
+function mmLowest() {
+  const sc = S.game.mm.score, m = Math.min(...sc);
+  return sc.map((v, i) => (v === m ? i : -1)).filter((i) => i >= 0);
 }

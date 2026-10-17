@@ -9,9 +9,9 @@ import OdaiScreen from './src/screens/OdaiScreen';
 import SugorokuScreen from './src/screens/SugorokuScreen';
 import ResultScreen from './src/screens/ResultScreen';
 import NgWordScreen from './src/screens/NgWordScreen';
+import MemoryScreen from './src/screens/MemoryScreen';
 import VoteScreen from './src/screens/VoteScreen';
 import { load, save } from './src/lib/storage';
-import { requestMotionPermission } from './src/lib/useShake';
 import { setSoundEnabled } from './src/lib/sound';
 import { PrefsContext } from './src/lib/prefs';
 import { speak, stopSpeak } from './src/lib/speech';
@@ -27,14 +27,13 @@ const EXAMPLE: Member[] = [
   { name: 'まゆ', neta: '' },
 ];
 
-type Screen = { name: 'home'; step?: 1 | 2 } | { name: Mode; key: number } | { name: 'result'; mode: Mode; pen: number[]; turns: number; stats?: Stats; words?: string[] };
+type Screen = { name: 'home'; step?: 1 | 2 } | { name: Mode; key: number } | { name: 'result'; mode: Mode; pen: number[]; turns: number; stats?: Stats; words?: string[]; scores?: number[] };
 
 export default function App() {
   useFonts({ DelaGothicOne_400Regular }); // 読み込み前はシステムフォントで表示
   const [members, setMembers] = useState<Member[]>(EXAMPLE);
   const [isExample, setIsExample] = useState(true);
   const [level, setLevel] = useState<Level>('futsu');
-  const [shake, setShake] = useState(true);
   const [night, setNight] = useState<Night>(false);
   const [sound, setSound] = useState(true);
   const [dual, setDual] = useState(false);
@@ -53,7 +52,6 @@ export default function App() {
         setIsExample(false);
       }
       setLevel(await load<Level>('nd_level', 'futsu'));
-      setShake(await load<boolean>('nd_shake', true));
       const nv = await load<Night | true>('nd_night', false);
       setNight(nv === true ? 'yoru' : nv);
       const sv = await load<boolean>('nd_sound', true);
@@ -74,10 +72,6 @@ export default function App() {
   const updateLevel = (l: Level) => {
     setLevel(l);
     save('nd_level', l);
-  };
-  const updateShake = (on: boolean) => {
-    setShake(on);
-    save('nd_shake', on);
   };
   const updateSound = (on: boolean) => {
     setSound(on);
@@ -107,11 +101,10 @@ export default function App() {
     save('nd_groups', next);
   };
   const start = (mode: Mode) => {
-    if (shake) requestMotionPermission(); // iPhoneのブラウザはタップの中で許可を聞く
     if (screen.name === 'home') rememberGroup();
     setScreen({ name: mode, key: Date.now() });
   };
-  const finish = (mode: Mode) => (pen: number[], turns: number, stats: Stats, words?: string[]) => setScreen({ name: 'result', mode, pen, turns, stats: { ...stats }, words });
+  const finish = (mode: Mode) => (pen: number[], turns: number, stats: Stats, words?: string[], scores?: number[]) => setScreen({ name: 'result', mode, pen, turns, stats: { ...stats }, words, scores });
   const home = () => {
     stopSpeak();
     setScreen({ name: 'home', step: 2 });
@@ -122,19 +115,19 @@ export default function App() {
   };
 
   // 画面が変わったらスッとスライドして入ってくる（進む時は右から、戻る時は左から）
-  const ORDER: Record<string, number> = { home: 0, odai: 2, sugoroku: 2, ngword: 2, vote: 2, result: 3 };
+  const ORDER: Record<string, number> = { home: 0, odai: 2, sugoroku: 2, memory: 2, ngword: 2, vote: 2, result: 3 };
   const slide = useRef(new Animated.Value(1)).current;
   const dir = useRef(1);
   const prev = useRef(screen.name);
   useEffect(() => {
-    if (prev.current === screen.name && screen.name !== 'odai' && screen.name !== 'sugoroku' && screen.name !== 'ngword' && screen.name !== 'vote') return;
+    if (prev.current === screen.name && screen.name !== 'odai' && screen.name !== 'sugoroku' && screen.name !== 'memory' && screen.name !== 'ngword' && screen.name !== 'vote') return;
     dir.current = ORDER[screen.name] < ORDER[prev.current] ? -1 : 1;
     prev.current = screen.name;
     slide.setValue(0);
     Animated.timing(slide, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [screen]);
 
-  const onStage = screen.name === 'odai' || screen.name === 'sugoroku' || screen.name === 'ngword' || screen.name === 'vote';
+  const onStage = screen.name === 'odai' || screen.name === 'sugoroku' || screen.name === 'memory' || screen.name === 'ngword' || screen.name === 'vote';
   const neonHome = screen.name === 'home' && !!night;
   const bg = onStage ? stageBg ?? STAGE[level].bg : neonHome ? NEON_BG : C.ink;
   useEffect(() => {
@@ -163,10 +156,13 @@ export default function App() {
             />
           )}
           {screen.name === 'odai' && (
-            <OdaiScreen key={screen.key} members={members} level={level} shake={shake} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('odai')} />
+            <OdaiScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('odai')} />
           )}
           {screen.name === 'sugoroku' && (
-            <SugorokuScreen key={screen.key} members={members} level={level} shake={shake} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('sugoroku')} />
+            <SugorokuScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('sugoroku')} />
+          )}
+          {screen.name === 'memory' && (
+            <MemoryScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('memory')} />
           )}
           {screen.name === 'ngword' && (
             <NgWordScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('ngword')} />
@@ -183,6 +179,7 @@ export default function App() {
               night={night}
               mode={screen.mode}
               words={screen.words}
+              scores={screen.scores}
               level={level}
               onHome={home}
               onAgain={() => start(screen.mode)}
@@ -191,12 +188,10 @@ export default function App() {
         </Animated.View>
         <SettingsSheet
           visible={sheet}
-          shake={shake}
           sound={sound}
           dual={dual}
           voice={voice}
           night={night}
-          onShake={updateShake}
           onSound={updateSound}
           onDual={updateDual}
           onVoice={updateVoice}

@@ -44,7 +44,7 @@ export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRule
           {item('flip', '上下反転', '向かいの人に見せる', onFlip, { state: flipped ? 'ON' : 'OFF' })}
           {item('book', 'ルール早見表', rulesSub ?? '倍プッシュ・時限爆弾・リベンジ権…', onRules)}
           {item('flag', '結果発表', 'ここで終わって戦犯を発表', onEnd)}
-          {item('gear', '設定', '振る・効果音・遊び方', onSettings)}
+          {item('gear', '設定', '効果音・読み上げ・遊び方', onSettings)}
           {item('exit', 'ゲームをやめる', '罰の記録は消える', onQuit, { danger: true })}
           <Tap style={s.ghost} onPress={onClose}>
             <Text style={s.ghostText}>閉じる</Text>
