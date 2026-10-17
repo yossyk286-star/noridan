@@ -408,7 +408,7 @@ function vRule() {
   const g = S.game, r = g.rule;
   const bomb = g.bomb && !g.phase.startsWith("bomb")
     ? `<div class="rule bomb"><span class="fuse" aria-hidden="true"></span><span><b>時限爆弾 作動中</b>　仕掛け人：${esc(S.members[g.bomb.owner].name)}</span></div>` : "";
-  return bomb + (r ? `<div class="rule"><b>発動中 残り${r.left}</b><span>${r.html}</span></div>` : "");
+  return bomb + (r ? `<div class="rule"><b>発動中 残り${r.left}</b><span>${r.html}</span><button class="rule-out" data-act="ruleOpen">違反者に罰</button></div>` : "");
 }
 function vTurn() {
   const g = S.game;
@@ -438,6 +438,29 @@ function vMenu() {
       <button class="menu-item" data-act="sheet">${ICON.gear}<span>設定<small>振る・効果音・遊び方</small></span></button>
       <button class="menu-item danger" data-act="home">${ICON.exit}<span>ゲームをやめる<small>罰の記録は消える</small></span></button>
       <button class="ghost" data-act="menuClose">閉じる</button>
+    </div>
+  </div>`;
+}
+// ルール違反：いつでも誰かに罰をつけられるシート（その場で罰ガチャ）
+function vRuleSheet() {
+  const g = S.game, r = S.ruleSheet;
+  if (r === "pick") return `
+  <div class="sheet-back" data-act="ruleClose">
+    <div class="sheet rule-sheet" role="dialog" aria-label="ルール違反" data-stop>
+      <div class="sheet-grip"></div>
+      <p class="h2">ルール違反</p>
+      <p class="rule-now">${g.rule ? g.rule.html : ""}</p>
+      <h2>破ったのは誰？</h2>
+      <div class="chips">${S.members.map((m, i) => `<button class="chip" style="--mc:${colorOf(i)}" data-act="ruleTo" data-i="${i}"><span class="dot"></span>${esc(m.name)}</button>`).join("")}</div>
+      <button class="ghost" data-act="ruleClose">やっぱやめる</button>
+    </div>
+  </div>`;
+  return `
+  <div class="sheet-back" data-act="ruleClose">
+    <div class="sheet rule-sheet ${r.lucky ? "lucky" : "out"}" role="dialog" aria-label="ルール違反の罰" data-stop>
+      <div class="skull-wrap">${r.lucky ? `${ANGEL}<b>天使が出た！セーフ</b>` : `${SKULL}<b>${esc(S.members[r.i].name)}、ルール違反</b>`}</div>
+      <p class="rule-pen">${r.html}</p>
+      <button class="big" data-act="ruleClose">${r.lucky ? "ラッキー！" : "受け入れた"}</button>
     </div>
   </div>`;
 }
@@ -685,7 +708,7 @@ function render(anim) {
   S.navKey = key;
   app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : vResult();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
-  overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : "";
+  overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.ruleSheet && onStage ? vRuleSheet() : "";
   if (onStage) fitCard();
   if (anim) { window.scrollTo(0, 0); cue(); speakNow(); }
   if (!onStage && sc !== "result") stopSpeak();
@@ -812,6 +835,18 @@ function onClick(e) {
       break;
     }
     case "next": finishCard(); break;
+    case "ruleOpen": S.ruleSheet = "pick"; render(); break;
+    case "ruleClose": S.ruleSheet = null; render(); break;
+    case "ruleTo": {
+      const lucky = Math.random() < CHANCE.lucky;
+      const html = fill(lucky ? draw("lucky", DATA.batsu.lucky) : draw("batsu", DATA.batsu.bad), i);
+      if (lucky) g.st.lucky[i]++;
+      else { g.pen[i]++; g.rev[i] = true; }
+      S.ruleSheet = { i, lucky, html };
+      play(lucky ? "lucky" : "pop");
+      if (navigator.vibrate) navigator.vibrate(lucky ? 30 : [60, 40, 60]);
+      render(); break;
+    }
     case "clear": g.add = new Map(); finishCard(); break;
     case "fail": g.add = new Map([[g.doer, 1]]); finishCard(); break;
     case "penOpen": g.penOpen = g.card; render(); break;

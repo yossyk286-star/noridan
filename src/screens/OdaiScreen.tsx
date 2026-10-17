@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
-import { BombBanner, Controls, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, Turn, shakeAction } from '../components/Stage';
+import { BombBanner, Controls, RuleSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, Turn, shakeAction } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
 import { Flash } from '../components/Fx';
 import { CHANCE, Decks } from '../lib/game';
@@ -11,7 +11,7 @@ import { useTurnFlow } from '../lib/useTurnFlow';
 import { useShake } from '../lib/useShake';
 import { useStageCues } from '../lib/useStageCues';
 import { LEVEL_LABEL, STAGE, colorOf, C, NEON_BG, neonPal } from '../theme';
-import type { Night, Level, Member, Rule } from '../types';
+import type { Night, Level, Member, Rule, GachaItem } from '../types';
 
 type Props = {
   members: Member[];
@@ -34,6 +34,8 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
   const [rule, setRule] = useState<Rule | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [menu, setMenu] = useState(false);
+  /** ルール違反のシート（誰を選ぶか → 罰ガチャの結果） */
+  const [ruleSheet, setRuleSheet] = useState<'pick' | GachaItem | null>(null);
 
   /** ターン開始：たまに割り込み、たまにダブルアップ */
   const startTurn = (who: number, t: number) => {
@@ -74,7 +76,7 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
         <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} />
         <Turn pal={pal} name={members[st.doer].name} color={colorOf(st.doer)} pushed={st.doer !== cur} bomb={st.card.bomb} passed={st.card.passed} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
-        <RuleBanner pal={pal} rule={rule} />
+        <RuleBanner pal={pal} rule={rule} onViolate={() => setRuleSheet('pick')} />
         <DeckStack pal={pal} minHeight={0}>
           {st.phase === 'batsu' ? (
             <GachaCard pal={pal} members={members} items={st.gacha} />
@@ -95,6 +97,7 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
       </View>
       <Frame color={colorOf(st.doer)} />
       <Flash trigger={flash} />
+      <RuleSheet members={members} rule={rule} state={ruleSheet} onPick={(i) => setRuleSheet(flow.rulePenalty(i))} onClose={() => setRuleSheet(null)} />
       <GameMenu
         visible={menu}
         meta={`アホお題・${LEVEL_LABEL[level]}・${turn}ターン`}

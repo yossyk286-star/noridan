@@ -156,6 +156,19 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       st.add = new Map([[st.doer, 1]]);
       finishCard();
     },
+    /** ルール違反：お題の途中でもその場で罰ガチャ（天使なら帳消し） */
+    rulePenalty(i: number): GachaItem {
+      const item: GachaItem = { i, n: 1, ...decks.batsu(members, i) };
+      if (item.lucky) st.stats.lucky[i]++;
+      else {
+        st.pen[i]++;
+        st.rev[i] = true;
+      }
+      play(item.lucky ? 'lucky' : 'pop');
+      Haptics.notificationAsync(item.lucky ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error).catch(() => {});
+      rerender();
+      return item;
+    },
     /** 他の人に罰をつけたい時だけ一覧を開く */
     openPen() {
       st.penOpenFor = st.card;

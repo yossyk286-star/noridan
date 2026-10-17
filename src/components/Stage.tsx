@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Tap } from './Tap';
 import type React from 'react';
-import { Animated, Easing, PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { isSituational, othersOf } from '../lib/game';
 import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
@@ -116,13 +116,64 @@ export function Turn({
   );
 }
 
-export function RuleBanner({ pal, rule }: { pal: Pal; rule: Rule | null }) {
+export function RuleBanner({ pal, rule, onViolate }: { pal: Pal; rule: Rule | null; onViolate?: () => void }) {
   if (!rule) return null;
+  const jigoku = pal.bg === STAGE.jigoku.bg;
   return (
     <View style={[styles.rule, { borderColor: pal.muted }]}>
       <Text style={[styles.ruleHead, { color: pal.fg }]}>発動中 残り{rule.left}</Text>
-      <SegText segments={rule.segments} style={[styles.ruleText, { color: pal.fg, flexShrink: 1 }]} />
+      <SegText segments={rule.segments} style={[styles.ruleText, { color: pal.fg, flex: 1 }]} />
+      {onViolate && (
+        <Tap onPress={onViolate} style={[styles.ruleOut, { backgroundColor: jigoku ? pal.fg : PEN_RED }]}>
+          <Text style={[styles.ruleOutText, { color: jigoku ? '#000' : '#fff' }]}>違反者に罰</Text>
+        </Tap>
+      )}
     </View>
+  );
+}
+
+/** ルール違反のシート：誰が破ったか選ぶ → その場で罰ガチャ */
+export function RuleSheet({
+  members, rule, state, onPick, onClose,
+}: { members: Member[]; rule: Rule | null; state: 'pick' | GachaItem | null; onPick: (i: number) => void; onClose: () => void }) {
+  return (
+    <Modal visible={!!state} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.sheetBack} onPress={onClose}>
+        <Pressable style={styles.sheet} onPress={() => {}}>
+          {state === 'pick' ? (
+            <>
+              <Text style={styles.sheetLabel}>ルール違反</Text>
+              {rule && <SegText segments={rule.segments} style={styles.sheetRule} />}
+              <Text style={styles.sheetTitle}>破ったのは誰？</Text>
+              <View style={styles.sheetChips}>
+                {members.map((m, i) => (
+                  <Tap key={i} onPress={() => onPick(i)} style={styles.sheetChip}>
+                    <View style={[styles.dot, { backgroundColor: colorOf(i) }]} />
+                    <Text style={styles.sheetChipText}>{m.name}</Text>
+                  </Tap>
+                ))}
+              </View>
+              <Tap onPress={onClose} style={styles.sheetGhost}>
+                <Text style={styles.sheetGhostText}>やっぱやめる</Text>
+              </Tap>
+            </>
+          ) : state ? (
+            <>
+              <View style={{ alignItems: 'center', gap: 6 }}>
+                {state.lucky ? <Angel /> : <Skull />}
+                <Text style={[styles.sheetVerdict, state.lucky && { color: '#ffd23f' }]}>
+                  {state.lucky ? '天使が出た！セーフ' : `${members[state.i].name}、ルール違反`}
+                </Text>
+              </View>
+              <SegText segments={state.segments} style={styles.sheetPen} />
+              <Tap onPress={onClose} style={styles.sheetBig}>
+                <Text style={styles.sheetBigText}>{state.lucky ? 'ラッキー！' : '受け入れた'}</Text>
+              </Tap>
+            </>
+          ) : null}
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -644,6 +695,23 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
   badgeText: { fontSize: 11, fontWeight: '900' },
   cardBody: { flex: 1, justifyContent: 'center' },
+  ruleOut: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 10 },
+  ruleOutText: { fontSize: 12, fontWeight: '900' },
+  sheetBack: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: '#1d1a17', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 18, paddingBottom: 34, gap: 12, width: '100%', maxWidth: 560, alignSelf: 'center' },
+  sheetLabel: { color: '#ff6b6b', fontSize: 12, fontWeight: '900', letterSpacing: 3 },
+  sheetRule: { color: 'rgba(247,243,234,0.62)', fontSize: 13, lineHeight: 20 },
+  sheetTitle: { color: '#f7f3ea', fontSize: 18, fontWeight: '900' },
+  sheetChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  sheetChip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingVertical: 10, paddingRight: 14, paddingLeft: 10, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.08)' },
+  sheetChipText: { color: '#f7f3ea', fontWeight: '900', fontSize: 15 },
+  dot: { width: 12, height: 12, borderRadius: 6 },
+  sheetGhost: { borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 14, padding: 14, alignItems: 'center' },
+  sheetGhostText: { color: '#f7f3ea', fontWeight: '900' },
+  sheetVerdict: { fontFamily: F.display, fontSize: 24, color: '#ff3b3b' },
+  sheetPen: { fontFamily: F.display, fontSize: 22, lineHeight: 32, color: '#f7f3ea', textAlign: 'center' },
+  sheetBig: { borderRadius: 16, backgroundColor: '#f7f3ea', padding: 16, alignItems: 'center' },
+  sheetBigText: { fontFamily: F.display, fontSize: 20, color: '#141210' },
   verdict: { flex: 1, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 8, alignItems: 'center', gap: 2, shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   verdictTitle: { fontFamily: F.display, fontSize: 21, lineHeight: 26 },
   verdictSub: { fontSize: 12, fontWeight: '900', opacity: 0.8 },

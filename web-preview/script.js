@@ -133,6 +133,7 @@ function newGame(mode) {
     st: { lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0) },
   };
   askMotion();
+  S.ruleSheet = null;
   S.screen = mode;
   if (mode === "odai") startOdaiTurn();
   else S.game.card = { kind: "すごろく", html: `${nm(0)}からスタート。サイコロ振れ！` };
