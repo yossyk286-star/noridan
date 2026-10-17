@@ -816,13 +816,13 @@ function onClick(e) {
       const now = Date.now();
       S.taps = (S.taps || []).filter((x) => now - x < 2500).concat(now);
       const lg = document.getElementById("logo");
-      // 3回目あたりから「何か起きそう」とロゴが震える
-      if (lg && S.taps.length >= 3 && S.taps.length < 5) { lg.classList.remove("tease", "tease2"); void lg.offsetWidth; lg.classList.add(S.taps.length === 3 ? "tease" : "tease2"); play("tick"); }
+      // 1回タップするごとにロゴが震えて光る（何か起きそう）
+      if (lg && S.taps.length < 5) { lg.classList.remove("tease"); void lg.offsetWidth; lg.classList.add("tease"); play("tick"); }
       if (S.taps.length >= 5) {
         S.taps = [];
         if (!S.night) S.nightAsk = "yoru";
         else if (S.night === "yoru") S.nightAsk = "shinya";
-        else { lg?.classList.add("tease2"); break; } // 深夜はもう一番奥
+        else break; // 深夜はもう一番奥
         play("warn"); render(); window.scrollTo(0, 0);
       }
       break;

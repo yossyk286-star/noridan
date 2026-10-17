@@ -524,9 +524,9 @@ body.stage .sg-ranks.many { display: grid; grid-template-columns: 1fr 1fr; colum
 .tip { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
 /* ロゴ連打で震える */
 @keyframes tease { 0%, 100% { transform: none; } 25% { transform: rotate(-2deg) translateX(-2px); } 75% { transform: rotate(2deg) translateX(2px); } }
-.logo.tease { animation: tease .25s ease 2; text-shadow: 0 0 18px color-mix(in srgb, var(--night) 60%, transparent); }
-.logo.tease2 { animation: tease .18s ease 3; text-shadow: 0 0 10px var(--night), 0 0 30px var(--night); }
-.logo.is-night.tease2 { text-shadow: 0 0 10px var(--deep), 0 0 30px var(--deep); }
+.logo.tease { animation: tease .2s ease 2; }
+.logo.tease .logo-btn { text-shadow: 0 0 10px var(--night), 0 0 30px var(--night); }
+.logo.is-night.tease .logo-btn { text-shadow: 0 0 2px #fff, 0 0 12px var(--deep), 0 0 34px var(--deep); }
 /* 深夜の確認画面 */
 .night-ask.deep .h2 { color: var(--deep); }
 .night-title.is-deep { --nc: var(--deep); }
@@ -1773,13 +1773,13 @@ function onClick(e) {
       const now = Date.now();
       S.taps = (S.taps || []).filter((x) => now - x < 2500).concat(now);
       const lg = document.getElementById("logo");
-      // 3回目あたりから「何か起きそう」とロゴが震える
-      if (lg && S.taps.length >= 3 && S.taps.length < 5) { lg.classList.remove("tease", "tease2"); void lg.offsetWidth; lg.classList.add(S.taps.length === 3 ? "tease" : "tease2"); play("tick"); }
+      // 1回タップするごとにロゴが震えて光る（何か起きそう）
+      if (lg && S.taps.length < 5) { lg.classList.remove("tease"); void lg.offsetWidth; lg.classList.add("tease"); play("tick"); }
       if (S.taps.length >= 5) {
         S.taps = [];
         if (!S.night) S.nightAsk = "yoru";
         else if (S.night === "yoru") S.nightAsk = "shinya";
-        else { lg?.classList.add("tease2"); break; } // 深夜はもう一番奥
+        else break; // 深夜はもう一番奥
         play("warn"); render(); window.scrollTo(0, 0);
       }
       break;

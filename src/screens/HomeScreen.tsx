@@ -35,12 +35,12 @@ export default function HomeScreen(props: Props) {
   const [tease, setTease] = useState(0);
   const taps = useRef<number[]>([]);
 
-  /** 隠しコマンド：ロゴを素早く5回タップ。3回目あたりからロゴが震えて「何か起きそう」と知らせる */
+  /** 隠しコマンド：ロゴを素早く5回タップ。1回タップするごとにロゴが震えて光る */
   const tapLogo = () => {
     const now = Date.now();
     taps.current = taps.current.filter((x) => now - x < 2500).concat(now);
     const n = taps.current.length;
-    if (n >= 3 && n < TAPS) {
+    if (n < TAPS) {
       setTease((t) => t + 1);
       play('tick');
     }
@@ -48,7 +48,7 @@ export default function HomeScreen(props: Props) {
       taps.current = [];
       if (!night) setAsking('yoru');
       else if (night === 'yoru' && ALLOW_SHINYA) setAsking('shinya');
-      else return setTease((t) => t + 1); // もう一番奥
+      else return; // もう一番奥
       play('warn');
     }
   };
@@ -126,6 +126,14 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
   };
   const toggleNg = (i: number) => onMembers(members.map((m, j) => (j === i ? { ...m, ng: !m.ng } : m)));
   const logoColor = night === 'shinya' ? C.deep : night ? C.night : C.yuru;
+  // ロゴをタップするたびに一瞬光る
+  const [glow, setGlow] = useState(false);
+  useEffect(() => {
+    if (!tease) return;
+    setGlow(true);
+    const t = setTimeout(() => setGlow(false), 420);
+    return () => clearTimeout(t);
+  }, [tease]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -135,9 +143,9 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
             <Tap onPress={onLogo} accessibilityLabel="ノリダン" haptic={false} scaleTo={0.98}>
               <Wiggle trigger={tease}>
                 {night ? (
-                  <Neon color={logoColor} style={s.logo}>ノリダン</Neon>
+                  <Neon color={glow ? C.deep : logoColor} style={s.logo}>ノリダン</Neon>
                 ) : (
-                  <Text style={[s.logo, { color: logoColor }]} numberOfLines={1} adjustsFontSizeToFit>ノリダン</Text>
+                  <Text style={[s.logo, { color: logoColor }, glow && { textShadowColor: C.night, textShadowRadius: 22, textShadowOffset: { width: 0, height: 0 } }]} numberOfLines={1} adjustsFontSizeToFit>ノリダン</Text>
                 )}
               </Wiggle>
             </Tap>
