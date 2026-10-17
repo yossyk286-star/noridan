@@ -153,6 +153,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", ngword: "NGワード", vote: "ぶっちゃけ投票" };
+const isStage = (sc) => sc in MODE_NAME;
+// 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" ? "問" : "ターン"}`;
 function newGame(mode) {
   const n = S.members.length;
   S.game = {
@@ -164,11 +168,13 @@ function newGame(mode) {
     rolled: false, rolling: false, die: 0, done: false,
     bomb: null, bombJust: false, cards: 0,
     // 称号用の記録
-    st: { lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), why: Array.from({ length: n }, () => ({})) },
+    st: { lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), votes: Array(n).fill(0), why: Array.from({ length: n }, () => ({})) },
   };
-  askMotion();
   S.ruleSheet = null;
   S.screen = mode;
+  if (mode === "ngword") { S.game.doer = -1; S.game.ng = { phase: "setup", minutes: store.get("nd_ng_min", 10), words: [], viewer: 0, dealing: false, out: null, res: null, left: 0, endAt: 0, topic: null }; render(true); return; }
+  if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "q", round: 0 }; startVoteRound(); render(true); return; }
+  askMotion();
   if (mode === "odai") startOdaiTurn();
   else S.game.card = { kind: "すごろく", html: `${nm(0)}からスタート。サイコロ振れ！` };
   render(true);
@@ -419,6 +425,7 @@ function titles() {
   const l = top(st.lucky, 1); if (l) add("天使に愛された人", l, `天使 ${st.lucky[l[0]]}回`);
   const r = top(st.rev, 1); if (r) add("リベンジの鬼", r, `押し付け ${st.rev[r[0]]}回`);
   const h = top(st.hit, 2); if (h) add("押し付けられ体質", h, `押し付けられ ${st.hit[h[0]]}回`);
+  if (g.mode === "vote" && st.votes) { const v = top(st.votes, 2); if (v) add("みんなの的", v, `合計 ${st.votes[v[0]]}票`); }
   const d = top(st.dbl, 1); if (d) add("ギャンブラー", d, `倍プッシュ ${st.dbl[d[0]]}回（成功${st.dwin[d[0]]}）`);
   const p = top(st.pass, 2); if (p) add("パス魔", p, `パス ${st.pass[p[0]]}回`);
   const nm2 = top(st.notme, 2); if (nm2) add("当てはまらん人生", nm2, `当てはまらん ${st.notme[nm2[0]]}回`);
@@ -430,7 +437,7 @@ const titleNames = (t) => t.idx.map((i) => S.members[i].name).join("・");
 // ゲーム中だけ画面を消さない（対応してないブラウザでは何もしない）
 let wakeLock = null;
 async function syncWake() {
-  const want = (S.screen === "odai" || S.screen === "sugoroku") && document.visibilityState === "visible";
+  const want = isStage(S.screen) && document.visibilityState === "visible";
   try {
     if (want && !wakeLock && navigator.wakeLock) {
       wakeLock = await navigator.wakeLock.request("screen");
@@ -465,4 +472,81 @@ function cardSpeech() {
     return g.gacha.map((x) => `${S.members[x.i].name}${x.lucky ? "はセーフ。" : "の罰。"}${plain(x.html)}`).join("。");
   }
   return g.card ? plain(g.card.html) : "";
+}
+
+// ---------- NGワード ----------
+// 1人ずつスマホを回して「自分以外のNGワード」を覚える。自分のワードは自分だけ知らん。言わされたらアウト
+function ngPick(exclude) {
+  const used = new Set(exclude);
+  for (let k = 0; k < 50; k++) { const w = draw("ngw", DATA.ngwords.words); if (w && !used.has(w)) return w; }
+  return pick(DATA.ngwords.words.filter((w) => !used.has(w)));
+}
+function ngDeal() {
+  const ng = S.game.ng;
+  ng.words = [];
+  S.members.forEach(() => ng.words.push(ngPick(ng.words)));
+  ng.dealing = true; ng.viewer = 0; ng.phase = "hand";
+  ng.left = ng.minutes * 60000;
+}
+// プレイ中だけ時計が進む（見直し・アウト処理の間は止める）
+function ngPlay() {
+  const ng = S.game.ng;
+  ng.phase = "play";
+  ng.endAt = ng.minutes ? Date.now() + ng.left : 0;
+}
+function ngPause() {
+  const ng = S.game.ng;
+  if (ng.phase === "play" && ng.endAt) ng.left = Math.max(0, ng.endAt - Date.now());
+  ng.endAt = 0;
+}
+function ngOut(i) {
+  const g = S.game, ng = g.ng;
+  ng.out = i;
+  ng.res = drawBatsu(i);
+  if (ng.res.lucky) g.st.lucky[i]++;
+  else { g.pen[i]++; g.st.why[i].ng = (g.st.why[i].ng || 0) + 1; }
+  g.turn++;
+  ng.phase = "out";
+}
+const fmtTime = (ms) => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
+setInterval(() => {
+  const g = S.game;
+  if (S.screen !== "ngword" || !g?.ng || g.ng.phase !== "play" || !g.ng.endAt) return;
+  const left = g.ng.endAt - Date.now();
+  const el = document.getElementById("ngTimer");
+  if (left <= 0) { g.ng.left = 0; g.ng.endAt = 0; g.ng.phase = "over"; render(true); return; }
+  if (el) { el.textContent = fmtTime(left); el.classList.toggle("hurry", left < 30000); }
+}, 250);
+
+// ---------- ぶっちゃけ投票 ----------
+// 「この中で一番○○なのは？」に全員がこっそり投票。一番票を集めた人が罰
+function startVoteRound() {
+  const g = S.game, vt = g.vt, n = S.members.length;
+  vt.round++;
+  const okIdx = S.members.map((_, i) => i).filter(okForYoru);
+  let key = S.level;
+  if (S.night && okIdx.length >= 3 && Math.random() < (S.night === "shinya" ? 0.75 : 0.35)) {
+    key = S.night === "shinya" && (S.level === "jigoku" || Math.random() < 0.6) ? "shinya" : "yoru";
+  }
+  vt.night = key === "yoru" || key === "shinya" ? key : false;
+  vt.q = draw("vote_" + key, DATA.vote[key]);
+  // 夜の質問は下ネタNGの人を候補から外す
+  vt.cands = S.members.map((_, i) => i).filter((i) => !vt.night || okForYoru(i));
+  vt.votes = Array(n).fill(null);
+  const s0 = (vt.round - 1) % n;
+  vt.order = S.members.map((_, k) => (s0 + k) % n);
+  vt.k = 0; vt.phase = "q";
+  g.phase = "play"; g.gacha = [];
+}
+function voteCounts() {
+  const vt = S.game.vt, c = Array(S.members.length).fill(0);
+  vt.votes.forEach((t) => { if (t != null) c[t]++; });
+  return c;
+}
+function voteReveal() {
+  const g = S.game, c = voteCounts();
+  c.forEach((v, i) => (g.st.votes[i] += v));
+  g.turn++;
+  g.vt.top = c.map((v, i) => (v === Math.max(...c) ? i : -1)).filter((i) => i >= 0);
+  g.vt.phase = "reveal";
 }

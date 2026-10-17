@@ -22,9 +22,13 @@ type Props = {
   level: Level;
   onHome: () => void;
   onAgain: () => void;
+  /** NGワードの時：最後のみんなのワード */
+  words?: string[];
 };
 
-export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onAgain }: Props) {
+const MODE_LABEL: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', ngword: 'NGワード', vote: 'ぶっちゃけ投票' };
+
+export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onAgain, words }: Props) {
   const rows = members.map((m, i) => ({ m, i, n: pen[i] ?? 0 })).sort((a, b) => b.n - a.n);
   const top = rows[0]?.n ?? 0;
   const who = top === 0 ? '該当者なし' : rows.filter((r) => r.n === top).map((r) => r.m.name).join('・');
@@ -58,7 +62,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       <Text style={s.brand}>ノリダン</Text>
       <Text style={s.head}>本日の戦犯</Text>
       <Text style={s.sub}>
-        {mode === 'odai' ? 'アホお題' : 'すごろく'}・{LEVEL_LABEL[level]}・{turns}ターン
+        {mode === 'ngword' ? `NGワード・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' ? '問' : 'ターン'}`}
       </Text>
 
       <View style={s.mvp}>
@@ -83,6 +87,17 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       )}
 
       <View>
+        {mode === 'ngword' && !!words?.length && (
+          <View style={{ gap: 8 }}>
+            <Text style={s.h2}>みんなのNGワード</Text>
+            {members.map((m, j) => (
+              <View key={j} style={[s.ngRow, { borderLeftColor: colorOf(j) }]}>
+                <Text style={s.ngName} numberOfLines={1}>{m.name}</Text>
+                <Text style={s.ngWord}>{words[j]}</Text>
+              </View>
+            ))}
+          </View>
+        )}
         <Text style={s.h2}>罰ランキング</Text>
         {rows.map((r, i) => (
           <View key={i} style={s.rank}>
@@ -155,6 +170,9 @@ const s = StyleSheet.create({
   name: { flex: 1, color: C.paper, fontWeight: '900' },
   ct: { fontFamily: F.display, color: C.paper },
   row: { flexDirection: 'row', gap: 10 },
+  ngRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 14, borderLeftWidth: 6, backgroundColor: 'rgba(247,243,234,0.06)' },
+  ngName: { color: C.paper, fontWeight: '900', fontSize: 15, flexShrink: 1 },
+  ngWord: { color: C.paper, fontFamily: F.display, fontSize: 22 },
   h2: { color: C.muted, fontSize: 12, fontWeight: '900', letterSpacing: 3 },
   titles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   title: { flexBasis: '48%', flexGrow: 1, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', gap: 2 },

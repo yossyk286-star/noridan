@@ -691,6 +691,58 @@ body.stage[data-level="jigoku"] { --acc: var(--blood); --card-edge: var(--blood)
 .odai .head .meta { margin-left: auto; flex: 0 1 auto; max-width: 100%; }
 .tag, .badge { white-space: nowrap; flex: none; }
 .pen-tile .nm { font-size: 15px; }
+/* ---------- NGワード・ぶっちゃけ投票 ---------- */
+.mode { padding-top: 14px; padding-bottom: 14px; }
+.mode[disabled] { opacity: .45; box-shadow: none; }
+.mode-card { gap: 12px; overflow: hidden; }
+.mode-card.center { align-items: center; justify-content: center; text-align: center; }
+.mode-card .head { width: 100%; }
+.how { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.55; font-weight: 700; line-break: strict; }
+.how b { font-weight: 900; }
+.how-note { margin: 0; font-size: 12px; font-weight: 700; opacity: .65; line-height: 1.5; line-break: strict; }
+.ng-min-wrap { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+.ng-min-h { margin: 0; font-size: 12px; font-weight: 900; letter-spacing: .1em; opacity: .65; }
+.ng-min { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 6px; }
+.ng-min button { padding: 11px 0; border-radius: 12px; border: 1.5px solid color-mix(in srgb, currentColor 30%, transparent); font-weight: 900; font-size: 15px; white-space: nowrap; }
+.ng-min button[aria-pressed="true"] { background: var(--card-fg); color: var(--card-bg); border-color: transparent; }
+.prog { margin: 0; font-size: 13px; font-weight: 900; letter-spacing: .08em; opacity: .65; line-break: strict; }
+.hand-who { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.hand-dot { width: 72px; height: 72px; border-radius: 50%; background: var(--mc); color: #141210; display: grid; place-items: center; font-family: var(--display); font-size: 34px; }
+.hand-who b { font-family: var(--display); font-weight: 400; font-size: clamp(30px, 10vw, 44px); line-height: 1.1; word-break: break-all; }
+.hand-who small { font-size: 18px; font-weight: 900; }
+.hand-note { margin: 0; font-size: 14px; font-weight: 700; opacity: .75; line-height: 1.6; line-break: strict; }
+.ng-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+.ng-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, currentColor 8%, transparent); border-left: 6px solid var(--mc); }
+.ng-list .nm { display: inline-flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ng-list .nm i { display: none; }
+.ng-list b { font-family: var(--display); font-weight: 400; font-size: 24px; white-space: nowrap; }
+.ng-list.res { flex: none; overflow: visible; color: var(--fg); }
+.ng-timer { margin: 0; font-family: var(--display); font-size: clamp(56px, 20vw, 88px); line-height: 1; font-variant-numeric: tabular-nums; }
+.ng-timer.hurry { color: #ff3b3b; animation: pulse 1s ease-in-out infinite; }
+.ng-timer.free { opacity: .5; }
+@keyframes pulse { 50% { transform: scale(1.06); } }
+.ng-lead { margin: 0; font-family: var(--display); font-size: clamp(22px, 7vw, 30px); line-height: 1.35; line-break: strict; }
+.ng-topic { margin: 0; padding: 10px 16px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, currentColor 40%, transparent); font-weight: 900; font-size: 17px; line-break: strict; }
+.ng-topic small { display: block; font-size: 11px; letter-spacing: .14em; opacity: .6; }
+.ng-reveal { margin: 0; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.ng-reveal small { font-size: 13px; font-weight: 900; opacity: .7; }
+.ng-reveal b { font-family: var(--display); font-weight: 400; font-size: clamp(30px, 11vw, 46px); line-height: 1.15; word-break: keep-all; }
+.skull-wrap.sm svg { width: 64px; height: 64px; }
+.mode-card .rule-pen { font-size: 19px; line-break: strict; }
+.sub-acts.two { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+.sub-acts.two button { padding: 12px 6px; font-weight: 900; white-space: nowrap; }
+.vote-q { margin: 0; font-family: var(--display); font-size: clamp(18px, 5.6vw, 23px); line-height: 1.4; line-break: strict; }
+body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat(2, minmax(0,1fr)); }
+.vote-grid .pen-tile { min-height: 62px; background: color-mix(in srgb, currentColor 7%, transparent); border-color: color-mix(in srgb, currentColor 22%, transparent); color: inherit; }
+.vbars { list-style: none; margin: auto 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.vbars li { position: relative; display: grid; grid-template-columns: minmax(0, 6.5em) minmax(0,1fr) 2em; align-items: center; gap: 10px; }
+.vbars .nm { font-weight: 900; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vbars .bar { height: 18px; border-radius: 9px; background: color-mix(in srgb, currentColor 10%, transparent); overflow: hidden; }
+.vbars .bar i { display: block; height: 100%; width: var(--w); background: var(--mc); border-radius: 9px; animation: grow .7s var(--d) cubic-bezier(.3,1.2,.5,1) both; }
+.vbars b { font-family: var(--display); font-weight: 400; font-size: 22px; text-align: right; animation: reveal .3s calc(var(--d) + .5s) both; }
+.vbars li.top .nm { color: #ff3b3b; }
+.vbars .stamp { position: absolute; right: 2.6em; top: 50%; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid #ff3b3b; color: #ff3b3b; display: grid; place-items: center; font-family: var(--display); font-size: 15px; transform: translateY(-50%) rotate(-14deg); animation: stamp .25s calc(var(--d) + .8s) cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes grow { from { width: 0; } }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

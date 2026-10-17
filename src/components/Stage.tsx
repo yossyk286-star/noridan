@@ -659,8 +659,8 @@ export function Coach({ flow }: { flow: TurnFlow }) {
 }
 
 /** ルール早見表（⋯メニューから） */
-export function RulesSheet({ visible, night, onClose }: { visible: boolean; night?: boolean; onClose: () => void }) {
-  const items: [string, string][] = [
+export function RulesSheet({ visible, night, onClose, custom }: { visible: boolean; night?: boolean; onClose: () => void; /** モードごとのルール（NGワード・投票） */ custom?: [string, string][] }) {
+  const items: [string, string][] = custom ? [...custom] : [
     ['セーフ／アウト', 'やり切ったらセーフ、逃げたりできんかったらアウト。札を右・左にスワイプでもOK'],
     ['罰ガチャ', 'アウトの人は罰ガチャで中身が決まる。だいたい7回に1回は天使が出て帳消し'],
     ['リベンジ権 ↺', 'ドクロを引いた人がもらえる。次の自分のお題を1回だけ誰かに押し付けられる'],
@@ -670,7 +670,7 @@ export function RulesSheet({ visible, night, onClose }: { visible: boolean; nigh
     ['当てはまらん', '恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる（1枚1回）'],
     ['本日の戦犯', '最後に罰が一番多い人を発表。称号もつく'],
   ];
-  if (night) items.push(['夜モード', '夜お題は「無理！」で罰なしパス。下ネタNGの人には振られへん。罰も夜仕様になる']);
+  if (night && !custom) items.push(['夜モード', '夜お題は「無理！」で罰なしパス。下ネタNGの人には振られへん。罰も夜仕様になる']);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.sheetBack} onPress={onClose}>

@@ -1,7 +1,7 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /** 線のアイコン（お試し版と同じ形）。色は color、太さは中で統一 */
-export type IconName = 'gear' | 'flip' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice';
+export type IconName = 'gear' | 'flip' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote';
 
 const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
   flip: 'M7 4v16M7 4 3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4',
@@ -13,6 +13,8 @@ const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
   share: 'M4 13v7h16v-7M12 3v12M7 8l5-5 5 5',
   next: 'M9 5l7 7-7 7',
   cards: 'M8.5 3h8A2.5 2.5 0 0 1 19 5.5v12a2.5 2.5 0 0 1-2.5 2.5h-8A2.5 2.5 0 0 1 6 17.5v-12A2.5 2.5 0 0 1 8.5 3zM3.5 7.5v11A2.5 2.5 0 0 0 6 21h9M10 9h5M10 13h5',
+  mute: 'M4 5h16v11H9l-5 4zM9 8.5l6 4M15 8.5l-6 4',
+  vote: 'M4 13h16v7H4zM8 13V5h8v8M10 9l1.5 1.5L14 8',
   dice: 'M7 3.5h10A3.5 3.5 0 0 1 20.5 7v10a3.5 3.5 0 0 1-3.5 3.5H7A3.5 3.5 0 0 1 3.5 17V7A3.5 3.5 0 0 1 7 3.5zM8.5 8.5h.01M15.5 15.5h.01M12 12h.01',
   book: 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M9 7h6M9 11h6',
   moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',

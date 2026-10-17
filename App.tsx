@@ -8,6 +8,8 @@ import HomeScreen from './src/screens/HomeScreen';
 import OdaiScreen from './src/screens/OdaiScreen';
 import SugorokuScreen from './src/screens/SugorokuScreen';
 import ResultScreen from './src/screens/ResultScreen';
+import NgWordScreen from './src/screens/NgWordScreen';
+import VoteScreen from './src/screens/VoteScreen';
 import { load, save } from './src/lib/storage';
 import { requestMotionPermission } from './src/lib/useShake';
 import { setSoundEnabled } from './src/lib/sound';
@@ -25,7 +27,7 @@ const EXAMPLE: Member[] = [
   { name: 'まゆ', neta: '' },
 ];
 
-type Screen = { name: 'home'; step?: 1 | 2 } | { name: Mode; key: number } | { name: 'result'; mode: Mode; pen: number[]; turns: number; stats?: Stats };
+type Screen = { name: 'home'; step?: 1 | 2 } | { name: Mode; key: number } | { name: 'result'; mode: Mode; pen: number[]; turns: number; stats?: Stats; words?: string[] };
 
 export default function App() {
   useFonts({ DelaGothicOne_400Regular }); // 読み込み前はシステムフォントで表示
@@ -109,7 +111,7 @@ export default function App() {
     if (screen.name === 'home') rememberGroup();
     setScreen({ name: mode, key: Date.now() });
   };
-  const finish = (mode: Mode) => (pen: number[], turns: number, stats: Stats) => setScreen({ name: 'result', mode, pen, turns, stats: { ...stats } });
+  const finish = (mode: Mode) => (pen: number[], turns: number, stats: Stats, words?: string[]) => setScreen({ name: 'result', mode, pen, turns, stats: { ...stats }, words });
   const home = () => {
     stopSpeak();
     setScreen({ name: 'home', step: 2 });
@@ -120,19 +122,19 @@ export default function App() {
   };
 
   // 画面が変わったらスッとスライドして入ってくる（進む時は右から、戻る時は左から）
-  const ORDER: Record<string, number> = { home: 0, odai: 2, sugoroku: 2, result: 3 };
+  const ORDER: Record<string, number> = { home: 0, odai: 2, sugoroku: 2, ngword: 2, vote: 2, result: 3 };
   const slide = useRef(new Animated.Value(1)).current;
   const dir = useRef(1);
   const prev = useRef(screen.name);
   useEffect(() => {
-    if (prev.current === screen.name && screen.name !== 'odai' && screen.name !== 'sugoroku') return;
+    if (prev.current === screen.name && screen.name !== 'odai' && screen.name !== 'sugoroku' && screen.name !== 'ngword' && screen.name !== 'vote') return;
     dir.current = ORDER[screen.name] < ORDER[prev.current] ? -1 : 1;
     prev.current = screen.name;
     slide.setValue(0);
     Animated.timing(slide, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [screen]);
 
-  const onStage = screen.name === 'odai' || screen.name === 'sugoroku';
+  const onStage = screen.name === 'odai' || screen.name === 'sugoroku' || screen.name === 'ngword' || screen.name === 'vote';
   const neonHome = screen.name === 'home' && !!night;
   const bg = onStage ? stageBg ?? STAGE[level].bg : neonHome ? NEON_BG : C.ink;
   useEffect(() => {
@@ -166,6 +168,12 @@ export default function App() {
           {screen.name === 'sugoroku' && (
             <SugorokuScreen key={screen.key} members={members} level={level} shake={shake} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('sugoroku')} />
           )}
+          {screen.name === 'ngword' && (
+            <NgWordScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('ngword')} />
+          )}
+          {screen.name === 'vote' && (
+            <VoteScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('vote')} />
+          )}
           {screen.name === 'result' && (
             <ResultScreen
               members={members}
@@ -174,6 +182,7 @@ export default function App() {
               stats={screen.stats}
               night={night}
               mode={screen.mode}
+              words={screen.words}
               level={level}
               onHome={home}
               onAgain={() => start(screen.mode)}

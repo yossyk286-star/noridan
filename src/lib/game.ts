@@ -3,6 +3,8 @@ import events from '../data/events.json';
 import batsu from '../data/batsu.json';
 import bombs from '../data/bombs.json';
 import boardJson from '../data/board.json';
+import ngwords from '../data/ngwords.json';
+import voteJson from '../data/vote.json';
 import { LEVEL_LABEL } from '../theme';
 import type { Card, Cell, GameEvent, Level, Member, Night, Rule, Segment } from '../types';
 
@@ -145,6 +147,29 @@ export class Decks {
 
   bomb(n: number): string {
     return this.str('bomb', bombs, n)!;
+  }
+
+  /** NGワードを1つ（今配ってるワードとは被らせへん） */
+  ngWord(exclude: string[]): string {
+    for (let k = 0; k < 50; k++) {
+      const w = this.str('ngw', ngwords.words, 99);
+      if (w && !exclude.includes(w)) return w;
+    }
+    return pick(ngwords.words.filter((w) => !exclude.includes(w)));
+  }
+  /** NGワード中に話題に困った時の振りネタ */
+  ngTopic(): string {
+    return this.str('ngt', ngwords.topics, 99)!;
+  }
+  /** ぶっちゃけ投票の質問。夜・深夜はたまに下ネタ（候補から下ネタNGの人を外す） */
+  vote(level: Level, night: Night, members: Member[]): { q: string; night: 'yoru' | 'shinya' | false; cands: number[] } {
+    const ok = members.map((_, i) => i).filter((i) => !members[i].ng);
+    const shinya = night === 'shinya' && ALLOW_SHINYA;
+    let key: Level | 'yoru' | 'shinya' = level;
+    if (night && ok.length >= 3 && Math.random() < (shinya ? 0.75 : 0.35)) key = shinya && (level === 'jigoku' || Math.random() < 0.6) ? 'shinya' : 'yoru';
+    const nightQ = key === 'yoru' || key === 'shinya' ? key : false;
+    const q = this.str('vote_' + key, (voteJson as unknown as Record<string, string[]>)[key], 99)!;
+    return { q, night: nightQ, cands: nightQ ? ok : members.map((_, i) => i) };
   }
 
   /** 罰ガチャ。たまにラッキー（天使）で帳消し */

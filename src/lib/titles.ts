@@ -8,11 +8,12 @@ export type Stats = {
   dwin: number[]; // 倍プッシュ成功
   notme: number[]; // 当てはまらんで回した回数
   solo: number[]; // 自分のお題をやった枚数
+  votes?: number[]; // ぶっちゃけ投票で集めた票
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
-export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb';
-export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾' };
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng';
+export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾', vote: '投票1位', ng: 'NGワード' };
 export function whyText(st: Stats | undefined, i: number) {
   const w = st?.why?.[i];
   if (!w) return '';
@@ -20,7 +21,7 @@ export function whyText(st: Stats | undefined, i: number) {
 }
 export const newStats = (n: number): Stats => ({
   lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0),
-  dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0),
+  dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), votes: Array(n).fill(0),
   why: Array.from({ length: n }, () => ({})),
 });
 
@@ -50,6 +51,8 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
   if (r) add('リベンジの鬼', r, `押し付け ${st.rev[r[0]]}回`);
   const h = top(st.hit, 2);
   if (h) add('押し付けられ体質', h, `押し付けられ ${st.hit[h[0]]}回`);
+  const v = st.votes ? top(st.votes, 2) : null;
+  if (v) add('みんなの的', v, `合計 ${st.votes![v[0]]}票`);
   const d = top(st.dbl, 1);
   if (d) add('ギャンブラー', d, `倍プッシュ ${st.dbl[d[0]]}回（成功${st.dwin[d[0]]}）`);
   const p = top(st.pass, 2);

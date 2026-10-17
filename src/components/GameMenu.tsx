@@ -13,10 +13,12 @@ type Props = {
   onSettings: () => void;
   onQuit: () => void;
   onClose: () => void;
+  /** ルール早見表の説明（モードごと） */
+  rulesSub?: string;
 };
 
 /** ゲーム中の「⋯」メニュー。画面をスッキリさせるために、たまにしか使わん操作はここに寄せる */
-export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRules, onSettings, onQuit, onClose }: Props) {
+export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRules, onSettings, onQuit, onClose, rulesSub }: Props) {
   const item = (icon: IconName, title: string, sub: string, onPress: () => void, extra?: { danger?: boolean; state?: string }) => (
     <Tap
       style={({ pressed }) => [s.item, pressed && { opacity: 0.7 }]}
@@ -40,7 +42,7 @@ export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRule
           <View style={s.grip} />
           <Text style={s.meta}>{meta}</Text>
           {item('flip', '上下反転', '向かいの人に見せる', onFlip, { state: flipped ? 'ON' : 'OFF' })}
-          {item('book', 'ルール早見表', '倍プッシュ・時限爆弾・リベンジ権…', onRules)}
+          {item('book', 'ルール早見表', rulesSub ?? '倍プッシュ・時限爆弾・リベンジ権…', onRules)}
           {item('flag', '結果発表', 'ここで終わって戦犯を発表', onEnd)}
           {item('gear', '設定', '振る・効果音・遊び方', onSettings)}
           {item('exit', 'ゲームをやめる', '罰の記録は消える', onQuit, { danger: true })}

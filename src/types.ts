@@ -1,7 +1,7 @@
 export type Level = 'yurume' | 'futsu' | 'jigoku';
 /** 夜モード: オフ / 夜（恋愛・ちょいエロ） / 深夜（性癖・経験まで） */
 export type Night = false | 'yoru' | 'shinya';
-export type Mode = 'odai' | 'sugoroku';
+export type Mode = 'odai' | 'sugoroku' | 'ngword' | 'vote';
 
 export type Member = { name: string; neta: string; /** 夜モードで下ネタを振らない */ ng?: boolean };
 

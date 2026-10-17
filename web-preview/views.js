@@ -57,6 +57,8 @@ const ICON = {
   edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>`,
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v7h16v-7M12 3v12M7 8l5-5 5 5"/></svg>`,
   users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.5-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.5 3.5 5.4"/></svg>`,
+  mute: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M9 8.5l6 4M15 8.5l-6 4"/></svg>`,
+  vote: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h16v7H4z"/><path d="M8 13V5h8v8"/><path d="M10 9l1.5 1.5L14 8"/></svg>`,
   next: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>`,
 };
 const BOMB_ART = `<svg class="bomb-art" viewBox="0 0 96 96" aria-hidden="true">
@@ -167,6 +169,7 @@ function vHome2() {
       <li>迷ったら地獄度は「普通」</li>
       <li><b>アホお題</b>：好きなとこで「⋯」→結果発表</li>
       <li><b>すごろく</b>：1番にゴールしたら終了</li>
+      <li><b>NGワード・投票</b>：スマホを回して遊ぶ</li>
     </ol>
     <button data-act="coachOk" data-k="mode">わかった</button>
   </div>`}
@@ -181,6 +184,8 @@ function vHome2() {
     <div class="modes">
       <button class="mode" data-act="start" data-m="odai"><i class="mode-ic">${ICON.cards}</i><b>アホお題</b><span>出たお題を順番にやるだけ</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="sugoroku"><i class="mode-ic">${ICON.dice}</i><b>すごろく</b><span>サイコロで進む。1番にゴールで終了</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>自分だけ知らんNGワードを、言わされたらアウト</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : "「一番○○なのは？」に匿名で投票。1位が罰"}</span><em class="go">開始</em></button>
     </div>
   </section>
   ${S.night ? `<section class="night-switch">
@@ -457,7 +462,7 @@ function vBar() {
   return `<div class="bar">
     <div class="score" aria-label="罰スコア">${S.members.map((m, i) => `
       <span class="av ${i === g.doer ? "is-turn" : ""}" style="--mc:${colorOf(i)}" title="${esc(m.name)} 罰${g.pen[i]}">
-        ${esc(m.name.slice(0, 1))}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${g.rev[i] ? `<i class="rv">↺</i>` : ""}
+        ${esc(m.name.slice(0, 1))}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${g.rev[i] && (g.mode === "odai" || g.mode === "sugoroku") ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}</div>
     <button class="icon-btn menu-btn" data-act="menu" aria-label="メニュー">${ICON.more}</button>
   </div>`;
@@ -468,9 +473,9 @@ function vMenu() {
   <div class="sheet-back" data-act="menuClose">
     <div class="sheet menu" role="dialog" aria-label="メニュー" data-stop>
       <div class="sheet-grip"></div>
-      <p class="menu-meta">${g.mode === "odai" ? "アホお題" : "すごろく"}・${LV[S.level]}・${g.turn}ターン</p>
+      <p class="menu-meta">${esc(modeLine(g))}</p>
       <button class="menu-item" data-act="flip">${ICON.flip}<span>上下反転<small>向かいの人に見せる</small></span><b>${S.flip ? "ON" : "OFF"}</b></button>
-      <button class="menu-item" data-act="rules">${ICON.book}<span>ルール早見表<small>倍プッシュ・時限爆弾・リベンジ権…</small></span></button>
+      <button class="menu-item" data-act="rules">${ICON.book}<span>ルール早見表<small>${g.mode === "ngword" || g.mode === "vote" ? "このモードの遊び方" : "倍プッシュ・時限爆弾・リベンジ権…"}</small></span></button>
       <button class="menu-item" data-act="end">${ICON.flag}<span>結果発表<small>ここで終わって戦犯を発表</small></span></button>
       <button class="menu-item" data-act="sheet">${ICON.gear}<span>設定<small>振る・効果音・遊び方</small></span></button>
       <button class="menu-item danger" data-act="home">${ICON.exit}<span>ゲームをやめる<small>罰の記録は消える</small></span></button>
@@ -543,6 +548,18 @@ function vRules() {
     ["本日の戦犯", "最後に罰が一番多い人を発表。称号もつく"],
   ];
   if (S.night) items.push(["夜モード", "夜お題は「無理！」で罰なしパス。下ネタNGの人には振られへん。罰も夜仕様になる"]);
+  const md = S.game?.mode;
+  if (md === "ngword") items.splice(0, items.length,
+    ["配る", "スマホを回して、1人ずつ自分以外の全員のNGワードを見る。自分のワードは自分だけ知らん"],
+    ["言わせる", "普通にしゃべって、相手がNGワードを言うように話を持っていく。話題に困ったら「話題を出す」"],
+    ["アウト", "言うてもうた人をタップ。ワードを発表して罰ガチャ。その人には新しいワードが配られる"],
+    ["忘れた時", "「ワードを見直す」→自分の名前を選ぶと、自分以外のワードをもう一回見られる（時計は止まる）"],
+    ["終わり", "制限時間が来るか、⋯→結果発表。アウトが一番多い人が戦犯"]);
+  if (md === "vote") items.splice(0, items.length,
+    ["質問", "「この中で一番○○なのは？」が出る。地獄度で質問の攻め具合が変わる"],
+    ["投票", "スマホを回して、1人ずつ自分以外の誰かにこっそり1票。誰が誰に入れたかは出えへん"],
+    ["結果", "一番票が多い人が罰ガチャ。同票なら全員"],
+    ["夜モード", "夜・深夜は下ネタの質問も出る。下ネタNGの人は候補に出えへん"]);
   return `
   <div class="sheet-back" data-act="rulesClose">
     <div class="sheet rules-sheet" role="dialog" aria-label="ルール早見表" data-stop>
@@ -554,7 +571,7 @@ function vRules() {
   </div>`;
 }
 // 結果発表の罰の内訳
-const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾" };
+const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード" };
 function whyText(i) {
   const w = S.game.st?.why?.[i];
   if (!w) return "";
@@ -597,6 +614,160 @@ function vOdai() {
     <div class="deck">${vCard()}</div>
     ${vCoach()}
     ${vControls()}
+  </div>`;
+}
+
+// ---------- NGワード（画面） ----------
+const NG_MIN = [3, 5, 10, 15, 0];
+const mName = (i) => esc(S.members[i].name);
+const bigWho = (i, sub) => `<div class="hand-who" style="--mc:${colorOf(i)}"><span class="hand-dot">${esc(S.members[i].name.slice(0, 1))}</span><b>${mName(i)}</b>${sub ? `<small>${sub}</small>` : ""}</div>`;
+function ngWordsFor(viewer) {
+  const ng = S.game.ng;
+  return `<ul class="ng-list">${S.members.map((m, j) => j === viewer ? "" : `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${esc(ng.words[j])}</b></li>`).join("")}</ul>`;
+}
+function vNgCard() {
+  const g = S.game, ng = g.ng, n = S.members.length;
+  switch (ng.phase) {
+    case "setup": return `<div class="odai mode-card" id="card">
+      <div class="head"><span class="who"><b>NGワード</b></span><span class="meta"><i class="tag">${n}人</i></span></div>
+      <ol class="how">
+        <li>スマホを回して、1人ずつ<b>自分以外のNGワード</b>をこっそり見る</li>
+        <li>自分のワードは自分だけ知らん。普通にしゃべって、相手に<b>NGワードを言わせろ</b></li>
+        <li>言うてもうた人をタップ → <b>アウトで罰ガチャ</b>。その人には新しいワードが配られる</li>
+      </ol>
+      <p class="how-note">ワードを忘れたら、ゲーム中の「ワードを見直す」でいつでも見られる</p>
+      <div class="ng-min-wrap"><p class="ng-min-h">制限時間</p>
+        <div class="ng-min">${NG_MIN.map((m) => `<button data-act="ngMin" data-v="${m}" aria-pressed="${ng.minutes === m}">${m ? m + "分" : "なし"}</button>`).join("")}</div></div>
+    </div>`;
+    case "hand": return `<div class="odai mode-card center" id="card">
+      ${ng.dealing ? `<p class="prog">ワード配り ${ng.viewer + 1} / ${n}</p>` : `<p class="prog">ワードの見直し</p>`}
+      ${bigWho(ng.viewer, "だけ見て")}
+      <p class="hand-note">スマホを${mName(ng.viewer)}に渡して。<br>他の人は画面を見たらアカン</p>
+    </div>`;
+    case "look": return `<div class="odai mode-card" id="card">
+      <div class="head"><span class="who" style="--mc:${colorOf(ng.viewer)}"><i></i><b>${mName(ng.viewer)}</b><small>以外のNGワード</small></span></div>
+      ${ngWordsFor(ng.viewer)}
+      <p class="how-note">自分のワードはここに出えへん。覚えたら隠してな</p>
+    </div>`;
+    case "play": case "who": return `<div class="odai mode-card center" id="card">
+      ${ng.minutes ? `<p class="ng-timer ${ng.left < 30000 ? "hurry" : ""}" id="ngTimer">${fmtTime(ng.endAt ? ng.endAt - Date.now() : ng.left)}</p>` : `<p class="ng-timer free">∞</p>`}
+      <p class="ng-lead">相手にNGワードを<br>言わせろ！</p>
+      ${ng.topic ? `<p class="ng-topic"><small>話題</small>${esc(ng.topic)}</p>` : ""}
+    </div>`;
+    case "confirm": return `<div class="odai mode-card center" id="card">
+      ${bigWho(ng.out, "")}
+      <p class="ng-lead">NGワード、言うた？</p>
+      <p class="hand-note">アウトにしたら、${mName(ng.out)}のワードを発表する</p>
+    </div>`;
+    case "out": return `<div class="odai ${ng.res.lucky ? "lucky" : "batsu"} mode-card center ${S.anim ? "shake" : ""}" id="card">
+      <p class="prog">${mName(ng.out)} アウト！</p>
+      <p class="ng-reveal"><small>NGワードは</small><b>「${esc(ng.words[ng.out])}」</b></p>
+      <div class="skull-wrap sm">${ng.res.lucky ? `${ANGEL}<b>天使！罰なし</b>` : `${SKULL}<b>罰ゲーム</b>`}</div>
+      <p class="rule-pen">${ng.res.html}</p>
+    </div>`;
+    case "eyes": return `<div class="odai mode-card center" id="card">
+      ${bigWho(ng.out, "は目をつぶれ！")}
+      <p class="hand-note">${mName(ng.out)}の新しいNGワードを、<br>${mName(ng.out)}以外の全員で見る</p>
+    </div>`;
+    case "newword": return `<div class="odai mode-card center" id="card">
+      <p class="prog">${mName(ng.out)}の新しいNGワード</p>
+      <p class="ng-reveal"><b>「${esc(ng.words[ng.out])}」</b></p>
+      <p class="hand-note">${mName(ng.out)}には見せたらアカン</p>
+    </div>`;
+    case "over": return `<div class="odai mode-card center" id="card">
+      <p class="ng-timer">0:00</p>
+      <p class="ng-lead">タイムアップ！</p>
+      <p class="hand-note">結果発表で、みんなのNGワードを公開</p>
+    </div>`;
+  }
+  return "";
+}
+function vNgControls() {
+  const g = S.game, ng = g.ng, n = S.members.length;
+  switch (ng.phase) {
+    case "setup": return `<button class="big" data-act="ngDeal">ワードを配る</button>`;
+    case "hand": return `<button class="big" data-act="ngSee">${mName(ng.viewer)}が見る</button>${ng.dealing ? "" : `<button class="ghost" data-act="ngBack">やっぱやめる</button>`}`;
+    case "look": return `<button class="big" data-act="ngNext">${!ng.dealing ? "覚えた、隠す" : ng.viewer + 1 < n ? `覚えた → ${mName(ng.viewer + 1)}に渡す` : "覚えた → スタート"}</button>`;
+    case "play": return `
+      <div class="pen-grid-wrap"><p class="pen-q">言うてもうたのは？<span>タップでアウト</span></p>
+      <div class="pen-grid ${n > 6 ? "many" : ""}">${S.members.map((m, i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="ngTap" data-i="${i}"><span class="bar"></span><span class="nm">${esc(m.name)}</span><span class="meta"><em>アウト${g.pen[i]}</em></span></button>`).join("")}</div></div>
+      <div class="sub-acts two"><button data-act="ngPeek">ワードを見直す</button><button data-act="ngTopic">話題を出す</button></div>`;
+    case "who": return `${vChipsSimple("誰がワードを見直す？", "ngWho", S.members.map((_, i) => i))}<button class="ghost" data-act="ngBack">やめる</button>`;
+    case "confirm": return `<div class="verdict"><button class="vd ok" data-act="ngNo"><b>言うてない</b><small>戻る</small></button><button class="vd ng" data-act="ngYes"><b>アウト！</b><small>罰ガチャ</small></button></div>`;
+    case "out": return `<button class="big" data-act="ngNew">${ng.res.lucky ? "ラッキー！" : "受け入れた"} → 新しいワードを配る</button>`;
+    case "eyes": return `<button class="big" data-act="ngEyes">${mName(ng.out)}以外で見る</button>`;
+    case "newword": return `<button class="big" data-act="ngHide">見た、隠す → 再開</button>`;
+    case "over": return `<button class="big" data-act="end">結果発表</button>`;
+  }
+  return "";
+}
+function vChipsSimple(head, act, list) {
+  return `<div class="pen"><h3>${head}</h3><div class="chips">${list.map((i) => `<button class="chip" style="--mc:${colorOf(i)}" data-act="${act}" data-i="${i}"><span class="dot"></span>${esc(S.members[i].name)}</button>`).join("")}</div></div>`;
+}
+function vNg() {
+  return `<div id="stage" class="${S.flip ? "flipped" : ""}">
+    ${vBar()}
+    <div class="deck">${vNgCard()}</div>
+    ${vNgControls()}
+  </div>`;
+}
+
+// ---------- ぶっちゃけ投票（画面） ----------
+function vVoteCard() {
+  const g = S.game, vt = g.vt, n = S.members.length;
+  const nc = vt.night === "shinya" ? "deep" : vt.night ? "yoru" : "";
+  const qHead = `<div class="head"><span class="who"><b>第${vt.round}問</b></span><span class="meta">${vt.night ? `<span class="kind">${vt.night === "shinya" ? "深夜" : "夜"}の質問</span>` : ""}<i class="tag">投票</i></span></div>`;
+  switch (vt.phase) {
+    case "q": return `<div class="odai ${nc} mode-card ${S.anim ? "in" : ""}" id="card">
+      ${qHead}
+      <p class="txt" style="font-size:${fitSize(vt.q, false)}"><span>${esc(vt.q)}</span></p>
+      <p class="how-note">自分以外の誰かに、こっそり1票。一番票が多い人が罰${vt.night ? "（下ネタNGの人は候補に出えへん）" : ""}</p>
+    </div>`;
+    case "hand": { const v = vt.order[vt.k]; return `<div class="odai ${nc} mode-card center" id="card">
+      <p class="prog">投票 ${vt.k + 1} / ${n}</p>
+      ${bigWho(v, "の番")}
+      <p class="hand-note">スマホを${mName(v)}に渡して。<br>他の人は画面を見たらアカン</p>
+    </div>`; }
+    case "vote": { const v = vt.order[vt.k]; return `<div class="odai ${nc} mode-card" id="card">
+      <div class="head"><span class="who" style="--mc:${colorOf(v)}"><i></i><b>${mName(v)}</b><small>の投票</small></span></div>
+      <p class="vote-q">${esc(vt.q)}</p>
+      <div class="pen-grid vote-grid ${n > 6 ? "many" : ""}">${vt.cands.filter((i) => i !== v).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="vPick" data-i="${i}"><span class="bar"></span><span class="nm">${mName(i)}</span></button>`).join("")}</div>
+    </div>`; }
+    case "done": return `<div class="odai ${nc} mode-card center" id="card">
+      <p class="prog">${esc(vt.q)}</p>
+      <p class="ng-lead">全員投票した！</p>
+      <p class="hand-note">スマホをみんなが見える所に置いて</p>
+    </div>`;
+    case "reveal": {
+      const c = voteCounts(), max = Math.max(...c);
+      const rows = vt.cands.map((i) => ({ i, v: c[i] })).sort((a, b) => b.v - a.v);
+      return `<div class="odai ${nc} mode-card" id="card">
+        ${qHead}
+        <p class="vote-q">${esc(vt.q)}</p>
+        <ul class="vbars">${rows.map((r, k) => `<li class="${vt.top.includes(r.i) ? "top" : ""}" style="--mc:${colorOf(r.i)};--d:${(0.15 + (rows.length - k) * 0.12).toFixed(2)}s"><span class="nm">${mName(r.i)}</span><span class="bar"><i style="--w:${max ? (r.v / max) * 100 : 0}%"></i></span><b>${r.v}</b>${vt.top.includes(r.i) ? `<span class="stamp">罰</span>` : ""}</li>`).join("")}</ul>
+      </div>`;
+    }
+    case "batsu": return vCard();
+  }
+  return "";
+}
+function vVoteControls() {
+  const g = S.game, vt = g.vt;
+  switch (vt.phase) {
+    case "q": return `<button class="big" data-act="vStart">投票スタート</button><button class="ghost" data-act="vSkip">この質問はパス</button>`;
+    case "hand": return `<button class="big" data-act="vHand">${mName(vt.order[vt.k])}です。投票する</button>`;
+    case "vote": return `<p class="hint">押したらすぐ次の人へ。誰に入れたかは出えへん</p>`;
+    case "done": return `<button class="big" data-act="vReveal">結果発表</button>`;
+    case "reveal": return `<button class="big has-pen" data-act="vGacha">${vt.top.map(mName).join("・")}に罰ガチャ</button>`;
+    case "batsu": return `<button class="big" data-act="vNext" data-shake>${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次の質問</button>`;
+  }
+  return "";
+}
+function vVote() {
+  return `<div id="stage" class="${S.flip ? "flipped" : ""}">
+    ${vBar()}
+    <div class="deck">${vVoteCard()}</div>
+    ${vVoteControls()}
   </div>`;
 }
 
@@ -694,9 +865,10 @@ function vResult() {
   const who = top.n === 0 ? "該当者なし" : tie.map((r) => r.m.name).join("・");
   return `<div class="result">
   <h1 class="res-head">本日の戦犯</h1>
-  <p class="res-sub">${g.mode === "odai" ? "アホお題" : "すごろく"}・${LV[S.level]}・${g.turn || "-"}ターン</p>
+  <p class="res-sub">${esc(modeLine(g))}</p>
   <div class="mvp"><small>MVP（悪い意味で）</small><b>${esc(who)}</b><span>${top.n === 0 ? "全員セーフ。平和すぎる" : `罰 ${top.n}回`}</span></div>
   ${(() => { const ts = titles(); return ts.length ? `<h2 class="res-h2">称号</h2><ul class="titles">${ts.map((t, k) => `<li style="--d:${(0.3 + k * 0.12).toFixed(2)}s"><small>${esc(t.title)}</small><b>${esc(titleNames(t))}</b><span>${esc(t.desc)}</span></li>`).join("")}</ul>` : ""; })()}
+  ${g.mode === "ngword" && g.ng?.words.length ? `<h2 class="res-h2">みんなのNGワード</h2><ul class="ng-list res">${S.members.map((m, j) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${esc(g.ng.words[j])}</b></li>`).join("")}</ul>` : ""}
   <h2 class="res-h2">罰ランキング</h2>
   <ol class="rank">${rows.map((r, k) => `<li><span class="no">${k + 1}</span><i class="pc" style="background:${colorOf(r.i)}"></i><span class="nm">${esc(r.m.name)}${whyText(r.i) ? `<small>${esc(whyText(r.i))}</small>` : ""}</span><span class="ct">${r.n}</span></li>`).join("")}</ol>
   <p class="tip">${MOON}<span>${esc(resultTip())}</span></p>
@@ -732,7 +904,7 @@ function resultImage() {
   x.restore();
   x.fillStyle = "#ffd23f"; x.font = `110px ${disp}`; x.fillText("ノリダン", 90, 200);
   x.fillStyle = "#8d857a"; x.font = `900 40px ${body}`;
-  x.fillText(`${g.mode === "odai" ? "アホお題" : "すごろく"}・${LV[S.level]}・${g.turn}ターン`, 90, 270);
+  x.fillText(modeLine(g), 90, 270);
   x.fillStyle = "#ff2a2a"; x.font = `150px ${disp}`; x.fillText("本日の戦犯", 90, 470);
   const rows = S.members.map((m, i) => ({ m, i, n: g.pen[i] })).sort((a, b) => b.n - a.n);
   const top = rows[0], who = top.n === 0 ? "該当者なし" : rows.filter((r) => r.n === top.n).map((r) => r.m.name).join("・");
@@ -809,26 +981,27 @@ const overlay = document.getElementById("overlay");
 let lastSoundKey = "";
 function render(anim) {
   const sc = S.screen;
-  const onStage = sc === "odai" || sc === "sugoroku";
+  const onStage = isStage(sc);
   document.body.dataset.level = S.level;
   document.body.classList.toggle("stage", onStage);
-  if (onStage) document.body.style.setProperty("--pc", colorOf(S.game.doer));
+  if (onStage) document.body.style.setProperty("--pc", S.game.doer >= 0 ? colorOf(S.game.doer) : modeFrame());
   // 夜お題の間だけ照明が落ちてネオン看板に。ホームも夜モード中はネオン
   const c = onStage ? S.game.card : null;
-  const neon = !!(c && c.yoru && S.game.phase !== "batsu");
+  const vtNight = sc === "vote" && S.game.vt.phase !== "batsu" ? S.game.vt.night : false; // 投票の夜の質問もネオンに
+  const neon = !!(c && c.yoru && S.game.phase !== "batsu") || !!vtNight;
   document.body.classList.toggle("neon", neon);
   // 画面の外側（下のホームバーの所など）も同じ色にして、黒い帯が出んようにする
   document.documentElement.style.backgroundColor = getComputedStyle(document.body).getPropertyValue("--bg").trim() || "";
   document.body.classList.toggle("night-home", sc === "home" && !!(S.night || S.nightAsk));
-  document.body.classList.toggle("deep", (neon && c.kind?.includes("深夜")) || (sc === "home" && (S.nightAsk ? S.nightAsk === "shinya" : S.night === "shinya")));
+  document.body.classList.toggle("deep", (neon && (vtNight ? vtNight === "shinya" : c.kind?.includes("深夜"))) || (sc === "home" && (S.nightAsk ? S.nightAsk === "shinya" : S.night === "shinya")));
   S.anim = !!anim;
   // 画面が変わった時だけスライドして入ってくる
   const key = sc === "home" ? (S.nightAsk ? "night" : "home" + S.step) : sc;
-  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, result: 3 };
+  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, ngword: 2, vote: 2, result: 3 };
   const moved = S.navKey && S.navKey !== key;
   const dir = moved && ORDER[key] < ORDER[S.navKey] ? "back" : "fwd";
   S.navKey = key;
-  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : vResult();
+  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : vResult();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
   overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   if (onStage) { fixHeight(); fitCard(); }
@@ -844,6 +1017,8 @@ function render(anim) {
 function cue() {
   const sc = S.screen;
   if (sc === "result") { play("fanfare"); return; }
+  if (sc === "ngword") { const p = S.game.ng.phase; play(p === "out" ? (S.game.ng.res.lucky ? "lucky" : "boom") : p === "over" ? "alarm" : p === "confirm" ? "warn" : "flip"); if (p === "out" && !S.game.ng.res.lucky) boomFlash(); return; }
+  if (sc === "vote") { const p = S.game.vt.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? "fanfare" : "flip"); return; }
   if (sc !== "odai" && sc !== "sugoroku") return;
   const g = S.game, c = g.card || {};
   if (sc === "sugoroku" && !g.rolled) return; // サイコロ待ちの時は鳴らさない
@@ -870,6 +1045,16 @@ function speakNow() {
     const g = S.game, m = Math.max(...g.pen);
     speak(m === 0 ? "本日の戦犯は、該当者なし。平和すぎる" : `本日の戦犯は、${S.members.filter((_, i) => g.pen[i] === m).map((x) => x.name).join("と")}。罰${m}回`);
   } else if (S.screen === "odai" || S.screen === "sugoroku") speak(cardSpeech());
+  else if (S.screen === "vote") { const vt = S.game.vt; if (vt.phase === "q") speak(vt.q); else if (vt.phase === "batsu") speak(cardSpeech()); }
+  // NGワードは絶対に読み上げへん（ワードがバレる）
+}
+// フチの色：番の人がおらんモードは、その時に画面を見てる人の色
+function modeFrame() {
+  const g = S.game;
+  if (g.ng && ["hand", "look"].includes(g.ng.phase)) return colorOf(g.ng.viewer);
+  if (g.ng && ["confirm", "out", "eyes", "newword"].includes(g.ng.phase)) return colorOf(g.ng.out);
+  if (g.vt && ["hand", "vote"].includes(g.vt.phase)) return colorOf(g.vt.order[g.vt.k]);
+  return "#8d857a";
 }
 function boomFlash() {
   const el = document.createElement("div");
@@ -987,6 +1172,41 @@ function onClick(e) {
     case "dWin": g.st.dwin[g.doer]++; g.phase = "push"; render(); break;
     case "dLose": g.addReason = "double"; addPen(g.doer, 2); finishCard(); break;
     case "pushTo": g.st.hit[i]++; g.addReason = "push"; addPen(i, 1); finishCard(); break;
+
+    // NGワード
+    case "ngMin": g.ng.minutes = +b.dataset.v; store.set("nd_ng_min", g.ng.minutes); render(); break;
+    case "ngDeal": ngDeal(); render(true); break;
+    case "ngSee": g.ng.phase = "look"; render(true); break;
+    case "ngNext":
+      if (g.ng.dealing && g.ng.viewer + 1 < S.members.length) { g.ng.viewer++; g.ng.phase = "hand"; }
+      else { g.ng.dealing = false; ngPlay(); }
+      render(true); break;
+    case "ngBack": ngPlay(); render(); break;
+    case "ngPeek": ngPause(); g.ng.phase = "who"; render(); break;
+    case "ngWho": g.ng.viewer = i; g.ng.phase = "hand"; render(true); break;
+    case "ngTopic": g.ng.topic = draw("ngt", DATA.ngwords.topics); render(); break;
+    case "ngTap": ngPause(); g.ng.out = i; g.ng.phase = "confirm"; render(true); break;
+    case "ngNo": ngPlay(); render(); break;
+    case "ngYes": ngOut(g.ng.out); render(true); if (navigator.vibrate) navigator.vibrate([80, 40, 160]); break;
+    case "ngNew": g.ng.phase = "eyes"; render(true); break;
+    case "ngEyes": g.ng.words[g.ng.out] = ngPick(g.ng.words); g.ng.phase = "newword"; render(true); break;
+    case "ngHide": ngPlay(); render(true); break;
+
+    // ぶっちゃけ投票
+    case "vStart": g.vt.phase = "hand"; render(true); break;
+    case "vSkip": g.vt.round--; startVoteRound(); render(true); break;
+    case "vHand": g.vt.phase = "vote"; render(true); break;
+    case "vPick":
+      g.vt.votes[g.vt.order[g.vt.k]] = i; g.vt.k++;
+      g.vt.phase = g.vt.k < S.members.length ? "hand" : "done";
+      play("tick"); if (navigator.vibrate) navigator.vibrate(20);
+      render(true); break;
+    case "vReveal": voteReveal(); render(true); break;
+    case "vGacha":
+      g.add = new Map(g.vt.top.map((t) => [t, 1])); g.addReason = "vote";
+      g.gacha = [...g.add].map(([t, n]) => ({ i: t, n, ...drawBatsu(t) }));
+      g.phase = "batsu"; g.vt.phase = "batsu"; render(true); break;
+    case "vNext": applyAdds(); g.gacha = []; startVoteRound(); render(true); break;
 
     // 夜モード
     case "logo": {
@@ -1137,7 +1357,7 @@ function askMotion() {
 }
 let lastShake = 0;
 window.addEventListener("devicemotion", (e) => {
-  if (!S.shake || S.screen === "home" || S.screen === "result") return;
+  if (!S.shake || !(S.screen === "odai" || S.screen === "sugoroku" || S.screen === "vote")) return;
   const a = e.accelerationIncludingGravity;
   if (!a || a.x == null) return;
   S.motionOk = true; // センサーが生きてる時だけ「振っても進む」を出す
