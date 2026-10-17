@@ -31,7 +31,9 @@
   --pc: var(--yuru); /* current player color */
 }
 html, body { height: 100%; }
+html { height: 100%; background: var(--ink); }
 body {
+  margin: 0; min-height: 100%; min-height: 100dvh;
   background: var(--bg); color: var(--fg);
   font-family: var(--body); font-weight: 500;
   -webkit-tap-highlight-color: transparent;
@@ -43,11 +45,13 @@ body.stage[data-level="futsu"]  { --bg: var(--futsu); --fg: var(--ink); --muted:
 body.stage[data-level="jigoku"] { --bg: var(--jigoku); --fg: var(--blood); --muted: rgba(255,42,42,.65); --chip: rgba(255,42,42,.14); --line: rgba(255,42,42,.3); --card-bg: #170b0b; --card-fg: var(--blood); --card-edge: rgba(255,42,42,.55); }
 
 #app {
-  min-height: 100%; box-sizing: border-box;
+  min-height: 100%; min-height: 100dvh; box-sizing: border-box;
   max-width: 560px; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 14px 24px;
+  /* ホーム画面に追加した時は時計・電池の下から始める */
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  padding-bottom: 24px;
   display: flex; flex-direction: column; gap: 16px;
 }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
@@ -56,7 +60,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--yuru); outl
 mark { background: none; color: inherit; }
 
 /* player-color frame around the whole screen */
-.frame { position: fixed; inset: 0; pointer-events: none; z-index: 5; box-shadow: inset 0 0 0 6px var(--pc), inset 0 0 38px color-mix(in srgb, var(--pc) 55%, transparent); transition: box-shadow .4s ease; }
+.frame { position: fixed; inset: 0 0 auto 0; height: 100vh; height: 100lvh; pointer-events: none; z-index: 5; box-shadow: inset 0 0 0 6px var(--pc), inset 0 0 38px color-mix(in srgb, var(--pc) 55%, transparent); transition: box-shadow .4s ease; }
 body:not(.stage) .frame { display: none; }
 
 /* ---------- shared bits ---------- */
