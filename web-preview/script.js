@@ -739,6 +739,26 @@ function startTimer(sec, onEnd) {
 }
 function stopTimer() { if (modeTimer) { clearInterval(modeTimer); modeTimer = null; } }
 
+// ---------- 最初の人ルーレット（ジェスチャー・褒め殺し） ----------
+// 名前のタイルを光らせながら回して、だんだん遅くなって1人に止まる
+function spinRoulette(onDone) {
+  const n = S.members.length, goal = rnd(n);
+  const base = 16 + rnd(n);
+  const steps = base + ((goal - (base % n) + n) % n); // steps % n === goal で止まる
+  let k = 0, idx = 0;
+  const tick = () => {
+    idx = k % n;
+    document.querySelectorAll(".roul-chip").forEach((el, j) => el.classList.toggle("on", j === idx));
+    play("tick");
+    if (navigator.vibrate) navigator.vibrate(5);
+    if (k >= steps) { setTimeout(() => onDone(idx), 450); return; }
+    k++;
+    const p = k / steps;
+    setTimeout(tick, 55 + p * p * 330);
+  };
+  tick();
+}
+
 // ---------- 早押しジェスチャー ----------
 // 番の人だけお題を見て、声を出さずに体で伝える。当てた人と演じた人に1点。全員1回ずつ演じたら終わり、点数が一番低い人が罰
 function gsWord() {

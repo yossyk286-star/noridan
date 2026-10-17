@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Tap } from '../components/Tap';
 import { BigButton, DeckStack, Frame, GachaCard, RulesSheet, ScoreBar } from '../components/Stage';
-import { HandWho, Lead, ModeCard, NameTiles, Note, Outline, Prog } from '../components/ModeParts';
+import { HandWho, Lead, ModeCard, NameTiles, Note, Outline, Prog, Roulette } from '../components/ModeParts';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
@@ -23,7 +23,7 @@ type Props = {
   onSettings: () => void;
   onFinish: (pen: number[], turns: number, stats: Stats, words?: string[], scores?: number[]) => void;
 };
-type Phase = 'intro' | 'hand' | 'act' | 'timeup' | 'over' | 'low' | 'end';
+type Phase = 'intro' | 'roul' | 'hand' | 'act' | 'timeup' | 'over' | 'low' | 'end';
 const SECS = [30, 60, 90];
 const LV_DESC: Record<Level, string> = { yurume: '動物やスポーツの簡単なお題', futsu: '「満員電車」「二日酔い」みたいなお題', jigoku: '「既読スルー」「月曜日の朝」みたいなむずいお題' };
 
@@ -48,6 +48,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
   const [sec, setSec] = useState(60);
   const [actor, setActor] = useState(0);
   const [acted, setActed] = useState(0);
+  const [picked, setPicked] = useState<number | null>(null);
   const [word, setWord] = useState(() => decks.gesture(level, night, members));
   const [got, setGot] = useState(0);
   const [last, setLast] = useState<number | null>(null);
@@ -128,7 +129,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
             <Text style={[s.how, { color: fg }]}>1. 演じる人だけがお題を見て、声を出さずに体だけで伝える</Text>
             <Text style={[s.how, { color: fg }]}>2. 当たったら、当てた人の名前をタップ。当てた人と演じた人に1点ずつ</Text>
             <Text style={[s.how, { color: fg }]}>3. 分からんお題は「パス」。制限時間いっぱいまで何問でも</Text>
-            <Text style={[s.how, { color: fg }]}>4. 全員1回ずつ演じたら終わり。点数が一番低い人が罰</Text>
+            <Text style={[s.how, { color: fg }]}>4. 最初に演じる人はルーレットで決める。全員1回ずつ演じたら終わり、点数が一番低い人が罰</Text>
             <View style={[s.lvBox, { backgroundColor: alpha(pal.cardEdge, 0.16) }]}>
               <Text style={[s.lvText, { color: fg }]}>地獄度「{LEVEL_LABEL[level]}」：{LV_DESC[level]}</Text>
               {!!night && !members.some((m) => m.ng) && <Text style={[s.small, { color: fg }]}>{night === 'shinya' ? '深夜' : '夜'}モードのお題も混ざる</Text>}
@@ -144,7 +145,17 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
           </View>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label={`${members[0].name}から始める`} onPress={() => setPhase('hand')} />;
+      controls = <BigButton pal={pal} label="ルーレットで最初の人を決める" onPress={() => { setPicked(null); setPhase('roul'); }} />;
+      break;
+    case 'roul':
+      card = (
+        <ModeCard pal={pal} center>
+          <Prog fg={fg}>最初に演じる人は…</Prog>
+          <Roulette members={members} fg={fg} tick={() => play('tick')} onDone={(i) => { setPicked(i); setActor(i); play('coin'); }} />
+          <Lead fg={fg}>{picked != null ? `${members[picked].name}から演じる！` : 'ルーレット中…'}</Lead>
+        </ModeCard>
+      );
+      controls = <BigButton pal={pal} label={picked != null ? `${members[picked].name}から始める` : 'ルーレット中…'} disabled={picked == null} onPress={() => setPhase('hand')} />;
       break;
     case 'hand':
       card = (

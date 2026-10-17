@@ -980,6 +980,15 @@ function vIto() {
   </div>`;
 }
 
+// ---------- 最初の人ルーレット（画面） ----------
+function vRoulette(title, picked, label) {
+  return `<div class="odai mode-card center" id="card">
+    <p class="prog">${title}</p>
+    <div class="roul" style="grid-template-columns:repeat(${S.members.length <= 4 ? 2 : S.members.length <= 6 || S.members.length === 9 ? 3 : 4}, minmax(0,1fr))">${S.members.map((m, i) => `<span class="roul-chip ${picked === i ? "on hit" : ""}" style="--mc:${colorOf(i)}"><i>${esc(m.name.slice(0, 1))}</i><b>${esc(m.name)}</b></span>`).join("")}</div>
+    <p class="ng-lead roul-res">${picked != null ? `${mName(picked)}${label}` : "ルーレット中…"}</p>
+  </div>`;
+}
+
 // ---------- 早押しジェスチャー（画面） ----------
 const GS_SEC = [30, 60, 90];
 function vGsCard() {
@@ -992,13 +1001,14 @@ function vGsCard() {
         <li>演じる人だけがお題を見て、<b>声を出さずに体だけ</b>で伝える</li>
         <li>当たったら、<b>当てた人の名前</b>をタップ。当てた人と演じた人に1点ずつ</li>
         <li>分からんお題は「パス」。制限時間いっぱいまで何問でも</li>
-        <li>全員1回ずつ演じたら終わり。<b>点数が一番低い人が罰</b></li>
+        <li>最初に演じる人はルーレットで決める。全員1回ずつ演じたら終わり、<b>点数が一番低い人が罰</b></li>
       </ol>
       <p class="ng-lv">地獄度「${LV[S.level]}」：${{ yurume: "動物やスポーツの簡単なお題", futsu: "「満員電車」「二日酔い」みたいなお題", jigoku: "「既読スルー」「月曜日の朝」みたいなむずいお題" }[S.level]}${S.night && !S.members.some((m) => m.ng) ? `<small>${S.night === "shinya" ? "深夜" : "夜"}モードのお題も混ざる</small>` : ""}</p>
       <div class="ng-min-wrap"><p class="ng-min-h">1人の持ち時間</p>
         <div class="ng-min three">${GS_SEC.map((v) => `<button data-act="gsSec" data-v="${v}" aria-pressed="${gs.sec === v}">${v}秒</button>`).join("")}</div></div>
       </div>
     </div>`;
+    case "roul": return vRoulette("最初に演じる人は…", gs.picked, "から演じる！");
     case "hand": return `<div class="odai mode-card center" id="card">
       <p class="prog">演じる人 ${gs.acted + 1} / ${n}</p>
       ${bigWho(gs.actor, "が演じる番")}
@@ -1030,7 +1040,8 @@ function vGsCard() {
 function vGsControls() {
   const g = S.game, gs = g.gs;
   switch (gs.phase) {
-    case "intro": return `<button class="big" data-act="gsBegin">${mName(0)}から始める</button>`;
+    case "intro": return `<button class="big" data-act="gsRoul">ルーレットで最初の人を決める</button>`;
+    case "roul": return gs.picked != null ? `<button class="big" data-act="gsBegin">${mName(gs.picked)}から始める</button>` : `<button class="big" disabled>ルーレット中…</button>`;
     case "hand": return `<button class="big" data-act="gsGo">スタート（${gs.sec}秒）</button>`;
     case "act": return `<div class="pen-grid-wrap"><p class="pen-q">当てたのは？<span>タップで1点</span></p>
       <div class="pen-grid ${S.members.length > 7 ? "many" : ""}">${others(gs.actor).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="gsHit" data-i="${i}"><span class="bar"></span><span class="nm">${mName(i)}</span><span class="meta"><em>${gs.score[i]}点</em></span></button>`).join("")}</div></div>
@@ -1063,11 +1074,12 @@ function vHmCard() {
         <li>番の人が、ランダムで選ばれた1人を<b>${hm.sec}秒間ひたすら褒める</b></li>
         <li>褒められた人は真顔で耐えろ。<b>笑ったり照れたりしたら褒められた人が罰</b></li>
         <li>${hm.sec}秒耐え切ったら、<b>褒めた人が罰</b></li>
-        <li>褒めるところのヒント（テーマ）も出る。順番に交代していく</li>
+        <li>最初に褒める人はルーレットで決める。褒めるところのヒント（テーマ）も出る。順番に交代していく</li>
       </ol>
       <p class="how-note">好きなとこで「⋯」→結果発表で終わり</p>
       </div>
     </div>`;
+    case "roul": return vRoulette("最初に褒める人は…", hm.picked, "から褒める！");
     case "ready": case "go": return `<div class="odai ${nc} mode-card center" id="card">
       ${hm.phase === "go" ? `<p class="gs-timer" id="modeTimer">${Math.max(0, Math.ceil((hm.endAt - Date.now()) / 1000))}</p>` : `<p class="prog">第${g.turn + 1}戦</p>`}
       <div class="hm-vs">
@@ -1085,7 +1097,8 @@ function vHmCard() {
 function vHmControls() {
   const g = S.game, hm = g.hm;
   switch (hm.phase) {
-    case "intro": return `<button class="big" data-act="hmBegin">${mName(0)}から始める</button>`;
+    case "intro": return `<button class="big" data-act="hmRoul">ルーレットで最初の人を決める</button>`;
+    case "roul": return hm.picked != null ? `<button class="big" data-act="hmBegin">${mName(hm.picked)}から始める</button>` : `<button class="big" disabled>ルーレット中…</button>`;
     case "ready": return `<div class="sub-acts two"><button data-act="hmShuffle">相手を変える</button><button data-act="hmTheme">テーマを変える</button></div><button class="big" data-act="hmGo">スタート（${hm.sec}秒）</button>`;
     case "go": return `<div class="verdict">
       <button class="vd ng" data-act="hmLaugh"><b>笑った・照れた</b><small>${mName(hm.target)}に罰</small></button>
@@ -1542,6 +1555,7 @@ function onClick(e) {
 
     // 早押しジェスチャー
     case "gsSec": g.gs.sec = +b.dataset.v; store.set("nd_gs_sec", g.gs.sec); render(); break;
+    case "gsRoul": g.gs.phase = "roul"; g.gs.picked = null; render(true); spinRoulette((i) => { g.gs.picked = i; g.gs.actor = i; g.doer = g.cur = i; play("coin"); render(true); }); break;
     case "gsBegin": g.gs.phase = "hand"; render(true); break;
     case "gsGo": gsStart(); render(true); break;
     case "gsHit": gsHit(i); play("coin"); if (navigator.vibrate) navigator.vibrate(30); render(true); break;
@@ -1556,6 +1570,7 @@ function onClick(e) {
     case "gsAccept": applyAdds(); g.gacha = []; g.phase = "play"; g.gs.phase = "end"; render(true); break;
 
     // 褒め殺し
+    case "hmRoul": g.hm.phase = "roul"; g.hm.picked = null; render(true); spinRoulette((i) => { g.hm.picked = i; g.hm.praiser = i; g.doer = g.cur = i; play("coin"); render(true); }); break;
     case "hmBegin": hmRound(); render(true); break;
     case "hmShuffle": { const t = g.hm.target, pool = others(g.hm.praiser).filter((x) => x !== t); if (pool.length) g.hm.target = pick(pool); render(true); break; }
     case "hmTheme": g.hm.theme = draw("hm_" + (g.hm.night || "normal"), DATA.homeru[g.hm.night || "normal"]); render(true); break;

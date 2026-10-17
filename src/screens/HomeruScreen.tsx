@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, Frame, GachaCard, RuleBanner, RuleSheet, RulesSheet, ScoreBar } from '../components/Stage';
-import { ModeCard, Outline, Prog } from '../components/ModeParts';
+import { Lead, ModeCard, Outline, Prog, Roulette } from '../components/ModeParts';
 import GameMenu from '../components/GameMenu';
 import { Decks, PERSONAL, othersOf, pick } from '../lib/game';
 import { play } from '../lib/sound';
@@ -23,7 +23,7 @@ type Props = {
   onSettings: () => void;
   onFinish: (pen: number[], turns: number, stats: Stats) => void;
 };
-type Phase = 'intro' | 'ready' | 'go' | 'batsu';
+type Phase = 'intro' | 'roul' | 'ready' | 'go' | 'batsu';
 const SEC = 30;
 
 export const HOMERU_RULES: [string, string][] = [
@@ -49,6 +49,7 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
   const [target, setTarget] = useState(1 % n);
   const [theme, setTheme] = useState<{ theme: string; night: 'yoru' | 'shinya' | false }>({ theme: '', night: false });
   const [loser, setLoser] = useState<number | null>(null);
+  const [picked, setPicked] = useState<number | null>(null);
   const [round, setRound] = useState(0);
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
   const [gacha, setGacha] = useState<GachaItem[]>([]);
@@ -150,12 +151,22 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
             <Text style={[s.how, { color: fg }]}>1. 番の人が、ランダムで選ばれた1人を30秒間ひたすら褒める</Text>
             <Text style={[s.how, { color: fg }]}>2. 褒められた人は真顔で耐えろ。笑ったり照れたりしたら褒められた人が罰</Text>
             <Text style={[s.how, { color: fg }]}>3. 30秒耐え切ったら、褒めた人が罰</Text>
-            <Text style={[s.how, { color: fg }]}>4. 褒めるところのヒント（テーマ）も出る。順番に交代していく</Text>
+            <Text style={[s.how, { color: fg }]}>4. 最初に褒める人はルーレットで決める。褒めるところのヒント（テーマ）も出る。順番に交代していく</Text>
             <Text style={[s.small, { color: fg }]}>好きなとこで「⋯」→結果発表で終わり</Text>
           </View>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label={`${members[0].name}から始める`} onPress={() => setup(0)} />;
+      controls = <BigButton pal={pal} label="ルーレットで最初の人を決める" onPress={() => { setPicked(null); setPhase('roul'); }} />;
+      break;
+    case 'roul':
+      card = (
+        <ModeCard pal={pal} center>
+          <Prog fg={fg}>最初に褒める人は…</Prog>
+          <Roulette members={members} fg={fg} tick={() => play('tick')} onDone={(i) => { setPicked(i); setPraiser(i); play('coin'); }} />
+          <Lead fg={fg}>{picked != null ? `${members[picked].name}から褒める！` : 'ルーレット中…'}</Lead>
+        </ModeCard>
+      );
+      controls = <BigButton pal={pal} label={picked != null ? `${members[picked].name}から始める` : 'ルーレット中…'} disabled={picked == null} onPress={() => setup(picked ?? 0)} />;
       break;
     case 'ready':
     case 'go':

@@ -762,6 +762,17 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .hm-vs span small { font-size: 12px; font-weight: 900; opacity: .7; }
 .hm-vs em { font-style: normal; font-family: var(--display); font-size: 28px; opacity: .6; }
 .hm-result { margin: 0; text-align: center; font-family: var(--display); font-size: 22px; color: var(--fg); }
+/* 最初の人ルーレット */
+.roul { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; width: 100%; }
+.roul.many { grid-template-columns: repeat(4, minmax(0,1fr)); }
+.roul-chip { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 14px; border: 2px solid color-mix(in srgb, currentColor 15%, transparent); transition: transform .08s, background-color .08s; min-width: 0; }
+.roul-chip i { width: 40px; height: 40px; border-radius: 50%; background: var(--mc); color: #141210; display: grid; place-items: center; font-style: normal; font-family: var(--display); font-size: 20px; opacity: .45; }
+.roul-chip b { font-size: 13px; font-weight: 900; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .55; }
+.roul-chip.on { border-color: var(--mc); background: color-mix(in srgb, var(--mc) 22%, transparent); transform: scale(1.06); }
+.roul-chip.on i, .roul-chip.on b { opacity: 1; }
+.roul-chip.hit { animation: roulHit .5s cubic-bezier(.3,1.6,.5,1); box-shadow: 0 0 0 3px var(--mc); }
+@keyframes roulHit { from { transform: scale(1.35); } to { transform: scale(1.06); } }
+.roul-res { min-height: 1.4em; }
 /* 価値観ナンバー */
 .it-num { margin: 0; font-family: var(--display); font-size: clamp(90px, 30vw, 150px); line-height: 1; font-variant-numeric: tabular-nums; }
 .it-topic { margin: 0; font-size: 18px; font-weight: 900; }
