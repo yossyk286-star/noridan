@@ -529,7 +529,9 @@ function startVoteRound() {
     key = S.night === "shinya" && (S.level === "jigoku" || Math.random() < 0.6) ? "shinya" : "yoru";
   }
   vt.night = key === "yoru" || key === "shinya" ? key : false;
-  vt.q = draw("vote_" + key, DATA.vote[key]);
+  const q = draw("vote_" + key, DATA.vote[key]);
+  vt.q = textOf(q);
+  vt.good = typeof q === "object" && !!q.good; // 褒める系は票が一番少ない人、イジる系は一番多い人が罰
   // 夜の質問は下ネタNGの人を候補から外す
   vt.cands = S.members.map((_, i) => i).filter((i) => !vt.night || okForYoru(i));
   vt.votes = Array(n).fill(null);
@@ -547,6 +549,8 @@ function voteReveal() {
   const g = S.game, c = voteCounts();
   c.forEach((v, i) => (g.st.votes[i] += v));
   g.turn++;
-  g.vt.top = c.map((v, i) => (v === Math.max(...c) ? i : -1)).filter((i) => i >= 0);
+  const vt = g.vt, cv = vt.cands.map((i) => c[i]);
+  const goal = vt.good ? Math.min(...cv) : Math.max(...cv);
+  vt.top = vt.cands.filter((i) => c[i] === goal);
   g.vt.phase = "reveal";
 }

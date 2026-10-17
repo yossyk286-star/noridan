@@ -162,14 +162,18 @@ export class Decks {
     return this.str('ngt', ngwords.topics, 99)!;
   }
   /** ぶっちゃけ投票の質問。夜・深夜はたまに下ネタ（候補から下ネタNGの人を外す） */
-  vote(level: Level, night: Night, members: Member[]): { q: string; night: 'yoru' | 'shinya' | false; cands: number[] } {
+  vote(level: Level, night: Night, members: Member[]): { q: string; good: boolean; night: 'yoru' | 'shinya' | false; cands: number[] } {
     const ok = members.map((_, i) => i).filter((i) => !members[i].ng);
     const shinya = night === 'shinya' && ALLOW_SHINYA;
     let key: Level | 'yoru' | 'shinya' = level;
     if (night && ok.length >= 3 && Math.random() < (shinya ? 0.75 : 0.35)) key = shinya && (level === 'jigoku' || Math.random() < 0.6) ? 'shinya' : 'yoru';
     const nightQ = key === 'yoru' || key === 'shinya' ? key : false;
-    const q = this.str('vote_' + key, (voteJson as unknown as Record<string, string[]>)[key], 99)!;
-    return { q, night: nightQ, cands: nightQ ? ok : members.map((_, i) => i) };
+    type VQ = string | { text: string; good?: boolean };
+    const raw = this.draw<VQ>('vote_' + key, (voteJson as unknown as Record<string, VQ[]>)[key], (t) => (typeof t === 'string' ? t : t.text), 99)!;
+    // 褒める系（good）は票が一番少ない人、イジる系は一番多い人が罰
+    const q = typeof raw === 'string' ? raw : raw.text;
+    const good = typeof raw !== 'string' && !!raw.good;
+    return { q, good, night: nightQ, cands: nightQ ? ok : members.map((_, i) => i) };
   }
 
   /** 罰ガチャ。たまにラッキー（天使）で帳消し */

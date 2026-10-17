@@ -185,7 +185,7 @@ function vHome2() {
       <button class="mode" data-act="start" data-m="odai"><i class="mode-ic">${ICON.cards}</i><b>アホお題</b><span>出たお題を順番にやるだけ</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="sugoroku"><i class="mode-ic">${ICON.dice}</i><b>すごろく</b><span>サイコロで進む。1番にゴールで終了</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>自分だけ知らんNGワードを、言わされたらアウト</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : "「一番○○なのは？」に匿名で投票。1位が罰"}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : "「一番○○なのは？」に匿名で投票して罰を決める"}</span><em class="go">開始</em></button>
     </div>
   </section>
   ${S.night ? `<section class="night-switch">
@@ -558,7 +558,7 @@ function vRules() {
   if (md === "vote") items.splice(0, items.length,
     ["質問", "「この中で一番○○なのは？」が出る。地獄度で質問の攻め具合が変わる"],
     ["投票", "スマホを回して、1人ずつ自分以外の誰かにこっそり1票。誰が誰に入れたかは出えへん"],
-    ["結果", "一番票が多い人が罰ガチャ。同票なら全員"],
+    ["結果", "イジる系の質問は票が一番多い人、褒める系の質問は一番少ない人が罰ガチャ。同票なら全員"],
     ["夜モード", "夜・深夜は下ネタの質問も出る。下ネタNGの人は候補に出えへん"]);
   return `
   <div class="sheet-back" data-act="rulesClose">
@@ -721,7 +721,8 @@ function vVoteCard() {
     case "q": return `<div class="odai ${nc} mode-card ${S.anim ? "in" : ""}" id="card">
       ${qHead}
       <p class="txt" style="font-size:${fitSize(vt.q, false)}"><span>${esc(vt.q)}</span></p>
-      <p class="how-note">自分以外の誰かに、こっそり1票。一番票が多い人が罰${vt.night ? "（下ネタNGの人は候補に出えへん）" : ""}</p>
+      <p class="vote-rule ${vt.good ? "good" : "bad"}">${vt.good ? "褒める系：票が一番<b>少ない</b>人が罰" : "イジる系：票が一番<b>多い</b>人が罰"}</p>
+      <p class="how-note">自分以外の誰かに、こっそり1票${vt.night ? "（下ネタNGの人は候補に出えへん）" : ""}</p>
     </div>`;
     case "hand": { const v = vt.order[vt.k]; return `<div class="odai ${nc} mode-card center" id="card">
       <p class="prog">投票 ${vt.k + 1} / ${n}</p>
@@ -741,9 +742,11 @@ function vVoteCard() {
     case "reveal": {
       const c = voteCounts(), max = Math.max(...c);
       const rows = vt.cands.map((i) => ({ i, v: c[i] })).sort((a, b) => b.v - a.v);
+      const rule = `<p class="vote-rule ${vt.good ? "good" : "bad"}">${vt.good ? "褒める系なので、票が一番少ない人が罰" : "イジる系なので、票が一番多い人が罰"}</p>`;
       return `<div class="odai ${nc} mode-card" id="card">
         ${qHead}
         <p class="vote-q">${esc(vt.q)}</p>
+        ${rule}
         <ul class="vbars">${rows.map((r, k) => `<li class="${vt.top.includes(r.i) ? "top" : ""}" style="--mc:${colorOf(r.i)};--d:${(0.15 + (rows.length - k) * 0.12).toFixed(2)}s"><span class="nm">${mName(r.i)}</span><span class="bar"><i style="--w:${max ? (r.v / max) * 100 : 0}%"></i></span><b>${r.v}</b>${vt.top.includes(r.i) ? `<span class="stamp">罰</span>` : ""}</li>`).join("")}</ul>
       </div>`;
     }

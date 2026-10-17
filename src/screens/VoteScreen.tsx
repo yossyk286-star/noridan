@@ -23,12 +23,12 @@ type Props = {
   onFinish: (pen: number[], turns: number, stats: Stats) => void;
 };
 type Phase = 'q' | 'hand' | 'vote' | 'done' | 'reveal' | 'batsu';
-type Round = { q: string; night: 'yoru' | 'shinya' | false; cands: number[]; order: number[]; votes: (number | null)[]; no: number };
+type Round = { q: string; good: boolean; night: 'yoru' | 'shinya' | false; cands: number[]; order: number[]; votes: (number | null)[]; no: number };
 
 export const VOTE_RULES: [string, string][] = [
   ['質問', '「この中で一番○○なのは？」が出る。地獄度で質問の攻め具合が変わる'],
   ['投票', 'スマホを回して、1人ずつ自分以外の誰かにこっそり1票。誰が誰に入れたかは出えへん'],
-  ['結果', '一番票が多い人が罰ガチャ。同票なら全員'],
+  ['結果', 'イジる系の質問は票が一番多い人、褒める系の質問は一番少ない人が罰ガチャ。同票なら全員'],
   ['夜モード', '夜・深夜は下ネタの質問も出る。下ネタNGの人は候補に出えへん'],
 ];
 
@@ -63,7 +63,14 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
   const counts = Array(n).fill(0) as number[];
   round.votes.forEach((t) => t != null && counts[t]++);
   const max = Math.max(...counts);
-  const top = round.cands.filter((i) => counts[i] === max && max > 0);
+  const cv = round.cands.map((i) => counts[i]);
+  const goal = round.good ? Math.min(...cv) : Math.max(...cv);
+  const top = round.cands.filter((i) => counts[i] === goal);
+  const ruleTag = (
+    <Text style={[s.rule, round.good ? s.ruleGood : s.ruleBad]}>
+      {round.good ? '褒める系：票が一番少ない人が罰' : 'イジる系：票が一番多い人が罰'}
+    </Text>
+  );
   const voter = round.order[k];
 
   const nextRound = (skip = false) => {
@@ -133,7 +140,8 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <Text style={[s.qBig, { color: fg }]} adjustsFontSizeToFit>{round.q}</Text>
           </View>
-          <Text style={[s.small, { color: fg }]}>自分以外の誰かに、こっそり1票。一番票が多い人が罰{round.night ? '（下ネタNGの人は候補に出えへん）' : ''}</Text>
+          {ruleTag}
+          <Text style={[s.small, { color: fg }]}>自分以外の誰かに、こっそり1票{round.night ? '（下ネタNGの人は候補に出えへん）' : ''}</Text>
         </ModeCard>
       );
       controls = (
@@ -180,6 +188,7 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
         <ModeCard pal={pal}>
           {head}
           <Text style={[s.qSmall, { color: fg }]}>{round.q}</Text>
+          {ruleTag}
           <View style={{ flex: 1 }} />
           <View style={{ gap: 8 }}>
             {rows.map((r, j) => (
@@ -255,6 +264,9 @@ const s = StyleSheet.create({
   small: { fontSize: 12, fontWeight: '700', opacity: 0.65, lineHeight: 18 },
   voter: { fontFamily: F.display, fontSize: 22 },
   voterSub: { fontFamily: undefined, fontSize: 13, fontWeight: '900' },
+  rule: { alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, fontSize: 13, fontWeight: '900', overflow: 'hidden' },
+  ruleBad: { backgroundColor: 'rgba(255,59,59,0.14)', color: '#ff3b3b' },
+  ruleGood: { backgroundColor: 'rgba(60,180,110,0.18)', color: '#2fbf6f' },
   hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   barName: { width: 96, fontWeight: '900', fontSize: 15 },
