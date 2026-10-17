@@ -253,6 +253,8 @@ export function OdaiCard({
           </View>
         ) : null}
       </View>
+      {/* コイン・爆弾の絵はお題の文と一緒に札の真ん中へ */}
+      {art && <View style={{ flex: 1 }} />}
       {art === 'bomb' && <BombArt />}
       {art === 'coin' && <Coin />}
       {dual && (
@@ -263,9 +265,10 @@ export function OdaiCard({
           <View style={[styles.dualLine, { borderColor: look.fg }]} />
         </>
       )}
-      <View style={styles.cardBody}>
+      <View style={[styles.cardBody, art && { flex: 0 }]}>
         <SegText fit segments={card.segments} underline={ul} style={[styles.cardText, fitSize(card.segments, small, dual ? 0.74 : 1), { color: look.fg }, textGlow]} />
       </View>
+      {art && <View style={{ flex: 1 }} />}
       </Animated.View>
     </Animated.View>
   );

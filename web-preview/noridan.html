@@ -676,6 +676,9 @@ body.stage[data-level="jigoku"] { --acc: var(--blood); --card-edge: var(--blood)
 .step-h small { font-size: 12px; font-weight: 700; color: var(--muted); }
 .home-coach { font-size: 14px; }
 .ghost-sub { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 2px; }
+/* 倍プッシュのコイン・爆弾の絵は、お題の文と一緒に札の真ん中へ */
+.odai .coin-wrap, .odai .bomb-art { margin-top: auto; }
+.odai .coin-wrap + .txt, .odai .bomb-art + .txt { flex: 0 1 auto; margin-bottom: auto; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
