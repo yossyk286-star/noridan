@@ -2,7 +2,7 @@ import { useReducer, useRef } from 'react';
 import * as Haptics from 'expo-haptics';
 import { CHANCE, Decks, makeCard, nameSeg, othersOf, pick } from './game';
 import { play } from './sound';
-import { newStats } from './titles';
+import { newStats, type Why } from './titles';
 import type { Bomb, Card, GachaItem, Member, Phase } from '../types';
 
 const OFFER_CARD = (members: Member[], doer: number): Card => ({
@@ -35,6 +35,8 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
     cards: 0,
     /** 「他の人に罰をつける」で一覧を開いた札（札が変わったら閉じる） */
     penOpenFor: null as Card | null,
+    /** 今たまってる罰の理由（なければアウト。爆弾札なら爆弾） */
+    addReason: null as Why | null,
     /** 称号用の記録 */
     stats: newStats(n),
   }).current;
@@ -44,12 +46,15 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
   const applyAdds = () => {
     const saved = new Set(st.gacha.filter((g) => g.lucky).map((g) => g.i)); // ラッキーの人は罰なし
     saved.forEach((i) => st.stats.lucky[i]++);
+    const why: Why = st.addReason ?? (st.card.bomb ? 'bomb' : 'out');
     st.add.forEach((k, i) => {
       if (saved.has(i)) return;
       st.pen[i] += k;
       st.rev[i] = true;
+      st.stats.why[i][why] = (st.stats.why[i][why] ?? 0) + k;
     });
     st.add = new Map();
+    st.addReason = null;
     return st.pen.slice();
   };
 
@@ -164,6 +169,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       else {
         st.pen[i]++;
         st.rev[i] = true;
+        st.stats.why[i].rule = (st.stats.why[i].rule ?? 0) + 1;
       }
       play(item.lucky ? 'lucky' : 'pop');
       Haptics.notificationAsync(item.lucky ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error).catch(() => {});
@@ -214,11 +220,13 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       rerender();
     },
     doubleLose() {
+      st.addReason = 'double';
       addPen(st.doer, 2);
       finishCard();
     },
     pushTo(i: number) {
       st.stats.hit[i]++;
+      st.addReason = 'push';
       addPen(i, 1);
       finishCard();
     },

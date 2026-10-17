@@ -575,6 +575,23 @@ body[data-level="jigoku"] .rule-out { background: var(--blood); color: #000; }
 .rule-sheet .skull-wrap svg { width: 84px; height: 84px; }
 .rule-pen { margin: 0; font-family: var(--display); font-size: 22px; line-height: 1.45; text-align: center; }
 .rule-sheet .big { background: var(--paper); color: var(--ink); }
+
+/* ===== 分かりやすさ ===== */
+.odai .head .tag { font-style: normal; display: inline-block; margin-right: 8px; padding: 2px 8px; border-radius: 999px; background: currentColor; letter-spacing: .06em; }
+.odai .head .tag { color: inherit; background: color-mix(in srgb, currentColor 14%, transparent); border: 1px solid color-mix(in srgb, currentColor 45%, transparent); }
+.coach { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 700; line-height: 1.5; position: relative; animation: rise .3s cubic-bezier(.2,1.2,.4,1); }
+.coach::before { content: ""; position: absolute; top: -6px; left: 28px; width: 12px; height: 12px; background: var(--ink); transform: rotate(45deg); }
+.coach span { flex: 1; }
+.coach button { flex: none; padding: 8px 12px; border-radius: 999px; background: var(--yuru); color: var(--ink); font-size: 12px; font-weight: 900; }
+body[data-level="jigoku"] .coach { background: #2a0d0d; border: 1px solid var(--blood); }
+body.stage.neon .coach { background: #1a1228; border: 1px solid var(--nc); }
+.rules { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.rules div { padding: 10px 12px; border-radius: 12px; background: rgba(247,243,234,.06); }
+.rules dt { font-weight: 900; color: var(--yuru); font-size: 14px; }
+.rules dd { margin: 2px 0 0; font-size: 13px; line-height: 1.6; color: rgba(247,243,234,.85); }
+.rules-sheet h2 { margin: 0; }
+.rank .nm { display: flex; flex-direction: column; min-width: 0; }
+.rank .nm small { font-size: 11px; font-weight: 700; color: var(--muted); }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

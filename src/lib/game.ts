@@ -138,7 +138,7 @@ export class Decks {
 
   event(members: Member[], p: number): { card: Card; rule: Rule | null } {
     const ev = this.draw('ev', EVENTS, (e) => e.text, members.length)!;
-    const card = makeCard('【緊急】割り込み', ev.text, members, p, { alert: true, solo: false });
+    const card = makeCard('【緊急】割り込み', ev.text, members, p, { alert: true, solo: false, ruleCard: !!ev.turns });
     return { card, rule: ev.turns ? { segments: card.segments, left: ev.turns } : null };
   }
 
@@ -190,6 +190,10 @@ export function penHead(tpl?: string): string {
   return "アウトの人は？";
 }
 // 番の人以外が罰になりうるお題か（勝負・多数決など）。そういう札は「アウト／セーフ」やなくて一覧から選ぶ
+/** 勝負のお題（負けた方・先に笑った方…）は誰かが必ずアウトになる */
+export function mustPick(tpl?: string): boolean {
+  return !!tpl && /方が罰|2人とも罰/.test(tpl);
+}
 export function needsPick(tpl?: string): boolean {
   if (!tpl) return true;
   if (/黙秘は罰/.test(tpl)) return false;

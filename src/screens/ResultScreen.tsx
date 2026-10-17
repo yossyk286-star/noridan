@@ -7,7 +7,7 @@ import { Icon } from '../components/Icon';
 import { play } from '../lib/sound';
 import { usePrefs } from '../lib/prefs';
 import { speak } from '../lib/speech';
-import { titles, type Stats } from '../lib/titles';
+import { titles, whyText, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, colorOf } from '../theme';
 import type { Level, Member, Mode, Night } from '../types';
 import { ALLOW_SHINYA } from '../lib/game';
@@ -88,7 +88,10 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
           <View key={i} style={s.rank}>
             <Text style={s.no}>{i + 1}</Text>
             <View style={[s.pc, { backgroundColor: colorOf(r.i) }]} />
-            <Text style={s.name}>{r.m.name}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.name}>{r.m.name}</Text>
+              {!!whyText(stats, r.i) && <Text style={s.why}>{whyText(stats, r.i)}</Text>}
+            </View>
             <Text style={s.ct}>{r.n}</Text>
           </View>
         ))}
@@ -126,6 +129,7 @@ function resultTip(night: Night) {
 }
 
 const s = StyleSheet.create({
+  why: { color: C.muted, fontSize: 11, fontWeight: '700' },
   tipRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   tip: { flex: 1, color: C.muted, fontSize: 13, fontWeight: '700' },
   wrap: { padding: 16, paddingBottom: 40, gap: 18, maxWidth: 560, width: '100%', alignSelf: 'center' },

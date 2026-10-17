@@ -42,6 +42,7 @@ const play = (k) => { if (S.sound) try { SFX[k](); } catch {} };
 
 // ---------- icons ----------
 const ICON = {
+  book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/><path d="M9 7h6M9 11h6"/></svg>`,
   gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,
   flip: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M7 4 3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4"/></svg>`,
   back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>`,
@@ -229,24 +230,24 @@ const TUT = [
   {
     step: "1 / 3",
     title: "回して、やって、次へ",
-    text: "スマホをテーブルの真ん中に置くか、順番に回す。画面のフチの色が<b>いまの番の人の色</b>。出たお題をやって、できたらそのまま次へ。",
+    text: "スマホをテーブルの真ん中に置くか、順番に回す。画面のフチの色が<b>いまの番の人の色</b>。出たお題をやって、やり切ったら<b>セーフ</b>、逃げたりできんかったら<b>アウト</b>。",
     art: () => `<div class="mini-card"><small>アホお題・普通</small><b><mark style="--mc:var(--yuru)">たく</mark>、今日のMVPを発表しろ</b></div>`,
   },
   {
     step: "2 / 3",
     title: "罰はガチャで決まる",
-    text: "逃げたりできんかったら「アウト」か札を左にスワイプ（やり切ったら右で「セーフ」）→ <b>罰ガチャ</b>が中身を決める。ドクロなら罰、たまに出る天使なら帳消し。ドクロを引いた人は<b>リベンジ権 ↺</b> をゲット。次の自分のお題を誰かに押し付けられる。",
+    text: "アウトの人は<b>罰ガチャ</b>で中身が決まる。ドクロなら罰、たまに出る天使なら帳消し。ドクロを引いた人は<b>リベンジ権 ↺</b>をゲットして、次の自分のお題を1回だけ誰かに押し付けられる。札を右にスワイプでセーフ、左でアウトでもOK。",
     art: () => `<div class="gacha" style="max-width:280px"><div class="gacha-item" style="--d:.1s;--mc:var(--futsu)"><div class="capsule"><i class="top"></i><i class="bot"></i></div><div class="gacha-txt"><b>まゆの罰</b><p>次の番まで語尾が「ござる」</p></div></div></div>`,
   },
   {
     step: "3 / 3",
-    title: "何が起きるかわからん",
-    text: "たまに予定外のことが起きる。スマホを<b>振っても</b>次に進める。",
+    title: "たまに起きること",
+    text: "この4つは突然やってくる。初めて出た時は画面にひとこと説明が出るから安心してな。スマホを<b>振っても</b>次に進める。",
     art: () => `<div class="tut-icons">
       <div><b>倍プッシュ</b><span>お題を見る前に賭ける。勝てば誰かに罰</span></div>
       <div><b>時限爆弾</b><span>仕掛け人だけが知るNG行動。やったら爆発で罰</span></div>
-      <div><b>緊急指令</b><span>急にルールが割り込んでくる</span></div>
-      <div><b>本日の戦犯</b><span>最後に罰が一番多い奴を発表</span></div>
+      <div><b>緊急指令</b><span>数ターン続くルール。破った人は「違反者に罰」</span></div>
+      <div><b>当てはまらん</b><span>恋人おらん等のお題は、罰なしで誰かに回せる</span></div>
     </div>`,
   },
 ];
@@ -308,7 +309,8 @@ function vPenGrid() {
 }
 function nextText(base) {
   const g = S.game;
-  if (!g.add.size) return `全員クリア → ${base}`;
+  if (!g.add.size && mustPick(g.card?.tpl)) return `${penHead(g.card.tpl).replace(/は？$/, "")}を選んで`;
+  if (!g.add.size) return `アウトなし → ${base}`;
   const names = [...g.add.keys()].map((i) => S.members[i].name);
   return `${names.length > 2 ? names.slice(0, 2).join("・") + ` ほか${names.length - 2}人` : names.join("・")}に罰 → ${base}`;
 }
@@ -360,7 +362,7 @@ function vControls() {
         ${subs ? `<div class="sub-acts">${subs}</div>` : ""}
         ${vPenGrid()}
         ${g.mode === "odai" || !g.done ? vNextUp() : ""}
-        <button class="big ${g.add.size ? "has-pen" : ""}" data-act="next" data-shake>${nextText(nextLabel)}</button>${shakeHint()}`;
+        <button class="big ${g.add.size ? "has-pen" : ""}" data-act="next" ${!g.add.size && mustPick(g.card.tpl) ? "disabled" : "data-shake"}>${nextText(nextLabel)}</button>${shakeHint()}`;
     }
   }
 }
@@ -397,7 +399,7 @@ function vCard() {
   const dual = S.dual && g.phase !== "bombPeek" && g.phase !== "bombSet";
   const no = g.mode === "odai" ? `No.${String(g.cards + 1).padStart(3, "0")}` : "";
   return `<div class="odai ${cardClass(c)} ${anim}" id="card">
-    <div class="head"><span>${esc(c.kind)}</span>${badge || `<span class="no">${no}</span>`}</div>
+    <div class="head"><span>${cardTag(c) && g.phase === "play" ? `<i class="tag">${cardTag(c)}</i>` : ""}${esc(c.kind)}</span>${badge || `<span class="no">${no}</span>`}</div>
     ${c.solo && !needsPick(c.tpl) && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
     ${art}
     ${dual ? `<p class="txt mirror" aria-hidden="true" style="font-size:${fitSize(c.html, g.mode === "sugoroku", 0.74)}"><span>${c.html}</span></p><hr class="dual-line">` : ""}
@@ -415,7 +417,7 @@ function vRule() {
   const g = S.game, r = g.rule;
   const bomb = g.bomb && !g.phase.startsWith("bomb")
     ? `<div class="rule bomb"><span class="fuse" aria-hidden="true"></span><span><b>時限爆弾 作動中</b><br><span class="nowrap">仕掛け人：${esc(S.members[g.bomb.owner].name)}</span></span></div>` : "";
-  return bomb + (r ? `<div class="rule"><b>発動中 残り${r.left}</b><span>${r.html}</span><button class="rule-out" data-act="ruleOpen">違反者に罰</button></div>` : "");
+  return bomb + (r ? `<div class="rule"><b>発動中 残り${r.left}ターン</b><span>${r.html}</span><button class="rule-out" data-act="ruleOpen">違反者に罰</button></div>` : "");
 }
 function vTurn() {
   const g = S.game;
@@ -441,12 +443,86 @@ function vMenu() {
       <div class="sheet-grip"></div>
       <p class="menu-meta">${g.mode === "odai" ? "アホお題" : "すごろく"}・${LV[S.level]}・${g.turn}ターン</p>
       <button class="menu-item" data-act="flip">${ICON.flip}<span>上下反転<small>向かいの人に見せる</small></span><b>${S.flip ? "ON" : "OFF"}</b></button>
+      <button class="menu-item" data-act="rules">${ICON.book}<span>ルール早見表<small>倍プッシュ・時限爆弾・リベンジ権…</small></span></button>
       <button class="menu-item" data-act="end">${ICON.flag}<span>結果発表<small>ここで終わって戦犯を発表</small></span></button>
       <button class="menu-item" data-act="sheet">${ICON.gear}<span>設定<small>振る・効果音・遊び方</small></span></button>
       <button class="menu-item danger" data-act="home">${ICON.exit}<span>ゲームをやめる<small>罰の記録は消える</small></span></button>
       <button class="ghost" data-act="menuClose">閉じる</button>
     </div>
   </div>`;
+}
+// ---------- 分かりやすさ ----------
+// 札の種類タグ（誰が動くお題か）
+function cardTag(c) {
+  if (!c || c.bomb || !c.tpl) return "";
+  if (c.ruleCard) return "ルール";
+  if (c.alert) return "緊急";
+  if (mustPick(c.tpl)) return "勝負";
+  if (!c.solo) return "全員";
+  return needsPick(c.tpl) ? "みんなで判定" : "ひとり";
+}
+// 初めて出てきた仕組みだけ、札の下にひとこと説明（1回見たら二度と出えへん）
+const COACH = {
+  double: "倍プッシュ：お題を見る前に賭ける。成功したら誰かに罰を押し付け、失敗したら罰2倍",
+  bomb: "時限爆弾：仕掛け人だけがNG行動を知る。数ターン後に爆発して、それまでにやってた奴は全員罰",
+  rule: "緊急ルール：上の「発動中」の間ずっと続く。破った人を見つけたら「違反者に罰」",
+  event: "緊急指令：急に割り込んでくるお題。全員参加やから、アウトの人を下から選ぶ",
+  contest: "勝負のお題：負けた人を下から選んでから次へ",
+  swipe: "やり切ったら「セーフ」、逃げたら「アウト」。札を右・左にスワイプでもOK",
+  notme: "当てはまらん：恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる",
+  pass: "夜お題は「無理！罰なしでパス」でパスできる",
+  revenge: "リベンジ権 ↺：罰を食らった人のご褒美。今のお題を1回だけ誰かに押し付けられる",
+};
+function coachKey() {
+  const g = S.game, c = g.card || {};
+  const keys = [];
+  if (g.phase === "offer") keys.push("double");
+  if (g.phase === "bombSet") keys.push("bomb");
+  if (g.phase === "play" && !g.double) {
+    if (c.ruleCard) keys.push("rule");
+    else if (c.alert && !c.bomb) keys.push("event");
+    if (mustPick(c.tpl)) keys.push("contest");
+    if (c.solo && !needsPick(c.tpl) && g.penOpen !== c) keys.push("swipe");
+    if (c.solo && !c.passed && isSituational(c.tpl)) keys.push("notme");
+    if (c.yoru) keys.push("pass");
+    if (c.solo && g.rev[g.doer]) keys.push("revenge");
+  }
+  return keys.find((k) => !S.seen[k]) || null;
+}
+function vCoach() {
+  const k = coachKey();
+  if (!k) return "";
+  return `<div class="coach" role="note"><span>${esc(COACH[k])}</span><button data-act="coachOk" data-k="${k}">わかった</button></div>`;
+}
+// ルール早見表（⋯メニューから）
+function vRules() {
+  const items = [
+    ["セーフ／アウト", "やり切ったらセーフ、逃げたりできんかったらアウト。札を右・左にスワイプでもOK"],
+    ["罰ガチャ", "アウトの人は罰ガチャで中身が決まる。だいたい7回に1回は天使が出て帳消し"],
+    ["リベンジ権 ↺", "ドクロを引いた人がもらえる。次の自分のお題を1回だけ誰かに押し付けられる"],
+    ["倍プッシュ", "たまに来る。お題を見る前に賭けて、成功したら誰かに罰、失敗したら罰2倍"],
+    ["緊急指令", "急に割り込むお題。数ターン続くルールは、破った人に「違反者に罰」でいつでも罰"],
+    ["時限爆弾", "仕掛け人だけがNG行動を知る。数ターン後に爆発して、やってた奴は全員罰"],
+    ["当てはまらん", "恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる（1枚1回）"],
+    ["本日の戦犯", "最後に罰が一番多い人を発表。称号もつく"],
+  ];
+  if (S.night) items.push(["夜モード", "夜お題は「無理！」で罰なしパス。下ネタNGの人には振られへん。罰も夜仕様になる"]);
+  return `
+  <div class="sheet-back" data-act="rulesClose">
+    <div class="sheet rules-sheet" role="dialog" aria-label="ルール早見表" data-stop>
+      <div class="sheet-grip"></div>
+      <h2>ルール早見表</h2>
+      <dl class="rules">${items.map(([h, t]) => `<div><dt>${h}</dt><dd>${t}</dd></div>`).join("")}</dl>
+      <button class="ghost" data-act="rulesClose">閉じる</button>
+    </div>
+  </div>`;
+}
+// 結果発表の罰の内訳
+const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾" };
+function whyText(i) {
+  const w = S.game.st?.why?.[i];
+  if (!w) return "";
+  return Object.entries(WHY).filter(([k]) => w[k]).map(([k, l]) => `${l}${w[k]}`).join("・");
 }
 // ルール違反：いつでも誰かに罰をつけられるシート（その場で罰ガチャ）
 function vRuleSheet() {
@@ -484,6 +560,7 @@ function vOdai() {
     ${vTurn()}
     ${vRule()}
     <div class="deck">${vCard()}</div>
+    ${vCoach()}
     ${vControls()}
   </div>`;
 }
@@ -568,6 +645,7 @@ function vSugo() {
   </div>
   ${sheet ? `<div class="sg-sheet-back"></div><div class="sg-sheet ${S.flip ? "flipped" : ""}">
     <div class="deck">${vCard()}</div>
+    ${vCoach()}
     ${vControls()}
   </div>` : ""}`;
 }
@@ -584,7 +662,7 @@ function vResult() {
   <div class="mvp"><small>MVP（悪い意味で）</small><b>${esc(who)}</b><span>${top.n === 0 ? "全員セーフ。平和すぎる" : `罰 ${top.n}回`}</span></div>
   ${(() => { const ts = titles(); return ts.length ? `<h2 class="res-h2">称号</h2><ul class="titles">${ts.map((t, k) => `<li style="--d:${(0.3 + k * 0.12).toFixed(2)}s"><small>${esc(t.title)}</small><b>${esc(titleNames(t))}</b><span>${esc(t.desc)}</span></li>`).join("")}</ul>` : ""; })()}
   <h2 class="res-h2">罰ランキング</h2>
-  <ol class="rank">${rows.map((r, k) => `<li><span class="no">${k + 1}</span><i class="pc" style="background:${colorOf(r.i)}"></i><span>${esc(r.m.name)}</span><span class="ct">${r.n}</span></li>`).join("")}</ol>
+  <ol class="rank">${rows.map((r, k) => `<li><span class="no">${k + 1}</span><i class="pc" style="background:${colorOf(r.i)}"></i><span class="nm">${esc(r.m.name)}${whyText(r.i) ? `<small>${esc(whyText(r.i))}</small>` : ""}</span><span class="ct">${r.n}</span></li>`).join("")}</ol>
   <p class="tip">${MOON}<span>${esc(resultTip())}</span></p>
   <button class="share-btn" data-act="share">${ICON.share}<span>画像で保存・シェア</span></button>
   ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}
@@ -715,7 +793,7 @@ function render(anim) {
   S.navKey = key;
   app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : vResult();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
-  overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.ruleSheet && onStage ? vRuleSheet() : "";
+  overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   if (onStage) fitCard();
   if (anim) { window.scrollTo(0, 0); cue(); speakNow(); }
   if (!onStage && sc !== "result") stopSpeak();
@@ -842,12 +920,15 @@ function onClick(e) {
       break;
     }
     case "next": finishCard(); break;
+    case "coachOk": S.seen[b.dataset.k] = 1; store.set("nd_seen", S.seen); render(); break;
+    case "rules": S.menu = false; S.rules = true; render(); break;
+    case "rulesClose": S.rules = false; render(); break;
     case "ruleOpen": S.ruleSheet = "pick"; render(); break;
     case "ruleClose": S.ruleSheet = null; render(); break;
     case "ruleTo": {
       const { lucky, html } = drawBatsu(i);
       if (lucky) g.st.lucky[i]++;
-      else { g.pen[i]++; g.rev[i] = true; }
+      else { g.pen[i]++; g.rev[i] = true; g.st.why[i].rule = (g.st.why[i].rule || 0) + 1; }
       S.ruleSheet = { i, lucky, html };
       play(lucky ? "lucky" : "pop");
       if (navigator.vibrate) navigator.vibrate(lucky ? 30 : [60, 40, 60]);
@@ -866,8 +947,8 @@ function onClick(e) {
       g.card = g.pending; g.pending = null; g.phase = "play";
       render(true); break;
     case "dWin": g.st.dwin[g.doer]++; g.phase = "push"; render(); break;
-    case "dLose": addPen(g.doer, 2); finishCard(); break;
-    case "pushTo": g.st.hit[i]++; addPen(i, 1); finishCard(); break;
+    case "dLose": g.addReason = "double"; addPen(g.doer, 2); finishCard(); break;
+    case "pushTo": g.st.hit[i]++; g.addReason = "push"; addPen(i, 1); finishCard(); break;
 
     // 夜モード
     case "logo": {

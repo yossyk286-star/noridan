@@ -3,7 +3,7 @@ import { Animated, Easing, ScrollView, StyleSheet, Text, View } from 'react-nati
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
-import { BombBanner, Controls, RuleSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, ShakeHint, Turn, shakeAction } from '../components/Stage';
+import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, ShakeHint, Turn, shakeAction } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
 import { Board, COLS, Die, ROWS, Ranks, type Callout } from '../components/Board';
 import { Flash } from '../components/Fx';
@@ -50,6 +50,7 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
   const [done, setDone] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [rules, setRules] = useState(false);
   /** ルール違反のシート（誰を選ぶか → 罰ガチャの結果） */
   const [ruleSheet, setRuleSheet] = useState<'pick' | GachaItem | null>(null);
   const [area, setArea] = useState({ w: 0, h: 0 });
@@ -268,6 +269,7 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
                   </SwipeCard>
                 )}
               </DeckStack>
+              <Coach flow={flow} />
               <Controls
                 pal={pal}
                 members={members}
@@ -284,11 +286,13 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
       <Frame color={colorOf(st.doer)} />
       <Flash trigger={flash} />
       <RuleSheet members={members} rule={rule} state={ruleSheet} onPick={(i) => setRuleSheet(flow.rulePenalty(i))} onClose={() => setRuleSheet(null)} />
+      <RulesSheet visible={rules} night={!!night} onClose={() => setRules(false)} />
       <GameMenu
         visible={menu}
         meta={`すごろく・${LEVEL_LABEL[level]}・${turn}ターン`}
         flipped={flipped}
         onFlip={() => setFlipped((f) => !f)}
+        onRules={() => setRules(true)}
         onEnd={() => onFinish(flow.finalPen(), turn, flow.st.stats)}
         onSettings={onSettings}
         onQuit={onQuit}

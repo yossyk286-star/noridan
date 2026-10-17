@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react';
 import { Tap } from './Tap';
 import type React from 'react';
 import { Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { isSituational, needsPick, othersOf, penHead } from '../lib/game';
+import { isSituational, mustPick, needsPick, othersOf, penHead } from '../lib/game';
 import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
+import { useSeen } from '../lib/coach';
 import { CARD_LOOK, F, STAGE, alpha, colorOf } from '../theme';
 import type { Bomb, Card, GachaItem, Level, Member, Rule, Segment } from '../types';
 import { Angel, BombArt, Capsule, Coin, Fuse, Skull } from './Fx';
@@ -121,7 +122,7 @@ export function RuleBanner({ pal, rule, onViolate }: { pal: Pal; rule: Rule | nu
   const jigoku = pal.bg === STAGE.jigoku.bg;
   return (
     <View style={[styles.rule, { borderColor: pal.muted }]}>
-      <Text style={[styles.ruleHead, { color: pal.fg }]}>発動中 残り{rule.left}</Text>
+      <Text style={[styles.ruleHead, { color: pal.fg }]}>発動中 残り{rule.left}ターン</Text>
       <SegText segments={rule.segments} style={[styles.ruleText, { color: pal.fg, flex: 1 }]} />
       {onViolate && (
         <Tap onPress={onViolate} style={[styles.ruleOut, { backgroundColor: jigoku ? pal.fg : PEN_RED }]}>
@@ -237,7 +238,12 @@ export function OdaiCard({
     <Animated.View style={[styles.card, { backgroundColor: look.bg, borderColor: look.edge }, glow, anim]}>
       <Animated.View style={{ flex: 1, gap: 12, opacity: flick }}>
       <View style={styles.cardHead}>
-        <Text style={[styles.kind, { color: neon ? look.edge : look.fg, opacity: neon ? 1 : undefined }, textGlow]} numberOfLines={1}>{card.kind}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
+          {!!cardTag(card) && art === undefined && (
+            <Text style={[styles.tag, { color: neon ? look.edge : look.fg, borderColor: neon ? look.edge : look.fg }]}>{cardTag(card)}</Text>
+          )}
+          <Text style={[styles.kind, { color: neon ? look.edge : look.fg, opacity: neon ? 1 : undefined, flexShrink: 1 }, textGlow]} numberOfLines={1}>{card.kind}</Text>
+        </View>
         {doubled ? (
           <View style={[styles.badge, { backgroundColor: look.fg }]}>
             <Text style={[styles.badgeText, { color: look.bg }]}>倍プッシュ中</Text>
@@ -433,8 +439,9 @@ function PenGrid({ pal, members, flow }: { pal: Pal; members: Member[]; flow: Tu
 }
 
 /** 次へボタンの文字。誰に罰がつくかをそのまま書く */
-function nextText(members: Member[], add: Map<number, number>, base: string) {
-  if (!add.size) return `全員クリア → ${base}`;
+function nextText(members: Member[], add: Map<number, number>, base: string, tpl?: string) {
+  if (!add.size && mustPick(tpl)) return `${penHead(tpl).replace(/は？$/, '')}を選んで`;
+  if (!add.size) return `アウトなし → ${base}`;
   const names = [...add.keys()].map((i) => members[i].name);
   const who = names.length > 2 ? `${names.slice(0, 2).join('・')} ほか${names.length - 2}人` : names.join('・');
   return `${who}に罰 → ${base}`;
@@ -543,8 +550,9 @@ export function Controls({
           {next != null && <NextUp pal={pal} name={members[next].name} color={colorOf(next)} />}
           <BigButton
             pal={pal}
-            label={nextText(members, st.add, nextLabel)}
+            label={nextText(members, st.add, nextLabel, st.card.tpl)}
             onPress={flow.next}
+            disabled={!st.add.size && mustPick(st.card.tpl)}
             danger={st.add.size > 0}
           />
           {hint}
@@ -574,6 +582,92 @@ function Verdict({ pal, title, sub, ng, onPress }: { pal: Pal; title: string; su
       <Text style={[styles.verdictTitle, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>{title}</Text>
       <Text style={[styles.verdictSub, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>{sub}</Text>
     </Tap>
+  );
+}
+
+/** 札の種類タグ（誰が動くお題か） */
+export function cardTag(c: Card): string {
+  if (!c || c.bomb || !c.tpl) return '';
+  if (c.ruleCard) return 'ルール';
+  if (c.alert) return '緊急';
+  if (mustPick(c.tpl)) return '勝負';
+  if (!c.solo) return '全員';
+  return needsPick(c.tpl) ? 'みんなで判定' : 'ひとり';
+}
+
+/** 初めて出てきた仕組みだけ、札の下にひとこと説明（1回見たら二度と出えへん） */
+const COACH: Record<string, string> = {
+  double: '倍プッシュ：お題を見る前に賭ける。成功したら誰かに罰を押し付け、失敗したら罰2倍',
+  bomb: '時限爆弾：仕掛け人だけがNG行動を知る。数ターン後に爆発して、それまでにやってた奴は全員罰',
+  rule: '緊急ルール：上の「発動中」の間ずっと続く。破った人を見つけたら「違反者に罰」',
+  event: '緊急指令：急に割り込んでくるお題。全員参加やから、アウトの人を下から選ぶ',
+  contest: '勝負のお題：負けた人を下から選んでから次へ',
+  swipe: 'やり切ったら「セーフ」、逃げたら「アウト」。札を右・左にスワイプでもOK',
+  notme: '当てはまらん：恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる',
+  pass: '夜お題は「無理！罰なしでパス」でパスできる',
+  revenge: 'リベンジ権 ↺：罰を食らった人のご褒美。今のお題を1回だけ誰かに押し付けられる',
+};
+export function Coach({ flow }: { flow: TurnFlow }) {
+  const { seen, markSeen } = useSeen();
+  const { st } = flow;
+  const c = st.card;
+  const keys: string[] = [];
+  if (st.phase === 'offer') keys.push('double');
+  if (st.phase === 'bombSet') keys.push('bomb');
+  if (st.phase === 'play' && !st.double) {
+    if (c.ruleCard) keys.push('rule');
+    else if (c.alert && !c.bomb) keys.push('event');
+    if (mustPick(c.tpl)) keys.push('contest');
+    if (canVerdict(flow)) keys.push('swipe');
+    if (c.solo && !c.passed && isSituational(c.tpl)) keys.push('notme');
+    if (c.yoru) keys.push('pass');
+    if (c.solo && st.rev[st.doer]) keys.push('revenge');
+  }
+  const k = keys.find((x) => !seen[x]);
+  if (!k) return null;
+  return (
+    <View style={styles.coach} accessibilityRole="text">
+      <View style={styles.coachArrow} />
+      <Text style={styles.coachText}>{COACH[k]}</Text>
+      <Tap onPress={() => markSeen(k)} style={styles.coachBtn}>
+        <Text style={styles.coachBtnText}>わかった</Text>
+      </Tap>
+    </View>
+  );
+}
+
+/** ルール早見表（⋯メニューから） */
+export function RulesSheet({ visible, night, onClose }: { visible: boolean; night?: boolean; onClose: () => void }) {
+  const items: [string, string][] = [
+    ['セーフ／アウト', 'やり切ったらセーフ、逃げたりできんかったらアウト。札を右・左にスワイプでもOK'],
+    ['罰ガチャ', 'アウトの人は罰ガチャで中身が決まる。だいたい7回に1回は天使が出て帳消し'],
+    ['リベンジ権 ↺', 'ドクロを引いた人がもらえる。次の自分のお題を1回だけ誰かに押し付けられる'],
+    ['倍プッシュ', 'たまに来る。お題を見る前に賭けて、成功したら誰かに罰、失敗したら罰2倍'],
+    ['緊急指令', '急に割り込むお題。数ターン続くルールは、破った人に「違反者に罰」でいつでも罰'],
+    ['時限爆弾', '仕掛け人だけがNG行動を知る。数ターン後に爆発して、やってた奴は全員罰'],
+    ['当てはまらん', '恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる（1枚1回）'],
+    ['本日の戦犯', '最後に罰が一番多い人を発表。称号もつく'],
+  ];
+  if (night) items.push(['夜モード', '夜お題は「無理！」で罰なしパス。下ネタNGの人には振られへん。罰も夜仕様になる']);
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.sheetBack} onPress={onClose}>
+        <Pressable style={[styles.sheet, { maxHeight: '88%' }]} onPress={() => {}}>
+          <ScrollView contentContainerStyle={{ gap: 10 }}>
+            <Text style={styles.sheetTitle}>ルール早見表</Text>
+            {items.map(([h, t]) => (
+              <View key={h} style={styles.ruleItem}>
+                <Text style={styles.ruleItemHead}>{h}</Text>
+                <Text style={styles.ruleItemText}>{t}</Text>
+              </View>
+            ))}
+            <Tap onPress={onClose} style={styles.sheetGhost}>
+              <Text style={styles.sheetGhostText}>閉じる</Text>
+            </Tap>
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -638,7 +732,7 @@ export function shakeAction(flow: TurnFlow): (() => void) | null {
   const { st } = flow;
   if (st.phase === 'batsu') return flow.accept;
   if (canVerdict(flow)) return flow.clear; // 振ったら「やった！」
-  if (st.phase === 'play' && !st.double) return flow.next;
+  if (st.phase === 'play' && !st.double) return !st.add.size && mustPick(st.card.tpl) ? null : flow.next;
   return null; // 選択が要る場面（ダブルアップ・リベンジ・爆弾）は振っても進めない
 }
 
@@ -703,6 +797,15 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
   badgeText: { fontSize: 11, fontWeight: '900' },
   cardBody: { flex: 1, justifyContent: 'center' },
+  tag: { fontSize: 10, fontWeight: '900', letterSpacing: 1, borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden', opacity: 0.8 },
+  coach: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, backgroundColor: '#141210' },
+  coachArrow: { position: 'absolute', top: -6, left: 28, width: 12, height: 12, backgroundColor: '#141210', transform: [{ rotate: '45deg' }] },
+  coachText: { flex: 1, color: '#f7f3ea', fontSize: 13, fontWeight: '700', lineHeight: 20 },
+  coachBtn: { borderRadius: 999, backgroundColor: '#ffd23f', paddingVertical: 8, paddingHorizontal: 12 },
+  coachBtnText: { color: '#141210', fontSize: 12, fontWeight: '900' },
+  ruleItem: { padding: 12, borderRadius: 12, backgroundColor: 'rgba(247,243,234,0.06)' },
+  ruleItemHead: { color: '#ffd23f', fontWeight: '900', fontSize: 14 },
+  ruleItemText: { color: 'rgba(247,243,234,0.85)', fontSize: 13, lineHeight: 20, marginTop: 2 },
   ruleOut: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 10 },
   ruleOutText: { fontSize: 12, fontWeight: '900' },
   sheetBack: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },

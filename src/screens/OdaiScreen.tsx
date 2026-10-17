@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
-import { BombBanner, Controls, RuleSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, Turn, shakeAction } from '../components/Stage';
+import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, Turn, shakeAction } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
 import { Flash } from '../components/Fx';
 import { CHANCE, Decks } from '../lib/game';
@@ -35,6 +35,7 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
   const [rule, setRule] = useState<Rule | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [rules, setRules] = useState(false);
   /** ルール違反のシート（誰を選ぶか → 罰ガチャの結果） */
   const [ruleSheet, setRuleSheet] = useState<'pick' | GachaItem | null>(null);
 
@@ -94,16 +95,19 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
             </SwipeCard>
           )}
         </DeckStack>
+        <Coach flow={flow} />
         <Controls pal={pal} members={members} flow={flow} nextLabel="次へ" shakeHint={shakeOn} next={(cur + 1) % members.length} />
       </View>
       <Frame color={colorOf(st.doer)} />
       <Flash trigger={flash} />
       <RuleSheet members={members} rule={rule} state={ruleSheet} onPick={(i) => setRuleSheet(flow.rulePenalty(i))} onClose={() => setRuleSheet(null)} />
+      <RulesSheet visible={rules} night={!!night} onClose={() => setRules(false)} />
       <GameMenu
         visible={menu}
         meta={`アホお題・${LEVEL_LABEL[level]}・${turn}ターン`}
         flipped={flipped}
         onFlip={() => setFlipped((f) => !f)}
+        onRules={() => setRules(true)}
         onEnd={() => onFinish(flow.finalPen(), turn, flow.st.stats)}
         onSettings={onSettings}
         onQuit={onQuit}

@@ -8,10 +8,20 @@ export type Stats = {
   dwin: number[]; // 倍プッシュ成功
   notme: number[]; // 当てはまらんで回した回数
   solo: number[]; // 自分のお題をやった枚数
+  /** 罰の理由ごとの回数（結果発表の内訳） */
+  why: Partial<Record<Why, number>>[];
 };
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb';
+export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾' };
+export function whyText(st: Stats | undefined, i: number) {
+  const w = st?.why?.[i];
+  if (!w) return '';
+  return (Object.keys(WHY_LABEL) as Why[]).filter((k) => w[k]).map((k) => `${WHY_LABEL[k]}${w[k]}`).join('・');
+}
 export const newStats = (n: number): Stats => ({
   lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0),
   dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0),
+  why: Array.from({ length: n }, () => ({})),
 });
 
 export type Title = { title: string; idx: number[]; desc: string };

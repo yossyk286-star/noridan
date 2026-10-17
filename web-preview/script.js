@@ -23,7 +23,9 @@ const S = {
   shake: store.get("nd_shake", true),
   night: (() => { const v = store.get("nd_night", false); return v === true ? "yoru" : v; })(), // false | "yoru" | "shinya"
   nightAsk: false,  // false | "yoru" | "shinya"（確認画面）
-  whisper: Math.random() < 0.35, // 昼間でもたまにヒントを出す（起動ごとに固定）
+  whisper: Math.random() < 0.35,
+  seen: store.get("nd_seen", {}) || {}, // 初登場のひとこと説明を見たかどうか
+  rules: false,     // ルール早見表 // 昼間でもたまにヒントを出す（起動ごとに固定）
   sound: store.get("nd_sound", true),
   dual: store.get("nd_dual", false),   // 向かい合わせ表示
   voice: store.get("nd_voice", false), // お題の読み上げ
@@ -112,6 +114,10 @@ function needsPick(tpl) {
   if (/黙秘は罰/.test(tpl)) return false;
   return /が罰|は罰|2人とも罰|両方罰/.test(tpl) || /^\{P\}と\{X\}/.test(tpl);
 }
+// 勝負のお題（負けた方・先に笑った方…）は誰かが必ずアウトになる
+function mustPick(tpl) {
+  return !!tpl && /方が罰|2人とも罰/.test(tpl);
+}
 // 夜お題に巻き込める人（下ネタNGの人は外す）
 const okForYoru = (i) => !S.members[i].ng;
 function canYoru(tpl, p) {
@@ -140,7 +146,7 @@ function drawOdai(p) {
 }
 function drawEvent(p) {
   const ev = draw("ev", DATA.events);
-  const card = makeCard("【緊急】割り込み", ev.text, p, {}, { alert: true, solo: false });
+  const card = makeCard("【緊急】割り込み", ev.text, p, {}, { alert: true, solo: false, ruleCard: !!ev.turns });
   return { card, rule: ev.turns ? { html: card.html, left: ev.turns } : null };
 }
 
@@ -156,7 +162,7 @@ function newGame(mode) {
     rolled: false, rolling: false, die: 0, done: false,
     bomb: null, bombJust: false, cards: 0,
     // 称号用の記録
-    st: { lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0) },
+    st: { lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), why: Array.from({ length: n }, () => ({})) },
   };
   askMotion();
   S.ruleSheet = null;
@@ -229,8 +235,15 @@ function applyAdds() {
   const g = S.game;
   const saved = new Set((g.gacha || []).filter((x) => x.lucky).map((x) => x.i)); // ラッキーの人は罰なし
   saved.forEach((i) => { if (g.st) g.st.lucky[i]++; });
-  g.add.forEach((n, i) => { if (saved.has(i)) return; g.pen[i] += n; g.rev[i] = true; });
+  // 罰の理由（結果発表の内訳用）
+  const why = g.addReason || (g.card?.bomb ? "bomb" : "out");
+  g.add.forEach((n, i) => {
+    if (saved.has(i)) return;
+    g.pen[i] += n; g.rev[i] = true;
+    if (g.st) g.st.why[i][why] = (g.st.why[i][why] || 0) + n;
+  });
   g.add = new Map();
+  g.addReason = null;
 }
 // カード1枚が終わったあと。時限爆弾の爆発・設置をここで挟む
 function advance() {
