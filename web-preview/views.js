@@ -383,9 +383,9 @@ function vCard() {
       ${S.dual ? `<div class="mirror-list">${g.gacha.map((x) => `<p><b>${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : "の罰"}</b>${x.html}</p>`).join("")}</div><hr class="dual-line">` : ""}
       <div class="skull-wrap">${allLucky ? `${ANGEL}<b>ラッキー！セーフ</b>` : `${SKULL}<b>罰ゲーム確定</b>`}</div>
       <div class="gacha">${g.gacha.map((x, k) => `
-        <div class="gacha-item" style="--d:${(k * 0.35).toFixed(2)}s;--mc:${colorOf(x.i)}">
+        <div class="gacha-item ${x.night ? "night " + x.night : ""}" style="--d:${(k * 0.35).toFixed(2)}s;--mc:${colorOf(x.i)}">
           <div class="capsule"><i class="top"></i><i class="bot"></i></div>
-          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="badge">×${x.n}</span>` : ""}</b><p>${x.html}</p></div>
+          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="badge">×${x.n}</span>` : ""}</b><p>${x.html}</p></div>
         </div>`).join("")}</div>
     </div>`;
   }
@@ -845,8 +845,7 @@ function onClick(e) {
     case "ruleOpen": S.ruleSheet = "pick"; render(); break;
     case "ruleClose": S.ruleSheet = null; render(); break;
     case "ruleTo": {
-      const lucky = Math.random() < CHANCE.lucky;
-      const html = fill(lucky ? draw("lucky", DATA.batsu.lucky) : draw("batsu", DATA.batsu.bad), i);
+      const { lucky, html } = drawBatsu(i);
       if (lucky) g.st.lucky[i]++;
       else { g.pen[i]++; g.rev[i] = true; }
       S.ruleSheet = { i, lucky, html };

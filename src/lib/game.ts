@@ -147,11 +147,26 @@ export class Decks {
   }
 
   /** 罰ガチャ。たまにラッキー（天使）で帳消し */
-  batsu(members: Member[], p: number): { segments: Segment[]; lucky: boolean } {
-    const lucky = Math.random() < CHANCE.lucky;
-    const tpl = (lucky ? this.str('lucky', batsu.lucky, members.length) : this.str('batsu', batsu.bad, members.length))!;
-    return { segments: fill(tpl, members, p), lucky };
+  /** 夜モードの状態（罰ガチャを過激にするかどうか）。画面側で毎回入れる */
+  night: Night = false;
+
+  /** 罰ガチャの中身。夜・深夜は罰も過激に（下ネタNGの人には普通の罰） */
+  batsu(members: Member[], p: number): { segments: Segment[]; lucky: boolean; night?: 'yoru' | 'shinya' } {
+    if (Math.random() < CHANCE.lucky) return { segments: fill(this.str('lucky', batsu.lucky, members.length)!, members, p), lucky: true };
+    let list: 'bad' | 'yoru' | 'shinya' = 'bad';
+    if (this.night && !members[p].ng) {
+      const r = Math.random();
+      list = this.night === 'shinya' && ALLOW_SHINYA ? (r < 0.65 ? 'shinya' : r < 0.85 ? 'yoru' : 'bad') : r < 0.4 ? 'yoru' : 'bad';
+    }
+    if (list !== 'bad') {
+      const tpl = this.str('batsu_' + list, batsu[list], members.length);
+      // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらんかったら普通の罰
+      const okX = members.some((m, j) => j !== p && !m.ng);
+      if (tpl && (!tpl.includes('{X}') || okX)) return { segments: fill(tpl, members, p, { noNg: true }), lucky: false, night: list };
+    }
+    return { segments: fill(this.str('batsu', batsu.bad, members.length)!, members, p), lucky: false };
   }
+
 }
 
 // お題の文から「誰が罰か」を読み取って、罰の人を選ぶ時の聞き方にする（例：一番遅い奴が罰 → 一番遅い人は？）

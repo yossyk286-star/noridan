@@ -30,7 +30,7 @@ export type Card = {
 
 export type Phase = 'play' | 'offer' | 'revenge' | 'push' | 'batsu' | 'bombSet' | 'bombPeek';
 export type Bomb = { cond: string; owner: number; left: number };
-export type GachaItem = { i: number; n: number; segments: Segment[]; /** ラッキー（天使）なら罰は帳消し */ lucky?: boolean };
+export type GachaItem = { i: number; n: number; segments: Segment[]; /** ラッキー（天使）なら罰は帳消し */ lucky?: boolean; /** 夜・深夜の罰 */ night?: 'yoru' | 'shinya' };
 
 export type Rule = { segments: Segment[]; left: number };
 

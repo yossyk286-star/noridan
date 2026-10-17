@@ -340,7 +340,7 @@ function GachaRow({ name, color, item, delay, fg, mark }: { name: string; color:
             </View>
           )}
           <Text style={[styles.gachaWho, { color: fg }]}>
-            {name}{item.lucky ? 'はセーフ' : 'の罰'}{item.n > 1 && !item.lucky ? `　×${item.n}` : ''}
+            {name}{item.lucky ? 'はセーフ' : item.night === 'shinya' ? 'の深夜の罰' : item.night ? 'の夜の罰' : 'の罰'}{item.n > 1 && !item.lucky ? `　×${item.n}` : ''}
           </Text>
         </View>
         <SegText segments={item.segments} style={[styles.gachaText, { color: fg }]} />

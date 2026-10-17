@@ -32,6 +32,7 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
   useKeepAwake(); // ゲーム中は画面を消さない
   const basePal = STAGE[level];
   const decks = useRef(new Decks()).current;
+  decks.night = night; // 夜・深夜は罰ガチャも過激に
   const n = members.length;
 
   const [cur, setCur] = useState(0);

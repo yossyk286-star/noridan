@@ -205,13 +205,25 @@ function finishCard() {
   if (g.card?.solo && g.st) g.st.solo[g.doer]++;
   if (g.add.size) {
     // たまにラッキー（天使）で帳消し
-    g.gacha = [...g.add].map(([i, n]) => {
-      const lucky = Math.random() < CHANCE.lucky;
-      return { i, n, lucky, html: fill(lucky ? draw("lucky", DATA.batsu.lucky) : draw("batsu", DATA.batsu.bad), i) };
-    });
+    g.gacha = [...g.add].map(([i, n]) => ({ i, n, ...drawBatsu(i) }));
     g.phase = "batsu";
     render(true);
   } else advance();
+}
+// 罰ガチャの中身を1つ引く。夜・深夜は罰も過激に（下ネタNGの人には普通の罰）
+function drawBatsu(i) {
+  if (Math.random() < CHANCE.lucky) return { lucky: true, html: fill(draw("lucky", DATA.batsu.lucky), i) };
+  let list = "bad";
+  if (S.night && !S.members[i].ng) {
+    const r = Math.random();
+    list = S.night === "shinya" ? (r < 0.65 ? "shinya" : r < 0.85 ? "yoru" : "bad") : r < 0.4 ? "yoru" : "bad";
+  }
+  if (list !== "bad") {
+    const tpl = draw("batsu_" + list, DATA.batsu[list]);
+    // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらんかったら普通の罰
+    if (tpl && (!tpl.includes("{X}") || others(i).some(okForYoru))) return { lucky: false, night: list, html: fill(tpl, i, { noNg: true }) };
+  }
+  return { lucky: false, html: fill(draw("batsu", DATA.batsu.bad), i) };
 }
 function applyAdds() {
   const g = S.game;

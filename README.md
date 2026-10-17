@@ -70,7 +70,7 @@ Expo版のWebに切り替える時は、`vercel.json` を `{"buildCommand": "npx
 | ファイル | 中身 |
 | --- | --- |
 | `odai.json` | アホお題（`yurume` / `futsu` / `jigoku`）、全員参加（`minna`）、夜モード（`yoru`）、深夜モード（`shinya`）、イジりお題（`neta`） |
-| `batsu.json` | 罰ガチャの中身（`bad`＝罰、`lucky`＝天使で帳消し） |
+| `batsu.json` | 罰ガチャの中身（`bad`＝普通の罰、`yoru`＝夜モードの罰、`shinya`＝深夜モードの罰、`lucky`＝天使で帳消し）。夜は4割、深夜は6〜7割が夜系の罰になる。下ネタNGの人には普通の罰だけ |
 | `bombs.json` | 時限爆弾のNG行動（「〜した奴」の「〜した」部分） |
 | `events.json` | 緊急割り込み。`turns` が1以上だとそのターン数ルールが続く |
 | `board.json` | すごろくのマス |
