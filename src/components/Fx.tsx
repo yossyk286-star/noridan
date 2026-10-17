@@ -70,24 +70,34 @@ export function Fuse({ color }: { color: string }) {
 }
 
 /** 罰ガチャのカプセル。上から落ちてきて、上半分がパカッと開く */
-export function Capsule({ color, delay }: { color: string; delay: number }) {
+/** 罰ガチャのカプセル。落ちてきて開いたら、中身（罰／天使）のマークに変わる */
+export function Capsule({ color, delay, result }: { color: string; delay: number; result?: 'ng' | 'ok' }) {
   const drop = useRef(new Animated.Value(0)).current;
   const open = useRef(new Animated.Value(0)).current;
+  const badge = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.sequence([
       Animated.delay(delay),
       Animated.spring(drop, { toValue: 1, friction: 5, tension: 70, useNativeDriver: true }),
       Animated.timing(open, { toValue: 1, duration: 380, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ...(result ? [Animated.spring(badge, { toValue: 1, friction: 5, tension: 140, useNativeDriver: true })] : []),
     ]).start();
   }, []);
+  const parts = badge.interpolate({ inputRange: [0, 0.4], outputRange: [1, 0], extrapolate: 'clamp' });
+  const badgeScale = badge.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
   const translateY = drop.interpolate({ inputRange: [0, 1], outputRange: [-140, 0] });
   const rotate = drop.interpolate({ inputRange: [0, 1], outputRange: ['-200deg', '0deg'] });
   const topRotate = open.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-70deg'] });
   const topY = open.interpolate({ inputRange: [0, 1], outputRange: [0, -10] });
   return (
     <Animated.View style={[fx.capsule, { opacity: drop, transform: [{ translateY }, { rotate }] }]}>
-      <View style={fx.capBot} />
-      <Animated.View style={[fx.capTop, { backgroundColor: color, transform: [{ translateX: -20 }, { translateY: topY }, { rotate: topRotate }, { translateX: 20 }] }]} />
+      <Animated.View style={[fx.capBot, { opacity: parts }]} />
+      <Animated.View style={[fx.capTop, { backgroundColor: color, opacity: parts, transform: [{ translateX: -20 }, { translateY: topY }, { rotate: topRotate }, { translateX: 20 }] }]} />
+      {result && (
+        <Animated.View style={[fx.capBadge, { borderColor: color, backgroundColor: result === 'ok' ? '#ffd23f' : '#e8202a', opacity: badge, transform: [{ scale: badgeScale }] }]}>
+          <Text style={[fx.capBadgeText, { color: result === 'ok' ? '#141210' : '#ffffff' }]}>{result === 'ok' ? '天' : '罰'}</Text>
+        </Animated.View>
+      )}
     </Animated.View>
   );
 }
@@ -219,6 +229,8 @@ const fx = StyleSheet.create({
   fuseDash: { width: 6, height: 6 },
   capsule: { width: 64, height: 64 },
   capBot: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 32, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, backgroundColor: '#f2ede4', borderWidth: 2, borderColor: 'rgba(0,0,0,0.18)' },
+  capBadge: { position: 'absolute', left: 6, top: 6, right: 6, bottom: 6, borderRadius: 999, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  capBadgeText: { fontFamily: F.display, fontSize: 20 },
   capTop: { position: 'absolute', left: 0, right: 0, top: 0, height: 32, borderTopLeftRadius: 32, borderTopRightRadius: 32, borderWidth: 2, borderColor: 'rgba(0,0,0,0.18)' },
   flash: { zIndex: 50, backgroundColor: 'rgba(255,59,26,0.75)', alignItems: 'center', justifyContent: 'center' },
   flashCore: { width: '70%', aspectRatio: 1, borderRadius: 999, backgroundColor: 'rgba(255,240,180,0.95)' },

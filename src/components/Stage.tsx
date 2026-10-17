@@ -337,7 +337,7 @@ function GachaRow({ name, color, item, delay, fg, mark }: { name: string; color:
   const translateY = v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] });
   return (
     <View style={styles.gachaRow}>
-      <Capsule color={color} delay={delay} />
+      <Capsule color={color} delay={delay} result={item.lucky ? 'ok' : 'ng'} />
       <Animated.View style={{ flex: 1, opacity: v, transform: [{ translateY }] }}>
         <View style={styles.gachaWhoRow}>
           {mark && (

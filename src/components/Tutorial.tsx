@@ -8,7 +8,7 @@ type Slide = { title: string; text: { t: string; b?: boolean }[]; art: () => Rea
 
 const SLIDES: Slide[] = [
   {
-    title: '回して、やって、次へ',
+    title: 'お題をやって、\nセーフかアウトか',
     text: [
       { t: 'スマホをテーブルの真ん中に置くか、順番に回す。画面のフチの色が' },
       { t: 'いまの番の人の色', b: true },
@@ -19,11 +19,27 @@ const SLIDES: Slide[] = [
       { t: '。' },
     ],
     art: () => (
-      <View style={s.miniCard}>
-        <Text style={s.miniKind}>アホお題・普通</Text>
-        <Text style={s.miniText}>
-          <Text style={{ backgroundColor: alpha(C.yuru, 0.55) }}>たく</Text>、今日のMVPを発表しろ
-        </Text>
+      <View style={{ width: 240, gap: 10 }}>
+        <View style={[s.miniCard, { aspectRatio: undefined, transform: [] }]}>
+          <Text style={s.miniKind}>ひとり</Text>
+          <Text style={s.miniText}>
+            <Text style={{ backgroundColor: alpha(C.yuru, 0.55) }}>たく</Text>、今日のMVPを発表しろ
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={s.miniKind}>← アウト</Text>
+            <Text style={s.miniKind}>セーフ →</Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={[s.miniBtn, { backgroundColor: '#e8202a' }]}>
+            <Text style={[s.miniBtnText, { color: '#fff' }]}>アウト</Text>
+            <Text style={[s.miniBtnSub, { color: '#fff' }]}>たくに罰</Text>
+          </View>
+          <View style={[s.miniBtn, { backgroundColor: C.paper }]}>
+            <Text style={[s.miniBtnText, { color: C.ink }]}>セーフ！</Text>
+            <Text style={[s.miniBtnSub, { color: C.ink }]}>→ 次へ</Text>
+          </View>
+        </View>
       </View>
     ),
   },
@@ -119,6 +135,9 @@ const s = StyleSheet.create({
   bigText: { fontFamily: F.display, fontSize: 22, color: C.ink },
   miniCard: { width: 240, aspectRatio: 3 / 4, borderRadius: 18, backgroundColor: C.cream, padding: 18, justifyContent: 'center', gap: 10, borderWidth: 5, borderColor: C.futsu, transform: [{ rotate: '-4deg' }] },
   miniKind: { fontSize: 10, fontWeight: '900', letterSpacing: 2, color: C.muted },
+  miniBtn: { flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: 'center' },
+  miniBtnText: { fontFamily: F.display, fontSize: 17 },
+  miniBtnSub: { fontSize: 10, fontWeight: '900', opacity: 0.8 },
   miniText: { fontFamily: F.display, fontSize: 22, lineHeight: 32, color: C.ink },
   gachaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, width: 280 },
   gachaWho: { color: C.muted, fontSize: 12, fontWeight: '900' },

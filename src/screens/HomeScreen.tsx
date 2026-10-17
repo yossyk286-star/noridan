@@ -4,6 +4,7 @@ import { Animated, ScrollView, StyleSheet, Text, TextInput, View } from 'react-n
 import { C, F, LEVEL_LABEL, LEVEL_SUB, colorOf } from '../theme';
 import { Icon } from '../components/Icon';
 import { ALLOW_SHINYA } from '../lib/game';
+import { useSeen } from '../lib/coach';
 import { play } from '../lib/sound';
 import type { Level, Member, Mode, Night } from '../types';
 
@@ -155,6 +156,7 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
           <Gear onPress={onSettings} />
         </View>
         <Steps n={1} label="メンバー" />
+        <MembersGuide />
 
         <View style={s.row}>
           <TextInput
@@ -380,6 +382,11 @@ function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () 
 }
 
 const s = StyleSheet.create({
+  guide: { gap: 6, padding: 14, borderRadius: 14, backgroundColor: 'rgba(255,210,63,0.1)', borderWidth: 1, borderColor: 'rgba(255,210,63,0.4)' },
+  guideHead: { color: C.yuru, fontWeight: '900', fontSize: 14 },
+  guideText: { color: C.paper, fontSize: 13, lineHeight: 20, fontWeight: '700' },
+  guideBtn: { alignSelf: 'flex-end', borderRadius: 999, backgroundColor: C.yuru, paddingVertical: 8, paddingHorizontal: 14 },
+  guideBtnText: { color: C.ink, fontSize: 12, fontWeight: '900' },
   wrap: { padding: 16, paddingBottom: 40, gap: 14, maxWidth: 560, width: '100%', alignSelf: 'center' },
   top: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   logo: { fontFamily: F.display, fontSize: 84, lineHeight: 92 },
@@ -526,4 +533,21 @@ function Wiggle({ trigger, children }: { trigger: number; children: ReactNode })
   const rotate = v.interpolate({ inputRange: [-1, 1], outputRange: ['-2deg', '2deg'] });
   const translateX = v.interpolate({ inputRange: [-1, 1], outputRange: [-3, 3] });
   return <Animated.View style={{ transform: [{ rotate }, { translateX }] }}>{children}</Animated.View>;
+}
+
+/** メンバー登録の初回だけ出す説明（「わかった」で二度と出えへん） */
+function MembersGuide() {
+  const { seen, markSeen } = useSeen();
+  if (seen.members) return null;
+  return (
+    <View style={s.guide}>
+      <Text style={s.guideHead}>はじめに：遊ぶメンバーを入れよう</Text>
+      <Text style={s.guideText}>1. 名前を入れて「＋」。続けて何人でも入れられる</Text>
+      <Text style={s.guideText}>2. 名前をタップするとイジりネタ（例：すぐ寝る）を足せる。お題に勝手に混ざる</Text>
+      <Text style={s.guideText}>3. 2人以上入れたら、下のボタンで次へ</Text>
+      <Tap onPress={() => markSeen('members')} style={s.guideBtn}>
+        <Text style={s.guideBtnText}>わかった</Text>
+      </Tap>
+    </View>
+  );
 }

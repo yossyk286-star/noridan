@@ -17,10 +17,10 @@ const cellXY = (i: number) => {
   return { r, c };
 };
 
-function cellFace(c: Cell, pal: Pal): { bg: string; fg: string; label: string; small?: boolean; stripe?: boolean } {
+function cellFace(c: Cell, pal: Pal): { bg: string; fg: string; label: string; small?: boolean; stripe?: boolean; top?: boolean } {
   switch (c.type) {
     case 'start':
-      return { bg: '#141210', fg: '#f7f3ea', label: 'START', small: true };
+      return { bg: '#141210', fg: '#f7f3ea', label: 'START', small: true, top: true };
     case 'goal':
       return { bg: '#ffd23f', fg: '#141210', label: 'GOAL', small: true };
     case 'odai':
@@ -34,7 +34,7 @@ function cellFace(c: Cell, pal: Pal): { bg: string; fg: string; label: string; s
     case 'event':
       return { bg: '#ffd23f', fg: '#141210', label: '！', stripe: true };
     default:
-      return { bg: '#ff9a3c', fg: '#2a1200', label: c.label, small: true };
+      return { bg: '#ff9a3c', fg: '#2a1200', label: ('short' in c && c.short) || c.label, small: true };
   }
 }
 
@@ -78,9 +78,9 @@ export function Board({ pal, members, vpos, cur, callout, height }: { pal: Pal; 
             const f = cellFace(c, pal);
             return (
               <View key={i} style={[s.cell, { left: col * cell, top: r * cellH, width: cell, height: cellH }]}>
-                <View style={[s.cellIn, { backgroundColor: f.bg }, f.stripe && { borderWidth: 4, borderColor: '#141210', borderStyle: 'dashed' }]}>
+                <View style={[s.cellIn, { backgroundColor: f.bg }, f.stripe && { borderWidth: 4, borderColor: '#141210', borderStyle: 'dashed' }, f.top && { justifyContent: 'flex-start', paddingTop: 8 }]}>
                   {c.type !== 'start' && c.type !== 'goal' && <Text style={[s.no, { color: f.fg }]}>{i}</Text>}
-                  <Text style={[f.small ? s.labelSmall : s.label, { color: f.fg }]} numberOfLines={2} adjustsFontSizeToFit>
+                  <Text style={[f.small ? s.labelSmall : s.label, { color: f.fg }]} numberOfLines={1} adjustsFontSizeToFit>
                     {f.label}
                   </Text>
                 </View>
@@ -91,9 +91,14 @@ export function Board({ pal, members, vpos, cur, callout, height }: { pal: Pal; 
           {members.map((m, i) => {
             const same = vpos.map((q, k) => (q === vpos[i] ? k : -1)).filter((k) => k >= 0);
             const k = same.indexOf(i);
-            const off = same.length === 1 ? { x: 0, y: 0 } : { x: ((k % 2) - 0.5) * 18, y: (Math.floor(k / 2) - (same.length > 2 ? 0.5 : 0)) * 18 };
+            // STARTはコマを小さく下に横並び（「START」の字が隠れんように）
+            const atStart = vpos[i] === 0;
+            const n = same.length;
+            const off = atStart
+              ? { x: (k - (n - 1) / 2) * Math.min(14, 44 / Math.max(1, n - 1)), y: cellH * 0.28 }
+              : n === 1 ? { x: 0, y: 0 } : { x: ((k % 2) - 0.5) * 18, y: (Math.floor(k / 2) - (n > 2 ? 0.5 : 0)) * 18 };
             const c = center(vpos[i]);
-            return <Token key={i} name={m.name} color={colorOf(i)} x={c.x + off.x} y={c.y + off.y} active={i === cur} />;
+            return <Token key={i} name={m.name} color={colorOf(i)} x={c.x + off.x} y={c.y + off.y} active={i === cur} small={atStart} />;
           })}
           {callout && <Bubble key={callout.key} text={callout.text} kind={callout.kind} x={center(callout.at).x} y={center(callout.at).y} width={w} />}
         </>
@@ -132,7 +137,7 @@ function Bubble({ text, kind, x, y, width }: { text: string; kind: 'plus' | 'min
   );
 }
 
-function Token({ name, color, x, y, active }: { name: string; color: string; x: number; y: number; active: boolean }) {
+function Token({ name, color, x, y, active, small }: { name: string; color: string; x: number; y: number; active: boolean; small?: boolean }) {
   const pos = useRef(new Animated.ValueXY({ x, y })).current;
   const jump = useRef(new Animated.Value(0)).current;
   const first = useRef(true);
@@ -150,7 +155,7 @@ function Token({ name, color, x, y, active }: { name: string; color: string; x: 
       ]),
     ]).start();
   }, [x, y]);
-  const size = active ? 32 : 26;
+  const size = small ? (active ? 22 : 18) : active ? 32 : 26;
   const lift = jump.interpolate({ inputRange: [0, 1], outputRange: [0, -14] });
   return (
     <Animated.View
@@ -172,7 +177,7 @@ function Token({ name, color, x, y, active }: { name: string; color: string; x: 
         active && { shadowColor: color, shadowOpacity: 1, shadowRadius: 6, shadowOffset: { width: 0, height: 0 } },
       ]}
     >
-      <Text style={[s.tokText, { fontSize: active ? 15 : 13 }]}>{name.slice(0, 1)}</Text>
+      <Text style={[s.tokText, { fontSize: small ? 10 : active ? 15 : 13 }]}>{name.slice(0, 1)}</Text>
     </Animated.View>
   );
 }

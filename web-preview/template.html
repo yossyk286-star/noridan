@@ -248,13 +248,20 @@ body[data-level="jigoku"] .odai .txt mark { background: none; text-decoration: u
 /* gacha capsules */
 .gacha { display: flex; flex-direction: column; gap: 14px; width: 100%; }
 .gacha-item { display: grid; grid-template-columns: 64px minmax(0,1fr); gap: 12px; align-items: center; }
+.gacha-item .capsule { overflow: visible; }
 .capsule { position: relative; width: 64px; height: 64px; animation: drop .6s cubic-bezier(.3,1.6,.5,1) both; animation-delay: var(--d); }
 .capsule i { position: absolute; left: 0; right: 0; height: 50%; }
 .capsule .top { top: 0; border-radius: 32px 32px 0 0; background: var(--mc); box-shadow: inset -6px 6px 0 rgba(255,255,255,.35); animation: popTop .5s calc(var(--d) + .55s) ease-out both; transform-origin: 10% 100%; }
 .capsule .bot { bottom: 0; border-radius: 0 0 32px 32px; background: #f2ede4; box-shadow: inset 0 -5px 0 rgba(0,0,0,.08); }
 .capsule::after { content: ""; position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(0,0,0,.18); }
 @keyframes drop { from { transform: translateY(-140px) rotate(-200deg); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }
-@keyframes popTop { to { transform: rotate(-70deg) translate(-4px,-10px); } }
+@keyframes popTop { 60% { opacity: 1; } to { transform: rotate(-50deg) translate(-2px,-8px); opacity: 0; } }
+@keyframes capFade { to { opacity: 0; transform: scale(.6); } }
+@keyframes badgeIn { from { opacity: 0; transform: scale(.3) rotate(-20deg); } to { opacity: 1; transform: none; } }
+.capsule .bot { animation: capFade .3s calc(var(--d) + .95s) ease-in both; }
+.capsule::after { animation: capFade .3s calc(var(--d) + .95s) ease-in both; }
+.capsule .res { font-style: normal; position: absolute; inset: 6px; height: auto; display: grid; place-items: center; border-radius: 50%; background: #e8202a; color: #fff; font-family: var(--display); font-size: 22px; animation: badgeIn .35s calc(var(--d) + 1.05s) cubic-bezier(.3,1.6,.5,1) both; box-shadow: 0 0 0 3px var(--mc); }
+.capsule .res.ok { background: #ffd23f; color: #141210; }
 .gacha-txt { animation: reveal .4s calc(var(--d) + .8s) ease-out both; }
 .gacha-txt b { display: block; font-size: 12px; font-weight: 900; letter-spacing: .1em; opacity: .7; }
 .gacha-txt p { margin: 2px 0 0; font-family: var(--display); font-size: clamp(19px, 5.6vw, 24px); line-height: 1.4; overflow-wrap: anywhere; }
@@ -593,6 +600,27 @@ body.stage.neon .coach { background: #1a1228; border: 1px solid var(--nc); }
 .rules-sheet h2 { margin: 0; }
 .rank .nm { display: flex; flex-direction: column; min-width: 0; }
 .rank .nm small { font-size: 11px; font-weight: 700; color: var(--muted); }
+
+/* START のコマは小さく下に並べる */
+.sg-tok { scale: var(--s, 1); }
+.c-start .in { align-content: start; padding-top: 10px; }
+.c-text b { white-space: nowrap; }
+/* 遊び方1枚目：札とセーフ／アウト */
+.tut-play { display: flex; flex-direction: column; gap: 10px; width: min(100%, 260px); }
+.tut-play .mini-card { position: relative; width: 100%; aspect-ratio: auto; min-height: 150px; transform: none; }
+.tut-play .tag { font-style: normal; padding: 1px 7px; border: 1px solid currentColor; border-radius: 999px; opacity: .7; }
+.swipe-arrows { display: flex; justify-content: space-between; margin-top: 10px; font-size: 11px; font-weight: 900; opacity: .5; }
+.swipe-arrows em { font-style: normal; }
+.mini-verdict { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mini-verdict span { border-radius: 12px; padding: 10px 6px; text-align: center; font-family: var(--display); font-size: 17px; line-height: 1.2; }
+.mini-verdict small { display: block; font-family: var(--body); font-size: 10px; font-weight: 900; opacity: .8; }
+.mini-verdict .ng { background: #e8202a; color: #fff; }
+.mini-verdict .ok { background: var(--paper); color: var(--ink); }
+/* メンバー登録の初回説明 */
+.home-coach { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 14px; background: rgba(255,210,63,.1); border: 1px solid rgba(255,210,63,.4); font-size: 13px; line-height: 1.6; font-weight: 700; }
+.home-coach b { color: var(--yuru); }
+.home-coach ol { margin: 0; padding-left: 1.3em; }
+.home-coach button { align-self: flex-end; padding: 8px 14px; border-radius: 999px; background: var(--yuru); color: var(--ink); font-size: 12px; font-weight: 900; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

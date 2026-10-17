@@ -78,7 +78,8 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
         <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} />
         <Turn pal={pal} name={members[st.doer].name} color={colorOf(st.doer)} pushed={st.doer !== cur} bomb={st.card.bomb} passed={st.card.passed} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
-        <RuleBanner pal={pal} rule={rule} onViolate={() => setRuleSheet('pick')} />
+        {/* ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので） */}
+        <RuleBanner pal={pal} rule={st.card.ruleCard && st.phase === 'play' ? null : rule} onViolate={() => setRuleSheet('pick')} />
         <DeckStack pal={pal} minHeight={0}>
           {st.phase === 'batsu' ? (
             <GachaCard pal={pal} members={members} items={st.gacha} />

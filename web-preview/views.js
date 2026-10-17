@@ -113,6 +113,15 @@ function vHome1() {
   return `
   <div class="home-top">${logoBlock()}<button class="icon-btn" data-act="sheet" aria-label="設定">${ICON.gear}</button></div>
   <div class="step-dots"><i class="on"></i><i></i><span>メンバー</span></div>
+  ${S.seen.members ? "" : `<div class="home-coach" role="note">
+    <b>はじめに：遊ぶメンバーを入れよう</b>
+    <ol>
+      <li>名前を入れて「＋」。続けて何人でも入れられる</li>
+      <li>名前をタップすると<b>イジりネタ</b>（例：すぐ寝る）を足せる。お題に勝手に混ざる</li>
+      <li>2人以上入れたら、下のボタンで次へ</li>
+    </ol>
+    <button data-act="coachOk" data-k="members">わかった</button>
+  </div>`}
   <form class="add1" id="addForm">
     <input id="inName" maxlength="10" placeholder="名前を入れて＋（続けて入れられる）" autocomplete="off" enterkeyhint="done">
     <button class="add-btn" type="submit" aria-label="追加">${ICON.plus}</button>
@@ -229,9 +238,12 @@ function vSheet() {
 const TUT = [
   {
     step: "1 / 3",
-    title: "回して、やって、次へ",
+    title: "お題をやって、<br>セーフかアウトか",
     text: "スマホをテーブルの真ん中に置くか、順番に回す。画面のフチの色が<b>いまの番の人の色</b>。出たお題をやって、やり切ったら<b>セーフ</b>、逃げたりできんかったら<b>アウト</b>。",
-    art: () => `<div class="mini-card"><small>アホお題・普通</small><b><mark style="--mc:var(--yuru)">たく</mark>、今日のMVPを発表しろ</b></div>`,
+    art: () => `<div class="tut-play">
+      <div class="mini-card"><small><i class="tag">ひとり</i></small><b><mark style="--mc:var(--yuru)">たく</mark>、今日のMVPを発表しろ</b><span class="swipe-arrows"><em>← アウト</em><em>セーフ →</em></span></div>
+      <div class="mini-verdict"><span class="ng">アウト<small>たくに罰</small></span><span class="ok">セーフ！<small>→ 次へ</small></span></div>
+    </div>`,
   },
   {
     step: "2 / 3",
@@ -386,7 +398,7 @@ function vCard() {
       <div class="skull-wrap">${allLucky ? `${ANGEL}<b>ラッキー！セーフ</b>` : `${SKULL}<b>罰ゲーム確定</b>`}</div>
       <div class="gacha">${g.gacha.map((x, k) => `
         <div class="gacha-item ${x.night ? "night " + x.night : ""}" style="--d:${(k * 0.35).toFixed(2)}s;--mc:${colorOf(x.i)}">
-          <div class="capsule"><i class="top"></i><i class="bot"></i></div>
+          <div class="capsule"><i class="top"></i><i class="bot"></i><i class="res ${x.lucky ? "ok" : ""}">${x.lucky ? "天" : "罰"}</i></div>
           <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="badge">×${x.n}</span>` : ""}</b><p>${x.html}</p></div>
         </div>`).join("")}</div>
     </div>`;
@@ -416,7 +428,9 @@ function vRule() {
   const g = S.game, r = g.rule;
   const bomb = g.bomb && !g.phase.startsWith("bomb")
     ? `<div class="rule bomb"><span class="fuse" aria-hidden="true"></span><span><b>時限爆弾 作動中</b><br><span class="nowrap">仕掛け人：${esc(S.members[g.bomb.owner].name)}</span></span></div>` : "";
-  return bomb + (r ? `<div class="rule"><b>発動中 残り${r.left}ターン</b><span>${r.html}</span><button class="rule-out" data-act="ruleOpen">違反者に罰</button></div>` : "");
+  // ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので）
+  const same = g.card?.ruleCard && g.phase === "play";
+  return bomb + (r && !same ? `<div class="rule"><b>発動中 残り${r.left}ターン</b><span>${r.html}</span><button class="rule-out" data-act="ruleOpen">違反者に罰</button></div>` : "");
 }
 function vTurn() {
   const g = S.game;
@@ -583,16 +597,18 @@ function cellFace(c) {
     case "skip": return { cls: "c-skip", g: "休" };
     case "swap": return { cls: "c-swap", g: "⇄" };
     case "event": return { cls: "c-event", g: "！" };
-    default: return { cls: "c-text", g: c.label };
+    default: return { cls: "c-text", g: c.short || c.label };
   }
 }
 function tokenStyle(i) {
   const g = S.game, p = g.vpos[i];
   const same = g.vpos.map((q, k) => (q === p ? k : -1)).filter((k) => k >= 0);
   const k = same.indexOf(i), n = same.length;
-  const off = n === 1 ? [0, 0] : [((k % 2) - 0.5) * 18, (Math.floor(k / 2) - (n > 2 ? 0.5 : 0)) * 18];
+  // STARTはコマを下に横並び（「START」の字が隠れんように）。それ以外は重なったら少しずらす
+  const off = p === 0 ? [(k - (n - 1) / 2) * Math.min(14, 44 / Math.max(1, n - 1)), 18]
+    : n === 1 ? [0, 0] : [((k % 2) - 0.5) * 18, (Math.floor(k / 2) - (n > 2 ? 0.5 : 0)) * 18];
   const { x, y } = pct(p);
-  return `left:calc(${x}% + ${off[0]}px);top:calc(${y}% + ${off[1]}px);--mc:${colorOf(i)}`;
+  return `left:calc(${x}% + ${off[0]}px);top:calc(${y}% + ${off[1]}px);--mc:${colorOf(i)}${p === 0 ? ";--s:.62" : ""}`;
 }
 function vBoard() {
   const g = S.game;

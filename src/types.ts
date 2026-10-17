@@ -40,7 +40,7 @@ export type Cell =
   | { type: 'start' | 'goal'; label: string }
   | { type: 'odai' }
   | { type: 'event'; label: string }
-  | { type: 'text' | 'skip' | 'swap'; label: string; text: string }
+  | { type: 'text' | 'skip' | 'swap'; label: string; text: string; /** マスに出す短い表記 */ short?: string }
   | { type: 'move'; label: string; text: string; value: number };
 
 export type GameEvent = { text: string; turns: number };
