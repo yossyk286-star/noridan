@@ -86,6 +86,32 @@ function draw(key, list) {
 function makeCard(kind, tpl, p, opts = {}, extra = {}) {
   return { kind, tpl, opts, html: fill(tpl, p, opts), solo: tpl.includes("{P}"), ...extra };
 }
+// お題の文から「誰が罰か」を読み取って、罰の人を選ぶ時の聞き方にする（例：一番遅い奴が罰 → 一番遅い人は？）
+function penHead(tpl) {
+  if (!tpl) return "アウトの人は？";
+  const s = tpl.replace(/（[^）]*）/g, "");
+  if (/黙秘/.test(s)) return "黙秘した人は？";
+  if (/一番指された人/.test(s)) return "一番指された人は？";
+  if (/一番似てない/.test(s)) return "一番似てなかった人は？";
+  const ok = (w) => w && !w.includes("{") && !/^(と|なら|どっち|も|なっ)/.test(w);
+  let m = s.match(/([^。、！？「」\s]+?)(?:が|は)罰/);
+  if (m) {
+    const w = m[1].replace(/奴$/, "人").replace(/^.*?で/, "");
+    if (ok(w)) return w + "は？";
+  }
+  m = s.match(/([^。、！？「」\s]+?)たら(?:\{[PXY]\}が)?(?:2人とも)?罰/);
+  if (m) {
+    const w = m[1].replace(/^.*[をがにでま]/, "");
+    if (ok(w)) return w + "た人は？";
+  }
+  return "アウトの人は？";
+}
+// 番の人以外が罰になりうるお題か（勝負・多数決など）。そういう札は「アウト／セーフ」やなくて一覧から選ぶ
+function needsPick(tpl) {
+  if (!tpl) return true;
+  if (/黙秘は罰/.test(tpl)) return false;
+  return /が罰|は罰|2人とも罰|両方罰/.test(tpl) || /^\{P\}と\{X\}/.test(tpl);
+}
 // 夜お題に巻き込める人（下ネタNGの人は外す）
 const okForYoru = (i) => !S.members[i].ng;
 function canYoru(tpl, p) {
@@ -205,7 +231,7 @@ function advance() {
       const b = g.bomb;
       g.bomb = null; g.bombJust = true;
       g.doer = b.owner; g.double = false; g.phase = "play";
-      g.card = { kind: "時限爆弾 ドカン！", bomb: true, alert: true, solo: false,
+      g.card = { kind: "時限爆弾 ドカン！", bomb: true, alert: true, solo: false, bombCond: b.cond,
         html: `仕掛け人${nm(b.owner)}が発表！爆弾が仕掛けられてから<mark>${esc(b.cond)}</mark>奴は全員罰。自首するか告発しろ` };
       render(true); return;
     }

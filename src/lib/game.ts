@@ -153,3 +153,30 @@ export class Decks {
     return { segments: fill(tpl, members, p), lucky };
   }
 }
+
+// お題の文から「誰が罰か」を読み取って、罰の人を選ぶ時の聞き方にする（例：一番遅い奴が罰 → 一番遅い人は？）
+export function penHead(tpl?: string): string {
+  if (!tpl) return "アウトの人は？";
+  const s = tpl.replace(/（[^）]*）/g, "");
+  if (/黙秘/.test(s)) return "黙秘した人は？";
+  if (/一番指された人/.test(s)) return "一番指された人は？";
+  if (/一番似てない/.test(s)) return "一番似てなかった人は？";
+  const ok = (w: string) => w && !w.includes("{") && !/^(と|なら|どっち|も|なっ)/.test(w);
+  let m = s.match(/([^。、！？「」\s]+?)(?:が|は)罰/);
+  if (m) {
+    const w = m[1].replace(/奴$/, "人").replace(/^.*?で/, "");
+    if (ok(w)) return w + "は？";
+  }
+  m = s.match(/([^。、！？「」\s]+?)たら(?:\{[PXY]\}が)?(?:2人とも)?罰/);
+  if (m) {
+    const w = m[1].replace(/^.*[をがにでま]/, "");
+    if (ok(w)) return w + "た人は？";
+  }
+  return "アウトの人は？";
+}
+// 番の人以外が罰になりうるお題か（勝負・多数決など）。そういう札は「アウト／セーフ」やなくて一覧から選ぶ
+export function needsPick(tpl?: string): boolean {
+  if (!tpl) return true;
+  if (/黙秘は罰/.test(tpl)) return false;
+  return /が罰|は罰|2人とも罰|両方罰/.test(tpl) || /^\{P\}と\{X\}/.test(tpl);
+}

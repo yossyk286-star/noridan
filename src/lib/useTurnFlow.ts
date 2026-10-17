@@ -68,6 +68,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
         st.phase = 'play';
         st.card = {
           kind: '時限爆弾 ドカン！',
+          bombCond: b.cond,
           bomb: true,
           alert: true,
           solo: false,

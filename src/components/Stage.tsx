@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Tap } from './Tap';
 import type React from 'react';
 import { Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { isSituational, othersOf } from '../lib/game';
+import { isSituational, needsPick, othersOf, penHead } from '../lib/game';
 import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
 import { CARD_LOOK, F, STAGE, alpha, colorOf } from '../theme';
@@ -393,7 +393,7 @@ function PenGrid({ pal, members, flow }: { pal: Pal; members: Member[]; flow: Tu
   return (
     <View style={{ gap: 8 }}>
       <View style={styles.penQRow}>
-        <Text style={[styles.penQ, { color: pal.fg }]}>できんかった人は？</Text>
+        <Text style={[styles.penQ, { color: pal.fg, flexShrink: 1 }]} numberOfLines={1} adjustsFontSizeToFit>{penQuestion(flow)}</Text>
         <Text style={[styles.penQSub, { color: pal.muted }]}>タップで罰</Text>
       </View>
       <View style={styles.penGrid}>
@@ -577,10 +577,18 @@ function Verdict({ pal, title, sub, ng, onPress }: { pal: Pal; title: string; su
   );
 }
 
+/** 罰の人を選ぶ時の聞き方（お題に合わせる。例：一番遅い奴が罰 → 一番遅い人は？） */
+function penQuestion(flow: TurnFlow) {
+  const c = flow.st.card;
+  if (c.bombCond) return `${c.bombCond}人は？`;
+  if (flow.st.penOpenFor === c && c.solo && !needsPick(c.tpl)) return '罰をつける人は？';
+  return penHead(c.tpl);
+}
+
 /** 1人用のお題で2択・スワイプが使える場面か */
 export function canVerdict(flow: TurnFlow) {
   const { st } = flow;
-  return st.phase === 'play' && !st.double && !!st.card.solo && st.penOpenFor !== st.card;
+  return st.phase === 'play' && !st.double && !!st.card.solo && !needsPick(st.card.tpl) && st.penOpenFor !== st.card;
 }
 
 /** 札のスワイプ：右でクリア、左で番の人に罰。上下反転中は左右も逆 */

@@ -281,11 +281,18 @@ function vChips(head, act, list, showCount = true) {
 }
 
 // 罰をつける人を選ぶタイル。押すと赤くなって「罰」のハンコ
+// 罰の人を選ぶ時の聞き方（お題に合わせる）
+function penQuestion() {
+  const g = S.game, c = g.card || {};
+  if (c.bombCond) return `${c.bombCond}人は？`;
+  if (g.penOpen === c && c.solo && !needsPick(c.tpl)) return "罰をつける人は？";
+  return penHead(c.tpl);
+}
 function vPenGrid() {
   const g = S.game;
   return `
   <div class="pen-grid-wrap">
-    <p class="pen-q">できんかった人は？<span>タップで罰</span></p>
+    <p class="pen-q">${esc(penQuestion())}<span>タップで罰</span></p>
     <div class="pen-grid ${S.members.length > 6 ? "many" : ""}">
       ${S.members.map((m, i) => {
         const on = g.add.has(i);
@@ -339,7 +346,7 @@ function vControls() {
         g.card.solo && g.rev[g.doer] ? `<button class="revenge" data-act="revenge">↺ リベンジ権を使う</button>` : "",
       ].join("");
       // 1人用のお題は「やった／できんかった」の2択（札のスワイプでもOK）。他の人に罰をつけたい時だけ一覧を開く
-      if (g.card.solo && g.penOpen !== g.card) {
+      if (g.card.solo && !needsPick(g.card.tpl) && g.penOpen !== g.card) {
         return `
         ${subs ? `<div class="sub-acts">${subs}</div>` : ""}
         <div class="verdict">
@@ -391,7 +398,7 @@ function vCard() {
   const no = g.mode === "odai" ? `No.${String(g.cards + 1).padStart(3, "0")}` : "";
   return `<div class="odai ${cardClass(c)} ${anim}" id="card">
     <div class="head"><span>${esc(c.kind)}</span>${badge || `<span class="no">${no}</span>`}</div>
-    ${c.solo && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
+    ${c.solo && !needsPick(c.tpl) && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
     ${art}
     ${dual ? `<p class="txt mirror" aria-hidden="true" style="font-size:${fitSize(c.html, g.mode === "sugoroku", 0.74)}"><span>${c.html}</span></p><hr class="dual-line">` : ""}
     <p class="txt" style="font-size:${fitSize(c.html, g.mode === "sugoroku", dual ? 0.74 : 1)}"><span>${c.html}</span></p>
@@ -950,7 +957,7 @@ window.addEventListener("orientationchange", () => setTimeout(fixHeight, 300));
 let drag = null;
 const canSwipe = () => {
   const g = S.game;
-  return g && (S.screen === "odai" || S.screen === "sugoroku") && g.phase === "play" && !g.double && g.card?.solo && g.penOpen !== g.card && !(S.screen === "sugoroku" && !g.rolled);
+  return g && (S.screen === "odai" || S.screen === "sugoroku") && g.phase === "play" && !g.double && g.card?.solo && !needsPick(g.card.tpl) && g.penOpen !== g.card && !(S.screen === "sugoroku" && !g.rolled);
 };
 app.addEventListener("pointerdown", (e) => {
   const card = e.target.closest("#card");

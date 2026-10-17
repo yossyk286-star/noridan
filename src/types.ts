@@ -17,6 +17,8 @@ export type Card = {
   needNeta?: boolean;
   /** その人がやるお題か（リベンジ・ダブルアップの対象） */
   solo?: boolean;
+  /** 時限爆弾の爆発札：NG行動（「〜した」） */
+  bombCond?: string;
   /** 時限爆弾まわりのカード（「仕掛け人」表示にする） */
   bomb?: boolean;
   /** 夜モードのお題（パスできる・NGの人に振らない） */
