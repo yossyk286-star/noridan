@@ -57,7 +57,7 @@ function fill(tpl, pIdx, opts = {}) {
     .replaceAll("{X}", nm(x))
     .replaceAll("{Y}", nm(y ?? x));
 }
-const textOf = (t) => (typeof t === "string" ? t : t.text);
+const textOf = (t) => (typeof t === "string" ? t : t?.text ?? "");
 // 3人以上おらんと成立せえへんお題（2人やと必ず引き分け・全員該当になる）
 const NEEDS_3 = /少数派|被らんかった|多数決|一番指された|指差せ|一番似てない|一番低い点|ひとりぼっち|被ったら/;
 function usable(t) {
@@ -389,7 +389,9 @@ function resolveCell(me) {
   const c = DATA.board[g.pos[me]];
   const head = `${g.pos[me]}マス目`;
   const show = (card) => { g.phase = "play"; g.double = false; g.card = card; };
-  if (c.type === "goal") {
+  if (c.type === "start") {
+    show({ kind: "START", html: `${nm(me)}はスタートに戻った。次の番まで待機` });
+  } else if (c.type === "goal") {
     g.done = true;
     show({ kind: "GOAL", html: `${nm(me)}がゴール！最後に罰が一番多い奴は誰や` });
   } else if (c.type === "odai") {

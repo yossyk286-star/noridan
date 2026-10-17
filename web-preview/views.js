@@ -346,7 +346,7 @@ function nextText(base) {
   const g = S.game;
   if (!g.add.size && mustPick(g.card?.tpl)) return `${penHead(g.card.tpl).replace(/は？$/, "")}を選んで`;
   if (!g.add.size) return `アウトなし → ${base}`;
-  const names = [...g.add.keys()].map((i) => S.members[i].name);
+  const names = [...g.add.keys()].map((i) => esc(S.members[i].name));
   return `${names.length > 2 ? names.slice(0, 2).join("・") + ` ほか${names.length - 2}人` : names.join("・")}に罰 → ${base}`;
 }
 
