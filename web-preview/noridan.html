@@ -1866,7 +1866,7 @@ function render(anim) {
   app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : vResult();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
   overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
-  if (onStage) fitCard();
+  if (onStage) { fixHeight(); fitCard(); }
   if (anim) { window.scrollTo(0, 0); cue(); speakNow(); }
   if (!onStage && sc !== "result") stopSpeak();
   syncWake();
@@ -2101,8 +2101,12 @@ function fixHeight() {
   } catch {}
   document.documentElement.style.setProperty("--app-h", h + "px");
 }
+// 起動直後は上の安全領域がまだ0のことがあるので、少し後にも測り直す
 fixHeight();
+[150, 600, 1500].forEach((ms) => setTimeout(fixHeight, ms));
 window.addEventListener("resize", fixHeight);
+window.addEventListener("pageshow", fixHeight);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") setTimeout(fixHeight, 100); });
 window.addEventListener("orientationchange", () => setTimeout(fixHeight, 300));
 
 // ---------- 札のスワイプ：右でクリア、左で番の人に罰 ----------
