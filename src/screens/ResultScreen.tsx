@@ -62,7 +62,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       <Text style={s.brand}>ノリダン</Text>
       <Text style={s.head}>本日の戦犯</Text>
       <Text style={s.sub}>
-        {mode === 'ngword' ? `NGワード・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' ? '問' : 'ターン'}`}
+        {mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' ? '問' : 'ターン'}`}
       </Text>
 
       <View style={s.mvp}>

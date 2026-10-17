@@ -12,7 +12,7 @@ import { Decks } from '../lib/game';
 import { load, save } from '../lib/storage';
 import { play } from '../lib/sound';
 import { newStats, type Stats } from '../lib/titles';
-import { C, F, STAGE, alpha, colorOf } from '../theme';
+import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { Level, Member, Night, Segment } from '../types';
 
 type Props = {
@@ -25,9 +25,11 @@ type Props = {
 };
 type Phase = 'setup' | 'hand' | 'look' | 'play' | 'who' | 'confirm' | 'out' | 'eyes' | 'newword' | 'over';
 const MINUTES = [3, 5, 10, 15, 0];
+const NG_LV: Record<Level, string> = { yurume: 'たまにしか言わん言葉', futsu: 'そこそこ言う言葉', jigoku: '絶対言うてまう口ぐせ' };
 
 export const NG_RULES: [string, string][] = [
   ['配る', 'スマホを回して、1人ずつ自分以外の全員のNGワードを見る。自分のワードは自分だけ知らん'],
+  ['地獄度', 'ゆるめ＝たまにしか言わん言葉、普通＝そこそこ言う言葉、地獄＝絶対言うてまう口ぐせ。夜・深夜は恋愛・下ネタのワードも混ざる'],
   ['言わせる', '普通にしゃべって、相手がNGワードを言うように話を持っていく。話題に困ったら「話題を出す」'],
   ['アウト', '言うてもうた人をタップ。ワードを発表して罰ガチャ。その人には新しいワードが配られる'],
   ['忘れた時', '「ワードを見直す」→自分の名前を選ぶと、自分以外のワードをもう一回見られる（時計は止まる）'],
@@ -96,7 +98,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
   };
   const deal = () => {
     const w: string[] = [];
-    members.forEach(() => w.push(decks.ngWord(w)));
+    members.forEach((m) => w.push(decks.ngWord(w, m)));
     setWords(w);
     left.current = minutes * 60000;
     setDealing(true);
@@ -141,6 +143,10 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
             <Text style={[s.how, { color: fg }]}>2. 自分のワードは自分だけ知らん。普通にしゃべって、相手にNGワードを言わせろ</Text>
             <Text style={[s.how, { color: fg }]}>3. 言うてもうた人をタップ → アウトで罰ガチャ。その人には新しいワードが配られる</Text>
             <Text style={[s.small, { color: fg }]}>ワードを忘れたら、ゲーム中の「ワードを見直す」でいつでも見られる</Text>
+            <View style={[s.lvBox, { backgroundColor: alpha(pal.cardEdge, 0.16) }]}>
+              <Text style={[s.lvText, { color: fg }]}>地獄度「{LEVEL_LABEL[level]}」：{NG_LV[level]}</Text>
+              {!!night && <Text style={[s.small, { color: fg }]}>{night === 'shinya' ? '深夜' : '夜'}モード：恋愛・下ネタのワードも混ざる</Text>}
+            </View>
           <Text style={[s.small, { color: fg, fontWeight: '900', marginTop: 4 }]}>制限時間</Text>
           <View style={s.mins}>
             {MINUTES.map((m) => {
@@ -250,7 +256,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
           <Note fg={fg}>{`${members[out].name}の新しいNGワードを、\n${members[out].name}以外の全員で見る`}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label={`${members[out].name}以外で見る`} onPress={() => { setWords((w) => w.map((x, i) => (i === out ? decks.ngWord(w) : x))); setPhase('newword'); }} />;
+      controls = <BigButton pal={pal} label={`${members[out].name}以外で見る`} onPress={() => { setWords((w) => w.map((x, i) => (i === out ? decks.ngWord(w, members[out]) : x))); setPhase('newword'); }} />;
       break;
     case 'newword':
       card = (
@@ -285,7 +291,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
       <RulesSheet visible={rules} custom={NG_RULES} onClose={() => setRules(false)} />
       <GameMenu
         visible={menu}
-        meta={`NGワード・アウト${pen.reduce((a, b) => a + b, 0)}回`}
+        meta={`NGワード・${LEVEL_LABEL[level]}・アウト${pen.reduce((a, b) => a + b, 0)}回`}
         rulesSub="このモードの遊び方"
         flipped={flipped}
         onFlip={() => setFlipped((f) => !f)}
@@ -306,6 +312,8 @@ const s = StyleSheet.create({
   small: { fontSize: 12, fontWeight: '700', opacity: 0.65, lineHeight: 18 },
   mins: { flexDirection: 'row', gap: 6 },
   min: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 11, alignItems: 'center' },
+  lvBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, gap: 2 },
+  lvText: { fontSize: 14, fontWeight: '900' },
   minText: { fontWeight: '900', fontSize: 15 },
   lookHead: { fontFamily: F.display, fontSize: 22 },
   lookSub: { fontFamily: undefined, fontSize: 13, fontWeight: '900' },

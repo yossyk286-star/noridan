@@ -184,7 +184,7 @@ function vHome2() {
     <div class="modes">
       <button class="mode" data-act="start" data-m="odai"><i class="mode-ic">${ICON.cards}</i><b>アホお題</b><span>出たお題を順番にやるだけ</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="sugoroku"><i class="mode-ic">${ICON.dice}</i><b>すごろく</b><span>サイコロで進む。1番にゴールで終了</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>自分だけ知らんNGワードを、言わされたらアウト</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>自分だけ知らんNGワードを、言わされたらアウト。地獄度で言葉の言いやすさが変わる</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : "「一番○○なのは？」に匿名で投票して罰を決める"}</span><em class="go">開始</em></button>
     </div>
   </section>
@@ -554,6 +554,7 @@ function vRules() {
   const md = S.game?.mode;
   if (md === "ngword") items.splice(0, items.length,
     ["配る", "スマホを回して、1人ずつ自分以外の全員のNGワードを見る。自分のワードは自分だけ知らん"],
+    ["地獄度", "ゆるめ＝たまにしか言わん言葉、普通＝そこそこ言う言葉、地獄＝絶対言うてまう口ぐせ。夜・深夜は恋愛・下ネタのワードも混ざる"],
     ["言わせる", "普通にしゃべって、相手がNGワードを言うように話を持っていく。話題に困ったら「話題を出す」"],
     ["アウト", "言うてもうた人をタップ。ワードを発表して罰ガチャ。その人には新しいワードが配られる"],
     ["忘れた時", "「ワードを見直す」→自分の名前を選ぶと、自分以外のワードをもう一回見られる（時計は止まる）"],
@@ -640,6 +641,7 @@ function vNgCard() {
         <li>言うてもうた人をタップ → <b>アウトで罰ガチャ</b>。その人には新しいワードが配られる</li>
       </ol>
       <p class="how-note">ワードを忘れたら、ゲーム中の「ワードを見直す」でいつでも見られる</p>
+      <p class="ng-lv">地獄度「${LV[S.level]}」：${NG_LV[S.level]}${S.night ? `<small>${S.night === "shinya" ? "深夜" : "夜"}モード：恋愛・下ネタのワードも混ざる</small>` : ""}</p>
       <div class="ng-min-wrap"><p class="ng-min-h">制限時間</p>
         <div class="ng-min">${NG_MIN.map((m) => `<button data-act="ngMin" data-v="${m}" aria-pressed="${ng.minutes === m}">${m ? m + "分" : "なし"}</button>`).join("")}</div></div>
       </div>
@@ -1200,7 +1202,7 @@ function onClick(e) {
     case "ngNo": ngPlay(); render(); break;
     case "ngYes": ngOut(g.ng.out); render(true); if (navigator.vibrate) navigator.vibrate([80, 40, 160]); break;
     case "ngNew": g.ng.phase = "eyes"; render(true); break;
-    case "ngEyes": g.ng.words[g.ng.out] = ngPick(g.ng.words); g.ng.phase = "newword"; render(true); break;
+    case "ngEyes": g.ng.words[g.ng.out] = ngPick(g.ng.words, g.ng.out); g.ng.phase = "newword"; render(true); break;
     case "ngHide": ngPlay(); render(true); break;
 
     // ぶっちゃけ投票

@@ -169,7 +169,7 @@ function drawEvent(p) {
 const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", ngword: "NGワード", vote: "ぶっちゃけ投票" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" ? "問" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" ? "問" : "ターン"}`;
 function newGame(mode) {
   const n = S.members.length;
   S.game = {
@@ -494,15 +494,23 @@ function cardSpeech() {
 
 // ---------- NGワード ----------
 // 1人ずつスマホを回して「自分以外のNGワード」を覚える。自分のワードは自分だけ知らん。言わされたらアウト
-function ngPick(exclude) {
+// 地獄度で言葉の言いやすさが変わる（ゆるめ=たまにしか言わん、地獄=絶対言うてまう口ぐせ）。
+// 夜・深夜は恋愛・下ネタ寄りのワードも混ざる（下ネタNGの人には配らへん）
+const NG_LV = { yurume: "たまにしか言わん言葉", futsu: "そこそこ言う言葉", jigoku: "絶対言うてまう口ぐせ" };
+function ngPick(exclude, i) {
   const used = new Set(exclude);
-  for (let k = 0; k < 50; k++) { const w = draw("ngw", DATA.ngwords.words); if (w && !used.has(w)) return w; }
-  return pick(DATA.ngwords.words.filter((w) => !used.has(w)));
+  let key = S.level;
+  if (S.night && i != null && okForYoru(i) && Math.random() < (S.night === "shinya" ? 0.5 : 0.3)) {
+    key = S.night === "shinya" && Math.random() < 0.6 ? "shinya" : "yoru";
+  }
+  const list = DATA.ngwords.words[key];
+  for (let k = 0; k < 50; k++) { const w = draw("ngw_" + key, list); if (w && !used.has(w)) return w; }
+  return pick(DATA.ngwords.words[S.level].filter((w) => !used.has(w)));
 }
 function ngDeal() {
   const ng = S.game.ng;
   ng.words = [];
-  S.members.forEach(() => ng.words.push(ngPick(ng.words)));
+  S.members.forEach((_, i) => ng.words.push(ngPick(ng.words, i)));
   ng.dealing = true; ng.viewer = 0; ng.phase = "hand";
   ng.left = ng.minutes * 60000;
 }

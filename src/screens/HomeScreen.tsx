@@ -295,7 +295,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       <StepHead num="③" title="遊び方" />
       <ModeCard icon="cards" title="アホお題" desc="出たお題を順番にやるだけ" onPress={() => onStart('odai')} />
       <ModeCard icon="dice" title="すごろく" desc="サイコロで進む。1番にゴールで終了" onPress={() => onStart('sugoroku')} />
-      <ModeCard icon="mute" title="NGワード" desc="自分だけ知らんNGワードを、言わされたらアウト" onPress={() => onStart('ngword')} />
+      <ModeCard icon="mute" title="NGワード" desc="自分だけ知らんNGワードを、言わされたらアウト。地獄度で言葉の言いやすさが変わる" onPress={() => onStart('ngword')} />
       <ModeCard icon="vote" title="ぶっちゃけ投票" desc={members.length < 3 ? '3人から遊べる' : '「一番○○なのは？」に匿名で投票して罰を決める'} disabled={members.length < 3} onPress={() => onStart('vote')} />
 
       {night && (

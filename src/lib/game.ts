@@ -155,12 +155,17 @@ export class Decks {
   }
 
   /** NGワードを1つ（今配ってるワードとは被らせへん） */
-  ngWord(exclude: string[]): string {
+  /** 地獄度で言葉の言いやすさが変わる。夜・深夜は恋愛・下ネタ寄りも混ざる（下ネタNGの人には配らへん） */
+  ngWord(exclude: string[], member?: Member): string {
+    let key: Level | 'yoru' | 'shinya' = this.level;
+    const shinya = this.night === 'shinya' && ALLOW_SHINYA;
+    if (this.night && member && !member.ng && Math.random() < (shinya ? 0.5 : 0.3)) key = shinya && Math.random() < 0.6 ? 'shinya' : 'yoru';
+    const words = ngwords.words as Record<string, string[]>;
     for (let k = 0; k < 50; k++) {
-      const w = this.str('ngw', ngwords.words, 99);
+      const w = this.str('ngw_' + key, words[key], 99);
       if (w && !exclude.includes(w)) return w;
     }
-    return pick(ngwords.words.filter((w) => !exclude.includes(w)));
+    return pick(words[this.level].filter((w) => !exclude.includes(w)));
   }
   /** NGワード中に話題に困った時の振りネタ */
   ngTopic(): string {

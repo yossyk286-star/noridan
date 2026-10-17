@@ -747,9 +747,11 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .vbars li.top .nm { color: #ff3b3b; }
 .vbars .stamp { position: absolute; right: 2.6em; top: 50%; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid #ff3b3b; color: #ff3b3b; display: grid; place-items: center; font-family: var(--display); font-size: 15px; transform: translateY(-50%) rotate(-14deg); animation: stamp .25s calc(var(--d) + .8s) cubic-bezier(.3,1.6,.5,1) both; }
 @keyframes grow { from { width: 0; } }
+.ng-lv { margin: 0; padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--card-edge) 16%, transparent); font-size: 14px; font-weight: 900; line-break: strict; }
+.ng-lv small { display: block; font-size: 12px; opacity: .75; margin-top: 2px; }
 /* 説明・ワード一覧は札の真ん中に寄せて、画面の高さに合わせて文字も大きくする（下にぽっかり余白が出んように） */
-.mode-card.mid .mid-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: clamp(12px, 2.4vh, 24px); overflow-y: auto; }
-.mode-card.mid .how { font-size: clamp(15px, 2.5vh, 22px); gap: clamp(8px, 1.6vh, 16px); }
+.mode-card.mid .mid-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: clamp(10px, 2vh, 24px); overflow-y: auto; }
+.mode-card.mid .how { font-size: clamp(14px, 2.3vh, 22px); gap: clamp(6px, 1.4vh, 16px); }
 .mode-card.mid .how-note { font-size: clamp(12px, 1.6vh, 14px); }
 .mode-card.mid .ng-min-wrap { margin-top: 0; }
 .mode-card.mid .ng-min button { padding: clamp(10px, 1.8vh, 16px) 0; font-size: clamp(15px, 2vh, 18px); }
