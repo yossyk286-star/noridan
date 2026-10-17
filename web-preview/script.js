@@ -165,10 +165,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ngword: "NGワード", vote: "ぶっちゃけ投票" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", ngword: "NGワード", vote: "ぶっちゃけ投票" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" ? "問" : g.mode === "memory" ? "ペア" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" ? "問" : g.mode === "memory" ? "ペア" : "ターン"}`;
 function newGame(mode) {
   const n = S.members.length;
   S.game = {
@@ -187,6 +187,7 @@ function newGame(mode) {
   if (mode === "ngword") { S.game.doer = -1; S.game.ng = { phase: "setup", minutes: store.get("nd_ng_min", 10), words: [], viewer: 0, dealing: false, out: null, res: null, left: 0, endAt: 0, topic: null }; render(true); return; }
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "q", round: 0 }; startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
+  if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
   if (mode === "odai") startOdaiTurn();
   else S.game.card = { kind: "すごろく", html: `${nm(0)}からスタート。サイコロ振れ！` };
   render(true);
@@ -674,4 +675,42 @@ function mmAfterBatsu() {
 function mmLowest() {
   const sc = S.game.mm.score, m = Math.min(...sc);
   return sc.map((v, i) => (v === m ? i : -1)).filter((i) => i >= 0);
+}
+
+// ---------- 価値観ナンバー ----------
+// 全員にこっそり1〜100の数字。お題（例：怖いもの）に合わせて自分の数字っぽいものを言って、全員で小さい順に並べる。
+// 答え合わせで、隣どうしの順番が逆になってた2人が罰
+function itRound() {
+  const g = S.game, it = g.it, n = S.members.length;
+  it.round++;
+  // 夜・深夜はお題も夜寄りに（下ネタNGの人がおる時は混ぜへん）
+  let key = S.level;
+  if (S.night && !S.members.some((m) => m.ng) && Math.random() < (S.night === "shinya" ? 0.6 : 0.3)) key = S.night === "shinya" && Math.random() < 0.6 ? "shinya" : "yoru";
+  it.night = key === "yoru" || key === "shinya" ? key : false;
+  it.topic = itTopic(key);
+  const nums = shuffle(Array.from({ length: 100 }, (_, i) => i + 1)).slice(0, n);
+  it.nums = nums;
+  it.order = [];
+  it.dealing = true;
+  it.viewer = (it.round - 1) % n; // 配る順番も毎回ずらす
+  it.seen = 0;
+  it.phase = "hand";
+  it.bad = [];
+}
+// お題の山札（文字列やないので普通の draw は使わへん）
+function itTopic(key) {
+  const k = "ito_" + key;
+  if (!decks[k] || !decks[k].length) decks[k] = shuffle(DATA.ito[key]);
+  return decks[k].pop();
+}
+// 並べた順で、隣どうしの数字が逆になってる2人
+function itCheck() {
+  const it = S.game.it, bad = new Set();
+  for (let k = 1; k < it.order.length; k++) {
+    const a = it.order[k - 1], b = it.order[k];
+    if (it.nums[a] > it.nums[b]) { bad.add(a); bad.add(b); }
+  }
+  it.bad = [...bad];
+  it.phase = "reveal";
+  S.game.turn++;
 }
