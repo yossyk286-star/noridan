@@ -41,16 +41,17 @@ function cellFace(c: Cell, pal: Pal): { bg: string; fg: string; label: string; s
 /** すごろく盤。道でつながったマスと、ピョンピョン動くコマ */
 export type Callout = { text: string; at: number; kind: 'plus' | 'minus' | 'swap'; key: number } | null;
 
-export function Board({ pal, members, vpos, cur, callout }: { pal: Pal; members: Member[]; vpos: number[]; cur: number; callout?: Callout }) {
+export function Board({ pal, members, vpos, cur, callout, height }: { pal: Pal; members: Member[]; vpos: number[]; cur: number; callout?: Callout; /** 指定すると盤をこの高さまで伸ばす（マスは縦長になる） */ height?: number }) {
   const [w, setW] = useState(0);
   const cell = w / COLS;
+  const cellH = height ? height / ROWS : cell;
   const center = (i: number) => {
     const { r, c } = cellXY(i);
-    return { x: (c + 0.5) * cell, y: (r + 0.5) * cell };
+    return { x: (c + 0.5) * cell, y: (r + 0.5) * cellH };
   };
 
   return (
-    <View style={{ width: '100%', height: w ? cell * ROWS : undefined, aspectRatio: w ? undefined : COLS / ROWS }} onLayout={(e) => setW(e.nativeEvent.layout.width)} accessibilityLabel="すごろく盤">
+    <View style={{ width: '100%', height: w ? cellH * ROWS : undefined, aspectRatio: w ? undefined : COLS / ROWS }} onLayout={(e) => setW(e.nativeEvent.layout.width)} accessibilityLabel="すごろく盤">
       {w > 0 && (
         <>
           {/* 道 */}
@@ -76,7 +77,7 @@ export function Board({ pal, members, vpos, cur, callout }: { pal: Pal; members:
             const { r, c: col } = cellXY(i);
             const f = cellFace(c, pal);
             return (
-              <View key={i} style={[s.cell, { left: col * cell, top: r * cell, width: cell, height: cell }]}>
+              <View key={i} style={[s.cell, { left: col * cell, top: r * cellH, width: cell, height: cellH }]}>
                 <View style={[s.cellIn, { backgroundColor: f.bg }, f.stripe && { borderWidth: 4, borderColor: '#141210', borderStyle: 'dashed' }]}>
                   {c.type !== 'start' && c.type !== 'goal' && <Text style={[s.no, { color: f.fg }]}>{i}</Text>}
                   <Text style={[f.small ? s.labelSmall : s.label, { color: f.fg }]} numberOfLines={2} adjustsFontSizeToFit>

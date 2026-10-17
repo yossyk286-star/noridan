@@ -517,7 +517,7 @@ function tokenStyle(i) {
 function vBoard() {
   const g = S.game;
   const pts = DATA.board.map((_, i) => { const { x, y } = pct(i); return `${x * 6},${y * ROWS}`; }).join(" ");
-  return `<div class="sg-board" id="board" style="aspect-ratio:${COLS}/${ROWS}" aria-label="すごろく盤">
+  return `<div class="sg-board" id="board" style="aspect-ratio:${COLS}/${ROWS};--rows:${ROWS}" aria-label="すごろく盤">
     <svg class="sg-path" viewBox="0 0 600 ${ROWS * 100}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}"/></svg>
     ${DATA.board.map((c, i) => {
       const { r, c: col } = cellXY(i), f = cellFace(c);

@@ -231,8 +231,9 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
         <RuleBanner pal={pal} rule={rule} onViolate={() => setRuleSheet('pick')} />
         <View style={s.boardArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
           {area.w > 0 && (
-            <View style={{ width: Math.min(area.w, (area.h * COLS) / ROWS) }}>
-              <Board pal={pal} members={members} vpos={vpos} cur={cur} callout={callout} />
+            <View style={{ width: area.w }}>
+              {/* 横幅いっぱい、縦は残りの高さまで伸ばす（伸ばしすぎない） */}
+              <Board pal={pal} members={members} vpos={vpos} cur={cur} callout={callout} height={Math.min(area.h, ((area.w * ROWS) / COLS) * 1.5)} />
             </View>
           )}
         </View>

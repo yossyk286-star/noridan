@@ -503,7 +503,9 @@ body.stage .odai { min-height: 0; overflow: hidden; }
 body.stage .odai .txt { min-height: 0; overflow: hidden; }
 body.stage .odai .gacha { overflow-y: auto; min-height: 0; flex: 1; }
 /* すごろく：盤は残りの高さに収まるサイズに */
-body.stage .sugo2 .sg-board { width: min(100%, calc(100dvh - 360px - env(safe-area-inset-top, 0px))); margin-inline: auto; }
+/* すごろく盤は横幅いっぱい、縦は残りの高さいっぱいまで伸ばす（マスは縦長になってもOK、伸ばしすぎない） */
+body.stage .sugo2 .sg-board { flex: 1 1 0; min-height: 0; width: 100%; aspect-ratio: auto !important; max-height: calc((100vw - 32px) * var(--rows) / 6 * 1.5); }
+body.stage .sugo2 .c-start b { font-size: clamp(9px, 2.6vw, 13px); white-space: nowrap; letter-spacing: -.02em; }
 /* 背の低いスマホ・人数が多い時は詰める */
 @media (max-height: 740px) {
   body.stage .turn em { font-size: clamp(30px, 9vw, 40px); }
@@ -514,7 +516,6 @@ body.stage .sugo2 .sg-board { width: min(100%, calc(100dvh - 360px - env(safe-ar
 body.stage .pen-grid.many .pen-tile { min-height: 46px; padding-block: 5px; }
 body.stage .pen-grid.many { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 body.stage .pen-grid.many .doer-lbl { display: none; }
-body.stage .sugo2:has(.sg-ranks.many) .sg-board { width: min(100%, calc(100dvh - 410px - env(safe-area-inset-top, 0px))); }
 @media (max-height: 740px) { body.stage .sg-sheet .deck { min-height: 160px; } }
 body.stage .sg-ranks.many { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
 
