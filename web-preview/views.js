@@ -414,7 +414,7 @@ function fitSize(html, small, scale = 1) {
 function vRule() {
   const g = S.game, r = g.rule;
   const bomb = g.bomb && !g.phase.startsWith("bomb")
-    ? `<div class="rule bomb"><span class="fuse" aria-hidden="true"></span><span><b>時限爆弾 作動中</b>　仕掛け人：${esc(S.members[g.bomb.owner].name)}</span></div>` : "";
+    ? `<div class="rule bomb"><span class="fuse" aria-hidden="true"></span><span><b>時限爆弾 作動中</b><br><span class="nowrap">仕掛け人：${esc(S.members[g.bomb.owner].name)}</span></span></div>` : "";
   return bomb + (r ? `<div class="rule"><b>発動中 残り${r.left}</b><span>${r.html}</span><button class="rule-out" data-act="ruleOpen">違反者に罰</button></div>` : "");
 }
 function vTurn() {

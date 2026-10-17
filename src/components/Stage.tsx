@@ -184,7 +184,7 @@ export function BombBanner({ pal, members, bomb }: { pal: Pal; members: Member[]
     <View style={[styles.rule, { borderColor: pal.fg, borderStyle: 'solid' }]}>
       <Fuse color={pal.fg} />
       <Text style={[styles.ruleText, { color: pal.fg, flexShrink: 1 }]}>
-        <Text style={styles.ruleHead}>時限爆弾 作動中　</Text>仕掛け人：{members[bomb.owner].name}
+        <Text style={styles.ruleHead}>時限爆弾 作動中</Text>{'\n'}仕掛け人：{members[bomb.owner].name}
       </Text>
     </View>
   );
