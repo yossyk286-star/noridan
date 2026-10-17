@@ -20,6 +20,12 @@ export function useSeen() {
   }, []);
   return {
     seen,
+    /** 説明をもう一回ぜんぶ出す */
+    resetSeen() {
+      seen = {};
+      save('nd_seen', seen);
+      listeners.forEach((f) => f());
+    },
     markSeen(k: string) {
       seen = { ...seen, [k]: 1 };
       save('nd_seen', seen);

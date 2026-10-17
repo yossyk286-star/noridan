@@ -240,6 +240,7 @@ function vSheet() {
         <button class="ghost" data-act="nightOff">夜モードをやめる</button>
       </div>` : ""}
       <button class="ghost" data-act="tut">遊び方を見る</button>
+      <button class="ghost" data-act="coachReset">説明をもう一回ぜんぶ出す<small class="ghost-sub">メンバー登録・モード選択・ゲーム中のひとこと説明</small></button>
       <button class="ghost" data-act="sheetClose">閉じる</button>
     </div>
   </div>`;
@@ -949,6 +950,7 @@ function onClick(e) {
       break;
     }
     case "next": finishCard(); break;
+    case "coachReset": S.seen = {}; store.set("nd_seen", {}); store.set("nd_tut", false); S.sheet = false; S.tut = 0; render(); break;
     case "coachOk": S.seen[b.dataset.k] = 1; store.set("nd_seen", S.seen); render(); break;
     case "rules": S.menu = false; S.rules = true; render(); break;
     case "rulesClose": S.rules = false; render(); break;

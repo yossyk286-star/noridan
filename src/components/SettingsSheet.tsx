@@ -1,6 +1,7 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Tap } from './Tap';
 import { ALLOW_SHINYA } from '../lib/game';
+import { useSeen } from '../lib/coach';
 import { C, F } from '../theme';
 import type { Night } from '../types';
 
@@ -22,6 +23,7 @@ type Props = {
 
 /** 歯車から開く設定。夜モードはONの時だけ出る（隠しコマンドなので存在は書かない） */
 export default function SettingsSheet({ visible, shake, sound, dual, voice, night, onShake, onSound, onDual, onVoice, onNight, onTutorial, onClose }: Props) {
+  const { resetSeen } = useSeen();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={s.back} onPress={onClose}>
@@ -64,6 +66,16 @@ export default function SettingsSheet({ visible, shake, sound, dual, voice, nigh
             <Tap style={s.ghost} onPress={onTutorial}>
               <Text style={s.ghostText}>遊び方を見る</Text>
             </Tap>
+            <Tap
+              style={s.ghost}
+              onPress={() => {
+                resetSeen();
+                onTutorial();
+              }}
+            >
+              <Text style={s.ghostText}>説明をもう一回ぜんぶ出す</Text>
+              <Text style={s.ghostSub}>メンバー登録・モード選択・ゲーム中のひとこと説明</Text>
+            </Tap>
             <Tap style={s.ghost} onPress={onClose}>
               <Text style={s.ghostText}>閉じる</Text>
             </Tap>
@@ -105,4 +117,5 @@ const s = StyleSheet.create({
   note: { color: C.muted, fontSize: 12, lineHeight: 20 },
   ghost: { borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 14, padding: 14, alignItems: 'center' },
   ghostText: { color: C.paper, fontWeight: '900' },
+  ghostSub: { color: C.muted, fontSize: 11, fontWeight: '700', marginTop: 2 },
 });
