@@ -130,7 +130,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
     const c = st.card;
     if (c.tpl && c.solo && !c.alert && PERSONAL.test(c.tpl) && !st.add.has(st.doer)) addRule({ segments: c.segments, left: untilNext(st.doer), who: st.doer, card: c });
     if (st.add.size) {
-      st.gacha = [...st.add].map(([i, k]) => ({ i, n: k, ...decks.batsu(members, i) }));
+      st.gacha = [...st.add].map(([i, k]) => ({ i, n: k, ...decks.batsu(members, i, k) }));
       st.phase = 'batsu';
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       rerender();

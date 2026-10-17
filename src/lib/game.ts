@@ -75,6 +75,10 @@ export function markOf(t: string): string | null {
 /** 「次の自分の番まで語尾が〜」みたいな、しばらく続く罰・お題 */
 export const PERSONAL = /次の(自分の)?番まで/;
 
+/** 罰2倍（×2）にしても意味が通る罰（「ひと口飲む」「10秒」「3つ言う」みたいに数があるやつ） */
+const DOUBLEABLE = /ひと口|ふた口|飲む|\d+\s*(秒|回|つ|個|件|枚|小節|発)|[一二三]回/;
+export const canDouble = (t: string) => DOUBLEABLE.test(t) && !PERSONAL.test(t);
+
 /** お題テンプレからカードを作る */
 export function makeCard(kind: string, tpl: string, members: Member[], p: number, extra: Partial<Card> = {}): Card {
   return {
@@ -227,7 +231,13 @@ export class Decks {
   level: Level = 'futsu';
 
   /** 罰ガチャの中身。夜・深夜は罰も過激に（下ネタNGの人には普通の罰） */
-  batsu(members: Member[], p: number): { segments: Segment[]; lucky: boolean; night?: 'yoru' | 'shinya' } {
+  /** 罰ガチャの中身。夜・深夜は罰も過激に（下ネタNGの人には普通の罰）。n が2以上（罰2倍）の時は、2倍にしても意味が通る罰だけ */
+  batsu(members: Member[], p: number, n = 1): { segments: Segment[]; lucky: boolean; night?: 'yoru' | 'shinya' } {
+    const pickFrom = (key: string, list: string[]) => {
+      if (n < 2) return this.str(key, list, members.length);
+      const pool = list.filter(canDouble);
+      return pool.length ? this.str(key + '_x2', pool, members.length) : this.str(key, list, members.length);
+    };
     if (Math.random() < CHANCE.lucky) return { segments: fill(this.str('lucky', batsu.lucky, members.length)!, members, p), lucky: true };
     let list: 'bad' | 'yoru' | 'shinya' = 'bad';
     if (this.night && !members[p].ng) {
@@ -235,13 +245,14 @@ export class Decks {
       list = this.night === 'shinya' && ALLOW_SHINYA ? (this.level === 'jigoku' || r < 0.65 ? 'shinya' : r < 0.85 ? 'yoru' : 'bad') : r < 0.4 ? 'yoru' : 'bad';
     }
     if (list !== 'bad') {
-      const tpl = this.str('batsu_' + list, batsu[list], members.length);
+      const tpl = pickFrom('batsu_' + list, batsu[list]);
       // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらんかったら普通の罰
       const okX = members.some((m, j) => j !== p && !m.ng);
       if (tpl && (!tpl.includes('{X}') || okX)) return { segments: fill(tpl, members, p, { noNg: true }), lucky: false, night: list };
     }
-    return { segments: fill(this.str('batsu', batsu.bad, members.length)!, members, p), lucky: false };
+    return { segments: fill(pickFrom('batsu', batsu.bad)!, members, p), lucky: false };
   }
+
 
 }
 

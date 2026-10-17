@@ -231,13 +231,21 @@ function finishCard() {
   if (c?.tpl && c.solo && !c.alert && PERSONAL.test(c.tpl) && !g.add.has(g.doer)) addRule({ html: c.html, left: untilNext(g.doer), who: g.doer, card: c });
   if (g.add.size) {
     // たまにラッキー（天使）で帳消し
-    g.gacha = [...g.add].map(([i, n]) => ({ i, n, ...drawBatsu(i) }));
+    g.gacha = [...g.add].map(([i, n]) => ({ i, n, ...drawBatsu(i, n) }));
     g.phase = "batsu";
     render(true);
   } else advance();
 }
 // 罰ガチャの中身を1つ引く。夜・深夜は罰も過激に（下ネタNGの人には普通の罰）
-function drawBatsu(i) {
+// 罰2倍（×2）の時は、2倍にしても意味が通る罰だけ（「ひと口飲む」「10秒」「3つ言う」みたいに数があるやつ）
+const DOUBLEABLE = /ひと口|ふた口|飲む|\d+\s*(秒|回|つ|個|件|枚|小節|発)|[一二三]回/;
+const canDouble = (t) => DOUBLEABLE.test(t) && !PERSONAL.test(t);
+function drawBatsuFrom(key, list, n) {
+  if (n < 2) return draw(key, list);
+  const pool = list.filter(canDouble);
+  return pool.length ? draw(key + "_x2", pool) : draw(key, list);
+}
+function drawBatsu(i, n = 1) {
   if (Math.random() < CHANCE.lucky) return { lucky: true, html: fill(draw("lucky", DATA.batsu.lucky), i) };
   let list = "bad";
   if (S.night && !S.members[i].ng) {
@@ -245,11 +253,11 @@ function drawBatsu(i) {
     list = S.night === "shinya" ? (S.level === "jigoku" || r < 0.65 ? "shinya" : r < 0.85 ? "yoru" : "bad") : r < 0.4 ? "yoru" : "bad";
   }
   if (list !== "bad") {
-    const tpl = draw("batsu_" + list, DATA.batsu[list]);
+    const tpl = drawBatsuFrom("batsu_" + list, DATA.batsu[list], n);
     // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらんかったら普通の罰
     if (tpl && (!tpl.includes("{X}") || others(i).some(okForYoru))) return { lucky: false, night: list, html: fill(tpl, i, { noNg: true }) };
   }
-  return { lucky: false, html: fill(draw("batsu", DATA.batsu.bad), i) };
+  return { lucky: false, html: fill(drawBatsuFrom("batsu", DATA.batsu.bad, n), i) };
 }
 function applyAdds() {
   const g = S.game;
