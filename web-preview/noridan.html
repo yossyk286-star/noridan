@@ -514,6 +514,25 @@ body.stage .pen-grid.many .doer-lbl { display: none; }
 body.stage .sugo2:has(.sg-ranks.many) .sg-board { width: min(100%, calc(100dvh - 410px - env(safe-area-inset-top, 0px))); }
 @media (max-height: 740px) { body.stage .sg-sheet .deck { min-height: 160px; } }
 body.stage .sg-ranks.many { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
+
+/* ===== 隠しモードのヒント ===== */
+@keyframes whisperIn { from { opacity: 0; transform: translateY(4px); } to { opacity: .8; transform: none; } }
+@keyframes whisperPulse { 0%, 100% { opacity: .55; } 50% { opacity: .95; } }
+.whisper { margin: 10px 0 0; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--night); letter-spacing: .06em; animation: whisperIn .8s ease .6s both, whisperPulse 3.2s ease-in-out 1.4s infinite; }
+.whisper.deep { color: var(--deep); }
+.whisper svg, .tip svg { width: 14px; height: 14px; flex: none; }
+.tip { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
+/* ロゴ連打で震える */
+@keyframes tease { 0%, 100% { transform: none; } 25% { transform: rotate(-2deg) translateX(-2px); } 75% { transform: rotate(2deg) translateX(2px); } }
+.logo.tease { animation: tease .25s ease 2; text-shadow: 0 0 18px color-mix(in srgb, var(--night) 60%, transparent); }
+.logo.tease2 { animation: tease .18s ease 3; text-shadow: 0 0 10px var(--night), 0 0 30px var(--night); }
+.logo.is-night.tease2 { text-shadow: 0 0 10px var(--deep), 0 0 30px var(--deep); }
+/* 深夜の確認画面 */
+.night-ask.deep .h2 { color: var(--deep); }
+.night-title.is-deep { --nc: var(--deep); }
+.night-ask.deep .big { background: var(--deep); color: var(--ink); }
+.night-switch { display: flex; flex-direction: column; gap: 10px; }
+.night-switch .night-lv button[data-v="shinya"] { border-color: var(--deep); }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
@@ -545,7 +564,8 @@ const S = {
   level: store.get("nd_level", "futsu"),
   shake: store.get("nd_shake", true),
   night: (() => { const v = store.get("nd_night", false); return v === true ? "yoru" : v; })(), // false | "yoru" | "shinya"
-  nightAsk: false,
+  nightAsk: false,  // false | "yoru" | "shinya"（確認画面）
+  whisper: Math.random() < 0.35, // 昼間でもたまにヒントを出す（起動ごとに固定）
   sound: store.get("nd_sound", true),
   dual: store.get("nd_dual", false),   // 向かい合わせ表示
   voice: store.get("nd_voice", false), // お題の読み上げ
@@ -1001,6 +1021,7 @@ const BOMB_ART = `<svg class="bomb-art" viewBox="0 0 96 96" aria-hidden="true">
   <g class="spark"><circle cx="70" cy="14" r="6" fill="#ffd23f"/><path d="M70 2v6M70 20v6M58 14h6M76 14h6M62 6l4 4M74 18l4 4M62 22l4-4M74 10l4-4" stroke="#ff7a1a" stroke-width="2.5" stroke-linecap="round"/></g>
 </svg>`;
 
+const MOON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
 const SKULL = `<svg class="skull" viewBox="0 0 100 100" aria-hidden="true">
   <path d="M50 6C25 6 10 23 10 45c0 14 8 23 17 27v11c0 4 3 7 7 7h32c4 0 7-3 7-7V72c9-4 17-13 17-27C90 23 75 6 50 6z" fill="#f7f3ea" stroke="#141210" stroke-width="3"/>
   <ellipse class="eye" cx="33" cy="47" rx="11" ry="12" fill="#e8202a"/>
@@ -1030,7 +1051,17 @@ function vHome() {
 function logoBlock() {
   const night = S.night === "shinya" ? "is-night is-deep" : S.night ? "is-night" : "";
   const sub = S.night === "shinya" ? "深夜モード 発動中" : S.night ? "夜モード 発動中" : "ノリで断れない飲み会ゲーム";
-  return `<div><h1 class="logo ${night}"><button class="logo-btn" data-act="logo" aria-label="ノリダン">ノリダン</button></h1><p class="catch">${sub}</p></div>`;
+  return `<div><h1 class="logo ${night}" id="logo"><button class="logo-btn" data-act="logo" aria-label="ノリダン">ノリダン</button></h1><p class="catch">${sub}</p>${whisper()}</div>`;
+}
+// 隠しモードのヒント（ささやき）。夜モード前は「ロゴに秘密がある」、夜モード中は「まだ奥がある」
+function whisper() {
+  const h = new Date().getHours();
+  const late = h >= 21 || h < 5;
+  let t = "";
+  if (S.night === "yoru") t = "まだ奥がある…ロゴをもう一回";
+  else if (!S.night && late) t = "夜が更けてきた…ロゴ、連打してみ？";
+  else if (!S.night && S.whisper) t = "ロゴには秘密があるらしい";
+  return t ? `<p class="whisper ${S.night === "yoru" ? "deep" : ""}">${MOON}<span>${t}</span></p>` : "";
 }
 function vHome1() {
   const ms = S.members, ok = ms.length >= 2;
@@ -1088,11 +1119,29 @@ function vHome2() {
       <button class="mode" data-act="start" data-m="sugoroku"><b>すごろく</b><span>あるあるマスを進む。1番にゴールで終了</span><em class="go">開始</em></button>
     </div>
   </section>
-  ${S.night ? `<p class="note" style="color:${S.night === "shinya" ? "var(--deep)" : "var(--night)"};font-weight:900">${S.night === "shinya" ? "深夜モード：お題が全部下ネタ" : "夜モード：下ネタがたまに混ざる"}</p>` : ""}
+  ${S.night ? `<section class="night-switch">
+    <p class="h2">夜の深さ</p>
+    <div class="night-lv">
+      <button data-act="nightPick" data-v="yoru" aria-pressed="${S.night === "yoru"}">夜<small>たまに下ネタ</small></button>
+      <button data-act="nightPick" data-v="shinya" aria-pressed="${S.night === "shinya"}">深夜<small>${S.night === "shinya" ? "全部下ネタ" : "？？？"}</small></button>
+    </div>
+  </section>` : ""}
   <p class="note">お酒は20歳になってから。飲めへん人はソフドリでOK、無理は絶対させんこと。</p>`;
 }
 
 function vNightAsk() {
+  if (S.nightAsk === "shinya") return `
+  <div class="night-ask deep">
+    <p class="h2">さらに奥へ…</p>
+    <h1 class="night-title is-deep">深夜モード</h1>
+    <p class="night-lead">お題が<b>全部</b>下ネタになる。ハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</p>
+    <ul class="night-rules">
+      <li>全員20歳以上で、全員がOKしてること</li>
+      <li>触られるのが嫌な人は「下ネタNG」に。NGの人には振られへん</li>
+      <li>戻りたくなったらモード選択の「夜」で戻れる</li>
+    </ul>
+    <div class="row2"><button class="ghost" data-act="nightCancel">やめとく</button><button class="big" data-act="nightOn">全員OK</button></div>
+  </div>`;
   return `
   <div class="night-ask">
     <p class="h2">隠しコマンド発動</p>
@@ -1451,12 +1500,25 @@ function vResult() {
   ${(() => { const ts = titles(); return ts.length ? `<h2 class="res-h2">称号</h2><ul class="titles">${ts.map((t, k) => `<li style="--d:${(0.3 + k * 0.12).toFixed(2)}s"><small>${esc(t.title)}</small><b>${esc(titleNames(t))}</b><span>${esc(t.desc)}</span></li>`).join("")}</ul>` : ""; })()}
   <h2 class="res-h2">罰ランキング</h2>
   <ol class="rank">${rows.map((r, k) => `<li><span class="no">${k + 1}</span><i class="pc" style="background:${colorOf(r.i)}"></i><span>${esc(r.m.name)}</span><span class="ct">${r.n}</span></li>`).join("")}</ol>
+  <p class="tip">${MOON}<span>${esc(resultTip())}</span></p>
   <button class="share-btn" data-act="share">${ICON.share}<span>画像で保存・シェア</span></button>
   ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}
   <div class="row2"><button class="ghost" data-act="home">メンバー変更</button><button class="big" data-act="again">もう一回</button></div>
   </div>`;
 }
 
+// 結果画面のひとこと。夜モードに入ってない人には噂として隠しモードをにおわせる
+const TIPS = ["罰ガチャの天使はだいたい7回に1回", "リベンジ権は罰を食らった人だけのご褒美", "倍プッシュは勝てば誰かに罰、負けたら罰2倍", "スマホを振っても次のお題に進める", "設定の「向かい合わせ表示」で机の真ん中に置ける"];
+let tipCache = null;
+function resultTip() {
+  if (tipCache && tipCache.key === S.game) return tipCache.t;
+  let t;
+  if (!S.night && Math.random() < 0.6) t = "噂：ロゴを5回連打すると、何かが起きるらしい";
+  else if (S.night === "yoru" && Math.random() < 0.6) t = "噂：夜の、さらに奥があるらしい";
+  else t = "豆知識：" + pick(TIPS);
+  tipCache = { key: S.game, t };
+  return t;
+}
 // 結果を1枚の画像にする（インスタのストーリーに貼れる縦長）
 function resultImage() {
   const g = S.game, W = 1080, H = 1920;
@@ -1555,8 +1617,8 @@ function render(anim) {
   const c = onStage ? S.game.card : null;
   const neon = !!(c && c.yoru && S.game.phase !== "batsu");
   document.body.classList.toggle("neon", neon);
-  document.body.classList.toggle("night-home", sc === "home" && !!S.night);
-  document.body.classList.toggle("deep", (neon && c.kind?.includes("深夜")) || (sc === "home" && S.night === "shinya"));
+  document.body.classList.toggle("night-home", sc === "home" && !!(S.night || S.nightAsk));
+  document.body.classList.toggle("deep", (neon && c.kind?.includes("深夜")) || (sc === "home" && (S.nightAsk ? S.nightAsk === "shinya" : S.night === "shinya")));
   S.anim = !!anim;
   // 画面が変わった時だけスライドして入ってくる
   const key = sc === "home" ? (S.nightAsk ? "night" : "home" + S.step) : sc;
@@ -1710,10 +1772,23 @@ function onClick(e) {
     case "logo": {
       const now = Date.now();
       S.taps = (S.taps || []).filter((x) => now - x < 2500).concat(now);
-      if (S.taps.length >= 5) { S.taps = []; S.nightAsk = true; render(); window.scrollTo(0, 0); }
+      const lg = document.getElementById("logo");
+      // 3回目あたりから「何か起きそう」とロゴが震える
+      if (lg && S.taps.length >= 3 && S.taps.length < 5) { lg.classList.remove("tease", "tease2"); void lg.offsetWidth; lg.classList.add(S.taps.length === 3 ? "tease" : "tease2"); play("tick"); }
+      if (S.taps.length >= 5) {
+        S.taps = [];
+        if (!S.night) S.nightAsk = "yoru";
+        else if (S.night === "yoru") S.nightAsk = "shinya";
+        else { lg?.classList.add("tease2"); break; } // 深夜はもう一番奥
+        play("warn"); render(); window.scrollTo(0, 0);
+      }
       break;
     }
-    case "nightOn": S.night = "yoru"; S.nightAsk = false; store.set("nd_night", S.night); render(); break;
+    case "nightPick":
+      if (b.dataset.v === "shinya" && S.night !== "shinya") { S.nightAsk = "shinya"; render(); window.scrollTo(0, 0); }
+      else { S.night = b.dataset.v; store.set("nd_night", S.night); render(); }
+      break;
+    case "nightOn": S.night = S.nightAsk || "yoru"; S.nightAsk = false; store.set("nd_night", S.night); render(); break;
     case "nightLv": S.night = b.dataset.v; store.set("nd_night", S.night); render(); break;
     case "nightOff": S.night = false; S.nightAsk = false; S.sheet = false; store.set("nd_night", false); render(); break;
     case "nightCancel": S.nightAsk = false; render(); break;

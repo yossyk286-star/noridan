@@ -22,7 +22,8 @@ const S = {
   level: store.get("nd_level", "futsu"),
   shake: store.get("nd_shake", true),
   night: (() => { const v = store.get("nd_night", false); return v === true ? "yoru" : v; })(), // false | "yoru" | "shinya"
-  nightAsk: false,
+  nightAsk: false,  // false | "yoru" | "shinya"（確認画面）
+  whisper: Math.random() < 0.35, // 昼間でもたまにヒントを出す（起動ごとに固定）
   sound: store.get("nd_sound", true),
   dual: store.get("nd_dual", false),   // 向かい合わせ表示
   voice: store.get("nd_voice", false), // お題の読み上げ

@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Tap } from '../components/Tap';
 import { Animated, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { C, F, LEVEL_LABEL, LEVEL_SUB, colorOf } from '../theme';
 import { Icon } from '../components/Icon';
+import { ALLOW_SHINYA } from '../lib/game';
+import { play } from '../lib/sound';
 import type { Level, Member, Mode, Night } from '../types';
 
 type Props = {
@@ -28,24 +30,44 @@ const TAPS = 5;
 export default function HomeScreen(props: Props) {
   const { night, onNight } = props;
   const [step, setStep] = useState<1 | 2>(props.initialStep ?? 1);
-  const [asking, setAsking] = useState(false);
+  /** 確認画面：夜モード（1回目）か深夜モード（夜モード中にもう一回） */
+  const [asking, setAsking] = useState<false | 'yoru' | 'shinya'>(false);
+  const [tease, setTease] = useState(0);
   const taps = useRef<number[]>([]);
 
-  /** 隠しコマンド：ロゴを素早く5回タップ */
+  /** 隠しコマンド：ロゴを素早く5回タップ。3回目あたりからロゴが震えて「何か起きそう」と知らせる */
   const tapLogo = () => {
     const now = Date.now();
     taps.current = taps.current.filter((x) => now - x < 2500).concat(now);
-    if (taps.current.length >= TAPS) {
+    const n = taps.current.length;
+    if (n >= 3 && n < TAPS) {
+      setTease((t) => t + 1);
+      play('tick');
+    }
+    if (n >= TAPS) {
       taps.current = [];
-      setAsking(true);
+      if (!night) setAsking('yoru');
+      else if (night === 'yoru' && ALLOW_SHINYA) setAsking('shinya');
+      else return setTease((t) => t + 1); // もう一番奥
+      play('warn');
     }
   };
 
-  if (asking) return <NightAsk onOk={() => { onNight('yoru'); setAsking(false); }} onCancel={() => setAsking(false)} />;
+  if (asking)
+    return (
+      <NightAsk
+        kind={asking}
+        onOk={() => {
+          onNight(asking);
+          setAsking(false);
+        }}
+        onCancel={() => setAsking(false)}
+      />
+    );
   return step === 1 ? (
-    <StepMembers {...props} night={night} onLogo={tapLogo} onNext={() => setStep(2)} />
+    <StepMembers {...props} night={night} tease={tease} onLogo={tapLogo} onNext={() => setStep(2)} />
   ) : (
-    <StepMode {...props} onBack={() => setStep(1)} />
+    <StepMode {...props} onBack={() => setStep(1)} onAskDeep={() => setAsking('shinya')} />
   );
 }
 
@@ -75,7 +97,7 @@ function Gear({ onPress }: { onPress: () => void }) {
   );
 }
 
-function StepMembers({ members, isExample, night, groups, onMembers, onSettings, onLogo, onNext }: Props & { onLogo: () => void; onNext: () => void }) {
+function StepMembers({ members, isExample, night, groups, tease, onMembers, onSettings, onLogo, onNext }: Props & { tease: number; onLogo: () => void; onNext: () => void }) {
   const [name, setName] = useState('');
   const [editing, setEditing] = useState<number | null>(null);
   const [neta, setNeta] = useState('');
@@ -111,13 +133,16 @@ function StepMembers({ members, isExample, night, groups, onMembers, onSettings,
         <View style={s.top}>
           <View style={{ flex: 1 }}>
             <Tap onPress={onLogo} accessibilityLabel="ノリダン" haptic={false} scaleTo={0.98}>
-              {night ? (
-                <Neon color={logoColor} style={s.logo}>ノリダン</Neon>
-              ) : (
-                <Text style={[s.logo, { color: logoColor }]} numberOfLines={1} adjustsFontSizeToFit>ノリダン</Text>
-              )}
+              <Wiggle trigger={tease}>
+                {night ? (
+                  <Neon color={logoColor} style={s.logo}>ノリダン</Neon>
+                ) : (
+                  <Text style={[s.logo, { color: logoColor }]} numberOfLines={1} adjustsFontSizeToFit>ノリダン</Text>
+                )}
+              </Wiggle>
             </Tap>
             <Text style={[s.catch, night && { color: logoColor, textShadowColor: logoColor, textShadowRadius: 8 }]}>{night === 'shinya' ? '深夜モード 発動中' : night ? '夜モード 発動中' : 'ノリで断れない飲み会ゲーム'}</Text>
+            <Whisper night={night} />
           </View>
           <Gear onPress={onSettings} />
         </View>
@@ -213,7 +238,7 @@ function StepMembers({ members, isExample, night, groups, onMembers, onSettings,
   );
 }
 
-function StepMode({ members, level, night, onLevel, onStart, onSettings, onBack }: Props & { onBack: () => void }) {
+function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings, onBack, onAskDeep }: Props & { onBack: () => void; onAskDeep: () => void }) {
   return (
     <ScrollView contentContainerStyle={s.wrap}>
       <View style={s.top}>
@@ -261,9 +286,27 @@ function StepMode({ members, level, night, onLevel, onStart, onSettings, onBack 
       <ModeCard title="すごろく" desc="あるあるマスを進む。1番にゴールで終了" onPress={() => onStart('sugoroku')} />
 
       {night && (
-        <Text style={[s.nightNote, { color: night === 'shinya' ? C.deep : C.night }]}>
-          {night === 'shinya' ? '深夜モード：お題が全部下ネタ' : '夜モード：下ネタがたまに混ざる'}
-        </Text>
+        <View style={{ gap: 10 }}>
+          <Text style={s.h2}>夜の深さ</Text>
+          <View style={s.row}>
+            {(['yoru', 'shinya'] as const).filter((v) => v === 'yoru' || ALLOW_SHINYA).map((v) => {
+              const on = night === v;
+              const col = v === 'shinya' ? C.deep : C.night;
+              return (
+                <Tap
+                  key={v}
+                  // 深夜に入る時は確認画面をはさむ
+                  onPress={() => (v === 'shinya' && night !== 'shinya' ? onAskDeep() : onNight(v))}
+                  accessibilityState={{ selected: on }}
+                  style={[s.nightLv, { borderColor: col }, on && { backgroundColor: col }]}
+                >
+                  <Text style={[s.nightLvText, on && { color: C.ink }]}>{v === 'yoru' ? '夜' : '深夜'}</Text>
+                  <Text style={[s.nightLvSub, on && { color: C.ink }]}>{v === 'yoru' ? 'たまに下ネタ' : night === 'shinya' ? '全部下ネタ' : '？？？'}</Text>
+                </Tap>
+              );
+            })}
+          </View>
+        </View>
       )}
       <Text style={s.note}>お酒は20歳になってから。飲めへん人はソフドリでOK、無理は絶対させんこと。</Text>
     </ScrollView>
@@ -284,7 +327,28 @@ function ModeCard({ title, desc, onPress }: { title: string; desc: string; onPre
   );
 }
 
-function NightAsk({ onOk, onCancel }: { onOk: () => void; onCancel: () => void }) {
+function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () => void; onCancel: () => void }) {
+  if (kind === 'shinya')
+    return (
+      <ScrollView contentContainerStyle={s.wrap}>
+        <Text style={[s.h2, { color: C.deep, marginTop: 24 }]}>さらに奥へ…</Text>
+        <Neon color={C.deep} style={s.nightTitle}>深夜モード</Neon>
+        <Text style={s.nightLead}>お題が全部下ネタになる。ハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</Text>
+        <View style={{ gap: 8 }}>
+          {['全員20歳以上で、全員がOKしてること', '触られるのが嫌な人は「下ネタNG」に。NGの人には振られへん', '戻りたくなったらモード選択の「夜」で戻れる'].map((r) => (
+            <Text key={r} style={s.nightRule}>・{r}</Text>
+          ))}
+        </View>
+        <View style={s.row}>
+          <Tap style={s.ghostBtn} onPress={onCancel}>
+            <Text style={s.ghostText}>やめとく</Text>
+          </Tap>
+          <Tap style={[s.big, { flex: 1, backgroundColor: C.deep }]} onPress={onOk}>
+            <Text style={s.bigText}>全員OK</Text>
+          </Tap>
+        </View>
+      </ScrollView>
+    );
   return (
     <ScrollView contentContainerStyle={s.wrap}>
       <Text style={[s.h2, { color: C.night, marginTop: 24 }]}>隠しコマンド発動</Text>
@@ -365,6 +429,11 @@ const s = StyleSheet.create({
   go: { backgroundColor: C.ink, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 14 },
   goText: { fontFamily: F.display, fontSize: 15, color: C.paper },
   nightNote: { fontSize: 12, fontWeight: '900' },
+  nightLv: { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  nightLvText: { color: C.paper, fontWeight: '900', fontSize: 16 },
+  nightLvSub: { color: C.paper, fontSize: 10, fontWeight: '700' },
+  whisper: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
+  whisperText: { fontSize: 12, fontWeight: '700', letterSpacing: 1 },
   note: { color: C.muted, fontSize: 12, lineHeight: 20 },
   nightTitle: { fontFamily: F.display, fontSize: 72, lineHeight: 80, color: C.night },
   nightLead: { color: C.paper, fontSize: 16, lineHeight: 28, fontWeight: '700' },
@@ -395,4 +464,58 @@ function Neon({ color, style, children }: { color: string; style: object; childr
       {children}
     </Animated.Text>
   );
+}
+
+/** 昼間でもたまにヒントを出す（起動ごとに固定） */
+const WHISPER_DAY = Math.random() < 0.35;
+
+/** 隠しモードのヒント（ささやき）。夜モード前は「ロゴに秘密がある」、夜モード中は「まだ奥がある」 */
+function Whisper({ night }: { night: Night }) {
+  const v = useRef(new Animated.Value(0)).current;
+  const h = new Date().getHours();
+  const late = h >= 21 || h < 5;
+  const text =
+    night === 'yoru' && ALLOW_SHINYA ? 'まだ奥がある…ロゴをもう一回'
+    : !night && late ? '夜が更けてきた…ロゴ、連打してみ？'
+    : !night && WHISPER_DAY ? 'ロゴには秘密があるらしい'
+    : '';
+  useEffect(() => {
+    if (!text) return;
+    const loop = Animated.sequence([
+      Animated.delay(600),
+      Animated.timing(v, { toValue: 0.85, duration: 800, useNativeDriver: true }),
+      Animated.loop(Animated.sequence([
+        Animated.timing(v, { toValue: 0.5, duration: 1600, useNativeDriver: true }),
+        Animated.timing(v, { toValue: 0.95, duration: 1600, useNativeDriver: true }),
+      ])),
+    ]);
+    loop.start();
+    return () => loop.stop();
+  }, [text]);
+  if (!text) return null;
+  const col = night === 'yoru' ? C.deep : C.night;
+  return (
+    <Animated.View style={[s.whisper, { opacity: v }]}>
+      <Icon name="moon" color={col} size={14} />
+      <Text style={[s.whisperText, { color: col }]}>{text}</Text>
+    </Animated.View>
+  );
+}
+
+/** ロゴ連打で震える */
+function Wiggle({ trigger, children }: { trigger: number; children: ReactNode }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!trigger) return;
+    v.setValue(0);
+    Animated.sequence([
+      Animated.timing(v, { toValue: 1, duration: 50, useNativeDriver: true }),
+      Animated.timing(v, { toValue: -1, duration: 70, useNativeDriver: true }),
+      Animated.timing(v, { toValue: 1, duration: 70, useNativeDriver: true }),
+      Animated.timing(v, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  }, [trigger]);
+  const rotate = v.interpolate({ inputRange: [-1, 1], outputRange: ['-2deg', '2deg'] });
+  const translateX = v.interpolate({ inputRange: [-1, 1], outputRange: [-3, 3] });
+  return <Animated.View style={{ transform: [{ rotate }, { translateX }] }}>{children}</Animated.View>;
 }

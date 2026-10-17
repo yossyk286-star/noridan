@@ -9,24 +9,27 @@ import { usePrefs } from '../lib/prefs';
 import { speak } from '../lib/speech';
 import { titles, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, colorOf } from '../theme';
-import type { Level, Member, Mode } from '../types';
+import type { Level, Member, Mode, Night } from '../types';
+import { ALLOW_SHINYA } from '../lib/game';
 
 type Props = {
   members: Member[];
   pen: number[];
   turns: number;
   stats?: Stats;
+  night?: Night;
   mode: Mode;
   level: Level;
   onHome: () => void;
   onAgain: () => void;
 };
 
-export default function ResultScreen({ members, pen, turns, stats, mode, level, onHome, onAgain }: Props) {
+export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onAgain }: Props) {
   const rows = members.map((m, i) => ({ m, i, n: pen[i] ?? 0 })).sort((a, b) => b.n - a.n);
   const top = rows[0]?.n ?? 0;
   const who = top === 0 ? '該当者なし' : rows.filter((r) => r.n === top).map((r) => r.m.name).join('・');
   const ts = titles(pen, stats);
+  const [tip] = useState(() => resultTip(night ?? false));
   const { voice } = usePrefs();
   useEffect(() => {
     play('fanfare');
@@ -92,6 +95,10 @@ export default function ResultScreen({ members, pen, turns, stats, mode, level, 
       </View>
       </View>
 
+      <View style={s.tipRow}>
+        <Icon name="moon" color={C.muted} size={14} />
+        <Text style={s.tip}>{tip}</Text>
+      </View>
       <Tap style={({ pressed }) => [s.share, pressed && { transform: [{ translateY: 4 }] }]} onPress={share}>
         <Icon name="share" color="#fff" />
         <Text style={s.shareText}>画像で保存・シェア</Text>
@@ -110,7 +117,17 @@ export default function ResultScreen({ members, pen, turns, stats, mode, level, 
   );
 }
 
+/** 結果画面のひとこと。夜モードに入ってない人には噂として隠しモードをにおわせる */
+const TIPS = ['罰ガチャの天使はだいたい7回に1回', 'リベンジ権は罰を食らった人だけのご褒美', '倍プッシュは勝てば誰かに罰、負けたら罰2倍', 'スマホを振っても次のお題に進める', '設定の「向かい合わせ表示」で机の真ん中に置ける'];
+function resultTip(night: Night) {
+  if (!night && Math.random() < 0.6) return '噂：ロゴを5回連打すると、何かが起きるらしい';
+  if (night === 'yoru' && ALLOW_SHINYA && Math.random() < 0.6) return '噂：夜の、さらに奥があるらしい';
+  return '豆知識：' + TIPS[Math.floor(Math.random() * TIPS.length)];
+}
+
 const s = StyleSheet.create({
+  tipRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  tip: { flex: 1, color: C.muted, fontSize: 13, fontWeight: '700' },
   wrap: { padding: 16, paddingBottom: 40, gap: 18, maxWidth: 560, width: '100%', alignSelf: 'center' },
   shot: { gap: 18, backgroundColor: C.ink, padding: 4 },
   brand: { fontFamily: F.display, fontSize: 28, color: C.yuru },

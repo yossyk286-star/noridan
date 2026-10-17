@@ -514,6 +514,25 @@ body.stage .pen-grid.many .doer-lbl { display: none; }
 body.stage .sugo2:has(.sg-ranks.many) .sg-board { width: min(100%, calc(100dvh - 410px - env(safe-area-inset-top, 0px))); }
 @media (max-height: 740px) { body.stage .sg-sheet .deck { min-height: 160px; } }
 body.stage .sg-ranks.many { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
+
+/* ===== 隠しモードのヒント ===== */
+@keyframes whisperIn { from { opacity: 0; transform: translateY(4px); } to { opacity: .8; transform: none; } }
+@keyframes whisperPulse { 0%, 100% { opacity: .55; } 50% { opacity: .95; } }
+.whisper { margin: 10px 0 0; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--night); letter-spacing: .06em; animation: whisperIn .8s ease .6s both, whisperPulse 3.2s ease-in-out 1.4s infinite; }
+.whisper.deep { color: var(--deep); }
+.whisper svg, .tip svg { width: 14px; height: 14px; flex: none; }
+.tip { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
+/* ロゴ連打で震える */
+@keyframes tease { 0%, 100% { transform: none; } 25% { transform: rotate(-2deg) translateX(-2px); } 75% { transform: rotate(2deg) translateX(2px); } }
+.logo.tease { animation: tease .25s ease 2; text-shadow: 0 0 18px color-mix(in srgb, var(--night) 60%, transparent); }
+.logo.tease2 { animation: tease .18s ease 3; text-shadow: 0 0 10px var(--night), 0 0 30px var(--night); }
+.logo.is-night.tease2 { text-shadow: 0 0 10px var(--deep), 0 0 30px var(--deep); }
+/* 深夜の確認画面 */
+.night-ask.deep .h2 { color: var(--deep); }
+.night-title.is-deep { --nc: var(--deep); }
+.night-ask.deep .big { background: var(--deep); color: var(--ink); }
+.night-switch { display: flex; flex-direction: column; gap: 10px; }
+.night-switch .night-lv button[data-v="shinya"] { border-color: var(--deep); }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

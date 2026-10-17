@@ -172,6 +172,7 @@ export default function App() {
               pen={screen.pen}
               turns={screen.turns}
               stats={screen.stats}
+              night={night}
               mode={screen.mode}
               level={level}
               onHome={home}
