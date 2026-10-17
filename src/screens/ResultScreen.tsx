@@ -28,7 +28,7 @@ type Props = {
   scores?: number[];
 };
 
-const MODE_LABEL: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', ngword: 'NGワード', vote: 'ぶっちゃけ投票' };
+const MODE_LABEL: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票' };
 
 export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onAgain, words, scores }: Props) {
   const rows = members.map((m, i) => ({ m, i, n: pen[i] ?? 0 })).sort((a, b) => b.n - a.n);
@@ -64,7 +64,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       <Text style={s.brand}>ノリダン</Text>
       <Text style={s.head}>本日の戦犯</Text>
       <Text style={s.sub}>
-        {mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' || mode === 'ito' ? '問' : mode === 'memory' ? 'ペア' : 'ターン'}`}
+        {mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' || mode === 'ito' ? '問' : mode === 'memory' ? 'ペア' : mode === 'gesture' ? '問正解' : mode === 'homeru' ? '回' : 'ターン'}`}
       </Text>
 
       <View style={s.mvp}>
@@ -89,9 +89,9 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       )}
 
       <View>
-        {mode === 'memory' && !!scores?.length && (
+        {(mode === 'memory' || mode === 'gesture') && !!scores?.length && (
           <View style={{ gap: 8 }}>
-            <Text style={s.h2}>神経衰弱の点数</Text>
+            <Text style={s.h2}>{mode === 'gesture' ? 'ジェスチャーの点数' : '神経衰弱の点数'}</Text>
             {members.map((m, j) => ({ m, j })).sort((a, b) => scores[b.j] - scores[a.j]).map(({ m, j }) => (
               <View key={j} style={[s.ngRow, { borderLeftColor: colorOf(j) }]}>
                 <Text style={s.ngName} numberOfLines={1}>{m.name}</Text>

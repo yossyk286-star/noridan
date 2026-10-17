@@ -11,6 +11,8 @@ import ResultScreen from './src/screens/ResultScreen';
 import NgWordScreen from './src/screens/NgWordScreen';
 import MemoryScreen from './src/screens/MemoryScreen';
 import ItoScreen from './src/screens/ItoScreen';
+import GestureScreen from './src/screens/GestureScreen';
+import HomeruScreen from './src/screens/HomeruScreen';
 import VoteScreen from './src/screens/VoteScreen';
 import { load, save } from './src/lib/storage';
 import { setSoundEnabled } from './src/lib/sound';
@@ -116,19 +118,19 @@ export default function App() {
   };
 
   // 画面が変わったらスッとスライドして入ってくる（進む時は右から、戻る時は左から）
-  const ORDER: Record<string, number> = { home: 0, odai: 2, sugoroku: 2, memory: 2, ito: 2, ngword: 2, vote: 2, result: 3 };
+  const ORDER: Record<string, number> = { home: 0, odai: 2, sugoroku: 2, memory: 2, ito: 2, gesture: 2, homeru: 2, ngword: 2, vote: 2, result: 3 };
   const slide = useRef(new Animated.Value(1)).current;
   const dir = useRef(1);
   const prev = useRef(screen.name);
   useEffect(() => {
-    if (prev.current === screen.name && screen.name !== 'odai' && screen.name !== 'sugoroku' && screen.name !== 'memory' && screen.name !== 'ito' && screen.name !== 'ngword' && screen.name !== 'vote') return;
+    if (prev.current === screen.name && screen.name !== 'odai' && screen.name !== 'sugoroku' && screen.name !== 'memory' && screen.name !== 'ito' && screen.name !== 'gesture' && screen.name !== 'homeru' && screen.name !== 'ngword' && screen.name !== 'vote') return;
     dir.current = ORDER[screen.name] < ORDER[prev.current] ? -1 : 1;
     prev.current = screen.name;
     slide.setValue(0);
     Animated.timing(slide, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [screen]);
 
-  const onStage = screen.name === 'odai' || screen.name === 'sugoroku' || screen.name === 'memory' || screen.name === 'ito' || screen.name === 'ngword' || screen.name === 'vote';
+  const onStage = screen.name === 'odai' || screen.name === 'sugoroku' || screen.name === 'memory' || screen.name === 'ito' || screen.name === 'gesture' || screen.name === 'homeru' || screen.name === 'ngword' || screen.name === 'vote';
   const neonHome = screen.name === 'home' && !!night;
   const bg = onStage ? stageBg ?? STAGE[level].bg : neonHome ? NEON_BG : C.ink;
   useEffect(() => {
@@ -167,6 +169,12 @@ export default function App() {
           )}
           {screen.name === 'ito' && (
             <ItoScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('ito')} />
+          )}
+          {screen.name === 'gesture' && (
+            <GestureScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('gesture')} />
+          )}
+          {screen.name === 'homeru' && (
+            <HomeruScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('homeru')} />
           )}
           {screen.name === 'ngword' && (
             <NgWordScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('ngword')} />

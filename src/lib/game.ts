@@ -6,6 +6,8 @@ import boardJson from '../data/board.json';
 import ngwords from '../data/ngwords.json';
 import voteJson from '../data/vote.json';
 import marksJson from '../data/marks.json';
+import gestureJson from '../data/gesture.json';
+import homeruJson from '../data/homeru.json';
 import { LEVEL_LABEL } from '../theme';
 import type { Card, Cell, GameEvent, Level, Member, Night, Rule, Segment } from '../types';
 
@@ -195,6 +197,21 @@ export class Decks {
       out.push({ tpl: t, ch, yoru: p.yoru, deep: p.deep });
     }
     return out;
+  }
+  /** 早押しジェスチャーのお題。夜・深夜は恋愛・ちょいエロ寄りも混ぜる（下ネタNGの人がおる時は混ぜへん） */
+  gesture(level: Level, night: Night, members: Member[]): { text: string; night: 'yoru' | 'shinya' | false } {
+    let key: Level | 'yoru' | 'shinya' = level;
+    const shinya = night === 'shinya' && ALLOW_SHINYA;
+    if (night && !members.some((m) => m.ng) && Math.random() < (shinya ? 0.4 : 0.25)) key = shinya && Math.random() < 0.6 ? 'shinya' : 'yoru';
+    const text = this.str('gs_' + key, (gestureJson as unknown as Record<string, string[]>)[key], 99)!;
+    return { text, night: key === 'yoru' || key === 'shinya' ? key : false };
+  }
+  /** 褒め殺しのテーマ。夜・深夜は色気寄りも（どっちかが下ネタNGなら普通のだけ） */
+  homeru(night: Night, okNight: boolean): { theme: string; night: 'yoru' | 'shinya' | false } {
+    const shinya = night === 'shinya' && ALLOW_SHINYA;
+    const key = night && okNight && Math.random() < (shinya ? 0.5 : 0.3) ? (shinya && Math.random() < 0.6 ? 'shinya' : 'yoru') : 'normal';
+    const theme = this.str('hm_' + key, (homeruJson as unknown as Record<string, string[]>)[key], 99)!;
+    return { theme, night: key === 'normal' ? false : key };
   }
   /** NGワード中に話題に困った時の振りネタ */
   ngTopic(): string {

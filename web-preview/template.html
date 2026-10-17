@@ -627,11 +627,11 @@ body.stage.neon .coach { background: #1a1228; border: 1px solid var(--nc); }
 .home-coach button { align-self: flex-end; padding: 8px 14px; border-radius: 999px; background: var(--yuru); color: var(--ink); font-size: 12px; font-weight: 900; }
 
 /* =====================================================================
-   v2：見やすさの土台
-   - 背景はどの地獄度も暗い色にそろえて、地獄度の色は札の縁と上の帯だけ
-   - 太い字体はお題と名前だけ。ほかは普通の太字・字間なし
-   - ボタンは「塗り（大事）」「枠（次に大事）」「文字リンク（たまに）」の3種類
-   ===================================================================== */
+  v2：見やすさの土台
+  - 背景はどの地獄度も暗い色にそろえて、地獄度の色は札の縁と上の帯だけ
+  - 太い字体はお題と名前だけ。ほかは普通の太字・字間なし
+  - ボタンは「塗り（大事）」「枠（次に大事）」「文字リンク（たまに）」の3種類
+  ===================================================================== */
 body.stage[data-level] { --bg: #141210; --fg: var(--paper); --muted: rgba(247,243,234,.66); --chip: rgba(247,243,234,.08); --line: rgba(247,243,234,.2); }
 body.stage[data-level="yurume"] { --acc: var(--yuru); --card-edge: var(--yuru); }
 body.stage[data-level="futsu"]  { --acc: var(--futsu); --card-edge: var(--futsu); }
@@ -747,6 +747,21 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .vbars li.top .nm { color: #ff3b3b; }
 .vbars .stamp { position: absolute; right: 2.6em; top: 50%; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid #ff3b3b; color: #ff3b3b; display: grid; place-items: center; font-family: var(--display); font-size: 15px; transform: translateY(-50%) rotate(-14deg); animation: stamp .25s calc(var(--d) + .8s) cubic-bezier(.3,1.6,.5,1) both; }
 @keyframes grow { from { width: 0; } }
+/* 点数・票のバーは人数が多い時だけ札の中でスクロール */
+.mode-card .vbars { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+.mode-card .vbars li { flex: none; }
+/* 早押しジェスチャー・褒め殺し */
+.ng-min.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+.gs-timer { margin: 0; font-family: var(--display); font-size: clamp(48px, 15vw, 72px); line-height: 1; font-variant-numeric: tabular-nums; }
+.gs-timer.hurry { color: #ff3b3b; animation: pulse 1s ease-in-out infinite; }
+.gs-word { margin: 0; font-family: var(--display); font-size: clamp(36px, 12vw, 60px); line-height: 1.2; text-align: center; word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.hm-vs { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; }
+.hm-vs span { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; flex: 1; }
+.hm-vs span i { width: 60px; height: 60px; border-radius: 50%; background: var(--mc); color: #141210; display: grid; place-items: center; font-style: normal; font-family: var(--display); font-size: 28px; }
+.hm-vs span b { font-family: var(--display); font-weight: 400; font-size: clamp(20px, 6vw, 28px); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hm-vs span small { font-size: 12px; font-weight: 900; opacity: .7; }
+.hm-vs em { font-style: normal; font-family: var(--display); font-size: 28px; opacity: .6; }
+.hm-result { margin: 0; text-align: center; font-family: var(--display); font-size: 22px; color: var(--fg); }
 /* 価値観ナンバー */
 .it-num { margin: 0; font-family: var(--display); font-size: clamp(90px, 30vw, 150px); line-height: 1; font-variant-numeric: tabular-nums; }
 .it-topic { margin: 0; font-size: 18px; font-weight: 900; }

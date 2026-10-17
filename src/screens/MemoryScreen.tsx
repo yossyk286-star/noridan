@@ -46,7 +46,7 @@ const shuffle = <T,>(a: T[]): T[] => {
 };
 const plain = (segs: Segment[]) => segs.map((x) => x.text).join('');
 
-/** 神経衰弱：お題のマークが描いたカードを揃えて、答えたら+1点。最後に点数が一番低い人が罰 */
+/** 神経衰弱：お題のマークが描かれたカードを揃えて、答えたら+1点。最後に点数が一番低い人が罰 */
 export default function MemoryScreen({ members, level, night, onQuit, onSettings, onFinish }: Props) {
   useKeepAwake();
   const pal = STAGE[level];

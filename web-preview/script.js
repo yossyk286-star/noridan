@@ -151,7 +151,7 @@ const PERSONAL = /次の(自分の)?番まで/;
 function untilNext(i) { const n = S.members.length; return (((i - S.game.cur + n) % n) || n) + 1; }
 function addRule(r) {
   const g = S.game;
-  if (!g || (g.mode !== "odai" && g.mode !== "sugoroku" && g.mode !== "memory")) return;
+  if (!g || !["odai", "sugoroku", "memory", "homeru"].includes(g.mode)) return;
   if (r.who != null) r = { ...r, html: r.html.replace(/次の(自分の)?番まで[、,]?/, "") }; // 「〇〇の次の番まで」は見出しに出すので本文からは省く
   g.rules = [...g.rules.filter((x) => x.html !== r.html), r].slice(-4);
 }
@@ -165,10 +165,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", ngword: "NGワード", vote: "ぶっちゃけ投票" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" ? "問" : g.mode === "memory" ? "ペア" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" ? "問" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode) {
   const n = S.members.length;
   S.game = {
@@ -188,6 +188,8 @@ function newGame(mode) {
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "q", round: 0 }; startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
   if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
+  if (mode === "gesture") { S.game.doer = 0; S.game.gs = { phase: "intro", sec: store.get("nd_gs_sec", 60), score: Array(n).fill(0), actor: 0, acted: 0, word: null, got: 0, endAt: 0 }; render(true); return; }
+  if (mode === "homeru") { S.game.doer = 0; S.game.hm = { phase: "intro", sec: 30, praiser: 0, target: 1, theme: null, endAt: 0, loser: null }; render(true); return; }
   if (mode === "odai") startOdaiTurn();
   else S.game.card = { kind: "すごろく", html: `${nm(0)}からスタート。サイコロ振れ！` };
   render(true);
@@ -719,4 +721,74 @@ function itCheck() {
   it.bad = [...bad];
   it.phase = "reveal";
   S.game.turn++;
+}
+
+// ---------- 時計（ジェスチャー・褒め殺し共通） ----------
+// endAt まで数えて、0になったら onEnd を呼ぶ。画面は #modeTimer の数字だけ書き換える
+let modeTimer = null;
+function startTimer(sec, onEnd) {
+  stopTimer();
+  const endAt = Date.now() + sec * 1000;
+  modeTimer = setInterval(() => {
+    const left = endAt - Date.now();
+    const el = document.getElementById("modeTimer");
+    if (left <= 0) { stopTimer(); play("alarm"); if (navigator.vibrate) navigator.vibrate([80, 40, 160]); onEnd(); return; }
+    if (el) { el.textContent = Math.ceil(left / 1000); el.classList.toggle("hurry", left < 10000); }
+  }, 200);
+  return endAt;
+}
+function stopTimer() { if (modeTimer) { clearInterval(modeTimer); modeTimer = null; } }
+
+// ---------- 早押しジェスチャー ----------
+// 番の人だけお題を見て、声を出さずに体で伝える。当てた人と演じた人に1点。全員1回ずつ演じたら終わり、点数が一番低い人が罰
+function gsWord() {
+  let key = S.level;
+  if (S.night && !S.members.some((m) => m.ng) && Math.random() < (S.night === "shinya" ? 0.4 : 0.25)) key = S.night === "shinya" && Math.random() < 0.6 ? "shinya" : "yoru";
+  return { text: draw("gs_" + key, DATA.gesture[key]), night: key === "yoru" || key === "shinya" ? key : false };
+}
+function gsStart() {
+  const g = S.game, gs = g.gs;
+  gs.phase = "act"; gs.got = 0; gs.word = gsWord();
+  gs.endAt = startTimer(gs.sec, () => { gs.phase = "timeup"; render(true); });
+}
+function gsHit(i) {
+  const g = S.game, gs = g.gs;
+  gs.score[i]++; gs.score[gs.actor]++; gs.got++; g.turn++;
+  gs.last = i;
+  gs.word = gsWord();
+}
+function gsNextActor() {
+  const g = S.game, gs = g.gs;
+  gs.acted++;
+  if (gs.acted >= S.members.length) { gs.phase = "over"; return; }
+  gs.actor = (gs.actor + 1) % S.members.length;
+  g.doer = g.cur = gs.actor;
+  gs.phase = "hand";
+}
+function gsLowest() {
+  const sc = S.game.gs.score, m = Math.min(...sc);
+  return sc.map((v, i) => (v === m ? i : -1)).filter((i) => i >= 0);
+}
+
+// ---------- 褒め殺し ----------
+// 番の人がランダムな1人を褒め続ける。褒められた側が笑ったり照れたりしたら褒められた側の負け、時間いっぱい耐えたら褒めた側の負け
+function hmRound() {
+  const g = S.game, hm = g.hm;
+  hm.target = pick(others(hm.praiser));
+  const night = S.night && okForYoru(hm.target) && okForYoru(hm.praiser) && Math.random() < (S.night === "shinya" ? 0.5 : 0.3);
+  const key = night ? (S.night === "shinya" && Math.random() < 0.6 ? "shinya" : "yoru") : "normal";
+  hm.theme = draw("hm_" + key, DATA.homeru[key]);
+  hm.night = key === "normal" ? false : key;
+  hm.loser = null;
+  hm.phase = "ready";
+  g.doer = g.cur = hm.praiser;
+}
+function hmLose(i) {
+  const g = S.game, hm = g.hm;
+  stopTimer();
+  hm.loser = i;
+  g.turn++;
+  g.add = new Map([[i, 1]]); g.addReason = i === hm.target ? "hmlaugh" : "hmfail";
+  g.gacha = [{ i, n: 1, ...drawBatsu(i) }];
+  g.phase = "batsu"; hm.phase = "batsu";
 }
