@@ -120,7 +120,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
 /** 結果画面のひとこと。夜モードに入ってない人には噂として隠しモードをにおわせる */
 const TIPS = ['罰ガチャの天使はだいたい7回に1回', 'リベンジ権は罰を食らった人だけのご褒美', '倍プッシュは勝てば誰かに罰、負けたら罰2倍', 'スマホを振っても次のお題に進める', '設定の「向かい合わせ表示」で机の真ん中に置ける'];
 function resultTip(night: Night) {
-  if (!night && Math.random() < 0.6) return '噂：ロゴを5回連打すると、何かが起きるらしい';
+  if (!night && Math.random() < 0.6) return '噂：ロゴを3回連打すると、何かが起きるらしい';
   if (night === 'yoru' && ALLOW_SHINYA && Math.random() < 0.6) return '噂：夜の、さらに奥があるらしい';
   return '豆知識：' + TIPS[Math.floor(Math.random() * TIPS.length)];
 }

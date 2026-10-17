@@ -25,7 +25,7 @@ type Props = {
 
 const LEVELS: Level[] = ['yurume', 'futsu', 'jigoku'];
 const MAX = 12;
-const TAPS = 5;
+const TAPS = 3;
 
 export default function HomeScreen(props: Props) {
   const { night, onNight } = props;
@@ -35,7 +35,7 @@ export default function HomeScreen(props: Props) {
   const [tease, setTease] = useState(0);
   const taps = useRef<number[]>([]);
 
-  /** 隠しコマンド：ロゴを素早く5回タップ。1回タップするごとにロゴが震えて光る */
+  /** 隠しコマンド：ロゴを素早く3回タップ。1回タップするごとにロゴが震えて光る */
   const tapLogo = () => {
     const now = Date.now();
     taps.current = taps.current.filter((x) => now - x < 2500).concat(now);
