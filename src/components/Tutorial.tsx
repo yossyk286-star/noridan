@@ -24,7 +24,7 @@ const SLIDES: Slide[] = [
   },
   {
     title: '負けたら罰ガチャ',
-    text: [{ t: '負けた人は' }, { t: '罰ガチャ', b: true }, { t: 'を引く。ドクロなら罰、たまに出る' }, { t: '天使', b: true }, { t: 'なら罰なし。飲む罰は全部ソフドリでOK。' }],
+    text: [{ t: '負けた人は' }, { t: '罰ガチャ', b: true }, { t: 'を引く。ドクロなら罰、たまに出る' }, { t: '天使', b: true }, { t: 'なら罰なし（飲めへん人はソフドリでOK）。' }],
     art: () => (
       <View style={s.gachaRow}>
         <Capsule color={C.futsu} delay={100} />
