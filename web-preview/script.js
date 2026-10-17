@@ -146,10 +146,23 @@ function drawOdai(p) {
   if (r < CHANCE.neta + CHANCE.minna) { const t = draw("minna", DATA.odai.minna); if (t) return makeCard("全員参加", t, p, {}, { solo: false }); }
   return makeCard(`アホお題・${LV[S.level]}`, draw(S.level, DATA.odai[S.level]), p);
 }
+// 「次の自分の番まで語尾が〜」みたいな、しばらく続く罰・お題
+const PERSONAL = /次の(自分の)?番まで/;
+// その人の次の番が終わるまで何ターンあるか（すぐ次がその人でも、その番の間は出しとく）
+function untilNext(i) { const n = S.members.length; return (((i - S.game.cur + n) % n) || n) + 1; }
+function addRule(r) {
+  const g = S.game;
+  if (!g || (g.mode !== "odai" && g.mode !== "sugoroku")) return;
+  if (r.who != null) r = { ...r, html: r.html.replace(/次の(自分の)?番まで[、,]?/, "") }; // 「〇〇の次の番まで」は見出しに出すので本文からは省く
+  g.rules = [...g.rules.filter((x) => x.html !== r.html), r].slice(-4);
+}
 function drawEvent(p) {
   const ev = draw("ev", DATA.events);
   const card = makeCard("【緊急】割り込み", ev.text, p, {}, { alert: true, solo: false, ruleCard: !!ev.turns });
-  return { card, rule: ev.turns ? { html: card.html, left: ev.turns } : null };
+  // 「次の自分の番まで〜」の指令も、その人の次の番まで上に出しておく（破ったら罰をつけられる）
+  const personal = !ev.turns && PERSONAL.test(ev.text);
+  if (personal) card.ruleCard = true;
+  return { card, rule: ev.turns ? { html: card.html, left: ev.turns, card } : personal ? { html: card.html, left: S.members.length + 1, who: p, card } : null };
 }
 
 // ---------- game state ----------
@@ -162,7 +175,7 @@ function newGame(mode) {
   S.game = {
     mode, turn: 0, cur: 0, doer: 0,
     pen: Array(n).fill(0), rev: Array(n).fill(false),
-    add: new Map(), rule: null, card: null, pending: null,
+    add: new Map(), rules: [], card: null, pending: null,
     phase: "play", double: false, gacha: [],
     pos: Array(n).fill(0), vpos: Array(n).fill(0), skip: Array(n).fill(false), hopping: false,
     rolled: false, rolling: false, die: 0, done: false,
@@ -200,7 +213,7 @@ function startOdaiTurn() {
   g.doer = g.cur;
   if (g.turn > 2 && Math.random() < CHANCE.event) {
     const e = drawEvent(g.cur);
-    if (e.rule) g.rule = e.rule;
+    if (e.rule) addRule(e.rule);
     g.double = false; g.phase = "play"; g.card = e.card;
   } else {
     present(drawOdai(g.cur));
@@ -209,7 +222,7 @@ function startOdaiTurn() {
 
 function tickRule() {
   const g = S.game;
-  if (g.rule) { g.rule.left--; if (g.rule.left <= 0) g.rule = null; }
+  g.rules = g.rules.map((r) => ({ ...r, left: r.left - 1 })).filter((r) => r.left > 0);
 }
 function addPen(i, n = 1) { const g = S.game; g.add.set(i, (g.add.get(i) || 0) + n); }
 
@@ -217,6 +230,9 @@ function addPen(i, n = 1) { const g = S.game; g.add.set(i, (g.add.get(i) || 0) +
 function finishCard() {
   const g = S.game;
   if (g.card?.solo && g.st) g.st.solo[g.doer]++;
+  // 「次の自分の番まで〜」のお題をやり切った（セーフ）なら、その人の次の番までルールとして上に出す
+  const c = g.card;
+  if (c?.tpl && c.solo && !c.alert && PERSONAL.test(c.tpl) && !g.add.has(g.doer)) addRule({ html: c.html, left: untilNext(g.doer), who: g.doer, card: c });
   if (g.add.size) {
     // たまにラッキー（天使）で帳消し
     g.gacha = [...g.add].map(([i, n]) => ({ i, n, ...drawBatsu(i) }));
@@ -245,6 +261,8 @@ function applyAdds() {
   saved.forEach((i) => { if (g.st) g.st.lucky[i]++; });
   // 罰の理由（結果発表の内訳用）
   const why = g.addReason || (g.card?.bomb ? "bomb" : "out");
+  // 「次の自分の番まで語尾が〜」の罰は、その人の次の番まで上に出す
+  (g.gacha || []).forEach((x) => { if (!x.lucky && PERSONAL.test(x.html)) addRule({ html: `${nm(x.i)}の罰：${x.html}`, left: untilNext(x.i), who: x.i }); });
   g.add.forEach((n, i) => {
     if (saved.has(i)) return;
     g.pen[i] += n; g.rev[i] = true;
@@ -373,7 +391,7 @@ function resolveCell(me) {
   } else if (c.type === "odai") {
     const o = drawOdai(me); o.kind = `${head}・${o.kind}`; present(o);
   } else if (c.type === "event") {
-    const e = drawEvent(me); if (e.rule) g.rule = e.rule; e.card.kind = `${head}・${e.card.kind}`; show(e.card);
+    const e = drawEvent(me); if (e.rule) addRule(e.rule); e.card.kind = `${head}・${e.card.kind}`; show(e.card);
   } else if (c.type === "move") {
     g.pos[me] = Math.max(0, Math.min(GOAL, g.pos[me] + c.value));
     const card = { kind: `${head}・${c.label}`, html: fill(c.text, me) };

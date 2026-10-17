@@ -44,6 +44,7 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
   const [hopping, setHopping] = useState(false);
   const [callout, setCallout] = useState<Callout>(null);
   const [skip, setSkip] = useState<boolean[]>(() => Array(n).fill(false));
+  /** 「違反者に罰」を押したルール */
   const [rule, setRule] = useState<Rule | null>(null);
   const [die, setDie] = useState<number | null>(null);
   const [rolling, setRolling] = useState(false);
@@ -61,8 +62,8 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
       onFinish(flow.st.pen.slice(), turn, flow.st.stats);
       return;
     }
-    setRule((r) => (r && r.left > 1 ? { ...r, left: r.left - 1 } : null));
     const nc = (cur + 1) % n;
+    flow.tickRules(nc);
     setCur(nc);
     setRolled(false);
     setDie(null);
@@ -93,8 +94,9 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
       }
       case 'event': {
         const e = decks.event(members, me);
-        if (e.rule) setRule(e.rule);
-        flow.show({ ...e.card, kind: `${head}・${e.card.kind}` }, me);
+        const ec = { ...e.card, kind: `${head}・${e.card.kind}` };
+        if (e.rule) flow.addRule({ ...e.rule, card: ec });
+        flow.show(ec, me);
         break;
       }
       case 'move': {
@@ -236,7 +238,7 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
         <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
         {/* ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので） */}
-        <RuleBanner pal={pal} rule={st.card.ruleCard && st.phase === 'play' ? null : rule} onViolate={() => setRuleSheet('pick')} />
+        <RuleBanner pal={pal} members={members} rules={st.rules} hideCard={st.phase === 'play' ? st.card : null} onViolate={(r) => { setRule(r); setRuleSheet('pick'); }} />
         <View style={s.boardArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
           {area.w > 0 && (
             <View style={{ width: area.w }}>

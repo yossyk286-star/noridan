@@ -51,14 +51,14 @@ export function NameTiles({ members, list, fg, onPress, count, cols = 3 }: { mem
 }
 
 /** 名前 → ワード の一覧 */
-export function WordList({ members, words, skip, fg }: { members: Member[]; words: string[]; skip?: number; fg: string }) {
+export function WordList({ members, words, skip, fg, big }: { members: Member[]; words: string[]; skip?: number; fg: string; /** 大きめ（覚える画面用） */ big?: boolean }) {
   return (
     <View style={{ gap: 8 }}>
       {members.map((m, j) =>
         j === skip ? null : (
-          <View key={j} style={[s.wordRow, { borderLeftColor: colorOf(j), backgroundColor: alpha(fg.length === 7 ? fg : '#141210', 0.07) }]}>
+          <View key={j} style={[s.wordRow, big && { paddingVertical: 18 }, { borderLeftColor: colorOf(j), backgroundColor: alpha(fg.length === 7 ? fg : '#141210', 0.07) }]}>
             <Text style={[s.wordName, { color: fg }]} numberOfLines={1}>{m.name}</Text>
-            <Text style={[s.word, { color: fg }]}>{words[j]}</Text>
+            <Text style={[s.word, big && { fontSize: 30 }, { color: fg }]}>{words[j]}</Text>
           </View>
         ),
       )}

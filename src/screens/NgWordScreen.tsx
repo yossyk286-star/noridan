@@ -136,13 +136,12 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
       card = (
         <ModeCard pal={pal}>
           <Text style={[s.title, { color: fg }]}>NGワード</Text>
-          <ScrollView contentContainerStyle={{ gap: 8 }}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', gap: 14 }}>
             <Text style={[s.how, { color: fg }]}>1. スマホを回して、1人ずつ自分以外のNGワードをこっそり見る</Text>
             <Text style={[s.how, { color: fg }]}>2. 自分のワードは自分だけ知らん。普通にしゃべって、相手にNGワードを言わせろ</Text>
             <Text style={[s.how, { color: fg }]}>3. 言うてもうた人をタップ → アウトで罰ガチャ。その人には新しいワードが配られる</Text>
             <Text style={[s.small, { color: fg }]}>ワードを忘れたら、ゲーム中の「ワードを見直す」でいつでも見られる</Text>
-          </ScrollView>
-          <Text style={[s.small, { color: fg, fontWeight: '900' }]}>制限時間</Text>
+          <Text style={[s.small, { color: fg, fontWeight: '900', marginTop: 4 }]}>制限時間</Text>
           <View style={s.mins}>
             {MINUTES.map((m) => {
               const on = minutes === m;
@@ -153,6 +152,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
               );
             })}
           </View>
+          </ScrollView>
         </ModeCard>
       );
       controls = <BigButton pal={pal} label="ワードを配る" onPress={deal} />;
@@ -176,10 +176,10 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
       card = (
         <ModeCard pal={pal}>
           <Text style={[s.lookHead, { color: fg }]}>{members[viewer].name}<Text style={s.lookSub}> 以外のNGワード</Text></Text>
-          <ScrollView contentContainerStyle={{ paddingBottom: 4 }}>
-            <WordList members={members} words={words} skip={viewer} fg={fg} />
+          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', gap: 14, paddingBottom: 4 }}>
+            <WordList members={members} words={words} skip={viewer} fg={fg} big />
+            <Text style={[s.small, { color: fg }]}>自分のワードはここに出えへん。覚えたら隠してな</Text>
           </ScrollView>
-          <Text style={[s.small, { color: fg }]}>自分のワードはここに出えへん。覚えたら隠してな</Text>
         </ModeCard>
       );
       controls = <BigButton pal={pal} label={!dealing ? '覚えた、隠す' : viewer + 1 < n ? `覚えた → ${members[viewer + 1].name}に渡す` : '覚えた → スタート'} onPress={nextLook} />;
@@ -302,7 +302,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
 const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
   title: { fontFamily: F.display, fontSize: 24 },
-  how: { fontSize: 15, fontWeight: '700', lineHeight: 23 },
+  how: { fontSize: 17, fontWeight: '700', lineHeight: 26 },
   small: { fontSize: 12, fontWeight: '700', opacity: 0.65, lineHeight: 18 },
   mins: { flexDirection: 'row', gap: 6 },
   min: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 11, alignItems: 'center' },

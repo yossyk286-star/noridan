@@ -66,6 +66,9 @@ export const nameSeg = (name: string, rest: string, who?: number): Segment[] => 
 const SITUATIONAL = /元恋人|恋人|キス|初体験|ラブホ|ワンナイト|付き合|好きやった|ドキッとした相手|グイグイ|トイレ|親に|寝言|夢/;
 export const isSituational = (tpl?: string) => !!tpl && SITUATIONAL.test(tpl);
 
+/** 「次の自分の番まで語尾が〜」みたいな、しばらく続く罰・お題 */
+export const PERSONAL = /次の(自分の)?番まで/;
+
 /** お題テンプレからカードを作る */
 export function makeCard(kind: string, tpl: string, members: Member[], p: number, extra: Partial<Card> = {}): Card {
   return {
@@ -141,8 +144,10 @@ export class Decks {
 
   event(members: Member[], p: number): { card: Card; rule: Rule | null } {
     const ev = this.draw('ev', EVENTS, (e) => e.text, members.length)!;
-    const card = makeCard('【緊急】割り込み', ev.text, members, p, { alert: true, solo: false, ruleCard: !!ev.turns });
-    return { card, rule: ev.turns ? { segments: card.segments, left: ev.turns } : null };
+    // 「次の自分の番まで〜」の指令も、その人の次の番まで上に出しておく（破ったら罰をつけられる）
+    const personal = !ev.turns && PERSONAL.test(ev.text);
+    const card = makeCard('【緊急】割り込み', ev.text, members, p, { alert: true, solo: false, ruleCard: !!ev.turns || personal });
+    return { card, rule: ev.turns ? { segments: card.segments, left: ev.turns, card } : personal ? { segments: card.segments, left: members.length + 1, who: p, card } : null };
   }
 
   bomb(n: number): string {

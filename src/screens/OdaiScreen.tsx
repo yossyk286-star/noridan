@@ -33,6 +33,7 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
   decks.level = level;
   const [cur, setCur] = useState(0);
   const [turn, setTurn] = useState(1);
+  /** 「違反者に罰」を押したルール */
   const [rule, setRule] = useState<Rule | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -42,9 +43,10 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
 
   /** ターン開始：たまに割り込み、たまにダブルアップ */
   const startTurn = (who: number, t: number) => {
+    flow.st.cur = who;
     if (t > 2 && Math.random() < CHANCE.event) {
       const ev = decks.event(members, who);
-      if (ev.rule) setRule(ev.rule);
+      if (ev.rule) flow.addRule(ev.rule);
       flow.show(ev.card, who);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     } else {
@@ -54,8 +56,8 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
   };
 
   const flow = useTurnFlow(members, decks, () => {
-    setRule((r) => (r && r.left > 1 ? { ...r, left: r.left - 1 } : null));
     const nc = (cur + 1) % members.length;
+    flow.tickRules(nc);
     setCur(nc);
     setTurn(turn + 1);
     startTurn(nc, turn + 1);
@@ -85,7 +87,7 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
         <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
         {/* ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので） */}
-        <RuleBanner pal={pal} rule={st.card.ruleCard && st.phase === 'play' ? null : rule} onViolate={() => setRuleSheet('pick')} />
+        <RuleBanner pal={pal} members={members} rules={st.rules} hideCard={st.phase === 'play' ? st.card : null} onViolate={(r) => { setRule(r); setRuleSheet('pick'); }} />
         <DeckStack pal={pal} minHeight={0}>
           {st.phase === 'batsu' ? (
             <GachaCard pal={pal} members={members} items={st.gacha} />

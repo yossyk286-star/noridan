@@ -443,12 +443,14 @@ function fitSize(html, small, scale = 1) {
   return `clamp(${Math.round(v * 0.62)}px, ${(v / 3.9).toFixed(1)}vw, ${Math.round(v)}px)`;
 }
 function vRule() {
-  const g = S.game, r = g.rule;
+  const g = S.game;
   const bomb = g.bomb && !g.phase.startsWith("bomb")
     ? `<div class="rule bomb"><span class="fuse" aria-hidden="true"></span><span><b>時限爆弾 作動中</b><br><span class="nowrap">仕掛け人：${esc(S.members[g.bomb.owner].name)}</span></span></div>` : "";
   // ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので）
-  const same = g.card?.ruleCard && g.phase === "play";
-  return bomb + (r && !same ? `<div class="rule"><b>発動中 残り${r.left}ターン</b><span>${r.html}</span><button class="rule-out" data-act="ruleOpen">違反者に罰</button></div>` : "");
+  // 新しい順に2つまで（画面を圧迫せんように）
+  const list = g.rules.map((r, k) => ({ r, k })).filter(({ r }) => !(r.card && r.card === g.card && g.phase === "play")).reverse();
+  const shown = list.slice(0, 2);
+  return bomb + shown.map(({ r, k }, j) => `<div class="rule"><span class="rule-txt"><b>${r.who != null ? `${esc(S.members[r.who].name)}の次の番まで` : `発動中 残り${r.left}ターン`}${j === 0 && list.length > 2 ? `<em>ほか${list.length - 2}件</em>` : ""}</b><span>${r.html}</span></span><button class="rule-out" data-act="ruleOpen" data-k="${k}">違反者に罰</button></div>`).join("");
 }
 // 誰の番か（札の上に1行でまとめる）
 function vWho() {
@@ -543,6 +545,7 @@ function vRules() {
     ["リベンジ権 ↺", "ドクロを引いた人がもらえる。次の自分のお題を1回だけ誰かに押し付けられる"],
     ["倍プッシュ", "たまに来る。お題を見る前に賭けて、成功したら誰かに罰、失敗したら罰2倍"],
     ["緊急指令", "急に割り込むお題。数ターン続くルールは、破った人に「違反者に罰」でいつでも罰"],
+    ["続く罰・お題", "「次の自分の番まで語尾が〜」みたいな罰やお題は、その人の次の番まで上に出る。うっかり破ったら「違反者に罰」"],
     ["時限爆弾", "仕掛け人だけがNG行動を知る。数ターン後に爆発して、やってた奴は全員罰"],
     ["当てはまらん", "恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる（1枚1回）"],
     ["本日の戦犯", "最後に罰が一番多い人を発表。称号もつく"],
@@ -585,7 +588,7 @@ function vRuleSheet() {
     <div class="sheet rule-sheet" role="dialog" aria-label="ルール違反" data-stop>
       <div class="sheet-grip"></div>
       <p class="h2">ルール違反</p>
-      <p class="rule-now">${g.rule ? g.rule.html : ""}</p>
+      <p class="rule-now">${g.rules[S.ruleK]?.html || ""}</p>
       <h2>破ったのは誰？</h2>
       <div class="chips">${S.members.map((m, i) => `<button class="chip" style="--mc:${colorOf(i)}" data-act="ruleTo" data-i="${i}"><span class="dot"></span>${esc(m.name)}</button>`).join("")}</div>
       <button class="ghost" data-act="ruleClose">やっぱやめる</button>
@@ -628,8 +631,9 @@ function ngWordsFor(viewer) {
 function vNgCard() {
   const g = S.game, ng = g.ng, n = S.members.length;
   switch (ng.phase) {
-    case "setup": return `<div class="odai mode-card" id="card">
+    case "setup": return `<div class="odai mode-card mid" id="card">
       <div class="head"><span class="who"><b>NGワード</b></span><span class="meta"><i class="tag">${n}人</i></span></div>
+      <div class="mid-body">
       <ol class="how">
         <li>スマホを回して、1人ずつ<b>自分以外のNGワード</b>をこっそり見る</li>
         <li>自分のワードは自分だけ知らん。普通にしゃべって、相手に<b>NGワードを言わせろ</b></li>
@@ -638,16 +642,19 @@ function vNgCard() {
       <p class="how-note">ワードを忘れたら、ゲーム中の「ワードを見直す」でいつでも見られる</p>
       <div class="ng-min-wrap"><p class="ng-min-h">制限時間</p>
         <div class="ng-min">${NG_MIN.map((m) => `<button data-act="ngMin" data-v="${m}" aria-pressed="${ng.minutes === m}">${m ? m + "分" : "なし"}</button>`).join("")}</div></div>
+      </div>
     </div>`;
     case "hand": return `<div class="odai mode-card center" id="card">
       ${ng.dealing ? `<p class="prog">ワード配り ${ng.viewer + 1} / ${n}</p>` : `<p class="prog">ワードの見直し</p>`}
       ${bigWho(ng.viewer, "だけ見て")}
       <p class="hand-note">スマホを${mName(ng.viewer)}に渡して。<br>他の人は画面を見たらアカン</p>
     </div>`;
-    case "look": return `<div class="odai mode-card" id="card">
+    case "look": return `<div class="odai mode-card mid" id="card">
       <div class="head"><span class="who" style="--mc:${colorOf(ng.viewer)}"><i></i><b>${mName(ng.viewer)}</b><small>以外のNGワード</small></span></div>
+      <div class="mid-body">
       ${ngWordsFor(ng.viewer)}
       <p class="how-note">自分のワードはここに出えへん。覚えたら隠してな</p>
+      </div>
     </div>`;
     case "play": case "who": return `<div class="odai mode-card center" id="card">
       ${ng.minutes ? `<p class="ng-timer ${ng.left < 30000 ? "hurry" : ""}" id="ngTimer">${fmtTime(ng.endAt ? ng.endAt - Date.now() : ng.left)}</p>` : `<p class="ng-timer free">∞</p>`}
@@ -1149,13 +1156,14 @@ function onClick(e) {
     case "coachOk": S.seen[b.dataset.k] = 1; store.set("nd_seen", S.seen); render(); break;
     case "rules": S.menu = false; S.rules = true; render(); break;
     case "rulesClose": S.rules = false; render(); break;
-    case "ruleOpen": S.ruleSheet = "pick"; render(); break;
+    case "ruleOpen": S.ruleK = +b.dataset.k; S.ruleSheet = "pick"; render(); break;
     case "ruleClose": S.ruleSheet = null; render(); break;
     case "ruleTo": {
       const { lucky, html } = drawBatsu(i);
       if (lucky) g.st.lucky[i]++;
       else { g.pen[i]++; g.rev[i] = true; g.st.why[i].rule = (g.st.why[i].rule || 0) + 1; }
       S.ruleSheet = { i, lucky, html };
+      if (!lucky && PERSONAL.test(html)) addRule({ html: `${nm(i)}の罰：${html}`, left: untilNext(i), who: i });
       play(lucky ? "lucky" : "pop");
       if (navigator.vibrate) navigator.vibrate(lucky ? 30 : [60, 40, 60]);
       render(); break;

@@ -34,7 +34,7 @@ export type Phase = 'play' | 'offer' | 'revenge' | 'push' | 'batsu' | 'bombSet' 
 export type Bomb = { cond: string; owner: number; left: number };
 export type GachaItem = { i: number; n: number; segments: Segment[]; /** ラッキー（天使）なら罰は帳消し */ lucky?: boolean; /** 夜・深夜の罰 */ night?: 'yoru' | 'shinya' };
 
-export type Rule = { segments: Segment[]; left: number };
+export type Rule = { segments: Segment[]; left: number; /** 「次の自分の番まで〜」の時、その人 */ who?: number; /** このルールを出した札（その札を見てる間は上に出さない） */ card?: Card };
 
 export type Cell =
   | { type: 'start' | 'goal'; label: string }

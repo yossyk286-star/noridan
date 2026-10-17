@@ -569,6 +569,10 @@ body.stage.neon .vd.ok { background: transparent; color: #fff; border: 2px solid
 
 /* ===== ルール違反 ===== */
 .rule span { flex: 1; min-width: 0; }
+.rule .rule-txt { display: flex; flex-direction: column; gap: 2px; line-break: strict; }
+.rule .rule-txt > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rule .rule-txt em { font-style: normal; margin-left: 8px; opacity: .7; }
+.rule + .rule { margin-top: -8px; }
 .rule .nowrap { white-space: nowrap; }
 .rule-out { flex: none; padding: 8px 10px; border-radius: 999px; background: #e8202a; color: #fff; font-size: 12px; font-weight: 900; white-space: nowrap; }
 body[data-level="jigoku"] .rule-out { background: var(--blood); color: #000; }
@@ -743,6 +747,18 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .vbars li.top .nm { color: #ff3b3b; }
 .vbars .stamp { position: absolute; right: 2.6em; top: 50%; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid #ff3b3b; color: #ff3b3b; display: grid; place-items: center; font-family: var(--display); font-size: 15px; transform: translateY(-50%) rotate(-14deg); animation: stamp .25s calc(var(--d) + .8s) cubic-bezier(.3,1.6,.5,1) both; }
 @keyframes grow { from { width: 0; } }
+/* 説明・ワード一覧は札の真ん中に寄せて、画面の高さに合わせて文字も大きくする（下にぽっかり余白が出んように） */
+.mode-card.mid .mid-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: clamp(12px, 2.4vh, 24px); overflow-y: auto; }
+.mode-card.mid .how { font-size: clamp(15px, 2.5vh, 22px); gap: clamp(8px, 1.6vh, 16px); }
+.mode-card.mid .how-note { font-size: clamp(12px, 1.6vh, 14px); }
+.mode-card.mid .ng-min-wrap { margin-top: 0; }
+.mode-card.mid .ng-min button { padding: clamp(10px, 1.8vh, 16px) 0; font-size: clamp(15px, 2vh, 18px); }
+.mode-card.mid .ng-list { flex: 0 1 auto; gap: clamp(8px, 1.3vh, 12px); }
+.mode-card.mid .ng-list li { padding: clamp(10px, 2.4vh, 26px) 16px; }
+.mode-card.mid .ng-list .nm { font-size: clamp(15px, 2vh, 18px); }
+.mode-card.mid .ng-list b { font-size: clamp(22px, 4.4vh, 40px); }
+/* 札の上の名前：左の丸が切れんように少しすき間 */
+.odai .head .who { padding-left: 3px; margin-left: -3px; }
 .vote-rule { margin: 0; align-self: flex-start; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 900; line-break: strict; }
 .vote-rule b { font-size: 15px; }
 .vote-rule.bad { background: rgba(255,59,59,.14); color: #ff3b3b; }

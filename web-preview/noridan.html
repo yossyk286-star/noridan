@@ -569,6 +569,10 @@ body.stage.neon .vd.ok { background: transparent; color: #fff; border: 2px solid
 
 /* ===== ルール違反 ===== */
 .rule span { flex: 1; min-width: 0; }
+.rule .rule-txt { display: flex; flex-direction: column; gap: 2px; line-break: strict; }
+.rule .rule-txt > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rule .rule-txt em { font-style: normal; margin-left: 8px; opacity: .7; }
+.rule + .rule { margin-top: -8px; }
 .rule .nowrap { white-space: nowrap; }
 .rule-out { flex: none; padding: 8px 10px; border-radius: 999px; background: #e8202a; color: #fff; font-size: 12px; font-weight: 900; white-space: nowrap; }
 body[data-level="jigoku"] .rule-out { background: var(--blood); color: #000; }
@@ -743,6 +747,18 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .vbars li.top .nm { color: #ff3b3b; }
 .vbars .stamp { position: absolute; right: 2.6em; top: 50%; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid #ff3b3b; color: #ff3b3b; display: grid; place-items: center; font-family: var(--display); font-size: 15px; transform: translateY(-50%) rotate(-14deg); animation: stamp .25s calc(var(--d) + .8s) cubic-bezier(.3,1.6,.5,1) both; }
 @keyframes grow { from { width: 0; } }
+/* 説明・ワード一覧は札の真ん中に寄せて、画面の高さに合わせて文字も大きくする（下にぽっかり余白が出んように） */
+.mode-card.mid .mid-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: clamp(12px, 2.4vh, 24px); overflow-y: auto; }
+.mode-card.mid .how { font-size: clamp(15px, 2.5vh, 22px); gap: clamp(8px, 1.6vh, 16px); }
+.mode-card.mid .how-note { font-size: clamp(12px, 1.6vh, 14px); }
+.mode-card.mid .ng-min-wrap { margin-top: 0; }
+.mode-card.mid .ng-min button { padding: clamp(10px, 1.8vh, 16px) 0; font-size: clamp(15px, 2vh, 18px); }
+.mode-card.mid .ng-list { flex: 0 1 auto; gap: clamp(8px, 1.3vh, 12px); }
+.mode-card.mid .ng-list li { padding: clamp(10px, 2.4vh, 26px) 16px; }
+.mode-card.mid .ng-list .nm { font-size: clamp(15px, 2vh, 18px); }
+.mode-card.mid .ng-list b { font-size: clamp(22px, 4.4vh, 40px); }
+/* 札の上の名前：左の丸が切れんように少しすき間 */
+.odai .head .who { padding-left: 3px; margin-left: -3px; }
 .vote-rule { margin: 0; align-self: flex-start; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 900; line-break: strict; }
 .vote-rule b { font-size: 15px; }
 .vote-rule.bad { background: rgba(255,59,59,.14); color: #ff3b3b; }
@@ -903,10 +919,23 @@ function drawOdai(p) {
   if (r < CHANCE.neta + CHANCE.minna) { const t = draw("minna", DATA.odai.minna); if (t) return makeCard("全員参加", t, p, {}, { solo: false }); }
   return makeCard(`アホお題・${LV[S.level]}`, draw(S.level, DATA.odai[S.level]), p);
 }
+// 「次の自分の番まで語尾が〜」みたいな、しばらく続く罰・お題
+const PERSONAL = /次の(自分の)?番まで/;
+// その人の次の番が終わるまで何ターンあるか（すぐ次がその人でも、その番の間は出しとく）
+function untilNext(i) { const n = S.members.length; return (((i - S.game.cur + n) % n) || n) + 1; }
+function addRule(r) {
+  const g = S.game;
+  if (!g || (g.mode !== "odai" && g.mode !== "sugoroku")) return;
+  if (r.who != null) r = { ...r, html: r.html.replace(/次の(自分の)?番まで[、,]?/, "") }; // 「〇〇の次の番まで」は見出しに出すので本文からは省く
+  g.rules = [...g.rules.filter((x) => x.html !== r.html), r].slice(-4);
+}
 function drawEvent(p) {
   const ev = draw("ev", DATA.events);
   const card = makeCard("【緊急】割り込み", ev.text, p, {}, { alert: true, solo: false, ruleCard: !!ev.turns });
-  return { card, rule: ev.turns ? { html: card.html, left: ev.turns } : null };
+  // 「次の自分の番まで〜」の指令も、その人の次の番まで上に出しておく（破ったら罰をつけられる）
+  const personal = !ev.turns && PERSONAL.test(ev.text);
+  if (personal) card.ruleCard = true;
+  return { card, rule: ev.turns ? { html: card.html, left: ev.turns, card } : personal ? { html: card.html, left: S.members.length + 1, who: p, card } : null };
 }
 
 // ---------- game state ----------
@@ -919,7 +948,7 @@ function newGame(mode) {
   S.game = {
     mode, turn: 0, cur: 0, doer: 0,
     pen: Array(n).fill(0), rev: Array(n).fill(false),
-    add: new Map(), rule: null, card: null, pending: null,
+    add: new Map(), rules: [], card: null, pending: null,
     phase: "play", double: false, gacha: [],
     pos: Array(n).fill(0), vpos: Array(n).fill(0), skip: Array(n).fill(false), hopping: false,
     rolled: false, rolling: false, die: 0, done: false,
@@ -957,7 +986,7 @@ function startOdaiTurn() {
   g.doer = g.cur;
   if (g.turn > 2 && Math.random() < CHANCE.event) {
     const e = drawEvent(g.cur);
-    if (e.rule) g.rule = e.rule;
+    if (e.rule) addRule(e.rule);
     g.double = false; g.phase = "play"; g.card = e.card;
   } else {
     present(drawOdai(g.cur));
@@ -966,7 +995,7 @@ function startOdaiTurn() {
 
 function tickRule() {
   const g = S.game;
-  if (g.rule) { g.rule.left--; if (g.rule.left <= 0) g.rule = null; }
+  g.rules = g.rules.map((r) => ({ ...r, left: r.left - 1 })).filter((r) => r.left > 0);
 }
 function addPen(i, n = 1) { const g = S.game; g.add.set(i, (g.add.get(i) || 0) + n); }
 
@@ -974,6 +1003,9 @@ function addPen(i, n = 1) { const g = S.game; g.add.set(i, (g.add.get(i) || 0) +
 function finishCard() {
   const g = S.game;
   if (g.card?.solo && g.st) g.st.solo[g.doer]++;
+  // 「次の自分の番まで〜」のお題をやり切った（セーフ）なら、その人の次の番までルールとして上に出す
+  const c = g.card;
+  if (c?.tpl && c.solo && !c.alert && PERSONAL.test(c.tpl) && !g.add.has(g.doer)) addRule({ html: c.html, left: untilNext(g.doer), who: g.doer, card: c });
   if (g.add.size) {
     // たまにラッキー（天使）で帳消し
     g.gacha = [...g.add].map(([i, n]) => ({ i, n, ...drawBatsu(i) }));
@@ -1002,6 +1034,8 @@ function applyAdds() {
   saved.forEach((i) => { if (g.st) g.st.lucky[i]++; });
   // 罰の理由（結果発表の内訳用）
   const why = g.addReason || (g.card?.bomb ? "bomb" : "out");
+  // 「次の自分の番まで語尾が〜」の罰は、その人の次の番まで上に出す
+  (g.gacha || []).forEach((x) => { if (!x.lucky && PERSONAL.test(x.html)) addRule({ html: `${nm(x.i)}の罰：${x.html}`, left: untilNext(x.i), who: x.i }); });
   g.add.forEach((n, i) => {
     if (saved.has(i)) return;
     g.pen[i] += n; g.rev[i] = true;
@@ -1130,7 +1164,7 @@ function resolveCell(me) {
   } else if (c.type === "odai") {
     const o = drawOdai(me); o.kind = `${head}・${o.kind}`; present(o);
   } else if (c.type === "event") {
-    const e = drawEvent(me); if (e.rule) g.rule = e.rule; e.card.kind = `${head}・${e.card.kind}`; show(e.card);
+    const e = drawEvent(me); if (e.rule) addRule(e.rule); e.card.kind = `${head}・${e.card.kind}`; show(e.card);
   } else if (c.type === "move") {
     g.pos[me] = Math.max(0, Math.min(GOAL, g.pos[me] + c.value));
     const card = { kind: `${head}・${c.label}`, html: fill(c.text, me) };
@@ -1757,12 +1791,14 @@ function fitSize(html, small, scale = 1) {
   return `clamp(${Math.round(v * 0.62)}px, ${(v / 3.9).toFixed(1)}vw, ${Math.round(v)}px)`;
 }
 function vRule() {
-  const g = S.game, r = g.rule;
+  const g = S.game;
   const bomb = g.bomb && !g.phase.startsWith("bomb")
     ? `<div class="rule bomb"><span class="fuse" aria-hidden="true"></span><span><b>時限爆弾 作動中</b><br><span class="nowrap">仕掛け人：${esc(S.members[g.bomb.owner].name)}</span></span></div>` : "";
   // ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので）
-  const same = g.card?.ruleCard && g.phase === "play";
-  return bomb + (r && !same ? `<div class="rule"><b>発動中 残り${r.left}ターン</b><span>${r.html}</span><button class="rule-out" data-act="ruleOpen">違反者に罰</button></div>` : "");
+  // 新しい順に2つまで（画面を圧迫せんように）
+  const list = g.rules.map((r, k) => ({ r, k })).filter(({ r }) => !(r.card && r.card === g.card && g.phase === "play")).reverse();
+  const shown = list.slice(0, 2);
+  return bomb + shown.map(({ r, k }, j) => `<div class="rule"><span class="rule-txt"><b>${r.who != null ? `${esc(S.members[r.who].name)}の次の番まで` : `発動中 残り${r.left}ターン`}${j === 0 && list.length > 2 ? `<em>ほか${list.length - 2}件</em>` : ""}</b><span>${r.html}</span></span><button class="rule-out" data-act="ruleOpen" data-k="${k}">違反者に罰</button></div>`).join("");
 }
 // 誰の番か（札の上に1行でまとめる）
 function vWho() {
@@ -1857,6 +1893,7 @@ function vRules() {
     ["リベンジ権 ↺", "ドクロを引いた人がもらえる。次の自分のお題を1回だけ誰かに押し付けられる"],
     ["倍プッシュ", "たまに来る。お題を見る前に賭けて、成功したら誰かに罰、失敗したら罰2倍"],
     ["緊急指令", "急に割り込むお題。数ターン続くルールは、破った人に「違反者に罰」でいつでも罰"],
+    ["続く罰・お題", "「次の自分の番まで語尾が〜」みたいな罰やお題は、その人の次の番まで上に出る。うっかり破ったら「違反者に罰」"],
     ["時限爆弾", "仕掛け人だけがNG行動を知る。数ターン後に爆発して、やってた奴は全員罰"],
     ["当てはまらん", "恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる（1枚1回）"],
     ["本日の戦犯", "最後に罰が一番多い人を発表。称号もつく"],
@@ -1899,7 +1936,7 @@ function vRuleSheet() {
     <div class="sheet rule-sheet" role="dialog" aria-label="ルール違反" data-stop>
       <div class="sheet-grip"></div>
       <p class="h2">ルール違反</p>
-      <p class="rule-now">${g.rule ? g.rule.html : ""}</p>
+      <p class="rule-now">${g.rules[S.ruleK]?.html || ""}</p>
       <h2>破ったのは誰？</h2>
       <div class="chips">${S.members.map((m, i) => `<button class="chip" style="--mc:${colorOf(i)}" data-act="ruleTo" data-i="${i}"><span class="dot"></span>${esc(m.name)}</button>`).join("")}</div>
       <button class="ghost" data-act="ruleClose">やっぱやめる</button>
@@ -1942,8 +1979,9 @@ function ngWordsFor(viewer) {
 function vNgCard() {
   const g = S.game, ng = g.ng, n = S.members.length;
   switch (ng.phase) {
-    case "setup": return `<div class="odai mode-card" id="card">
+    case "setup": return `<div class="odai mode-card mid" id="card">
       <div class="head"><span class="who"><b>NGワード</b></span><span class="meta"><i class="tag">${n}人</i></span></div>
+      <div class="mid-body">
       <ol class="how">
         <li>スマホを回して、1人ずつ<b>自分以外のNGワード</b>をこっそり見る</li>
         <li>自分のワードは自分だけ知らん。普通にしゃべって、相手に<b>NGワードを言わせろ</b></li>
@@ -1952,16 +1990,19 @@ function vNgCard() {
       <p class="how-note">ワードを忘れたら、ゲーム中の「ワードを見直す」でいつでも見られる</p>
       <div class="ng-min-wrap"><p class="ng-min-h">制限時間</p>
         <div class="ng-min">${NG_MIN.map((m) => `<button data-act="ngMin" data-v="${m}" aria-pressed="${ng.minutes === m}">${m ? m + "分" : "なし"}</button>`).join("")}</div></div>
+      </div>
     </div>`;
     case "hand": return `<div class="odai mode-card center" id="card">
       ${ng.dealing ? `<p class="prog">ワード配り ${ng.viewer + 1} / ${n}</p>` : `<p class="prog">ワードの見直し</p>`}
       ${bigWho(ng.viewer, "だけ見て")}
       <p class="hand-note">スマホを${mName(ng.viewer)}に渡して。<br>他の人は画面を見たらアカン</p>
     </div>`;
-    case "look": return `<div class="odai mode-card" id="card">
+    case "look": return `<div class="odai mode-card mid" id="card">
       <div class="head"><span class="who" style="--mc:${colorOf(ng.viewer)}"><i></i><b>${mName(ng.viewer)}</b><small>以外のNGワード</small></span></div>
+      <div class="mid-body">
       ${ngWordsFor(ng.viewer)}
       <p class="how-note">自分のワードはここに出えへん。覚えたら隠してな</p>
+      </div>
     </div>`;
     case "play": case "who": return `<div class="odai mode-card center" id="card">
       ${ng.minutes ? `<p class="ng-timer ${ng.left < 30000 ? "hurry" : ""}" id="ngTimer">${fmtTime(ng.endAt ? ng.endAt - Date.now() : ng.left)}</p>` : `<p class="ng-timer free">∞</p>`}
@@ -2463,13 +2504,14 @@ function onClick(e) {
     case "coachOk": S.seen[b.dataset.k] = 1; store.set("nd_seen", S.seen); render(); break;
     case "rules": S.menu = false; S.rules = true; render(); break;
     case "rulesClose": S.rules = false; render(); break;
-    case "ruleOpen": S.ruleSheet = "pick"; render(); break;
+    case "ruleOpen": S.ruleK = +b.dataset.k; S.ruleSheet = "pick"; render(); break;
     case "ruleClose": S.ruleSheet = null; render(); break;
     case "ruleTo": {
       const { lucky, html } = drawBatsu(i);
       if (lucky) g.st.lucky[i]++;
       else { g.pen[i]++; g.rev[i] = true; g.st.why[i].rule = (g.st.why[i].rule || 0) + 1; }
       S.ruleSheet = { i, lucky, html };
+      if (!lucky && PERSONAL.test(html)) addRule({ html: `${nm(i)}の罰：${html}`, left: untilNext(i), who: i });
       play(lucky ? "lucky" : "pop");
       if (navigator.vibrate) navigator.vibrate(lucky ? 30 : [60, 40, 60]);
       render(); break;

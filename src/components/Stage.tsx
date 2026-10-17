@@ -117,18 +117,28 @@ export function Turn({
   );
 }
 
-export function RuleBanner({ pal, rule, onViolate }: { pal: Pal; rule: Rule | null; onViolate?: () => void }) {
-  if (!rule) return null;
-  const jigoku = !!pal.jigoku;
+/** 発動中のルール（新しい順に2つまで）。「違反者に罰」でいつでも罰をつけられる */
+export function RuleBanner({ pal, rules, members, hideCard, onViolate }: { pal: Pal; rules: Rule[]; members: Member[]; /** 今見てる札が出したルールは出さない */ hideCard?: Card | null; onViolate?: (r: Rule) => void }) {
+  const list = rules.filter((r) => !(r.card && hideCard && r.card === hideCard)).reverse();
+  if (!list.length) return null;
   return (
-    <View style={[styles.rule, { borderColor: pal.muted }]}>
-      <Text style={[styles.ruleHead, { color: pal.fg }]}>発動中 残り{rule.left}ターン</Text>
-      <SegText segments={rule.segments} style={[styles.ruleText, { color: pal.fg, flex: 1 }]} />
-      {onViolate && (
-        <Tap onPress={onViolate} style={[styles.ruleOut, { borderWidth: 1.5, borderColor: '#ff7a7a' }]}>
-          <Text style={[styles.ruleOutText, { color: '#ff7a7a' }]}>違反者に罰</Text>
-        </Tap>
-      )}
+    <View style={{ gap: 6 }}>
+      {list.slice(0, 2).map((r, j) => (
+        <View key={j} style={[styles.rule, { borderColor: pal.muted }]}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[styles.ruleHead, { color: pal.fg }]}>
+              {r.who != null ? `${members[r.who].name}の次の番まで` : `発動中 残り${r.left}ターン`}
+              {j === 0 && list.length > 2 ? `　ほか${list.length - 2}件` : ''}
+            </Text>
+            <SegText segments={r.segments} style={[styles.ruleText, { color: pal.fg }]} />
+          </View>
+          {onViolate && (
+            <Tap onPress={() => onViolate(r)} style={[styles.ruleOut, { borderWidth: 1.5, borderColor: '#ff7a7a' }]}>
+              <Text style={[styles.ruleOutText, { color: '#ff7a7a' }]}>違反者に罰</Text>
+            </Tap>
+          )}
+        </View>
+      ))}
     </View>
   );
 }
@@ -666,6 +676,7 @@ export function RulesSheet({ visible, night, onClose, custom }: { visible: boole
     ['リベンジ権 ↺', 'ドクロを引いた人がもらえる。次の自分のお題を1回だけ誰かに押し付けられる'],
     ['倍プッシュ', 'たまに来る。お題を見る前に賭けて、成功したら誰かに罰、失敗したら罰2倍'],
     ['緊急指令', '急に割り込むお題。数ターン続くルールは、破った人に「違反者に罰」でいつでも罰'],
+    ['続く罰・お題', '「次の自分の番まで語尾が〜」みたいな罰やお題は、その人の次の番まで上に出る。うっかり破ったら「違反者に罰」'],
     ['時限爆弾', '仕掛け人だけがNG行動を知る。数ターン後に爆発して、やってた奴は全員罰'],
     ['当てはまらん', '恋人おらん等でお題が当てはまらん時は、罰なしで誰かに回せる（1枚1回）'],
     ['本日の戦犯', '最後に罰が一番多い人を発表。称号もつく'],
