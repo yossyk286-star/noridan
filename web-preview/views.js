@@ -235,7 +235,7 @@ const TUT = [
   {
     step: "2 / 3",
     title: "罰はガチャで決まる",
-    text: "「できんかった」を押すか札を左にスワイプ（やれたら右）→ <b>罰ガチャ</b>が中身を決める。ドクロなら罰、たまに出る天使なら帳消し。ドクロを引いた人は<b>リベンジ権 ↺</b> をゲット。次の自分のお題を誰かに押し付けられる。",
+    text: "逃げたりできんかったら「アウト」か札を左にスワイプ（やり切ったら右で「セーフ」）→ <b>罰ガチャ</b>が中身を決める。ドクロなら罰、たまに出る天使なら帳消し。ドクロを引いた人は<b>リベンジ権 ↺</b> をゲット。次の自分のお題を誰かに押し付けられる。",
     art: () => `<div class="gacha" style="max-width:280px"><div class="gacha-item" style="--d:.1s;--mc:var(--futsu)"><div class="capsule"><i class="top"></i><i class="bot"></i></div><div class="gacha-txt"><b>まゆの罰</b><p>次の番まで語尾が「ござる」</p></div></div></div>`,
   },
   {
@@ -343,10 +343,10 @@ function vControls() {
         return `
         ${subs ? `<div class="sub-acts">${subs}</div>` : ""}
         <div class="verdict">
-          <button class="vd ng" data-act="fail"><b>できんかった</b><small>${esc(S.members[g.doer].name)}に罰</small></button>
-          <button class="vd ok" data-act="clear" data-shake><b>やった！</b><small>→ ${nextLabel}</small></button>
+          <button class="vd ng" data-act="fail"><b>アウト</b><small>${esc(S.members[g.doer].name)}に罰</small></button>
+          <button class="vd ok" data-act="clear" data-shake><b>セーフ！</b><small>→ ${nextLabel}</small></button>
         </div>
-        <p class="swipe-hint"><span>← 罰</span><button class="link" data-act="penOpen">他の人に罰をつける</button><span>クリア →</span></p>
+        <p class="swipe-hint"><span>← アウト</span><button class="link" data-act="penOpen">他の人に罰をつける</button><span>セーフ →</span></p>
         ${g.mode === "odai" || !g.done ? vNextUp() : ""}${shakeHint()}`;
       }
       return `
@@ -391,7 +391,7 @@ function vCard() {
   const no = g.mode === "odai" ? `No.${String(g.cards + 1).padStart(3, "0")}` : "";
   return `<div class="odai ${cardClass(c)} ${anim}" id="card">
     <div class="head"><span>${esc(c.kind)}</span>${badge || `<span class="no">${no}</span>`}</div>
-    ${c.solo && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">クリア</i><i class="sw-stamp ng">罰</i>` : ""}
+    ${c.solo && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
     ${art}
     ${dual ? `<p class="txt mirror" aria-hidden="true" style="font-size:${fitSize(c.html, g.mode === "sugoroku", 0.74)}"><span>${c.html}</span></p><hr class="dual-line">` : ""}
     <p class="txt" style="font-size:${fitSize(c.html, g.mode === "sugoroku", dual ? 0.74 : 1)}"><span>${c.html}</span></p>

@@ -473,15 +473,15 @@ export function Controls({
             <>
               {/* 1人用のお題は「やった／できんかった」の2択（札のスワイプでもOK） */}
               <View style={styles.choices}>
-                <Verdict pal={pal} ng title="できんかった" sub={`${members[st.doer].name}に罰`} onPress={flow.fail} />
-                <Verdict pal={pal} title="やった！" sub={`→ ${nextLabel}`} onPress={flow.clear} />
+                <Verdict pal={pal} ng title="アウト" sub={`${members[st.doer].name}に罰`} onPress={flow.fail} />
+                <Verdict pal={pal} title="セーフ！" sub={`→ ${nextLabel}`} onPress={flow.clear} />
               </View>
               <View style={styles.swipeHint}>
-                <Text style={[styles.swipeHintText, { color: pal.muted }]}>← 罰</Text>
+                <Text style={[styles.swipeHintText, { color: pal.muted }]}>← アウト</Text>
                 <Tap onPress={flow.openPen} haptic={false}>
                   <Text style={[styles.link, { color: pal.fg }]}>他の人に罰をつける</Text>
                 </Tap>
-                <Text style={[styles.swipeHintText, { color: pal.muted }]}>クリア →</Text>
+                <Text style={[styles.swipeHintText, { color: pal.muted }]}>セーフ →</Text>
               </View>
               {next != null && <NextUp pal={pal} name={members[next].name} color={colorOf(next)} />}
               {hint}
@@ -507,19 +507,21 @@ export function Controls({
 /** やった／できんかった ボタン */
 function Verdict({ pal, title, sub, ng, onPress }: { pal: Pal; title: string; sub: string; ng?: boolean; onPress: () => void }) {
   const jigoku = pal.bg === STAGE.jigoku.bg;
-  const bg = ng ? (jigoku ? pal.fg : PEN_RED) : pal.neon ? 'transparent' : pal.fg;
-  const fg = ng ? (jigoku ? '#000' : '#fff') : pal.neon ? '#fff' : pal.bg;
+  // 地獄度は両方赤になって見分けにくいので、セーフは枠だけにする
+  const outline = !ng && (pal.neon || jigoku);
+  const bg = ng ? (jigoku ? pal.fg : PEN_RED) : outline ? 'transparent' : pal.fg;
+  const fg = ng ? (jigoku ? '#000' : '#fff') : pal.neon ? '#fff' : jigoku ? pal.fg : pal.bg;
   return (
     <Tap
       onPress={onPress}
       style={({ pressed }) => [
         styles.verdict,
         { backgroundColor: bg, transform: [{ translateY: pressed ? 4 : 0 }] },
-        !ng && pal.neon && { borderWidth: 2, borderColor: pal.neon },
+        outline && { borderWidth: 2, borderColor: pal.neon ?? pal.fg },
       ]}
     >
       <Text style={[styles.verdictTitle, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>{title}</Text>
-      <Text style={[styles.verdictSub, { color: fg }]} numberOfLines={1}>{sub}</Text>
+      <Text style={[styles.verdictSub, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>{sub}</Text>
     </Tap>
   );
 }
@@ -560,8 +562,8 @@ export function SwipeCard({ enabled, flipped, onSwipe, children }: { enabled: bo
       {children}
       {enabled && (
         <>
-          <Animated.Text style={[styles.stamp, styles.stampOk, { opacity: okOp }]}>クリア</Animated.Text>
-          <Animated.Text style={[styles.stamp, styles.stampNg, { opacity: ngOp }]}>罰</Animated.Text>
+          <Animated.Text style={[styles.stamp, styles.stampOk, { opacity: okOp }]}>セーフ</Animated.Text>
+          <Animated.Text style={[styles.stamp, styles.stampNg, { opacity: ngOp }]}>アウト</Animated.Text>
         </>
       )}
     </Animated.View>

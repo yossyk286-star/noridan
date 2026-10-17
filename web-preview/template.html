@@ -535,13 +535,15 @@ body.stage .sg-ranks.many { display: grid; grid-template-columns: 1fr 1fr; colum
 .night-switch .night-lv button[data-v="shinya"] { border-color: var(--deep); }
 
 /* ===== やった／できんかった の2択 ===== */
-.verdict { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.verdict { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .vd { border-radius: 18px; padding: 16px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; box-shadow: 0 6px 0 rgba(0,0,0,.28); }
 .vd b { font-family: var(--display); font-weight: 400; font-size: clamp(17px, 5.4vw, 22px); white-space: nowrap; line-height: 1.15; }
 .vd small { font-size: 12px; font-weight: 900; opacity: .8; }
 .vd.ok { background: var(--fg); color: var(--bg); }
 .vd.ng { background: #e8202a; color: #fff; }
 body[data-level="jigoku"] .vd.ng { background: var(--blood); color: #000; }
+body[data-level="jigoku"] .vd.ok { background: transparent; color: var(--blood); border: 2px solid var(--blood); }
+.vd small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 body.stage.neon .vd.ok { background: transparent; color: #fff; border: 2px solid var(--nc); box-shadow: 0 0 14px color-mix(in srgb, var(--nc) 55%, transparent); }
 .vd:active { transform: translateY(4px) scale(.985); box-shadow: 0 2px 0 rgba(0,0,0,.28); transition-duration: .06s; }
 .swipe-hint { margin: -2px 0 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 900; color: var(--muted); letter-spacing: .08em; }
