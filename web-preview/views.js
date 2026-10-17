@@ -660,6 +660,8 @@ function render(anim) {
   const c = onStage ? S.game.card : null;
   const neon = !!(c && c.yoru && S.game.phase !== "batsu");
   document.body.classList.toggle("neon", neon);
+  // 画面の外側（下のホームバーの所など）も同じ色にして、黒い帯が出んようにする
+  document.documentElement.style.backgroundColor = getComputedStyle(document.body).getPropertyValue("--bg").trim() || "";
   document.body.classList.toggle("night-home", sc === "home" && !!(S.night || S.nightAsk));
   document.body.classList.toggle("deep", (neon && c.kind?.includes("深夜")) || (sc === "home" && (S.nightAsk ? S.nightAsk === "shinya" : S.night === "shinya")));
   S.anim = !!anim;
