@@ -765,12 +765,14 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 /* 始める前の説明：マークつきで大きめに */
 .how.ic { list-style: none; padding: 0; gap: clamp(12px, 2.4vh, 22px); }
 .how.ic li { display: grid; grid-template-columns: 1.6em minmax(0,1fr); gap: 10px; align-items: start; font-size: clamp(16px, 2.6vh, 22px); line-height: 1.5; }
-.how.ic .ic { font-size: 1.3em; line-height: 1.15; text-align: center; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+.how.ic .ic { display: grid; place-items: center; width: 1.6em; height: 1.5em; color: var(--card-edge); }
+.how.ic .ic svg { width: 1.25em; height: 1.25em; }
 /* 遊び方（チュートリアル）の絵 */
 .tut-modes { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; width: 100%; max-width: 300px; }
 .tut-modes span { padding: 10px 8px; border-radius: 12px; background: var(--paper); color: var(--ink); font-weight: 900; font-size: 14px; text-align: center; white-space: nowrap; }
 .tut-menu { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 260px; }
-.tut-menu span { padding: 12px 14px; border-radius: 12px; background: #26221e; color: var(--paper); font-weight: 900; font-size: 15px; }
+.tut-menu span { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: #26221e; color: var(--paper); font-weight: 900; font-size: 15px; }
+.tut-menu svg { width: 20px; height: 20px; color: var(--yuru); }
 /* 最初の人ルーレット */
 .roul { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; width: 100%; }
 .roul.many { grid-template-columns: repeat(4, minmax(0,1fr)); }

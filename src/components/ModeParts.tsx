@@ -6,6 +6,7 @@ import { F, alpha, colorOf } from '../theme';
 import type { STAGE } from '../theme';
 import type { Level, Member, Mode } from '../types';
 import { HELP, boldParts } from '../lib/help';
+import { Icon, type IconName } from './Icon';
 
 type Pal = (typeof STAGE)[Level];
 
@@ -38,7 +39,9 @@ export function IntroCard({ pal, mode, tag, children }: { pal: Pal; mode: Mode; 
       <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
         {HELP[mode].how.map(([ic, t], k) => (
           <View key={k} style={s.howRow}>
-            <Text style={s.howIc}>{ic}</Text>
+            <View style={s.howIc}>
+              <Icon name={ic as IconName} color={pal.cardEdge} size={24} />
+            </View>
             <Text style={[s.howText, { color: fg }]}>
               {boldParts(t).map((x, j) => (
                 <Text key={j} style={x.b ? s.howBold : undefined}>{x.t}</Text>
@@ -188,7 +191,7 @@ const s = StyleSheet.create({
   introTitle: { fontFamily: F.display, fontSize: 22 },
   introTag: { fontSize: 11, fontWeight: '900', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
   howRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  howIc: { width: 30, fontSize: 22, lineHeight: 28, textAlign: 'center' },
+  howIc: { width: 30, height: 27, alignItems: 'center', justifyContent: 'center' },
   howText: { flex: 1, fontSize: 18, lineHeight: 27, fontWeight: '700' },
   howBold: { fontWeight: '900' },
   lvBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, gap: 2 },

@@ -1,7 +1,7 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /** 線のアイコン（お試し版と同じ形）。色は color、太さは中で統一 */
-export type IconName = 'gear' | 'flip' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart';
+export type IconName = 'gear' | 'flip' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale';
 
 const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
   flip: 'M7 4v16M7 4 3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4',
@@ -15,6 +15,17 @@ const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
   cards: 'M8.5 3h8A2.5 2.5 0 0 1 19 5.5v12a2.5 2.5 0 0 1-2.5 2.5h-8A2.5 2.5 0 0 1 6 17.5v-12A2.5 2.5 0 0 1 8.5 3zM3.5 7.5v11A2.5 2.5 0 0 0 6 21h9M10 9h5M10 13h5',
   hand: 'M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11V4.5a1.5 1.5 0 0 1 3 0V12M14 11.5V6a1.5 1.5 0 0 1 3 0v7.5c0 4-2.5 7-6.5 7S5 18 4 15l-1-3a1.5 1.5 0 0 1 2.8-1L8 14',
   heart: 'M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z',
+  check: 'M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M8 12.5l2.7 2.7L16 9.5',
+  pin: 'M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10zM9.8 11a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0',
+  skull: 'M12 3a7 7 0 0 0-7 7c0 2.4 1.2 4.2 3 5.3V19h8v-3.7c1.8-1.1 3-2.9 3-5.3a7 7 0 0 0-7-7zM7.9 10.5a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0 -2.8 0M13.299999999999999 10.5a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0 -2.8 0M10.5 19v2M13.5 19v2',
+  hash: 'M5 9h14M5 15h14M10 4L8 20M16 4l-2 16',
+  chat: 'M4 5h16v11H9l-5 4z',
+  smile: 'M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M8 14a4.5 4.5 0 0 0 8 0M9 9.5h.01M15 9.5h.01',
+  timer: 'M4 13a8 8 0 1 0 16 0a8 8 0 1 0 -16 0M12 9v4l2.5 2M9.5 2.5h5',
+  eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0',
+  bang: 'M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M12 7v6M12 16.5h.01',
+  question: 'M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5v.4M12 16.8h.01',
+  scale: 'M12 4v16M7 20h10M5 8h14M5 8l-2.5 6a3 3 0 0 0 5 0zM19 8l-2.5 6a3 3 0 0 0 5 0z',
   num: 'M4 18h16M6 14v4M10 11v7M14 8v10M18 5v13',
   grid: 'M5 3.5h4A1.5 1.5 0 0 1 10.5 5v4A1.5 1.5 0 0 1 9 10.5H5A1.5 1.5 0 0 1 3.5 9V5A1.5 1.5 0 0 1 5 3.5zM15 3.5h4A1.5 1.5 0 0 1 20.5 5v4a1.5 1.5 0 0 1-1.5 1.5h-4A1.5 1.5 0 0 1 13.5 9V5A1.5 1.5 0 0 1 15 3.5zM5 13.5h4a1.5 1.5 0 0 1 1.5 1.5v4A1.5 1.5 0 0 1 9 20.5H5A1.5 1.5 0 0 1 3.5 19v-4A1.5 1.5 0 0 1 5 13.5zM15.5 16.5h3M17 15v3',
   mute: 'M4 5h16v11H9l-5 4zM9 8.5l6 4M15 8.5l-6 4',

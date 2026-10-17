@@ -41,7 +41,20 @@ const SFX = (() => {
 const play = (k) => { if (S.sound) try { SFX[k](); } catch {} };
 
 // ---------- icons ----------
+// 線のアイコン（1本のパスで描く）
+const ico = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 const ICON = {
+  check: ico("M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M8 12.5l2.7 2.7L16 9.5"),
+  pin: ico("M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10zM9.8 11a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0"),
+  skull: ico("M12 3a7 7 0 0 0-7 7c0 2.4 1.2 4.2 3 5.3V19h8v-3.7c1.8-1.1 3-2.9 3-5.3a7 7 0 0 0-7-7zM7.9 10.5a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0 -2.8 0M13.299999999999999 10.5a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0 -2.8 0M10.5 19v2M13.5 19v2"),
+  hash: ico("M5 9h14M5 15h14M10 4L8 20M16 4l-2 16"),
+  chat: ico("M4 5h16v11H9l-5 4z"),
+  smile: ico("M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M8 14a4.5 4.5 0 0 0 8 0M9 9.5h.01M15 9.5h.01"),
+  timer: ico("M4 13a8 8 0 1 0 16 0a8 8 0 1 0 -16 0M12 9v4l2.5 2M9.5 2.5h5"),
+  eye: ico("M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"),
+  bang: ico("M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M12 7v6M12 16.5h.01"),
+  question: ico("M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5v.4M12 16.8h.01"),
+  scale: ico("M12 4v16M7 20h10M5 8h14M5 8l-2.5 6a3 3 0 0 0 5 0zM19 8l-2.5 6a3 3 0 0 0 5 0z"),
   cards: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="13" height="17" rx="2.5"/><path d="M3.5 7.5v11A2.5 2.5 0 0 0 6 21h9"/><path d="M10 9h5M10 13h5"/></svg>`,
   dice: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>`,
   book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/><path d="M9 7h6M9 11h6"/></svg>`,
@@ -263,14 +276,14 @@ const TUT = [
   {
     step: "2 / 3",
     title: "負けたら罰ガチャ",
-    text: "負けた人は<b>罰ガチャ</b>を引く。💀なら罰、たまに出る<b>天使</b>なら罰なし。飲む罰は全部ソフドリでOK。",
+    text: "負けた人は<b>罰ガチャ</b>を引く。ドクロなら罰、たまに出る<b>天使</b>なら罰なし。飲む罰は全部ソフドリでOK。",
     art: () => `<div class="gacha" style="max-width:280px"><div class="gacha-item" style="--d:.1s;--mc:var(--futsu)"><div class="capsule"><i class="top"></i><i class="bot"></i></div><div class="gacha-txt"><b>まゆの罰</b><p>次の番まで語尾が「ござる」</p></div></div></div>`,
   },
   {
     step: "3 / 3",
     title: "困ったら「⋯」",
     text: "画面のフチの色は<b>いまの人の色</b>。右上の<b>「⋯」</b>で、ルール・結果発表・設定が開ける。「〇〇だけ見て」の時は、他の人は見たらアカン。",
-    art: () => `<div class="tut-menu"><span>📖 ルール早見表</span><span>🏁 結果発表</span><span>⚙️ 設定</span></div>`,
+    art: () => `<div class="tut-menu"><span>${ICON.book}ルール早見表</span><span>${ICON.flag}結果発表</span><span>${ICON.gear}設定</span></div>`,
   },
 ];
 function vTut() {
@@ -887,7 +900,7 @@ function vIntroStage(mode, { tag = "", extra = "", btn, act, disabled = false })
     <div class="deck"><div class="odai mode-card mid" id="card">
       <div class="head"><span class="who"><b>${MODE_NAME[mode]}</b></span><span class="meta"><i class="tag">${tag || `${S.members.length}人`}</i></span></div>
       <div class="mid-body">
-        <ul class="how ic">${h.how.map(([ic, t]) => `<li><span class="ic">${ic}</span><span>${t}</span></li>`).join("")}</ul>
+        <ul class="how ic">${h.how.map(([ic, t]) => `<li><span class="ic">${ICON[ic] || ""}</span><span>${t}</span></li>`).join("")}</ul>
         ${extra}
       </div>
     </div></div>

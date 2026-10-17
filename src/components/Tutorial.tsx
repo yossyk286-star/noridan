@@ -3,6 +3,7 @@ import { Tap } from './Tap';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { Capsule } from './Fx';
+import { Icon } from './Icon';
 
 type Slide = { title: string; text: { t: string; b?: boolean }[]; art: () => ReactElement };
 
@@ -39,8 +40,9 @@ const SLIDES: Slide[] = [
     text: [{ t: '画面のフチの色は' }, { t: 'いまの人の色', b: true }, { t: '。右上の' }, { t: '「⋯」', b: true }, { t: 'で、ルール・結果発表・設定が開ける。「〇〇だけ見て」の時は、他の人は見たらアカン。' }],
     art: () => (
       <View style={{ width: 240, gap: 8 }}>
-        {['📖 ルール早見表', '🏁 結果発表', '⚙️ 設定'].map((m) => (
+        {([['book', 'ルール早見表'], ['flag', '結果発表'], ['gear', '設定']] as const).map(([ic, m]) => (
           <View key={m} style={s.menuRow}>
+            <Icon name={ic} color={C.yuru} size={20} />
             <Text style={s.menuText}>{m}</Text>
           </View>
         ))}
@@ -105,6 +107,6 @@ const s = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, width: '100%', maxWidth: 320, justifyContent: 'center' },
   modeChip: { width: '47%', paddingVertical: 10, borderRadius: 12, backgroundColor: C.paper, alignItems: 'center' },
   modeChipText: { color: C.ink, fontWeight: '900', fontSize: 14 },
-  menuRow: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#26221e' },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#26221e' },
   menuText: { color: C.paper, fontWeight: '900', fontSize: 15 },
 });
