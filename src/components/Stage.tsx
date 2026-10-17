@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Tap } from './Tap';
 import type React from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { isSituational, othersOf } from '../lib/game';
 import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
@@ -407,6 +407,7 @@ export function Controls({
   const others = othersOf(members, st.doer);
   const revTargets = others.filter((i) => !st.card.yoru || !members[i].ng);
   const hint = shakeHint ? <ShakeHint pal={pal} /> : null;
+  const verdict = canVerdict(flow);
 
   switch (st.phase) {
     case 'offer':
@@ -468,6 +469,25 @@ export function Controls({
               )}
             </View>
           )}
+          {verdict ? (
+            <>
+              {/* 1人用のお題は「やった／できんかった」の2択（札のスワイプでもOK） */}
+              <View style={styles.choices}>
+                <Verdict pal={pal} ng title="できんかった" sub={`${members[st.doer].name}に罰`} onPress={flow.fail} />
+                <Verdict pal={pal} title="やった！" sub={`→ ${nextLabel}`} onPress={flow.clear} />
+              </View>
+              <View style={styles.swipeHint}>
+                <Text style={[styles.swipeHintText, { color: pal.muted }]}>← 罰</Text>
+                <Tap onPress={flow.openPen} haptic={false}>
+                  <Text style={[styles.link, { color: pal.fg }]}>他の人に罰をつける</Text>
+                </Tap>
+                <Text style={[styles.swipeHintText, { color: pal.muted }]}>クリア →</Text>
+              </View>
+              {next != null && <NextUp pal={pal} name={members[next].name} color={colorOf(next)} />}
+              {hint}
+            </>
+          ) : (
+            <>
           <PenGrid pal={pal} members={members} flow={flow} />
           {next != null && <NextUp pal={pal} name={members[next].name} color={colorOf(next)} />}
           <BigButton
@@ -477,9 +497,75 @@ export function Controls({
             danger={st.add.size > 0}
           />
           {hint}
+            </>
+          )}
         </View>
       );
   }
+}
+
+/** やった／できんかった ボタン */
+function Verdict({ pal, title, sub, ng, onPress }: { pal: Pal; title: string; sub: string; ng?: boolean; onPress: () => void }) {
+  const jigoku = pal.bg === STAGE.jigoku.bg;
+  const bg = ng ? (jigoku ? pal.fg : PEN_RED) : pal.neon ? 'transparent' : pal.fg;
+  const fg = ng ? (jigoku ? '#000' : '#fff') : pal.neon ? '#fff' : pal.bg;
+  return (
+    <Tap
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.verdict,
+        { backgroundColor: bg, transform: [{ translateY: pressed ? 4 : 0 }] },
+        !ng && pal.neon && { borderWidth: 2, borderColor: pal.neon },
+      ]}
+    >
+      <Text style={[styles.verdictTitle, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>{title}</Text>
+      <Text style={[styles.verdictSub, { color: fg }]} numberOfLines={1}>{sub}</Text>
+    </Tap>
+  );
+}
+
+/** 1人用のお題で2択・スワイプが使える場面か */
+export function canVerdict(flow: TurnFlow) {
+  const { st } = flow;
+  return st.phase === 'play' && !st.double && !!st.card.solo && st.penOpenFor !== st.card;
+}
+
+/** 札のスワイプ：右でクリア、左で番の人に罰。上下反転中は左右も逆 */
+export function SwipeCard({ enabled, flipped, onSwipe, children }: { enabled: boolean; flipped?: boolean; onSwipe: (dir: 1 | -1) => void; children: React.ReactNode }) {
+  const x = useRef(new Animated.Value(0)).current;
+  const live = useRef({ enabled, flipped, onSwipe });
+  live.current = { enabled, flipped, onSwipe };
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => live.current.enabled && Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderMove: (_, g) => x.setValue(g.dx),
+      onPanResponderRelease: (_, g) => {
+        const dir = (g.dx > 0 ? 1 : -1) as 1 | -1;
+        if (Math.abs(g.dx) > 90) {
+          Animated.timing(x, { toValue: dir * 520, duration: 200, useNativeDriver: true }).start(() => {
+            x.setValue(0);
+            live.current.onSwipe((live.current.flipped ? -dir : dir) as 1 | -1);
+          });
+        } else Animated.spring(x, { toValue: 0, friction: 5, useNativeDriver: true }).start();
+      },
+      onPanResponderTerminate: () => Animated.spring(x, { toValue: 0, useNativeDriver: true }).start(),
+    }),
+  ).current;
+  const rotate = x.interpolate({ inputRange: [-300, 0, 300], outputRange: ['-16deg', '0deg', '16deg'] });
+  // 右に動かすと「クリア」、左で「罰」のハンコが浮かぶ（反転中は逆）
+  const okOp = x.interpolate({ inputRange: flipped ? [-110, 0] : [0, 110], outputRange: flipped ? [1, 0] : [0, 1], extrapolate: 'clamp' });
+  const ngOp = x.interpolate({ inputRange: flipped ? [0, 110] : [-110, 0], outputRange: flipped ? [0, 1] : [1, 0], extrapolate: 'clamp' });
+  return (
+    <Animated.View style={{ flex: 1, transform: [{ translateX: x }, { rotate }] }} {...pan.panHandlers}>
+      {children}
+      {enabled && (
+        <>
+          <Animated.Text style={[styles.stamp, styles.stampOk, { opacity: okOp }]}>クリア</Animated.Text>
+          <Animated.Text style={[styles.stamp, styles.stampNg, { opacity: ngOp }]}>罰</Animated.Text>
+        </>
+      )}
+    </Animated.View>
+  );
 }
 
 export function ShakeHint({ pal }: { pal: Pal }) {
@@ -490,6 +576,7 @@ export function ShakeHint({ pal }: { pal: Pal }) {
 export function shakeAction(flow: TurnFlow): (() => void) | null {
   const { st } = flow;
   if (st.phase === 'batsu') return flow.accept;
+  if (canVerdict(flow)) return flow.clear; // 振ったら「やった！」
   if (st.phase === 'play' && !st.double) return flow.next;
   return null; // 選択が要る場面（ダブルアップ・リベンジ・爆弾）は振っても進めない
 }
@@ -555,6 +642,15 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
   badgeText: { fontSize: 11, fontWeight: '900' },
   cardBody: { flex: 1, justifyContent: 'center' },
+  verdict: { flex: 1, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 8, alignItems: 'center', gap: 2, shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  verdictTitle: { fontFamily: F.display, fontSize: 21, lineHeight: 26 },
+  verdictSub: { fontSize: 12, fontWeight: '900', opacity: 0.8 },
+  swipeHint: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  swipeHintText: { fontSize: 11, fontWeight: '900', letterSpacing: 1 },
+  link: { fontSize: 12, fontWeight: '900', textDecorationLine: 'underline', opacity: 0.8, padding: 6 },
+  stamp: { position: 'absolute', top: 46, fontFamily: F.display, fontSize: 28, paddingHorizontal: 12, paddingVertical: 2, borderWidth: 4, borderRadius: 10, overflow: 'hidden' },
+  stampOk: { left: 18, color: '#1aa64b', borderColor: '#1aa64b', transform: [{ rotate: '-12deg' }] },
+  stampNg: { right: 18, color: PEN_RED, borderColor: PEN_RED, transform: [{ rotate: '12deg' }] },
   mirror: { transform: [{ rotate: '180deg' }] },
   mirrorText: { fontSize: 14, lineHeight: 20 },
   dualLine: { borderTopWidth: 2, borderStyle: 'dashed', opacity: 0.22 },

@@ -3,7 +3,7 @@ import { Animated, Easing, ScrollView, StyleSheet, Text, View } from 'react-nati
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
-import { BombBanner, Controls, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, ShakeHint, Turn, shakeAction } from '../components/Stage';
+import { BombBanner, Controls, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, ShakeHint, Turn, shakeAction } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
 import { Board, COLS, Die, ROWS, Ranks, type Callout } from '../components/Board';
 import { Flash } from '../components/Fx';
@@ -259,7 +259,9 @@ export default function SugorokuScreen({ members, level, shake, night, onQuit, o
                 {st.phase === 'batsu' ? (
                   <GachaCard pal={pal} members={members} items={st.gacha} />
                 ) : (
-                  <OdaiCard pal={pal} card={st.card} doubled={st.double && st.phase === 'play'} art={art} underline={level === 'jigoku'} small />
+                  <SwipeCard enabled={canVerdict(flow)} flipped={flipped} onSwipe={(d) => (d > 0 ? flow.clear() : flow.fail())}>
+                    <OdaiCard pal={pal} card={st.card} doubled={st.double && st.phase === 'play'} art={art} underline={level === 'jigoku'} small />
+                  </SwipeCard>
                 )}
               </DeckStack>
               <Controls

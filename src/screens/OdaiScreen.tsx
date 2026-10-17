@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
-import { BombBanner, Controls, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, Turn, shakeAction } from '../components/Stage';
+import { BombBanner, Controls, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, Turn, shakeAction } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
 import { Flash } from '../components/Fx';
 import { CHANCE, Decks } from '../lib/game';
@@ -79,14 +79,16 @@ export default function OdaiScreen({ members, level, shake, night, onQuit, onSet
           {st.phase === 'batsu' ? (
             <GachaCard pal={pal} members={members} items={st.gacha} />
           ) : (
-            <OdaiCard
-              pal={pal}
-              card={st.card}
-              no={st.cards + 1}
-              doubled={st.double && st.phase === 'play'}
-              art={art}
-              underline={level === 'jigoku'}
-            />
+            <SwipeCard enabled={canVerdict(flow)} flipped={flipped} onSwipe={(d) => (d > 0 ? flow.clear() : flow.fail())}>
+              <OdaiCard
+                pal={pal}
+                card={st.card}
+                no={st.cards + 1}
+                doubled={st.double && st.phase === 'play'}
+                art={art}
+                underline={level === 'jigoku'}
+              />
+            </SwipeCard>
           )}
         </DeckStack>
         <Controls pal={pal} members={members} flow={flow} nextLabel="次へ" shakeHint={shakeOn} next={(cur + 1) % members.length} />

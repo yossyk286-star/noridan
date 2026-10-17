@@ -235,7 +235,7 @@ const TUT = [
   {
     step: "2 / 3",
     title: "罰はガチャで決まる",
-    text: "できんかった人をタップして次へ → <b>罰ガチャ</b>が中身を決める。ドクロなら罰、たまに出る天使なら帳消し。ドクロを引いた人は<b>リベンジ権 ↺</b> をゲット。次の自分のお題を誰かに押し付けられる。",
+    text: "「できんかった」を押すか札を左にスワイプ（やれたら右）→ <b>罰ガチャ</b>が中身を決める。ドクロなら罰、たまに出る天使なら帳消し。ドクロを引いた人は<b>リベンジ権 ↺</b> をゲット。次の自分のお題を誰かに押し付けられる。",
     art: () => `<div class="gacha" style="max-width:280px"><div class="gacha-item" style="--d:.1s;--mc:var(--futsu)"><div class="capsule"><i class="top"></i><i class="bot"></i></div><div class="gacha-txt"><b>まゆの罰</b><p>次の番まで語尾が「ござる」</p></div></div></div>`,
   },
   {
@@ -338,6 +338,17 @@ function vControls() {
         g.card.yoru ? `<button data-act="pass">無理！罰なしでパス</button>` : "",
         g.card.solo && g.rev[g.doer] ? `<button class="revenge" data-act="revenge">↺ リベンジ権を使う</button>` : "",
       ].join("");
+      // 1人用のお題は「やった／できんかった」の2択（札のスワイプでもOK）。他の人に罰をつけたい時だけ一覧を開く
+      if (g.card.solo && g.penOpen !== g.card) {
+        return `
+        ${subs ? `<div class="sub-acts">${subs}</div>` : ""}
+        <div class="verdict">
+          <button class="vd ng" data-act="fail"><b>できんかった</b><small>${esc(S.members[g.doer].name)}に罰</small></button>
+          <button class="vd ok" data-act="clear" data-shake><b>やった！</b><small>→ ${nextLabel}</small></button>
+        </div>
+        <p class="swipe-hint"><span>← 罰</span><button class="link" data-act="penOpen">他の人に罰をつける</button><span>クリア →</span></p>
+        ${g.mode === "odai" || !g.done ? vNextUp() : ""}${shakeHint()}`;
+      }
       return `
         ${subs ? `<div class="sub-acts">${subs}</div>` : ""}
         ${vPenGrid()}
@@ -380,6 +391,7 @@ function vCard() {
   const no = g.mode === "odai" ? `No.${String(g.cards + 1).padStart(3, "0")}` : "";
   return `<div class="odai ${cardClass(c)} ${anim}" id="card">
     <div class="head"><span>${esc(c.kind)}</span>${badge || `<span class="no">${no}</span>`}</div>
+    ${c.solo && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">クリア</i><i class="sw-stamp ng">罰</i>` : ""}
     ${art}
     ${dual ? `<p class="txt mirror" aria-hidden="true" style="font-size:${fitSize(c.html, g.mode === "sugoroku", 0.74)}"><span>${c.html}</span></p><hr class="dual-line">` : ""}
     <p class="txt" style="font-size:${fitSize(c.html, g.mode === "sugoroku", dual ? 0.74 : 1)}"><span>${c.html}</span></p>
@@ -800,6 +812,9 @@ function onClick(e) {
       break;
     }
     case "next": finishCard(); break;
+    case "clear": g.add = new Map(); finishCard(); break;
+    case "fail": g.add = new Map([[g.doer, 1]]); finishCard(); break;
+    case "penOpen": g.penOpen = g.card; render(); break;
     case "accept": advance(); break;
     case "roll": rollDice(); break;
 
@@ -875,6 +890,55 @@ function onClick(e) {
   }
 }
 app.addEventListener("click", onClick);
+
+// ---------- 札のスワイプ：右でクリア、左で番の人に罰 ----------
+let drag = null;
+const canSwipe = () => {
+  const g = S.game;
+  return g && (S.screen === "odai" || S.screen === "sugoroku") && g.phase === "play" && !g.double && g.card?.solo && g.penOpen !== g.card && !(S.screen === "sugoroku" && !g.rolled);
+};
+app.addEventListener("pointerdown", (e) => {
+  const card = e.target.closest("#card");
+  if (!card || !canSwipe() || e.target.closest("button")) return;
+  drag = { x: e.clientX, y: e.clientY, card, dx: 0, on: false };
+});
+window.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  let dx = e.clientX - drag.x;
+  const dy = e.clientY - drag.y;
+  if (!drag.on) {
+    if (Math.abs(dx) < 8) return;
+    if (Math.abs(dy) > Math.abs(dx)) { drag = null; return; } // 縦の動きはスワイプ扱いしない
+    drag.on = true; drag.card.classList.add("dragging");
+  }
+  if (S.flip) dx = -dx; // 上下反転中は左右も逆
+  drag.dx = dx;
+  const p = Math.max(-1, Math.min(1, dx / 110));
+  drag.card.style.transform = `translateX(${S.flip ? -dx : dx}px) rotate(${(S.flip ? -dx : dx) / 18}deg)`;
+  drag.card.style.setProperty("--ok", Math.max(0, p).toFixed(2));
+  drag.card.style.setProperty("--ng", Math.max(0, -p).toFixed(2));
+});
+const endDrag = () => {
+  if (!drag) return;
+  const { card, dx, on } = drag;
+  drag = null;
+  card.classList.remove("dragging");
+  if (!on) return;
+  if (Math.abs(dx) > 90) {
+    const g = S.game;
+    const out = (S.flip ? -dx : dx) > 0 ? 1 : -1;
+    card.style.transition = "transform .22s ease-in";
+    card.style.transform = `translateX(${out * 520}px) rotate(${out * 24}deg)`;
+    if (navigator.vibrate) navigator.vibrate(dx > 0 ? 20 : [30, 30, 30]);
+    setTimeout(() => { g.add = dx > 0 ? new Map() : new Map([[g.doer, 1]]); finishCard(); }, 200);
+  } else {
+    card.style.transition = "transform .3s cubic-bezier(.3,1.6,.5,1)";
+    card.style.transform = "";
+    card.style.setProperty("--ok", 0); card.style.setProperty("--ng", 0);
+  }
+};
+window.addEventListener("pointerup", endDrag);
+window.addEventListener("pointercancel", endDrag);
 overlay.addEventListener("click", onClick);
 
 // ---------- 振ってルーレット ----------

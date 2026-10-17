@@ -33,6 +33,8 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
     /** これ以上爆弾を仕掛けない（すごろくのゴール後など） */
     noPlant: false,
     cards: 0,
+    /** 「他の人に罰をつける」で一覧を開いた札（札が変わったら閉じる） */
+    penOpenFor: null as Card | null,
     /** 称号用の記録 */
     stats: newStats(n),
   }).current;
@@ -144,6 +146,21 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       rerender();
     },
     next: finishCard,
+    /** やった！（罰なしで次へ） */
+    clear() {
+      st.add = new Map();
+      finishCard();
+    },
+    /** できんかった（番の人に罰） */
+    fail() {
+      st.add = new Map([[st.doer, 1]]);
+      finishCard();
+    },
+    /** 他の人に罰をつけたい時だけ一覧を開く */
+    openPen() {
+      st.penOpenFor = st.card;
+      rerender();
+    },
     accept: afterCard,
     /** 夜お題の「無理」。罰なしで次へ */
     pass() {
