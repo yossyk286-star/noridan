@@ -348,6 +348,16 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .tl-lim small { display: block; font-family: inherit; font-size: 13px; opacity: .65; margin-top: 4px; }
 .tl-count { margin: 0; font-family: var(--display); font-size: clamp(96px, 34vw, 150px); line-height: 1; animation: pulse .8s ease-in-out infinite; }
 .tl-play { gap: 14px; }
+/* 傾けたらアウト：限界に近づくほどフチが赤く太く、画面の端から赤がにじむ */
+body.tl-hot .frame { transition: box-shadow .08s linear, background .08s linear; box-shadow: inset 0 0 0 calc(3px + 13px * var(--tr)) color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), var(--pc)), inset 0 0 calc(90px * var(--tr)) color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), var(--pc)); background: radial-gradient(ellipse at center, transparent 45%, rgba(255, 30, 30, calc(var(--tr) * var(--tr) * .5)) 100%); }
+body.tl-edge .frame { animation: tlPulse .35s ease-in-out infinite alternate; }
+body.tl-edge .tl-play { animation: tlShake .12s linear infinite; }
+body.tl-hot .odai.tl-play { box-shadow: 0 0 0 calc(3px + 2px * var(--tr)) color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), var(--card-edge)); }
+body.tl-hot .tl-deg b { color: color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), currentColor); }
+body.tl-hot .tl-ring { border-width: calc(3px + 3px * var(--tr)); }
+@keyframes tlPulse { from { opacity: 1; } to { opacity: .55; } }
+@keyframes tlShake { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-2px, 1px); } 50% { transform: translate(2px, -1px); } 75% { transform: translate(-1px, -1px); } }
+@media (prefers-reduced-motion: reduce) { body.tl-edge .frame, body.tl-edge .tl-play { animation: none; } }
 .tl-timer { font-variant-numeric: tabular-nums; }
 .tl-level { position: relative; width: min(64vw, 240px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, #7be36b 26%, transparent) 0 48%, color-mix(in srgb, #ffd23f 22%, transparent) 48% 70%, color-mix(in srgb, #ff2a2a 20%, transparent) 70%); box-shadow: inset 0 0 0 3px color-mix(in srgb, currentColor 30%, transparent); overflow: hidden; }
 .tl-ring { position: absolute; inset: 25%; border-radius: 50%; border: 3px dashed #ff2a2a; }
@@ -1907,6 +1917,7 @@ const tiltLive = () => tiltSensor.at && Date.now() - tiltSensor.at < 1500; // �
 function tiltBegin() {
   const tl = S.game.tl, n = S.members.length;
   tl.who = (tl.k) % n;
+  tiltHeat(0);
   S.game.doer = tl.who;
   tl.phase = "hand"; tl.angle = 0; tl.peak = 0; tl.outAt = 0; tl.manual = false;
 }
@@ -1939,8 +1950,20 @@ function tiltTick() {
   if (a > tiltLimit()) { tiltOut(); return; }
   if (!tl.raf) tl.raf = requestAnimationFrame(() => { tl.raf = 0; tiltPaint(); });
 }
+// 限界に近づくほど画面のフチを赤く・太く（0〜1）。0.8を超えたら画面がブルブル
+let tiltHeatNow = -1;
+function tiltHeat(r) {
+  r = Math.max(0, Math.min(1, r));
+  if (Math.abs(r - tiltHeatNow) < 0.01 && r !== 0 && r !== 1) return;
+  tiltHeatNow = r;
+  const b = document.body;
+  b.style.setProperty("--tr", r.toFixed(3));
+  b.classList.toggle("tl-hot", r > 0);
+  b.classList.toggle("tl-edge", r >= 0.8 && r < 1);
+}
 function tiltPaint() {
   const tl = S.game?.tl; if (!tl) return;
+  if (tl.phase === "play" && !tl.manual) tiltHeat(tl.angle / tiltLimit());
   const el = document.getElementById("tiltDeg"); if (el) el.textContent = tl.angle.toFixed(1);
   const dot = document.getElementById("tiltDot");
   if (dot && tl.base) {
@@ -1954,6 +1977,7 @@ function tiltPaint() {
 function tiltOut() {
   const g = S.game, tl = g.tl;
   stopTimer();
+  tiltHeat(1);
   tl.phase = "out"; tl.outAt = Date.now();
   tl.tries[tl.who]++; tl.outs[tl.who]++;
   if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
@@ -1964,6 +1988,7 @@ function tiltOut() {
 function tiltSafe() {
   const g = S.game, tl = g.tl;
   stopTimer();
+  tiltHeat(0);
   tl.phase = "safe";
   tl.tries[tl.who]++;
   if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
@@ -4014,6 +4039,7 @@ function render(anim) {
   const onStage = isStage(sc);
   document.body.dataset.level = S.level;
   document.body.classList.toggle("stage", onStage);
+  if (S.game?.mode !== "tilt" && tiltHeatNow > 0) tiltHeat(0);
   if (onStage) document.body.style.setProperty("--pc", S.game.doer >= 0 ? colorOf(S.game.doer) : modeFrame());
   // 夜お題の間だけ照明が落ちてネオン看板に。ホームも夜モード中はネオン
   const c = onStage ? S.game.card : null;

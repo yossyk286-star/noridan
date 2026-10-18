@@ -30,6 +30,11 @@ const LIMIT: Record<Level, number> = { yurume: 6, futsu: 4, jigoku: 2 };
 type Vec = [number, number, number];
 /** 端末の傾き（ラジアン）から「画面の向き」のベクトル */
 const vecOf = (b: number, g: number): Vec => [Math.cos(b) * Math.sin(g), -Math.sin(b), Math.cos(b) * Math.cos(g)];
+/** 2色を r（0〜1）で混ぜる */
+const mix = (a: string, b: string, r: number) => {
+  const h = (c: string, i: number) => parseInt(c.slice(1 + i * 2, 3 + i * 2), 16);
+  return '#' + [0, 1, 2].map((i) => Math.round(h(a, i) + (h(b, i) - h(a, i)) * r).toString(16).padStart(2, '0')).join('');
+};
 const angleOf = (v: Vec, w: Vec) => (Math.acos(Math.max(-1, Math.min(1, v[0] * w[0] + v[1] * w[1] + v[2] * w[2]))) * 180) / Math.PI;
 
 /**
@@ -203,9 +208,26 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     onFinish(pen, tries, stats);
   };
 
+  // 限界に近づくほどフチが赤く太く。0.8を超えたら札がブルブル
+  const heat = phase === 'out' ? 1 : phase === 'play' && !manual ? Math.min(1, angle / lim) : 0;
+  const edge = heat >= 0.8 && heat < 1;
+  const shake = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!edge) return void shake.setValue(0);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shake, { toValue: 1, duration: 40, useNativeDriver: true }),
+        Animated.timing(shake, { toValue: -1, duration: 60, useNativeDriver: true }),
+        Animated.timing(shake, { toValue: 0, duration: 40, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+    return () => loop.stop();
+  }, [edge]);
   const pal = STAGE[level];
   const fg = pal.cardFg;
-  const frame = phase === 'intro' ? C.muted : phase === 'out' ? '#ff2a2a' : colorOf(who);
+  const frame = phase === 'intro' ? C.muted : mix(colorOf(who), '#ff2a2a', heat);
   const nextName = members[(k + 1) % n].name;
 
   let card: React.ReactNode = null;
@@ -315,10 +337,12 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       <View style={[s.wrap, flipped && { transform: [{ rotate: '180deg' }] }]}>
         <ScoreBar pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={phase === 'intro' ? -1 : who} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
-        <View style={{ flex: 1 }}>{card}</View>
+        <Animated.View style={{ flex: 1, transform: [{ translateX: Animated.multiply(shake, 3) }] }}>{card}</Animated.View>
         {controls}
       </View>
+      {heat > 0 && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `rgba(255,30,30,${(heat * heat * 0.22).toFixed(3)})`, zIndex: 9 }]} />}
       <Frame color={frame} />
+      {heat > 0 && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderWidth: 3 + 13 * heat, borderColor: frame, opacity: edge ? 0.9 : 1, zIndex: 10 }]} />}
       <RulesSheet visible={rules} custom={HELP.tilt.rules} onClose={() => setRules(false)} />
       <GameMenu
         visible={menu}

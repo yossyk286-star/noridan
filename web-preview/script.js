@@ -735,6 +735,7 @@ const tiltLive = () => tiltSensor.at && Date.now() - tiltSensor.at < 1500; // �
 function tiltBegin() {
   const tl = S.game.tl, n = S.members.length;
   tl.who = (tl.k) % n;
+  tiltHeat(0);
   S.game.doer = tl.who;
   tl.phase = "hand"; tl.angle = 0; tl.peak = 0; tl.outAt = 0; tl.manual = false;
 }
@@ -767,8 +768,20 @@ function tiltTick() {
   if (a > tiltLimit()) { tiltOut(); return; }
   if (!tl.raf) tl.raf = requestAnimationFrame(() => { tl.raf = 0; tiltPaint(); });
 }
+// 限界に近づくほど画面のフチを赤く・太く（0〜1）。0.8を超えたら画面がブルブル
+let tiltHeatNow = -1;
+function tiltHeat(r) {
+  r = Math.max(0, Math.min(1, r));
+  if (Math.abs(r - tiltHeatNow) < 0.01 && r !== 0 && r !== 1) return;
+  tiltHeatNow = r;
+  const b = document.body;
+  b.style.setProperty("--tr", r.toFixed(3));
+  b.classList.toggle("tl-hot", r > 0);
+  b.classList.toggle("tl-edge", r >= 0.8 && r < 1);
+}
 function tiltPaint() {
   const tl = S.game?.tl; if (!tl) return;
+  if (tl.phase === "play" && !tl.manual) tiltHeat(tl.angle / tiltLimit());
   const el = document.getElementById("tiltDeg"); if (el) el.textContent = tl.angle.toFixed(1);
   const dot = document.getElementById("tiltDot");
   if (dot && tl.base) {
@@ -782,6 +795,7 @@ function tiltPaint() {
 function tiltOut() {
   const g = S.game, tl = g.tl;
   stopTimer();
+  tiltHeat(1);
   tl.phase = "out"; tl.outAt = Date.now();
   tl.tries[tl.who]++; tl.outs[tl.who]++;
   if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
@@ -792,6 +806,7 @@ function tiltOut() {
 function tiltSafe() {
   const g = S.game, tl = g.tl;
   stopTimer();
+  tiltHeat(0);
   tl.phase = "safe";
   tl.tries[tl.who]++;
   if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);

@@ -1763,6 +1763,7 @@ function render(anim) {
   const onStage = isStage(sc);
   document.body.dataset.level = S.level;
   document.body.classList.toggle("stage", onStage);
+  if (S.game?.mode !== "tilt" && tiltHeatNow > 0) tiltHeat(0);
   if (onStage) document.body.style.setProperty("--pc", S.game.doer >= 0 ? colorOf(S.game.doer) : modeFrame());
   // 夜お題の間だけ照明が落ちてネオン看板に。ホームも夜モード中はネオン
   const c = onStage ? S.game.card : null;

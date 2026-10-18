@@ -348,6 +348,16 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .tl-lim small { display: block; font-family: inherit; font-size: 13px; opacity: .65; margin-top: 4px; }
 .tl-count { margin: 0; font-family: var(--display); font-size: clamp(96px, 34vw, 150px); line-height: 1; animation: pulse .8s ease-in-out infinite; }
 .tl-play { gap: 14px; }
+/* 傾けたらアウト：限界に近づくほどフチが赤く太く、画面の端から赤がにじむ */
+body.tl-hot .frame { transition: box-shadow .08s linear, background .08s linear; box-shadow: inset 0 0 0 calc(3px + 13px * var(--tr)) color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), var(--pc)), inset 0 0 calc(90px * var(--tr)) color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), var(--pc)); background: radial-gradient(ellipse at center, transparent 45%, rgba(255, 30, 30, calc(var(--tr) * var(--tr) * .5)) 100%); }
+body.tl-edge .frame { animation: tlPulse .35s ease-in-out infinite alternate; }
+body.tl-edge .tl-play { animation: tlShake .12s linear infinite; }
+body.tl-hot .odai.tl-play { box-shadow: 0 0 0 calc(3px + 2px * var(--tr)) color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), var(--card-edge)); }
+body.tl-hot .tl-deg b { color: color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), currentColor); }
+body.tl-hot .tl-ring { border-width: calc(3px + 3px * var(--tr)); }
+@keyframes tlPulse { from { opacity: 1; } to { opacity: .55; } }
+@keyframes tlShake { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-2px, 1px); } 50% { transform: translate(2px, -1px); } 75% { transform: translate(-1px, -1px); } }
+@media (prefers-reduced-motion: reduce) { body.tl-edge .frame, body.tl-edge .tl-play { animation: none; } }
 .tl-timer { font-variant-numeric: tabular-nums; }
 .tl-level { position: relative; width: min(64vw, 240px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, #7be36b 26%, transparent) 0 48%, color-mix(in srgb, #ffd23f 22%, transparent) 48% 70%, color-mix(in srgb, #ff2a2a 20%, transparent) 70%); box-shadow: inset 0 0 0 3px color-mix(in srgb, currentColor 30%, transparent); overflow: hidden; }
 .tl-ring { position: absolute; inset: 25%; border-radius: 50%; border: 3px dashed #ff2a2a; }
