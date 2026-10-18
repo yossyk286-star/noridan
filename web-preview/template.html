@@ -919,9 +919,13 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .wf-wolf { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .wf-wolf .wolf { width: 104px; height: 104px; filter: drop-shadow(0 6px 0 rgba(0,0,0,.25)); animation: skullIn .55s cubic-bezier(.3,1.7,.5,1) both; }
 .wf-wolf.win .wolf { animation: skullIn .55s cubic-bezier(.3,1.7,.5,1) both, wolfHowl 1.6s .6s ease-in-out infinite; transform-origin: 50% 90%; }
-.wf-wolf.caught .wolf { animation: skullIn .55s cubic-bezier(.3,1.7,.5,1) both, jolt .5s .6s both; filter: drop-shadow(0 6px 0 rgba(0,0,0,.25)) saturate(.7); }
-.wf-wolf.caught .w-eye { fill: #e8ecf5; }
-.wf-wolf.caught .w-glow { display: none; }
+.wf-wolf.caught .wolf { animation: skullIn .55s cubic-bezier(.3,1.7,.5,1) both, wolfSob .5s .6s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes wolfSob { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(1px) rotate(-2deg); } 75% { transform: translateY(1px) rotate(2deg); } }
+.w-tear { animation: tearDrop 1.1s ease-in infinite; }
+.w-tear.r { animation-delay: .55s; }
+@keyframes tearDrop { 0% { transform: translateY(-4px); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(26px); opacity: 0; } }
+.w-mouth { animation: mouthWob .3s steps(2) infinite; transform-origin: 50px 80px; }
+@keyframes mouthWob { 50% { transform: translateY(1px) scaleX(.94); } }
 .wf-wolf.win .w-glow { animation: wGlow 1.2s ease-in-out infinite alternate; }
 @keyframes wGlow { from { opacity: .12; } to { opacity: .45; } }
 .wf-wolf > span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, currentColor 8%, transparent); font-weight: 900; font-size: 14px; }

@@ -428,6 +428,15 @@ function WolfFace({ size, mood }: { size: number; mood?: 'caught' | 'win' }) {
   const sway = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.spring(pop, { toValue: 1, friction: 4, tension: 90, useNativeDriver: true }).start();
+    if (mood === 'caught') {
+      const a = Animated.loop(Animated.sequence([
+        Animated.timing(sway, { toValue: 1, duration: 120, useNativeDriver: true }),
+        Animated.timing(sway, { toValue: -1, duration: 240, useNativeDriver: true }),
+        Animated.timing(sway, { toValue: 0, duration: 120, useNativeDriver: true }),
+      ]));
+      a.start();
+      return () => a.stop();
+    }
     if (mood === 'win') {
       const a = Animated.loop(Animated.sequence([
         Animated.timing(sway, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
@@ -437,9 +446,8 @@ function WolfFace({ size, mood }: { size: number; mood?: 'caught' | 'win' }) {
       return () => a.stop();
     }
   }, []);
-  const eyeFill = mood === 'caught' ? '#e8ecf5' : 'url(#eg)';
   return (
-    <Animated.View style={{ transform: [{ scale: pop }, { rotate: sway.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-8deg'] }) }] }}>
+    <Animated.View style={{ transform: [{ scale: pop }, { rotate: sway.interpolate({ inputRange: [-1, 0, 1], outputRange: mood === 'caught' ? ['2deg', '0deg', '-2deg'] : ['8deg', '0deg', '-8deg'] }) }] }}>
       <Svg width={size} height={size} viewBox="0 0 100 100">
         <Defs>
           <RadialGradient id="eg" cx="50%" cy="50%" r="50%"><Stop offset="0" stopColor="#fff6b0" /><Stop offset=".55" stopColor="#ffd23f" /><Stop offset="1" stopColor="#ff8a1a" /></RadialGradient>
@@ -452,19 +460,50 @@ function WolfFace({ size, mood }: { size: number; mood?: 'caught' | 'win' }) {
         <Path d="M50 21 43 38 50 57 57 38z" fill="#6b7590" opacity={0.9} />
         <Path d="M23 58 33 56 38 64M77 58 67 56 62 64" fill="none" stroke="#7d87a3" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         <Path d="M37 63 50 58 63 63 59 80 50 90 41 80z" fill="#d7dcea" stroke="#0b0d12" strokeWidth={2.5} strokeLinejoin="round" />
-        <Path d="M22 40 45 47M78 40 55 47" stroke="#0b0d12" strokeWidth={5} strokeLinecap="round" />
-        {mood !== 'caught' && (
+        <Path d="M43 61.5h14l-7 7.5z" fill="#0b0d12" />
+        {mood === 'caught' ? (
           <>
+            <Path d="M24 45 44 39M76 45 56 39" stroke="#0b0d12" strokeWidth={4.5} strokeLinecap="round" />
+            <Path d="M29 47.5 41 53 29 58.5M71 47.5 59 53 71 58.5" fill="none" stroke="#0b0d12" strokeWidth={3.6} strokeLinecap="round" strokeLinejoin="round" />
+            <Path d="M33 58q-2 7 0 14M67 58q2 7 0 14" fill="none" stroke="#6cc7ff" strokeWidth={4} strokeLinecap="round" opacity={0.85} />
+            <Path d="M40 80q2.5-4 5 0t5 0 5 0 5 0" fill="none" stroke="#0b0d12" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+          </>
+        ) : (
+          <>
+            <Path d="M22 40 45 47M78 40 55 47" stroke="#0b0d12" strokeWidth={5} strokeLinecap="round" />
             <Ellipse cx="35" cy="52" rx="12" ry="7" fill="#ffd23f" opacity={0.22} />
             <Ellipse cx="65" cy="52" rx="12" ry="7" fill="#ffd23f" opacity={0.22} />
+            <Path d="M25 45 45 50.5 41 58 28 53.5z" fill="url(#eg)" stroke="#0b0d12" strokeWidth={2} strokeLinejoin="round" />
+            <Path d="M75 45 55 50.5 59 58 72 53.5z" fill="url(#eg)" stroke="#0b0d12" strokeWidth={2} strokeLinejoin="round" />
+            <Path d="M37 49v7.5M63 49v7.5" stroke="#0b0d12" strokeWidth={2.4} strokeLinecap="round" />
+            <Path d="M41 75q9 5 18 0" fill="none" stroke="#0b0d12" strokeWidth={2.2} strokeLinecap="round" />
+            <Path d="M42.5 76 45 85 47.5 77.5M57.5 76 55 85 52.5 77.5" fill="#fff" stroke="#0b0d12" strokeWidth={1.4} strokeLinejoin="round" />
           </>
         )}
-        <Path d="M25 45 45 50.5 41 58 28 53.5z" fill={eyeFill} stroke="#0b0d12" strokeWidth={2} strokeLinejoin="round" />
-        <Path d="M75 45 55 50.5 59 58 72 53.5z" fill={eyeFill} stroke="#0b0d12" strokeWidth={2} strokeLinejoin="round" />
-        <Path d="M37 49v7.5M63 49v7.5" stroke="#0b0d12" strokeWidth={2.4} strokeLinecap="round" />
-        <Path d="M43 61.5h14l-7 7.5z" fill="#0b0d12" />
-        <Path d="M41 75q9 5 18 0" fill="none" stroke="#0b0d12" strokeWidth={2.2} strokeLinecap="round" />
-        <Path d="M42.5 76 45 85 47.5 77.5M57.5 76 55 85 52.5 77.5" fill="#fff" stroke="#0b0d12" strokeWidth={1.4} strokeLinejoin="round" />
+      </Svg>
+      {mood === 'caught' && (
+        <>
+          <Tear size={size} x={0.31} delay={0} />
+          <Tear size={size} x={0.69} delay={550} />
+        </>
+      )}
+    </Animated.View>
+  );
+}
+
+/** ぽろぽろ落ちる涙 */
+function Tear({ size, x, delay }: { size: number; x: number; delay: number }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const a = Animated.loop(Animated.sequence([Animated.delay(delay), Animated.timing(v, { toValue: 1, duration: 1100, easing: Easing.in(Easing.quad), useNativeDriver: true }), Animated.timing(v, { toValue: 0, duration: 0, useNativeDriver: true })]));
+    a.start();
+    return () => a.stop();
+  }, []);
+  const w = size * 0.1;
+  return (
+    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: size * x - w / 2, top: size * 0.57, opacity: v.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 1, 0] }), transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-size * 0.04, size * 0.26] }) }] }}>
+      <Svg width={w} height={w * 1.4} viewBox="0 0 10 14">
+        <Path d="M5 1C2.5 5 1 7.5 1 9.5a4 4 0 0 0 8 0C9 7.5 7.5 5 5 1z" fill="#8fd8ff" stroke="#0b0d12" strokeWidth={1.2} />
       </Svg>
     </Animated.View>
   );

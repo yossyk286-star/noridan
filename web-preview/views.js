@@ -900,10 +900,27 @@ function vVote() {
 
 // ---------- ワードウルフ（画面） ----------
 // ウルフの顔（cls: "caught" つかまった / "win" 逃げ切り）
+// ウルフの顔（cls: "caught" つかまって泣いてる / "win" 逃げ切りでニヤリ）
+const WOLF_FACE = {
+  normal: `<path d="M22 40 45 47M78 40 55 47" stroke="#0b0d12" stroke-width="5" stroke-linecap="round"/>
+  <ellipse class="w-glow" cx="35" cy="52" rx="12" ry="7" fill="#ffd23f" opacity=".22"/><ellipse class="w-glow" cx="65" cy="52" rx="12" ry="7" fill="#ffd23f" opacity=".22"/>
+  <path class="w-eye" d="M25 45 45 50.5 41 58 28 53.5z" fill="url(#eg)" stroke="#0b0d12" stroke-width="2" stroke-linejoin="round"/>
+  <path class="w-eye" d="M75 45 55 50.5 59 58 72 53.5z" fill="url(#eg)" stroke="#0b0d12" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M37 49v7.5M63 49v7.5" stroke="#0b0d12" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M41 75q9 5 18 0" fill="none" stroke="#0b0d12" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M42.5 76 45 85 47.5 77.5M57.5 76 55 85 52.5 77.5" fill="#fff" stroke="#0b0d12" stroke-width="1.4" stroke-linejoin="round"/>`,
+  // 泣き顔：眉は八の字、目は「＞＜」でぎゅっとつぶって、涙がぽろぽろ、口はへの字でふるえる
+  caught: `<path d="M24 45 44 39M76 45 56 39" stroke="#0b0d12" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M29 47.5 41 53 29 58.5M71 47.5 59 53 71 58.5" fill="none" stroke="#0b0d12" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="w-tear-stream" d="M33 58q-2 7 0 14M67 58q2 7 0 14" fill="none" stroke="#6cc7ff" stroke-width="4" stroke-linecap="round" opacity=".85"/>
+  <path class="w-tear" d="M31 58c-3 5-4.5 8-4.5 10.5a4.5 4.5 0 0 0 9 0c0-2.5-1.5-5.5-4.5-10.5z" fill="#8fd8ff" stroke="#0b0d12" stroke-width="1.5"/>
+  <path class="w-tear r" d="M69 58c-3 5-4.5 8-4.5 10.5a4.5 4.5 0 0 0 9 0c0-2.5-1.5-5.5-4.5-10.5z" fill="#8fd8ff" stroke="#0b0d12" stroke-width="1.5"/>
+  <path class="w-mouth" d="M40 80q2.5-4 5 0t5 0 5 0 5 0" fill="none" stroke="#0b0d12" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`,
+};
 const WOLF = (cls = "") => `<svg class="wolf ${cls}" viewBox="0 0 100 100" aria-hidden="true">
   <defs>
-    <radialGradient id="eg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff6b0"/><stop offset=".55" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff8a1a"/></radialGradient>
-    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b556e"/><stop offset="1" stop-color="#262c3b"/></linearGradient>
+  <radialGradient id="eg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff6b0"/><stop offset=".55" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff8a1a"/></radialGradient>
+  <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b556e"/><stop offset="1" stop-color="#262c3b"/></linearGradient>
   </defs>
   <path d="M50 19 35 23 21 38 12 58l11 1-6 11 14 2 8 16 11 9 11-9 8-16 14-2-6-11 11-1-9-20-14-15zM19 47 25 3l23 26zM81 47 75 3 52 29z" fill="none" stroke="#9fb2e6" stroke-opacity=".35" stroke-width="8" stroke-linejoin="round"/>
   <path d="M19 47 25 3l23 26zM81 47 75 3 52 29z" fill="#262c3b" stroke="#0b0d12" stroke-width="3" stroke-linejoin="round"/>
@@ -912,14 +929,8 @@ const WOLF = (cls = "") => `<svg class="wolf ${cls}" viewBox="0 0 100 100" aria-
   <path d="M50 21 43 38 50 57 57 38z" fill="#6b7590" opacity=".9"/>
   <path d="M23 58 33 56 38 64M77 58 67 56 62 64" fill="none" stroke="#7d87a3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
   <path d="M37 63 50 58 63 63 59 80 50 90 41 80z" fill="#d7dcea" stroke="#0b0d12" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M22 40 45 47M78 40 55 47" stroke="#0b0d12" stroke-width="5" stroke-linecap="round"/>
-  <ellipse class="w-glow" cx="35" cy="52" rx="12" ry="7" fill="#ffd23f" opacity=".22"/><ellipse class="w-glow" cx="65" cy="52" rx="12" ry="7" fill="#ffd23f" opacity=".22"/>
-  <path class="w-eye" d="M25 45 45 50.5 41 58 28 53.5z" fill="url(#eg)" stroke="#0b0d12" stroke-width="2" stroke-linejoin="round"/>
-  <path class="w-eye" d="M75 45 55 50.5 59 58 72 53.5z" fill="url(#eg)" stroke="#0b0d12" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M37 49v7.5M63 49v7.5" stroke="#0b0d12" stroke-width="2.4" stroke-linecap="round"/>
   <path d="M43 61.5h14l-7 7.5z" fill="#0b0d12"/>
-  <path d="M41 75q9 5 18 0" fill="none" stroke="#0b0d12" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M42.5 76 45 85 47.5 77.5M57.5 76 55 85 52.5 77.5" fill="#fff" stroke="#0b0d12" stroke-width="1.4" stroke-linejoin="round"/>
+  ${cls === "caught" ? WOLF_FACE.caught : WOLF_FACE.normal}
 </svg>`;
 function vWfCard() {
   const g = S.game, wf = g.wf, n = S.members.length;
