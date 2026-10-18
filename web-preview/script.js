@@ -967,9 +967,9 @@ function skRound() {
 
 // ---------- ピタッとストップ ----------
 // 数字が減っていく（or 増えていく）のを、0（or 目標の秒数）ちょうどで止める。行き過ぎたらオーバーでアウト。
-// ゆるめ＝一定の速さ／普通＝途中で速さが変わる（×0.5〜×2）／地獄＝それに加えて数字が消えたり邪魔が入ったり
+// ゆるめ＝ふつうの速さ／普通＝最初に見せた倍率（×0.5・×1.5・×2）でずっと進む／地獄＝それに加えて数字が消えたり邪魔が入ったり
 // 全員1回ずつ止めたら答え合わせ：オーバーした人が罰。誰もオーバーしてへんかったら一番遠い人が罰。ピッタリが出たら罰2倍
-const SP_RATES = [0.5, 1.5, 2, 0.5, 1.5, 2, 1];
+const SP_RATES = [0.5, 1.5, 2];
 const SP_OVER = 1.5; // これだけ行き過ぎたら勝手に止まる
 const spLen = (sp) => sp.target; // 動く秒数（表示上）
 function spRound() {
@@ -982,6 +982,8 @@ const spWho = (sp) => (sp.k + sp.round - 1) % S.members.length;
 function spBegin() {
   const sp = S.game.sp;
   sp.who = spWho(sp); S.game.doer = sp.who;
+  // 普通・地獄はこの番の倍率を先に決めて見せる。止めるまでずっとこの倍率
+  sp.rate = S.level === "yurume" ? 1 : SP_RATES[rnd(SP_RATES.length)];
   sp.phase = "hand";
 }
 function spCount() {
@@ -999,12 +1001,8 @@ function spCount() {
 function spGo() {
   const sp = S.game.sp, now = performance.now();
   sp.phase = "play"; sp.el = 0; sp.t0 = now; sp.prev = now;
-  // 普通・地獄は最初から速さが違う（×0.5〜×2）。そこから途中でも変わる
-  sp.rate = S.level === "yurume" ? 1 : SP_RATES.filter((r) => r !== 1)[rnd(6)];
-  sp.nextChange = now + 900 + Math.random() * 900;
   sp.hideUntil = 0; sp.nextHide = now + 1400 + Math.random() * 1500;
   sp.jamUntil = 0; sp.jamVal = 0; sp.nextJam = now + 1100 + Math.random() * 1600;
-  sp.rateShow = S.level === "yurume" ? 0 : now + 1100;
   play("coin");
   render(true);
   cancelAnimationFrame(sp.raf);
@@ -1012,12 +1010,6 @@ function spGo() {
     if (S.game?.sp !== sp || sp.phase !== "play") return;
     const dt = (t - sp.prev) / 1000; sp.prev = t;
     sp.el += dt * sp.rate;
-    // 普通・地獄：速さが変わる
-    if (S.level !== "yurume" && t > sp.nextChange) {
-      let r; do { r = SP_RATES[rnd(SP_RATES.length)]; } while (r === sp.rate);
-      sp.rate = r; sp.nextChange = t + 700 + Math.random() * 1300; sp.rateShow = t + 900;
-      if (S.level === "futsu") play("tick");
-    }
     if (S.level === "jigoku") {
       // 数字が消える
       if (t > sp.nextHide && sp.hideUntil < t) { sp.hideUntil = t + 600 + Math.random() * 900; sp.nextHide = sp.hideUntil + 900 + Math.random() * 1500; }
@@ -1041,7 +1033,7 @@ function spPaint(t) {
   box.classList.toggle("jam", jam);
   box.classList.toggle("over", !hide && sp.el > spLen(sp));
   const badge = document.getElementById("spRate");
-  if (badge) { const on = S.level === "futsu" && t < sp.rateShow; badge.classList.toggle("on", on); if (on) badge.textContent = sp.rate > 1 ? `×${sp.rate} 加速！` : `×${sp.rate} 減速…`; }
+  if (badge) { const on = sp.rate !== 1; badge.classList.toggle("on", on); if (on) badge.textContent = `×${sp.rate}`; }
 }
 function spStop(auto = false) {
   const g = S.game, sp = g.sp;

@@ -1082,6 +1082,7 @@ function vWolf() {
 }
 
 // ---------- ピタッとストップ（画面） ----------
+const spRateBox = (sp) => `<p class="sp-rate-box ${sp.rate > 1 ? "fast" : "slow"}"><small>今回の速さ</small><b>×${sp.rate}</b><span>${sp.rate > 1 ? "速い！" : "遅い…"}止めるまでずっとこの速さ</span></p>`;
 const spGoal = (sp) => sp.dir === "down" ? "0.00" : `${sp.target}.00`;
 const spDiffText = (r) => r.exact ? "ピッタリ！" : r.over ? `${Math.abs(r.diff).toFixed(2)}秒オーバー` : `あと${r.diff.toFixed(2)}秒`;
 function spBoard(hi) {
@@ -1099,16 +1100,17 @@ function spBoard(hi) {
 function vStopCard() {
   const g = S.game, sp = g.sp, n = S.members.length;
   switch (sp.phase) {
-    case "hand": return `<div class="odai mode-card center" id="card">
+    case "hand": return `<div class="odai mode-card center board-card sp-hand" id="card">
       <p class="prog">第${sp.round}回戦・${sp.k + 1}/${n}人目</p>
       ${bigWho(sp.who, "の番")}
       <p class="sp-goal">${sp.dir === "down" ? `${sp.target}.00 から減っていく` : "0.00 から増えていく"}<br><b>${spGoal(sp)}</b>ちょうどで止めろ</p>
-      <p class="hand-note">${S.level === "yurume" ? "速さは一定" : S.level === "futsu" ? "途中で速さが変わる" : "速さが変わる・数字が消える・邪魔が入る"}。行き過ぎたらオーバーでアウト</p>
+      ${sp.rate !== 1 ? spRateBox(sp) : ""}
+      <p class="hand-note">${S.level === "jigoku" ? "数字が消えたり邪魔が入ったりする。" : ""}行き過ぎたらオーバーでアウト</p>
     </div>`;
     case "count": return `<div class="odai mode-card center" id="card">
       <p class="prog">${mName(sp.who)}、準備して…</p>
       <p class="tl-count">${sp.n}</p>
-      <p class="hand-note"><b>${spGoal(sp)}</b>で止める</p>
+      <p class="hand-note"><b>${spGoal(sp)}</b>で止める${sp.rate !== 1 ? `・速さは<b>×${sp.rate}</b>` : ""}</p>
     </div>`;
     case "play": return `<div class="odai mode-card center sp-play" id="card">
       <p class="prog">${mName(sp.who)}・<b>${spGoal(sp)}</b>で止めろ</p>
@@ -1151,7 +1153,7 @@ function vStopControls() {
 function vStop() {
   const sp = S.game.sp;
   if (sp.phase === "intro") {
-    const lv = S.level === "yurume" ? "速さは一定" : S.level === "futsu" ? "途中で速さが変わる（×0.5〜×2）" : "速さが変わる＋数字が消える＋邪魔が入る";
+    const lv = S.level === "yurume" ? "ふつうの速さ" : S.level === "futsu" ? "番ごとに速さが×0.5・×1.5・×2のどれか" : "番ごとに速さが変わる（×0.5〜×2）＋数字が消える＋邪魔が入る";
     return vIntroStage("stop", { extra: `${lvBox(lv, false)}<div class="sp-dir" role="group" aria-label="モード">
         <button data-act="spDir" data-v="down" aria-pressed="${sp.dir === "down"}"><b>減る</b><small>0.00で止める</small></button>
         <button data-act="spDir" data-v="up" aria-pressed="${sp.dir === "up"}"><b>増える</b><small>目標の秒数で止める</small></button>

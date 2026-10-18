@@ -371,6 +371,13 @@ body.stage .odai.board-card { overflow-y: auto; justify-content: flex-start !imp
 .sp-box.jam .sp-num { color: #b69cff; text-shadow: 3px 0 #ff5d8f, -3px 0 #4dd4ff; }
 .sp-rate { position: absolute; top: -12px; right: 8px; padding: 4px 10px; border-radius: 999px; background: #ff5d8f; color: #fff; font-weight: 900; font-size: 14px; opacity: 0; transform: scale(.6); transition: opacity .12s, transform .18s cubic-bezier(.2,1.6,.4,1); }
 .sp-rate.on { opacity: 1; transform: scale(1); }
+.sp-rate-box { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 6px 0 0; padding: 8px 18px; border-radius: 16px; color: #fff; }
+.sp-rate-box.fast { background: #ff5d8f; }
+.sp-rate-box.slow { background: #4d8dff; }
+.sp-rate-box small { font-size: 11px; font-weight: 800; opacity: .85; }
+.sp-rate-box b { font-family: var(--display); font-weight: 400; font-size: 44px; line-height: 1.05; }
+.sp-rate-box span { font-size: 11px; font-weight: 800; }
+@media (max-height: 640px) { .sp-hand .hand-note { display: none; } .sp-hand .sp-goal { margin: 0; font-size: 13px; } .sp-hand .sp-goal b { font-size: 26px; } .sp-rate-box { padding: 4px 14px; } .sp-rate-box b { font-size: 30px; } }
 .sp-res { font-size: clamp(60px, 20vw, 90px); }
 .sp-res.over { color: #ff3b3b; }
 .sp-check { animation: skPop .35s cubic-bezier(.2,1.6,.4,1); }

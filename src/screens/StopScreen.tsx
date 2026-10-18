@@ -27,7 +27,7 @@ type Phase = 'intro' | 'hand' | 'count' | 'play' | 'check' | 'done' | 'rank' | '
 type Dir = 'down' | 'up';
 type Res = { v: number; diff: number; over: boolean; exact: boolean };
 
-const RATES = [0.5, 1.5, 2, 0.5, 1.5, 2, 1];
+const RATES = [0.5, 1.5, 2];
 /** これだけ行き過ぎたら勝手に止まる */
 const OVER = 1.5;
 /** -0.00 にならんように丸めてから */
@@ -36,11 +36,11 @@ const fmt = (v: number) => {
   return (r < 0 ? '-' : '') + Math.abs(r).toFixed(2);
 };
 const rnd = (n: number) => Math.floor(Math.random() * n);
-const LV_TEXT: Record<Level, string> = { yurume: '速さは一定', futsu: '途中で速さが変わる（×0.5〜×2）', jigoku: '速さが変わる＋数字が消える＋邪魔が入る' };
+const LV_TEXT: Record<Level, string> = { yurume: 'ふつうの速さ', futsu: '番ごとに速さが×0.5・×1.5・×2のどれか', jigoku: '番ごとに速さが変わる（×0.5〜×2）＋数字が消える＋邪魔が入る' };
 
 /**
  * ピタッとストップ：数字が減っていく（or 増えていく）のを、0（or 目標の秒数）ちょうどで止める。行き過ぎたらオーバーでアウト。
- * ゆるめ＝一定の速さ／普通＝途中で速さが変わる（×0.5〜×2）／地獄＝それに加えて数字が消えたり邪魔が入ったり。
+ * ゆるめ＝ふつうの速さ／普通＝番の最初に見せた倍率（×0.5・×1.5・×2）でずっと進む／地獄＝それに加えて数字が消えたり邪魔が入ったり。
  * 全員1回ずつ止めたら答え合わせ：オーバーした人が罰。誰もオーバーしてへんかったら一番遠い人が罰。ピッタリが出たら罰2倍
  */
 export default function StopScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
@@ -71,7 +71,13 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const [view, setView] = useState({ text: '0.00', hide: false, jam: false, over: false, badge: '' });
   const phaseRef = useRef<Phase>('intro');
   phaseRef.current = phase;
-  const run = useRef({ el: 0, prev: 0, rate: 1, nextChange: 0, hideUntil: 0, nextHide: 0, jamUntil: 0, jamVal: 0, nextJam: 0, rateShow: 0, raf: 0 });
+  const run = useRef({ el: 0, prev: 0, rate: 1, hideUntil: 0, nextHide: 0, jamUntil: 0, jamVal: 0, nextJam: 0, raf: 0 });
+  // この番の倍率（普通・地獄）。番の最初に見せて、止めるまでずっとこれ
+  const [rate, setRate] = useState(1);
+  const toHand = () => {
+    setRate(level === 'yurume' ? 1 : RATES[rnd(RATES.length)]);
+    setPhase('hand');
+  };
   const shake = useRef(new Animated.Value(0)).current;
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const clear = () => {
@@ -96,7 +102,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
     setLosers([]);
     setExactAny(false);
     setTarget(6 + rnd(7));
-    setPhase('hand');
+    toHand();
   };
   const countdown = () => {
     setPhase('count');
@@ -108,9 +114,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const go = () => {
     const now = performance.now();
     const R = run.current;
-    // 普通・地獄は最初から速さが違う（×0.5〜×2）。そこから途中でも変わる
-    const rate0 = level === 'yurume' ? 1 : RATES.filter((r) => r !== 1)[rnd(6)];
-    Object.assign(R, { el: 0, prev: now, rate: rate0, nextChange: now + 900 + Math.random() * 900, hideUntil: 0, nextHide: now + 1400 + Math.random() * 1500, jamUntil: 0, jamVal: 0, nextJam: now + 1100 + Math.random() * 1600, rateShow: level === 'yurume' ? 0 : now + 1100 });
+    Object.assign(R, { el: 0, prev: now, rate, hideUntil: 0, nextHide: now + 1400 + Math.random() * 1500, jamUntil: 0, jamVal: 0, nextJam: now + 1100 + Math.random() * 1600 });
     setView({ text: fmt(shown(0)), hide: false, jam: false, over: false, badge: '' });
     setPhase('play');
     phaseRef.current = 'play';
@@ -120,15 +124,6 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
       const dt = (t - R.prev) / 1000;
       R.prev = t;
       R.el += dt * R.rate;
-      if (level !== 'yurume' && t > R.nextChange) {
-        let r: number;
-        do r = RATES[rnd(RATES.length)];
-        while (r === R.rate);
-        R.rate = r;
-        R.nextChange = t + 700 + Math.random() * 1300;
-        R.rateShow = t + 900;
-        if (level === 'futsu') play('tick');
-      }
       if (level === 'jigoku') {
         if (t > R.nextHide && R.hideUntil < t) {
           R.hideUntil = t + 600 + Math.random() * 900;
@@ -154,7 +149,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         hide,
         jam,
         over: !hide && R.el > target,
-        badge: level === 'futsu' && t < R.rateShow ? (R.rate > 1 ? `×${R.rate} 加速！` : `×${R.rate} 減速…`) : '',
+        badge: R.rate !== 1 ? `×${R.rate}` : '',
       });
       R.raf = requestAnimationFrame(loop);
     };
@@ -300,7 +295,14 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
             {goal}
             <Text style={s.goalSub}> ちょうどで止めろ</Text>
           </Text>
-          <Note fg={fg}>{`${level === 'yurume' ? '速さは一定' : level === 'futsu' ? '途中で速さが変わる' : '速さが変わる・数字が消える・邪魔が入る'}。行き過ぎたらオーバーでアウト`}</Note>
+          {rate !== 1 && (
+            <View style={[s.rateBox, { backgroundColor: rate > 1 ? '#ff5d8f' : '#4d8dff' }]}>
+              <Text style={s.rateSmall}>今回の速さ</Text>
+              <Text style={s.rateBig}>×{rate}</Text>
+              <Text style={s.rateSmall}>{rate > 1 ? '速い！' : '遅い…'}止めるまでずっとこの速さ</Text>
+            </View>
+          )}
+          <Note fg={fg}>{`${level === 'jigoku' ? '数字が消えたり邪魔が入ったりする。' : ''}行き過ぎたらオーバーでアウト`}</Note>
         </ModeCard>
       );
       controls = <BigButton pal={pal} label="スタート" onPress={countdown} />;
@@ -310,7 +312,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`${members[who].name}、準備して…`}</Prog>
           <Text style={[s.count, { color: fg }]}>{count}</Text>
-          <Note fg={fg}>{`${goal}で止める`}</Note>
+          <Note fg={fg}>{`${goal}で止める${rate !== 1 ? `・速さは×${rate}` : ''}`}</Note>
         </ModeCard>
       );
       controls = <Text style={[s.hint, { color: pal.muted }]}>ボタンに指を置いて待って</Text>;
@@ -358,7 +360,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
           {board(who)}
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label={`次は${members[nextWho].name}`} onPress={() => { setK(k + 1); setPhase('hand'); }} />;
+      controls = <BigButton pal={pal} label={`次は${members[nextWho].name}`} onPress={() => { setK(k + 1); toHand(); }} />;
       break;
     }
     case 'rank':
@@ -432,6 +434,9 @@ const s = StyleSheet.create({
   v: { flex: 1, textAlign: 'right', fontFamily: F.display, fontSize: 14, opacity: 0.7, fontVariant: ['tabular-nums'] },
   d: { fontSize: 13, fontWeight: '800' },
   lose: { fontFamily: F.display, fontSize: 24, lineHeight: 30, textAlign: 'center', marginTop: 8 },
+  rateBox: { alignItems: 'center', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 16, marginTop: 6 },
+  rateSmall: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  rateBig: { color: '#fff', fontFamily: F.display, fontSize: 44, lineHeight: 50 },
   dirRow: { flexDirection: 'row', gap: 8 },
   dirBtn: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 12, paddingHorizontal: 8, borderRadius: 14, borderWidth: 2 },
   dirT: { fontSize: 18, fontWeight: '900' },
