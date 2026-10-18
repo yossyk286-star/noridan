@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Animated, StyleSheet, Text, Vibration, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
 import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
@@ -205,7 +204,8 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     if (manualRef.current) tapped[who] = true;
     setTurns((t) => t + 1);
     play('fanfare');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    // タイムアップの「ブブッ」：振ってる最中は画面を見てへんので、手に伝える
+    Vibration.vibrate([0, 300, 120, 300]);
     if (k + 1 >= n) {
       const min = Math.min(...(nc as number[]));
       setLosers(members.map((_, i) => i).filter((i) => nc[i] === min));

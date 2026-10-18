@@ -948,7 +948,7 @@ function skDone() {
   if (sk.cur > (sk.best[sk.who] ?? -1)) sk.best[sk.who] = sk.cur;
   if (sk.manual) sk.tapped[sk.who] = true;
   g.turn++;
-  play("fanfare"); if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+  play("fanfare"); if (navigator.vibrate) navigator.vibrate([250, 120, 250]); // タイムアップの「ブブッ」（Androidだけ。iPhoneのブラウザはバイブ不可）
   sk.phase = sk.k + 1 >= S.members.length ? "rank" : "done";
   if (sk.phase === "rank") {
     g.doer = -1;
