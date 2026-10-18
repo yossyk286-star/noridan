@@ -158,10 +158,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" ? "問" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null;
   const n = S.members.length;
@@ -174,13 +174,15 @@ function newGame(mode, again = false) {
     rolled: false, rolling: false, die: 0, done: false,
     bomb: null, bombJust: false, cards: 0,
     // 称号用の記録
-    st: { lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), votes: Array(n).fill(0), why: Array.from({ length: n }, () => ({})) },
+    st: { lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), votes: Array(n).fill(0), exact: Array(n).fill(0), wolf: Array(n).fill(0), why: Array.from({ length: n }, () => ({})) },
   };
   S.ruleSheet = null;
   S.screen = mode;
   if (mode === "ngword") { S.game.doer = -1; S.game.ng = { phase: "setup", minutes: store.get("nd_ng_min", 10), words: [], viewer: 0, dealing: false, out: null, res: null, left: 0, endAt: 0, topic: null }; render(true); return; }
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "intro", round: 0 }; if (again) startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
+  if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: store.get("nd_wf_min", 3) }; render(true); return; }
+  if (mode === "pittari") { S.game.doer = -1; S.game.pt = { phase: "intro", round: 0 }; if (again) ptRound(); render(true); return; }
   if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
   if (mode === "gesture") { S.game.doer = 0; S.game.gs = { phase: "intro", sec: store.get("nd_gs_sec", 60), score: Array(n).fill(0), actor: 0, acted: 0, word: null, got: 0, endAt: 0 }; render(true); return; }
   if (mode === "homeru") { S.game.doer = 0; S.game.hm = { phase: "intro", sec: 30, praiser: 0, target: 1, theme: null, endAt: 0, loser: null }; render(true); return; }
@@ -450,6 +452,8 @@ function titles() {
   const l = top(st.lucky, 1); if (l) add("天使に愛された人", l, `天使 ${st.lucky[l[0]]}回`);
   const r = top(st.rev, 1); if (r) add("リベンジの鬼", r, `押し付け ${st.rev[r[0]]}回`);
   const h = top(st.hit, 2); if (h) add("押し付けられ体質", h, `押し付けられ ${st.hit[h[0]]}回`);
+  if (g.mode === "pittari") { const e = top(st.exact, 1); if (e) add("ピッタリ職人", e, `ピッタリ ${st.exact[e[0]]}回`); }
+  if (g.mode === "wolf") { const w = top(st.wolf, 1); if (w) add("名演技", w, `少数派で逃げ切り ${st.wolf[w[0]]}回`); }
   if (g.mode === "vote" && st.votes) { const v = top(st.votes, 2); if (v) add("みんなの的", v, `合計 ${st.votes[v[0]]}票`); }
   const d = top(st.dbl, 1); if (d) add("ギャンブラー", d, `倍プッシュ ${st.dbl[d[0]]}回（成功${st.dwin[d[0]]}）`);
   const p = top(st.pass, 2); if (p) add("パス魔", p, `パス ${st.pass[p[0]]}回`);
@@ -586,6 +590,102 @@ function voteReveal() {
   const goal = vt.good ? Math.min(...cv) : Math.max(...cv);
   vt.top = vt.cands.filter((i) => c[i] === goal);
   g.vt.phase = "reveal";
+}
+
+// 文字列やないお題（ワードウルフの組・ピッタリ予想）用の山札
+function deckPop(key, list) {
+  if (!decks[key] || !decks[key].length) decks[key] = shuffle(list);
+  return decks[key].pop();
+}
+
+// ---------- ワードウルフ ----------
+// 全員にお題。1人（少数派）だけちょっと違うお題で、自分がどっちかは分からへん。話して投票、
+// 少数派が一番票を集めたら少数派の負け（ただし多数派のお題を当てたら逆転）。外したら・同票なら多数派全員の負け
+const WF_MIN = [2, 3, 5];
+function wfRound() {
+  const g = S.game, wf = g.wf, n = S.members.length;
+  wf.round++;
+  let key = S.level;
+  if (S.night && !S.members.some((m) => m.ng) && Math.random() < (S.night === "shinya" ? 0.5 : 0.3)) key = S.night === "shinya" && Math.random() < 0.6 ? "shinya" : "yoru";
+  wf.night = key === "yoru" || key === "shinya" ? key : false;
+  const pair = deckPop("wolf_" + key, DATA.wolf[key]);
+  const sw = Math.random() < 0.5;
+  wf.maj = sw ? pair[1] : pair[0];
+  wf.min = sw ? pair[0] : pair[1];
+  wf.wolf = rnd(n);
+  const s0 = (wf.round - 1) % n;
+  wf.order = S.members.map((_, k) => (s0 + k) % n);
+  wf.viewer = wf.order[0]; wf.dealt = 0; wf.dealing = true;
+  wf.votes = Array(n).fill(null); wf.k = 0;
+  wf.timeUp = false; wf.endAt = 0; wf.top = []; wf.caught = false; wf.guessed = null;
+  wf.phase = "hand";
+  g.phase = "play"; g.gacha = []; g.doer = -1;
+}
+const wfWord = (i) => (i === S.game.wf.wolf ? S.game.wf.min : S.game.wf.maj);
+function wfTalk() {
+  const wf = S.game.wf;
+  wf.phase = "talk"; wf.dealing = false;
+  if (wf.endAt || wf.timeUp) return; // 見直しから戻った時はタイマーそのまま
+  wf.endAt = startTimer(wf.minutes * 60, () => { wf.timeUp = true; wf.endAt = 0; if (S.game?.wf === wf) render(); }, fmtTime);
+}
+function wfReveal() {
+  const g = S.game, wf = g.wf, n = S.members.length;
+  stopTimer(); wf.endAt = 0;
+  const c = Array(n).fill(0);
+  wf.votes.forEach((t) => { if (t != null) c[t]++; });
+  wf.counts = c;
+  const max = Math.max(...c);
+  wf.top = c.map((v, i) => (v === max ? i : -1)).filter((i) => i >= 0);
+  wf.caught = wf.top.length === 1 && wf.top[0] === wf.wolf;
+  g.turn++;
+  wf.phase = "reveal";
+}
+// 負けた人：バレて逆転できず → 少数派だけ。逃げ切り・逆転 → 多数派全員
+function wfLosers() {
+  const wf = S.game.wf;
+  if (wf.caught && !wf.guessed) return [wf.wolf];
+  return S.members.map((_, i) => i).filter((i) => i !== wf.wolf);
+}
+
+// 多数派全員の罰：全員で同じ罰を1つ（人によって中身が変わるもの・「次の自分の番まで」系は外す）
+function wfGroupBatsu() {
+  if (Math.random() < CHANCE.lucky) return { lucky: true, html: esc(draw("lucky_group", DATA.batsu.lucky.filter((t) => !/\{[PXY]\}/.test(t))) || "セーフ！") };
+  const pool = DATA.batsu.bad.filter((t) => !/\{[PXY]\}/.test(t) && !PERSONAL.test(t));
+  return { lucky: false, html: esc(draw("batsu_group", pool) || "全員でひと口飲む（ソフドリでもOK）") };
+}
+
+// ---------- ピッタリ予想 ----------
+// 数字のお題に1人ずつこっそり予想を入れる。答え合わせで一番遠い人が罰。誰かがピッタリなら罰2倍
+function ptRound() {
+  const g = S.game, pt = g.pt, n = S.members.length;
+  pt.round++;
+  const q = deckPop("pit_" + S.level, DATA.pittari[S.level]);
+  pt.q = q.t; pt.u = q.u;
+  pt.who = q.t.includes("{P}") ? (pt.round - 1) % n : -1; // 答える人（予想はせえへん）
+  const all = S.members.map((_, k) => (pt.round - 1 + k) % n);
+  pt.order = all.filter((i) => i !== pt.who);
+  pt.guess = Array(n).fill(null);
+  pt.k = 0; pt.input = ""; pt.answer = null; pt.losers = []; pt.exact = [];
+  pt.phase = "q";
+  g.phase = "play"; g.gacha = []; g.doer = pt.who;
+}
+const PT_MAX = 7; // 入力できる桁数
+function ptKey(v) {
+  const pt = S.game.pt;
+  if (v === "del") pt.input = pt.input.slice(0, -1);
+  else if (v === "clr") pt.input = "";
+  else if (pt.input.length < PT_MAX) pt.input = pt.input === "0" ? v : pt.input + v;
+}
+function ptReveal() {
+  const g = S.game, pt = g.pt;
+  const d = pt.order.map((i) => Math.abs(pt.guess[i] - pt.answer));
+  const max = Math.max(...d);
+  pt.exact = pt.order.filter((i) => pt.guess[i] === pt.answer);
+  pt.exact.forEach((i) => g.st.exact[i]++);
+  // 全員同じ距離（全員ピッタリ含む）なら罰なし
+  pt.losers = d.every((x) => x === max) ? [] : pt.order.filter((i, k) => d[k] === max);
+  g.turn++;
+  pt.phase = "reveal";
 }
 
 // ---------- 神経衰弱 ----------
@@ -731,14 +831,14 @@ function itCheck() {
 // ---------- 時計（ジェスチャー・褒め殺し共通） ----------
 // endAt まで数えて、0になったら onEnd を呼ぶ。画面は #modeTimer の数字だけ書き換える
 let modeTimer = null;
-function startTimer(sec, onEnd) {
+function startTimer(sec, onEnd, fmt) {
   stopTimer();
   const endAt = Date.now() + sec * 1000;
   modeTimer = setInterval(() => {
     const left = endAt - Date.now();
     const el = document.getElementById("modeTimer");
     if (left <= 0) { stopTimer(); play("alarm"); if (navigator.vibrate) navigator.vibrate([80, 40, 160]); onEnd(); return; }
-    if (el) { el.textContent = Math.ceil(left / 1000); el.classList.toggle("hurry", left < 10000); }
+    if (el) { el.textContent = fmt ? fmt(left) : Math.ceil(left / 1000); el.classList.toggle("hurry", left < (fmt ? 30000 : 10000)); }
   }, 200);
   return endAt;
 }

@@ -1,9 +1,12 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /** 線のアイコン（お試し版と同じ形）。色は color、太さは中で統一 */
-export type IconName = 'gear' | 'flip' | 'split' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale';
+export type IconName = 'gear' | 'flip' | 'split' | 'wolf' | 'target' | 'undo' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale';
 
 const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
+  wolf: 'M12 8a3 3 0 1 1-6 0a3 3 0 1 1 6 0zM3.5 19a5.5 5.5 0 0 1 11 0M20 9a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0zM15.5 14.2A4.5 4.5 0 0 1 21 18.5M17.5 3.5v1',
+  target: 'M20.5 12a8.5 8.5 0 1 1-17 0a8.5 8.5 0 1 1 17 0zM16.5 12a4.5 4.5 0 1 1-9 0a4.5 4.5 0 1 1 9 0zM13 12a1 1 0 1 1-2 0a1 1 0 1 1 2 0z',
+  undo: 'M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
   split: 'M6.5 3.5h11A2.5 2.5 0 0 1 20 6v12a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18V6a2.5 2.5 0 0 1 2.5-2.5zM4 12h16M9 7.5h6M9 16.5h6',
   flip: 'M7 4v16M7 4 3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4',
   back: 'M15 5l-7 7 7 7',

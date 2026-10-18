@@ -9,11 +9,13 @@ export type Stats = {
   notme: number[]; // 当てはまらんで回した回数
   solo: number[]; // 自分のお題をやった枚数
   votes?: number[]; // ぶっちゃけ投票で集めた票
+  exact?: number[]; // ピッタリ予想でピッタリ当てた回数
+  wolf?: number[]; // ワードウルフで少数派として逃げ切った回数
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
-export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'hmlaugh' | 'hmfail';
-export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾', vote: '投票1位', ng: 'NGワード', mfail: '答えられへん', skull: 'ドクロ', mlow: '最下位', ito: '並び間違い', glow: 'ジェスチャー最下位', hmlaugh: '笑った', hmfail: '褒め負け' };
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit';
+export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾', vote: '投票1位', ng: 'NGワード', mfail: '答えられへん', skull: 'ドクロ', mlow: '最下位', ito: '並び間違い', glow: 'ジェスチャー最下位', hmlaugh: '笑った', hmfail: '褒め負け', wolf: 'ワードウルフ負け', pit: '予想が一番遠い' };
 export function whyText(st: Stats | undefined, i: number) {
   const w = st?.why?.[i];
   if (!w) return '';
@@ -21,7 +23,7 @@ export function whyText(st: Stats | undefined, i: number) {
 }
 export const newStats = (n: number): Stats => ({
   lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0),
-  dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), votes: Array(n).fill(0),
+  dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), votes: Array(n).fill(0), exact: Array(n).fill(0), wolf: Array(n).fill(0),
   why: Array.from({ length: n }, () => ({})),
 });
 
@@ -53,6 +55,10 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
   if (h) add('押し付けられ体質', h, `押し付けられ ${st.hit[h[0]]}回`);
   const v = st.votes ? top(st.votes, 2) : null;
   if (v) add('みんなの的', v, `合計 ${st.votes![v[0]]}票`);
+  const ex = st.exact ? top(st.exact, 1) : null;
+  if (ex) add('ピッタリ職人', ex, `ピッタリ ${st.exact![ex[0]]}回`);
+  const wf = st.wolf ? top(st.wolf, 1) : null;
+  if (wf) add('名演技', wf, `少数派で逃げ切り ${st.wolf![wf[0]]}回`);
   const d = top(st.dbl, 1);
   if (d) add('ギャンブラー', d, `倍プッシュ ${st.dbl[d[0]]}回（成功${st.dwin[d[0]]}）`);
   const p = top(st.pass, 2);

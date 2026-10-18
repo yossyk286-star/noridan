@@ -266,6 +266,8 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       <ModeCard icon="heart" title="褒め殺し" desc={HELP.homeru.desc} onPress={() => onStart('homeru')} />
       <ModeCard icon="mute" title="NGワード" desc={HELP.ngword.desc} onPress={() => onStart('ngword')} />
       <ModeCard icon="vote" title="ぶっちゃけ投票" desc={members.length < 3 ? '3人から遊べる' : HELP.vote.desc} disabled={members.length < 3} onPress={() => onStart('vote')} />
+      <ModeCard icon="wolf" title="ワードウルフ" desc={members.length < 3 ? '3人から遊べる' : HELP.wolf.desc} disabled={members.length < 3} onPress={() => onStart('wolf')} />
+      <ModeCard icon="target" title="ピッタリ予想" desc={members.length < 3 ? '3人から遊べる' : HELP.pittari.desc} disabled={members.length < 3} onPress={() => onStart('pittari')} />
 
       {night && (
         <View style={{ gap: 10 }}>
@@ -306,7 +308,7 @@ function StepHead({ num, title, sub }: { num: string; title: string; sub?: strin
   );
 }
 
-function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
+function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote' | 'wolf' | 'target'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Tap onPress={onPress} disabled={disabled} style={({ pressed }) => [s.mode, { opacity: disabled ? 0.45 : 1, transform: [{ translateY: pressed ? 4 : 0 }] }]}>
       <View style={s.modeIc}>

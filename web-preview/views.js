@@ -70,6 +70,8 @@ const ICON = {
   edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>`,
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v7h16v-7M12 3v12M7 8l5-5 5 5"/></svg>`,
   users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.5-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.5 3.5 5.4"/></svg>`,
+  wolf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/><path d="M17.5 3.5v1"/></svg>`,
+  target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>`,
   undo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>`,
   split: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 12h16M9 7.5h6M9 16.5h6"/></svg>`,
   hand: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11V4.5a1.5 1.5 0 0 1 3 0V12M14 11.5V6a1.5 1.5 0 0 1 3 0v7.5c0 4-2.5 7-6.5 7S5 18 4 15l-1-3a1.5 1.5 0 0 1 2.8-1L8 14"/></svg>`,
@@ -211,6 +213,8 @@ function vHome2() {
       <button class="mode" data-act="start" data-m="homeru"><i class="mode-ic">${ICON.heart}</i><b>褒め殺し</b><span>${HELP.homeru.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>${HELP.ngword.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.vote.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="wolf" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.wolf}</i><b>ワードウルフ</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.wolf.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="pittari" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.target}</i><b>ピッタリ予想</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.pittari.desc}</span><em class="go">開始</em></button>
     </div>
   </section>
   ${S.night ? `<section class="night-switch">
@@ -280,8 +284,8 @@ const TUT = [
   {
     step: "1 / 3",
     title: "名前を入れて、<br>遊び方を選ぶ",
-    text: "遊ぶ人の名前を入れて、遊び方を選ぶだけ。遊び方は<b>8つ</b>。どれも始める前に<b>説明が出る</b>から大丈夫。",
-    art: () => `<div class="tut-modes">${["アホお題", "すごろく", "神経衰弱", "価値観ナンバー", "ジェスチャー", "褒め殺し", "NGワード", "ぶっちゃけ投票"].map((m) => `<span>${m}</span>`).join("")}</div>`,
+    text: "遊ぶ人の名前を入れて、遊び方を選ぶだけ。遊び方は<b>10個</b>。どれも始める前に<b>説明が出る</b>から大丈夫。",
+    art: () => `<div class="tut-modes">${["アホお題", "すごろく", "神経衰弱", "価値観ナンバー", "ジェスチャー", "褒め殺し", "NGワード", "ぶっちゃけ投票", "ワードウルフ", "ピッタリ予想"].map((m) => `<span>${m}</span>`).join("")}</div>`,
   },
   {
     step: "2 / 3",
@@ -629,7 +633,7 @@ function vRules() {
   </div>`;
 }
 // 結果発表の罰の内訳
-const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード", mfail: "答えられへん", skull: "ドクロ", mlow: "最下位", ito: "並び間違い", glow: "ジェスチャー最下位", hmlaugh: "笑った", hmfail: "褒め負け" };
+const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード", mfail: "答えられへん", skull: "ドクロ", mlow: "最下位", ito: "並び間違い", glow: "ジェスチャー最下位", hmlaugh: "笑った", hmfail: "褒め負け", wolf: "ワードウルフ負け", pit: "予想が一番遠い" };
 function whyText(i) {
   const w = S.game.st?.why?.[i];
   if (!w) return "";
@@ -823,6 +827,183 @@ function vVote() {
     ${vBar()}
     <div class="deck">${vVoteCard()}</div>
     ${vVoteControls()}
+  </div>`;
+}
+
+// ---------- ワードウルフ（画面） ----------
+function vWfCard() {
+  const g = S.game, wf = g.wf, n = S.members.length;
+  const nc = wf.night === "shinya" ? "deep" : wf.night ? "yoru" : "";
+  const words = (showMaj = true) => `<div class="wf-words">
+      <p><small>少数派</small><b>${esc(wf.min)}</b><span style="--mc:${colorOf(wf.wolf)}"><i></i>${mName(wf.wolf)}</span></p>
+      <p><small>多数派</small><b>${showMaj ? esc(wf.maj) : "？？？"}</b><span>ほか${n - 1}人</span></p>
+    </div>`;
+  switch (wf.phase) {
+    case "hand": return `<div class="odai mode-card center" id="card">
+      <p class="prog">${wf.dealing ? `お題配り ${wf.dealt + 1} / ${n}` : "お題の見直し"}</p>
+      ${bigWho(wf.viewer, "だけ見て")}
+      <p class="hand-note">スマホを${mName(wf.viewer)}に渡して。<br>他の人は画面を見たらアカン</p>
+    </div>`;
+    case "look": return `<div class="odai ${nc} mode-card center" id="card">
+      <p class="prog">${mName(wf.viewer)}のお題</p>
+      <p class="ng-reveal wf-word"><b>${esc(wfWord(wf.viewer))}</b></p>
+      <p class="hand-note">自分が多数派か少数派かは分からへん。<br>お題そのものは言うたらアカン</p>
+    </div>`;
+    case "talk": case "who": return `<div class="odai mode-card center" id="card">
+      <p class="ng-timer ${wf.timeUp ? "" : "run"}" id="${wf.timeUp ? "" : "modeTimer"}">${wf.timeUp ? "0:00" : fmtTime(wf.endAt - Date.now())}</p>
+      <p class="ng-lead">${wf.timeUp ? "時間切れ！<br>投票へ" : "お題の話をして<br>少数派を探せ！"}</p>
+      <p class="hand-note">${n}人のうち1人だけ、ちょっと違うお題。<br>自分が少数派かもしれへん</p>
+    </div>`;
+    case "vhand": { const v = wf.order[wf.k]; return `<div class="odai mode-card center" id="card">
+      <p class="prog">投票 ${wf.k + 1} / ${n}</p>
+      ${bigWho(v, "の番")}
+      <p class="hand-note">スマホを${mName(v)}に渡して。<br>他の人は画面を見たらアカン</p>
+    </div>`; }
+    case "vote": { const v = wf.order[wf.k]; return `<div class="odai mode-card" id="card">
+      <div class="head"><span class="who" style="--mc:${colorOf(v)}"><i></i><b>${mName(v)}</b><small>の投票</small></span></div>
+      <p class="vote-q">少数派やと思うのは？</p>
+      <div class="pen-grid vote-grid ${n > 6 ? "many" : ""}">${S.members.map((_, i) => i).filter((i) => i !== v).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="wfPick" data-i="${i}"><span class="bar"></span><span class="nm">${mName(i)}</span></button>`).join("")}</div>
+    </div>`; }
+    case "done": return `<div class="odai mode-card center" id="card">
+      <p class="ng-lead">全員投票した！</p>
+      <p class="hand-note">スマホをみんなが見える所に置いて</p>
+    </div>`;
+    case "reveal": {
+      const c = wf.counts, max = Math.max(...c);
+      const rows = S.members.map((_, i) => ({ i, v: c[i] })).sort((a, b) => b.v - a.v);
+      const res = wf.caught ? `少数派を当てた！${mName(wf.wolf)}に逆転チャンス` : wf.top.length > 1 ? "同票で決まらず。少数派の逃げ切り！" : `${mName(wf.top[0])}は多数派。少数派の逃げ切り！`;
+      return `<div class="odai mode-card" id="card">
+        <div class="head"><span class="who"><b>第${wf.round}回戦</b></span><span class="meta"><i class="tag">結果</i></span></div>
+        <ul class="vbars">${rows.map((r, k) => `<li class="${r.i === wf.wolf ? "top" : ""}" style="--mc:${colorOf(r.i)};--d:${(0.15 + (rows.length - k) * 0.1).toFixed(2)}s"><span class="nm">${mName(r.i)}</span><span class="bar"><i style="--w:${max ? (r.v / max) * 100 : 0}%"></i></span><b>${r.v}</b></li>`).join("")}</ul>
+        ${words(!wf.caught)}
+        <p class="vote-rule ${wf.caught ? "good" : "bad"}">${res}</p>
+      </div>`;
+    }
+    case "guess": return `<div class="odai mode-card center" id="card">
+      <p class="prog">逆転チャンス</p>
+      ${bigWho(wf.wolf, "")}
+      <p class="ng-lead">多数派のお題を<br>当てろ！</p>
+      <p class="hand-note">${mName(wf.wolf)}が声に出して答える。<br>合ってるかは多数派のみんなが判定</p>
+    </div>`;
+    case "result": {
+      const lose = wfLosers(), wolfLose = lose.length === 1 && lose[0] === wf.wolf;
+      return `<div class="odai mode-card center" id="card">
+        <p class="prog">第${wf.round}回戦</p>
+        ${words(true)}
+        <p class="ng-lead">${wolfLose ? "少数派の負け" : wf.caught ? "逆転！多数派の負け" : "少数派の逃げ切り"}</p>
+        <p class="vote-rule bad">${wolfLose ? `${mName(wf.wolf)}に罰` : `多数派の${n - 1}人全員に罰`}</p>
+      </div>`;
+    }
+    case "group": { const r = wf.res; return `<div class="odai ${r.lucky ? "lucky" : "batsu"} mode-card center ${S.anim ? "shake" : ""}" id="card">
+      <p class="prog">多数派全員の罰</p>
+      <div class="skull-wrap sm">${r.lucky ? `${ANGEL}<b>天使！全員セーフ</b>` : `${SKULL}<b>罰ゲーム</b>`}</div>
+      <p class="rule-pen">${r.html}</p>
+      <p class="hand-note">${wfLosers().map(mName).join("・")}</p>
+    </div>`; }
+    case "batsu": return vCard();
+  }
+  return "";
+}
+function vWfControls() {
+  const g = S.game, wf = g.wf, n = S.members.length;
+  const nextIdx = wf.order[wf.dealt + 1];
+  switch (wf.phase) {
+    case "hand": return `<button class="big" data-act="wfSee">${mName(wf.viewer)}が見る</button>${wf.dealing ? "" : `<button class="ghost" data-act="wfBack">やっぱやめる</button>`}`;
+    case "look": return `<button class="big" data-act="wfNext">${!wf.dealing ? "覚えた、隠す" : wf.dealt + 1 < n ? `覚えた → ${mName(nextIdx)}に渡す` : "覚えた → 話し合いスタート"}</button>`;
+    case "talk": return `<button class="big" data-act="wfVote">${wf.timeUp ? "投票へ" : "話し終わった → 投票へ"}</button><div class="sub-acts"><button data-act="wfPeek">お題を見直す</button></div>`;
+    case "who": return `${vChipsSimple("誰がお題を見直す？", "wfWho", S.members.map((_, i) => i))}<button class="ghost" data-act="wfBack">やめる</button>`;
+    case "vhand": return `<button class="big" data-act="wfVHand">${mName(wf.order[wf.k])}です。投票する</button>`;
+    case "vote": return `<p class="hint">押したらすぐ次の人へ。誰に入れたかは出えへん</p>`;
+    case "done": return `<button class="big" data-act="wfReveal">結果発表</button>`;
+    case "reveal": return wf.caught ? `<button class="big" data-act="wfGuess">逆転チャンスへ</button>` : `<button class="big has-pen" data-act="wfResult">罰を決める</button>`;
+    case "guess": return `<div class="verdict"><button class="vd ng" data-act="wfMiss"><b>外れ</b><small>${mName(wf.wolf)}に罰</small></button><button class="vd ok" data-act="wfHit"><b>当たり！</b><small>多数派に罰</small></button></div>`;
+    case "result": return `<button class="big has-pen" data-act="wfGacha">罰ガチャ</button>`;
+    case "group": return `<button class="big" data-act="wfDone">${wf.res.lucky ? "ラッキー！" : "受け入れた"} → 次の回戦</button>`;
+    case "batsu": return `<button class="big" data-act="wfDone">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次の回戦</button>`;
+  }
+  return "";
+}
+function vWolf() {
+  const wf = S.game.wf;
+  if (wf.phase === "intro") return vIntroStage("wolf", { extra: `${lvBox("", true)}<div class="ng-min-wrap"><p class="ng-min-h">話し合いの時間</p><div class="ng-min three">${WF_MIN.map((m) => `<button data-act="wfMin" data-v="${m}" aria-pressed="${wf.minutes === m}">${m}分</button>`).join("")}</div></div>`, btn: "お題を配る", act: "wfBegin" });
+  return `<div id="stage" class="${S.flip ? "flipped" : ""}">
+    ${vBar()}
+    <div class="deck">${vWfCard()}</div>
+    ${vWfControls()}
+  </div>`;
+}
+
+// ---------- ピッタリ予想（画面） ----------
+const ptQ = (pt) => (pt.who >= 0 ? fill(pt.q, pt.who) : esc(pt.q));
+const ptNum = (v) => Number(v).toLocaleString("ja-JP");
+function vPtPad(act) {
+  const pt = S.game.pt;
+  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "clr", "0", "del"];
+  return `<div class="pt-pad">${keys.map((k) => `<button data-act="ptKey" data-v="${k}" ${k === "clr" || k === "del" ? `class="fn" aria-label="${k === "del" ? "1文字消す" : "全部消す"}"` : ""}>${k === "del" ? "⌫" : k === "clr" ? "C" : k}</button>`).join("")}</div>
+    <button class="big" data-act="${act}" ${pt.input === "" ? "disabled" : ""}>${act === "ptAnsOk" ? "答え合わせ" : "決定"}</button>`;
+}
+function vPtCard() {
+  const g = S.game, pt = g.pt, n = S.members.length;
+  const head = `<div class="head"><span class="who"><b>第${pt.round}問</b></span><span class="meta"><i class="tag">予想</i></span></div>`;
+  const disp = (lab) => `<p class="pt-disp"><small>${lab}</small><b>${pt.input === "" ? "<i>?</i>" : ptNum(pt.input)}</b><span>${esc(pt.u)}</span></p>`;
+  switch (pt.phase) {
+    case "q": return `<div class="odai mode-card ${S.anim ? "in" : ""}" id="card">
+      ${head}
+      <p class="txt" style="font-size:${fitSize(pt.q, false)}"><span>${ptQ(pt)}</span></p>
+      <p class="how-note">${pt.who >= 0 ? `${mName(pt.who)}は答える人なので予想せえへん。ほかの人が1人ずつこっそり予想` : "全員1人ずつ、こっそり数字を予想"}（単位：${esc(pt.u)}）</p>
+    </div>`;
+    case "hand": { const v = pt.order[pt.k]; return `<div class="odai mode-card center" id="card">
+      <p class="prog">予想 ${pt.k + 1} / ${pt.order.length}</p>
+      ${bigWho(v, "の番")}
+      <p class="hand-note">スマホを${mName(v)}に渡して。<br>他の人は画面を見たらアカン</p>
+    </div>`; }
+    case "input": { const v = pt.order[pt.k]; return `<div class="odai mode-card pt-card" id="card">
+      <div class="head"><span class="who" style="--mc:${colorOf(v)}"><i></i><b>${mName(v)}</b><small>の予想</small></span></div>
+      <p class="vote-q">${ptQ(pt)}</p>
+      ${disp("予想")}
+    </div>`; }
+    case "done": return `<div class="odai mode-card center" id="card">
+      <p class="ng-lead">全員予想した！</p>
+      <p class="hand-note">${pt.who >= 0 ? `${mName(pt.who)}、本当の数字を調べて入れて` : "スマホや財布を見て、本当の数字を調べよう"}</p>
+    </div>`;
+    case "answer": return `<div class="odai mode-card pt-card" id="card">
+      <div class="head"><span class="who"><b>答え</b></span></div>
+      <p class="vote-q">${ptQ(pt)}</p>
+      ${disp("本当の数字")}
+    </div>`;
+    case "reveal": {
+      const rows = pt.order.map((i) => ({ i, v: pt.guess[i], d: Math.abs(pt.guess[i] - pt.answer) })).sort((a, b) => b.d - a.d); // 罰の人（一番遠い）が上に来るように
+      return `<div class="odai mode-card" id="card">
+        ${head}
+        <p class="vote-q">${ptQ(pt)}</p>
+        <p class="pt-ans"><small>答え</small><b>${ptNum(pt.answer)}</b><span>${esc(pt.u)}</span></p>
+        <ul class="pt-list">${rows.map((r, k) => `<li class="${pt.losers.includes(r.i) ? "lose" : r.d === 0 ? "hit" : ""}" style="--mc:${colorOf(r.i)};--d:${(0.15 + k * 0.1).toFixed(2)}s"><span class="nm"><i></i>${mName(r.i)}</span>${pt.losers.includes(r.i) ? `<span class="stamp">罰</span>` : "<span></span>"}<b>${ptNum(r.v)}</b><em>${r.d === 0 ? "ピッタリ！" : `差 ${ptNum(r.d)}`}</em></li>`).join("")}</ul>
+        <p class="vote-rule ${pt.losers.length ? "bad" : "good"}">${pt.losers.length ? `一番遠い${pt.losers.map(mName).join("・")}に罰${pt.exact.length ? "（ピッタリが出たので2倍）" : ""}` : "全員同じ差なので、今回は罰なし"}</p>
+      </div>`;
+    }
+    case "batsu": return vCard();
+  }
+  return "";
+}
+function vPtControls() {
+  const g = S.game, pt = g.pt;
+  switch (pt.phase) {
+    case "q": return `<button class="big" data-act="ptStart">予想スタート</button><button class="ghost" data-act="ptSkip">このお題はパス</button>`;
+    case "hand": return `<button class="big" data-act="ptHand">${mName(pt.order[pt.k])}です。予想する</button>`;
+    case "input": return vPtPad("ptOk");
+    case "done": return `<button class="big" data-act="ptAns">答えを入れる</button>`;
+    case "answer": return vPtPad("ptAnsOk");
+    case "reveal": return pt.losers.length ? `<button class="big has-pen" data-act="ptGacha">${pt.losers.map(mName).join("・")}に罰ガチャ</button>` : `<button class="big" data-act="ptNext">次のお題</button>`;
+    case "batsu": return `<button class="big" data-act="ptNext">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次のお題</button>`;
+  }
+  return "";
+}
+function vPittari() {
+  if (S.game.pt.phase === "intro") return vIntroStage("pittari", { extra: lvBox(), btn: "1問目へ", act: "ptBegin" });
+  return `<div id="stage" class="${S.flip ? "flipped" : ""}">
+    ${vBar()}
+    <div class="deck">${vPtCard()}</div>
+    ${vPtControls()}
   </div>`;
 }
 
@@ -1323,11 +1504,11 @@ function render(anim) {
   S.anim = !!anim;
   // 画面が変わった時だけスライドして入ってくる
   const key = sc === "home" ? (S.nightAsk ? "night" : "home" + S.step) : sc;
-  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, memory: 2, ito: 2, gesture: 2, homeru: 2, ngword: 2, vote: 2, result: 3 };
+  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, memory: 2, ito: 2, gesture: 2, homeru: 2, ngword: 2, vote: 2, wolf: 2, pittari: 2, result: 3 };
   const moved = S.navKey && S.navKey !== key;
   const dir = moved && ORDER[key] < ORDER[S.navKey] ? "back" : "fwd";
   S.navKey = key;
-  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "memory" ? vMemory() : sc === "ito" ? vIto() : sc === "gesture" ? vGesture() : sc === "homeru" ? vHomeru() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : vResult();
+  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "memory" ? vMemory() : sc === "ito" ? vIto() : sc === "gesture" ? vGesture() : sc === "homeru" ? vHomeru() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : sc === "wolf" ? vWolf() : sc === "pittari" ? vPittari() : vResult();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
   overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   if (onStage) { fixHeight(); fitCard(); }
@@ -1346,6 +1527,8 @@ function cue() {
   if (sc === "homeru") { const p = S.game.hm.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "go" ? "coin" : "flip"); return; }
   if (sc === "ito") { const p = S.game.it.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? (S.game.it.bad.length ? "warn" : "fanfare") : "flip"); return; }
   if (sc === "memory") { const p = S.game.mm.phase; play(p === "skull" ? "boom" : p === "fail" || p === "low" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "match" ? "coin" : p === "miss" ? "warn" : p === "over" ? "fanfare" : "flip"); if (p === "skull") boomFlash(); return; }
+  if (sc === "wolf") { const p = S.game.wf.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "group" ? (S.game.wf.res.lucky ? "lucky" : "pop") : p === "reveal" || p === "result" ? "fanfare" : "flip"); return; }
+  if (sc === "pittari") { const p = S.game.pt.phase; if (p === "input" || p === "answer") return; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? "fanfare" : "flip"); return; }
   if (sc === "vote") { const p = S.game.vt.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? "fanfare" : "flip"); return; }
   if (sc !== "odai" && sc !== "sugoroku") return;
   const g = S.game, c = g.card || {};
@@ -1378,6 +1561,8 @@ function speakNow() {
   // ジェスチャーのお題は読み上げへん（当てる人に聞こえてまう）
   else if (S.screen === "ito") { const it = S.game.it; if (it.phase === "talk") speak(`お題は、${it.topic.t}`); else if (S.game.phase === "batsu") speak(cardSpeech()); }
   else if (S.screen === "memory") { const mm = S.game.mm; if (mm.phase === "match") speak(plain(mm.card.html)); else if (S.game.phase === "batsu") speak(cardSpeech()); }
+  else if (S.screen === "pittari") { const pt = S.game.pt; if (pt.phase === "q") speak(pt.q.replace("{P}", pt.who >= 0 ? S.members[pt.who].name : "")); else if (pt.phase === "batsu") speak(cardSpeech()); }
+  else if (S.screen === "wolf") { const wf = S.game.wf; if (wf.phase === "batsu") speak(cardSpeech()); }
   else if (S.screen === "vote") { const vt = S.game.vt; if (vt.phase === "q") speak(vt.q); else if (vt.phase === "batsu") speak(cardSpeech()); }
   // NGワードは絶対に読み上げへん（ワードがバレる）
 }
@@ -1387,6 +1572,10 @@ function modeFrame() {
   if (g.ng && ["hand", "look"].includes(g.ng.phase)) return colorOf(g.ng.viewer);
   if (g.ng && ["confirm", "out", "eyes", "newword"].includes(g.ng.phase)) return colorOf(g.ng.out);
   if (g.vt && ["hand", "vote"].includes(g.vt.phase)) return colorOf(g.vt.order[g.vt.k]);
+  if (g.wf && ["hand", "look"].includes(g.wf.phase)) return colorOf(g.wf.viewer);
+  if (g.wf && ["vhand", "vote"].includes(g.wf.phase)) return colorOf(g.wf.order[g.wf.k]);
+  if (g.wf && g.wf.phase === "guess") return colorOf(g.wf.wolf);
+  if (g.pt && ["hand", "input"].includes(g.pt.phase)) return colorOf(g.pt.order[g.pt.k]);
   if (g.it && ["hand", "look"].includes(g.it.phase)) return colorOf(g.it.viewer);
   if (g.hm && g.hm.phase === "batsu" && g.hm.loser != null) return colorOf(g.hm.loser);
   return "#8d857a";
@@ -1620,6 +1809,65 @@ function onClick(e) {
       g.gacha = low.map((t) => ({ i: t, n: 1, ...drawBatsu(t) }));
       g.phase = "batsu"; g.mm.phase = "low"; render(true); break;
     }
+
+    // ワードウルフ
+    case "wfMin": g.wf.minutes = +b.dataset.v; store.set("nd_wf_min", g.wf.minutes); render(); break;
+    case "wfBegin": wfRound(); render(true); break;
+    case "wfSee": g.wf.phase = "look"; render(true); break;
+    case "wfNext": {
+      const wf = g.wf;
+      if (wf.dealing && wf.dealt + 1 < S.members.length) { wf.dealt++; wf.viewer = wf.order[wf.dealt]; wf.phase = "hand"; }
+      else wfTalk();
+      render(true); break;
+    }
+    case "wfBack": g.wf.phase = "talk"; render(); break;
+    case "wfPeek": g.wf.phase = "who"; render(); break;
+    case "wfWho": g.wf.viewer = i; g.wf.phase = "hand"; render(true); break;
+    case "wfVote": stopTimer(); g.wf.endAt = 0; g.wf.k = 0; g.wf.phase = "vhand"; render(true); break;
+    case "wfVHand": g.wf.phase = "vote"; render(true); break;
+    case "wfPick":
+      g.wf.votes[g.wf.order[g.wf.k]] = i; g.wf.k++;
+      g.wf.phase = g.wf.k < S.members.length ? "vhand" : "done";
+      play("tick"); if (navigator.vibrate) navigator.vibrate(20);
+      render(true); break;
+    case "wfReveal": wfReveal(); render(true); break;
+    case "wfGuess": g.wf.phase = "guess"; render(true); break;
+    case "wfHit": g.wf.guessed = true; g.wf.phase = "result"; render(true); break;
+    case "wfMiss": g.wf.guessed = false; g.wf.phase = "result"; render(true); break;
+    case "wfResult": g.wf.phase = "result"; render(true); break;
+    case "wfGacha": {
+      const wf = g.wf, lose = wfLosers();
+      if (!wf.caught) g.st.wolf[wf.wolf]++;
+      g.add = new Map(lose.map((t) => [t, 1])); g.addReason = "wolf";
+      if (lose.length === 1) { g.gacha = lose.map((t) => ({ i: t, n: 1, ...drawBatsu(t) })); g.phase = "batsu"; wf.phase = "batsu"; }
+      else { wf.res = wfGroupBatsu(); g.gacha = wf.res.lucky ? lose.map((t) => ({ i: t, n: 1, lucky: true, html: "" })) : []; wf.phase = "group"; }
+      render(true); break;
+    }
+    case "wfDone": applyAdds(); g.gacha = []; g.phase = "play"; wfRound(); render(true); break;
+
+    // ピッタリ予想
+    case "ptBegin": ptRound(); render(true); break;
+    case "ptSkip": g.pt.round--; ptRound(); render(true); break;
+    case "ptStart": g.pt.phase = "hand"; render(true); break;
+    case "ptHand": g.pt.input = ""; g.pt.phase = "input"; render(true); break;
+    case "ptKey": ptKey(b.dataset.v); play("tick"); render(); break;
+    case "ptOk": {
+      const pt = g.pt;
+      if (pt.input === "") break;
+      pt.guess[pt.order[pt.k]] = +pt.input; pt.input = ""; pt.k++;
+      pt.phase = pt.k < pt.order.length ? "hand" : "done";
+      if (navigator.vibrate) navigator.vibrate(20);
+      render(true); break;
+    }
+    case "ptAns": g.pt.input = ""; g.pt.phase = "answer"; render(true); break;
+    case "ptAnsOk": if (g.pt.input === "") break; g.pt.answer = +g.pt.input; g.pt.input = ""; ptReveal(); render(true); break;
+    case "ptGacha": {
+      const pt = g.pt, x = pt.exact.length ? 2 : 1;
+      g.add = new Map(pt.losers.map((t) => [t, x])); g.addReason = "pit";
+      g.gacha = pt.losers.map((t) => ({ i: t, n: x, ...drawBatsu(t, x) }));
+      g.phase = "batsu"; pt.phase = "batsu"; render(true); break;
+    }
+    case "ptNext": applyAdds(); g.gacha = []; g.phase = "play"; ptRound(); render(true); break;
 
     // ぶっちゃけ投票
     case "vStart": g.vt.phase = "hand"; render(true); break;

@@ -758,6 +758,38 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 /* 点数・票のバーは人数が多い時だけ札の中でスクロール */
 .mode-card .vbars { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 .mode-card .vbars li { flex: none; }
+/* ワードウルフ */
+.wf-word b { font-size: clamp(34px, 12vw, 52px); }
+.wf-words { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin: 0; }
+.wf-words p { margin: 0; padding: 10px 8px; border-radius: 14px; background: color-mix(in srgb, currentColor 8%, transparent); display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 0; }
+.wf-words small { font-size: 12px; font-weight: 900; opacity: .65; }
+.wf-words b { font-family: var(--display); font-weight: 400; font-size: clamp(18px, 6vw, 24px); line-height: 1.25; word-break: keep-all; overflow-wrap: anywhere; }
+.wf-words span { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 900; opacity: .8; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wf-words span i { width: 9px; height: 9px; border-radius: 50%; background: var(--mc); flex: none; }
+.mode-card .vbars + .wf-words { margin-top: 2px; }
+/* ピッタリ予想 */
+.pt-disp, .pt-ans { margin: auto 0; display: flex; align-items: baseline; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.pt-disp small, .pt-ans small { width: 100%; text-align: center; font-size: 13px; font-weight: 900; opacity: .65; }
+.pt-disp b, .pt-ans b { font-family: var(--display); font-weight: 400; font-size: clamp(48px, 17vw, 72px); line-height: 1; font-variant-numeric: tabular-nums; }
+.pt-disp b i { font-style: normal; opacity: .3; }
+.pt-disp span, .pt-ans span { font-weight: 900; font-size: 18px; }
+.pt-ans { margin: 0; }
+.pt-ans b { font-size: clamp(40px, 13vw, 56px); }
+.pt-pad { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.pt-pad button { height: 52px; border-radius: 14px; background: var(--chip); font-family: var(--display); font-size: 24px; color: var(--fg); }
+.pt-pad button.fn { font-family: inherit; font-size: 18px; font-weight: 900; opacity: .8; }
+.pt-pad button:active { transform: scale(.96); }
+@media (max-height: 700px) { .pt-pad button { height: 44px; } .pt-pad { gap: 6px; } }
+.pt-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+.pt-list li { position: relative; flex: none; display: grid; grid-template-columns: minmax(0,1fr) 28px auto 5.2em; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, currentColor 7%, transparent); border-left: 6px solid var(--mc); animation: reveal .3s var(--d) both; }
+.pt-list .nm { font-weight: 900; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pt-list .nm i { display: none; }
+.pt-list b { font-family: var(--display); font-weight: 400; font-size: 22px; font-variant-numeric: tabular-nums; }
+.pt-list em { font-style: normal; font-size: 12px; font-weight: 900; opacity: .7; text-align: right; white-space: nowrap; }
+.pt-list li.hit em { opacity: 1; color: #1f9d55; }
+.pt-list li.lose .nm { color: #ff3b3b; }
+.pt-list .stamp { width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid #ff3b3b; color: #ff3b3b; display: grid; place-items: center; font-family: var(--display); font-size: 13px; transform: rotate(-14deg); animation: stamp .25s calc(var(--d) + .4s) cubic-bezier(.3,1.6,.5,1) both; }
+.pt-card .vote-q { font-size: clamp(16px, 5vw, 20px); }
 /* 早押しジェスチャー・褒め殺し */
 .ng-min.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
 .gs-timer { margin: 0; font-family: var(--display); font-size: clamp(48px, 15vw, 72px); line-height: 1; font-variant-numeric: tabular-nums; }

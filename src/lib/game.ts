@@ -8,6 +8,8 @@ import voteJson from '../data/vote.json';
 import marksJson from '../data/marks.json';
 import gestureJson from '../data/gesture.json';
 import homeruJson from '../data/homeru.json';
+import wolfJson from '../data/wolf.json';
+import pittariJson from '../data/pittari.json';
 import { LEVEL_LABEL } from '../theme';
 import type { Card, Cell, GameEvent, Level, Member, Night, Rule, Segment } from '../types';
 
@@ -222,6 +224,35 @@ export class Decks {
     const q = typeof raw === 'string' ? raw : raw.text;
     const good = typeof raw !== 'string' && !!raw.good;
     return { q, good, night: nightQ, cands: nightQ ? ok : members.map((_, i) => i) };
+  }
+
+  /** 文字列やないお題（ワードウルフの組・ピッタリ予想）用の山札 */
+  private obj<T>(key: string, list: T[]): T {
+    let d = this.decks[key] as T[] | undefined;
+    if (!d || !d.length) d = this.decks[key] = shuffle(list.slice());
+    return d.pop()!;
+  }
+  /** ワードウルフのお題の組。どっちが多数派かはランダム。夜は下ネタNGの人がおらん時だけ */
+  wolf(level: Level, night: Night, members: Member[]): { maj: string; min: string; night: 'yoru' | 'shinya' | false } {
+    let key: Level | 'yoru' | 'shinya' = level;
+    const shinya = night === 'shinya' && ALLOW_SHINYA;
+    if (night && !members.some((m) => m.ng) && Math.random() < (shinya ? 0.5 : 0.3)) key = shinya && Math.random() < 0.6 ? 'shinya' : 'yoru';
+    const pair = this.obj('wolf_' + key, (wolfJson as unknown as Record<string, [string, string][]>)[key]);
+    const sw = Math.random() < 0.5;
+    return { maj: sw ? pair[1] : pair[0], min: sw ? pair[0] : pair[1], night: key === 'yoru' || key === 'shinya' ? key : false };
+  }
+  /** ピッタリ予想のお題（{P}=答える人） */
+  pittari(level: Level): { t: string; u: string } {
+    return this.obj('pit_' + level, (pittariJson as unknown as Record<string, { t: string; u: string }[]>)[level]);
+  }
+  /** 多数派全員の罰：全員で同じ罰を1つ（人で中身が変わるもの・「次の自分の番まで」系は外す） */
+  groupBatsu(members: Member[]): { segments: Segment[]; lucky: boolean } {
+    if (Math.random() < CHANCE.lucky) {
+      const t = this.obj('lucky_group', batsu.lucky.filter((x) => !/\{[PXY]\}/.test(x))) ?? 'セーフ！';
+      return { segments: [{ text: t }], lucky: true };
+    }
+    const pool = batsu.bad.filter((t) => !/\{[PXY]\}/.test(t) && !PERSONAL.test(t));
+    return { segments: [{ text: this.obj('batsu_group', pool) ?? '全員でひと口飲む（ソフドリでもOK）' }], lucky: false };
   }
 
   /** 罰ガチャ。たまにラッキー（天使）で帳消し */
