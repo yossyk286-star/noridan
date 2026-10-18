@@ -37,8 +37,9 @@ const SFX = (() => {
     lucky: () => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "sine", 0.14, 0, i * 0.07)); },
     // ガラガラ…（だんだんゆっくり）→ ポン
     rattle: (T) => { let t = 0, k = 0; while (t < T) { tone(k % 2 ? 1250 : 980, 0.03, "square", 0.05, 0, t); t += 0.07 + k * 0.006; k++; } },
-    gachaPop: () => { SFX.rattle(GACHA_T - 0.15); noise(0.25, 0.45, 900, GACHA_T); tone(140, 0.35, "sine", 0.4, 60, GACHA_T); tone(500, 0.09, "sine", 0.2, 1100, GACHA_T + 0.25); },
-    gachaLucky: () => { SFX.rattle(GACHA_T - 0.15); [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "sine", 0.14, 0, GACHA_T + i * 0.07)); },
+    // ガラガラ → コロン（カプセルが出る）→ パカッ（割れる）→ 結果
+    gachaPop: () => { SFX.rattle(0.5); tone(700, 0.06, "triangle", 0.12, 400, 0.45); noise(0.08, 0.4, 4000, 0.76); tone(1200, 0.05, "square", 0.06, 0, 0.76); noise(0.25, 0.45, 900, GACHA_T); tone(140, 0.35, "sine", 0.4, 60, GACHA_T); },
+    gachaLucky: () => { SFX.rattle(0.5); tone(700, 0.06, "triangle", 0.12, 400, 0.45); noise(0.08, 0.35, 5000, 0.76); [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "sine", 0.14, 0, 0.8 + i * 0.07)); },
     // ドラムロール（T秒）→ ジャーン
     drumroll: (T = 2.4) => { let t = 0, k = 0; while (t < T) { noise(0.05, 0.12 + 0.18 * (t / T), 1400, t); t += 0.055; k++; } [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.55 : 0.13, "triangle", 0.18, 0, T + i * 0.1)); noise(0.5, 0.35, 5000, T + 0.3); },
     hurry: () => { tone(1800, 0.04, "square", 0.07); },
@@ -111,25 +112,33 @@ const SKULL = `<svg class="skull" viewBox="0 0 100 100" aria-hidden="true">
 </svg>`;
 
 // 罰ガチャのマシン（札が出る前に1.4秒ガラガラ回る）
-const GACHA_T = 1.4;
+const GACHA_T = 1.0;
 const CROWN = `<svg class="crown" viewBox="0 0 24 16" aria-label="罰が一番多い"><path d="M2 14 1 4l6 4 5-7 5 7 6-4-1 10z" fill="#ffd23f" stroke="#141210" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="1.6" fill="#e8202a"/></svg>`;
 // 長押ししてる間だけ中身が見える目隠し（スマホを渡して1人だけ見る画面用）
 const peekBox = (inner, label = "長押しで見る", cls = "") => `<div class="peek ${cls}" data-peek>
   <div class="peek-in">${inner}</div>
   <div class="peek-cover"><span class="peek-ic">${ICON.eye}</span><b>${label}</b><small>指を離したら隠れる</small></div>
 </div>`;
-const gachaMachine = () => {
-  const balls = [[44, 40, "#ffd23f"], [70, 36, "#ff5aa5"], [56, 58, "#3ec7ff"], [36, 62, "#7be36b"], [80, 60, "#ff8a1a"], [60, 26, "#b48cff"], [48, 74, "#ff4d4d"], [74, 78, "#ffd23f"]];
-  return `<div class="g-machine" aria-hidden="true"><svg viewBox="0 0 120 160">
+// ドームの中のカプセル：ドクロ顔と天使顔（6:2）
+const miniSkull = (x, y) => `<g><circle cx="${x}" cy="${y}" r="10" fill="#f7f3ea" stroke="#141210" stroke-width="2"/><circle cx="${x - 3.6}" cy="${y - 1}" r="2.8" fill="#e8202a"/><circle cx="${x + 3.6}" cy="${y - 1}" r="2.8" fill="#e8202a"/><path d="M${x - 3} ${y + 5}h6" stroke="#141210" stroke-width="1.6" stroke-linecap="round"/></g>`;
+const miniAngel = (x, y) => `<g><ellipse cx="${x}" cy="${y - 12}" rx="6" ry="2" fill="none" stroke="#ffd23f" stroke-width="2"/><circle cx="${x}" cy="${y}" r="10" fill="#fff3d6" stroke="#141210" stroke-width="2"/><path d="M${x - 6} ${y - 1}q2.5-3 5 0M${x + 1} ${y - 1}q2.5-3 5 0" fill="none" stroke="#141210" stroke-width="1.6" stroke-linecap="round"/><circle cx="${x - 6}" cy="${y + 4}" r="1.6" fill="#ff9aa8"/><circle cx="${x + 6}" cy="${y + 4}" r="1.6" fill="#ff9aa8"/></g>`;
+const CAP_SKULL = `<svg viewBox="0 0 100 100"><path d="M50 10C28 10 16 25 16 44c0 12 7 20 15 24v10c0 3 3 6 6 6h26c3 0 6-3 6-6V68c8-4 15-12 15-24C84 25 72 10 50 10z" fill="#f7f3ea" stroke="#141210" stroke-width="4"/><ellipse cx="36" cy="46" rx="9" ry="10" fill="#e8202a"/><ellipse cx="64" cy="46" rx="9" ry="10" fill="#e8202a"/><path d="M50 56l-5 8h10z" fill="#141210"/></svg>`;
+const CAP_ANGEL = `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="14" rx="20" ry="6" fill="none" stroke="#ffd23f" stroke-width="5"/><circle cx="50" cy="56" r="30" fill="#fff3d6" stroke="#141210" stroke-width="4"/><path d="M34 52q6-7 12 0M54 52q6-7 12 0" fill="none" stroke="#141210" stroke-width="4" stroke-linecap="round"/><path d="M42 68q8 7 16 0" fill="none" stroke="#141210" stroke-width="4" stroke-linecap="round"/></svg>`;
+// 罰ガチャのマシン：ガタガタ回って、ドクロか天使のカプセルが出てきて、パカッと割れる（約1秒）
+const gachaMachine = (lucky = false) => {
+  const balls = [[44, 40, 0], [70, 36, 0], [56, 58, 1], [36, 62, 0], [80, 60, 0], [60, 24, 0], [46, 78, 1], [74, 78, 0]];
+  return `<div class="g-machine ${lucky ? "lucky" : ""}" aria-hidden="true"><svg viewBox="0 0 120 160">
     <g class="gm-body">
-      <circle cx="60" cy="56" r="46" fill="rgba(255,255,255,.18)" stroke="currentColor" stroke-width="4"/>
-      <g class="gm-balls">${balls.map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="10" fill="${c}" stroke="#141210" stroke-width="2"/>`).join("")}</g>
+      <circle cx="60" cy="56" r="46" fill="rgba(255,255,255,.16)" stroke="currentColor" stroke-width="4"/>
+      <g class="gm-balls">${balls.map(([x, y, a]) => (a ? miniAngel(x, y) : miniSkull(x, y))).join("")}</g>
+      <path d="M30 34a34 34 0 0 1 22-14" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".55"/>
       <path d="M24 98h72l6 52H18z" fill="#e8202a" stroke="#141210" stroke-width="4" stroke-linejoin="round"/>
       <rect x="50" y="134" width="20" height="12" rx="3" fill="#141210"/>
       <g class="gm-handle"><circle cx="60" cy="116" r="11" fill="#f7f3ea" stroke="#141210" stroke-width="4"/><rect x="57" y="104" width="6" height="24" rx="3" fill="#141210"/></g>
     </g>
-    <circle class="gm-out" cx="60" cy="146" r="9" fill="#ffd23f" stroke="#141210" stroke-width="2"/>
-  </svg><b>ガラガラ…</b></div>`;
+  </svg>
+  <div class="gm-cap"><i class="t"></i><i class="b"></i><span class="ic">${lucky ? CAP_ANGEL : CAP_SKULL}</span></div>
+  <i class="gm-burst"></i></div>`;
 };
 const ANGEL = `<svg class="angel" viewBox="0 0 120 100" aria-hidden="true">
   <ellipse class="halo" cx="60" cy="14" rx="22" ry="6" fill="none" stroke="#ffd23f" stroke-width="5"/>
@@ -465,7 +474,7 @@ function vCard() {
     const drum = S.anim; // 画面が切り替わった時だけマシンを回す（メニュー開閉などの再描画では回さへん）
     if (drum) S.gIntro = true;
     return `<div class="odai ${allLucky ? "lucky" : "batsu"} ${drum ? "drum" : anim}" id="card">
-      ${drum ? gachaMachine() : ""}
+      ${drum ? gachaMachine(allLucky) : ""}
       <div class="head"><span>罰ガチャ</span></div>
       ${S.dual ? `<div class="mirror-list">${g.gacha.map((x) => `<p><b>${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : "の罰"}</b>${x.html}</p>`).join("")}</div><hr class="dual-line">` : ""}
       <div class="skull-wrap">${allLucky ? `${ANGEL}<b>ラッキー！セーフ</b>` : `${SKULL}<b>罰ゲーム確定</b>`}</div>
@@ -947,7 +956,7 @@ function vWfCard() {
       </div>`;
     }
     case "group": { const r = wf.res; if (S.anim) S.gIntro = true; return `<div class="odai ${r.lucky ? "lucky" : "batsu"} mode-card center ${S.anim ? "drum" : ""}" id="card">
-      ${S.anim ? gachaMachine() : ""}
+      ${S.anim ? gachaMachine(r.lucky) : ""}
       <p class="prog">多数派全員の罰</p>
       <div class="skull-wrap sm">${r.lucky ? `${ANGEL}<b>天使！全員セーフ</b>` : `${SKULL}<b>罰ゲーム</b>`}</div>
       <p class="rule-pen">${r.html}</p>
@@ -1422,16 +1431,38 @@ function vResult() {
   const tie = rows.filter((r) => r.n === top.n);
   const who = top.n === 0 ? "該当者なし" : tie.map((r) => r.m.name).join("・");
   const slot = S.anim && top.n > 0 && S.members.length > 1;
+  const rankOf = (n) => 1 + rows.filter((r) => r.n > n).length; // 同点は同じ順位
+  const maxN = Math.max(1, top.n);
+  // 表彰台：真ん中が1位、左が2位、右が3位
+  const podN = Math.min(3, rows.length);
+  const order = podN === 3 ? [1, 0, 2] : podN === 2 ? [1, 0] : [0];
+  const pod = (k) => {
+    const r = rows[k], rk = rankOf(r.n), first = k === 0;
+    return `<div class="pod p${Math.min(rk, 3)} ${first ? "first" : ""}" style="--mc:${colorOf(r.i)};--d:${(0.15 + (podN - 1 - k) * 0.35).toFixed(2)}s">
+      ${first ? `<div class="pod-skull">${CROWN}${SKULL}</div>` : ""}
+      <div class="pod-av"><span class="real">${ini(r.i)}</span>${first && slot ? `<span class="q">？</span>` : ""}</div>
+      <b class="pod-nm">${first && slot ? `<span class="q">？？？</span>` : ""}<span class="real">${esc(r.m.name)}</span></b>
+      <div class="pod-block"><em>${rk}</em><span>罰${r.n}</span></div>
+    </div>`;
+  };
+  const hero = top.n === 0
+    ? `<div class="res-safe">${ANGEL}<b>全員セーフ</b><span>平和すぎる。もう一回いっとく？</span></div>`
+    : `<div class="podium n${podN}">${order.map(pod).join("")}</div>
+       <div class="mvp" ${slot ? "data-slot" : ""}><small>MVP（悪い意味で）</small><b data-final="${esc(who)}">${slot ? "？？？" : esc(who)}</b><span>罰 ${top.n}回${tie.length === 1 && whyText(top.i) ? `（${esc(whyText(top.i))}）` : ""}</span></div>`;
+  const MEDAL = (k) => `<i class="medal" style="--m:${["#ffd23f", "#ff5aa5", "#3ec7ff", "#7be36b", "#ff8a1a", "#b48cff"][k % 6]}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h4l1 5-3 2zM17 2h-4l-1 5 3 2z" fill="currentColor" opacity=".55"/><circle cx="12" cy="15" r="7" fill="var(--m)" stroke="#141210" stroke-width="1.6"/><path d="m12 11 1.2 2.5 2.7.3-2 1.9.6 2.7-2.5-1.4-2.5 1.4.6-2.7-2-1.9 2.7-.3z" fill="#fff"/></svg></i>`;
   return `<div class="result ${slot ? "wait" : ""}">
-  <h1 class="res-head">本日の戦犯</h1>
-  <p class="res-sub">${esc(modeLine(g))}</p>
-  <div class="mvp" ${slot ? "data-slot" : ""}><small>MVP（悪い意味で）</small><b data-final="${esc(who)}">${slot ? "？？？" : esc(who)}</b><span>${top.n === 0 ? "全員セーフ。平和すぎる" : `罰 ${top.n}回`}</span></div>
-  ${(() => { const ts = titles(); return ts.length ? `<h2 class="res-h2">称号</h2><ul class="titles">${ts.map((t, k) => `<li style="--d:${(0.3 + k * 0.12).toFixed(2)}s"><small>${esc(t.title)}</small><b>${esc(titleNames(t))}</b><span>${esc(t.desc)}</span></li>`).join("")}</ul>` : ""; })()}
+  <section class="res-hero">
+    <div class="rays" aria-hidden="true"></div>
+    <p class="res-sub">${esc(modeLine(g))}</p>
+    <h1 class="res-head"><span>本日の戦犯</span></h1>
+    ${hero}
+  </section>
+  ${(() => { const ts = titles(); return ts.length ? `<h2 class="res-h2">称号</h2><ul class="titles">${ts.map((t, k) => `<li style="--d:${(0.3 + k * 0.12).toFixed(2)}s">${MEDAL(k)}<div><small>${esc(t.title)}</small><b>${esc(titleNames(t))}</b><span>${esc(t.desc)}</span></div></li>`).join("")}</ul>` : ""; })()}
   ${g.mode === "gesture" && g.gs ? `<h2 class="res-h2">ジェスチャーの点数</h2><ul class="ng-list res">${S.members.map((m, j) => ({ m, j })).sort((a, b) => g.gs.score[b.j] - g.gs.score[a.j]).map(({ m, j }) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${g.gs.score[j]}点</b></li>`).join("")}</ul>` : ""}
   ${g.mode === "memory" && g.mm ? `<h2 class="res-h2">神経衰弱の点数</h2><ul class="ng-list res">${S.members.map((m, j) => ({ m, j })).sort((a, b) => g.mm.score[b.j] - g.mm.score[a.j]).map(({ m, j }) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${g.mm.score[j]}点</b></li>`).join("")}</ul>` : ""}
   ${g.mode === "ngword" && g.ng?.words.length ? `<h2 class="res-h2">みんなのNGワード</h2><ul class="ng-list res">${S.members.map((m, j) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${esc(g.ng.words[j])}</b></li>`).join("")}</ul>` : ""}
   <h2 class="res-h2">罰ランキング</h2>
-  <ol class="rank">${rows.map((r, k) => `<li><span class="no">${k + 1}</span><i class="pc" style="background:${colorOf(r.i)}"></i><span class="nm">${esc(r.m.name)}${whyText(r.i) ? `<small>${esc(whyText(r.i))}</small>` : ""}</span><span class="ct">${r.n}</span></li>`).join("")}</ol>
+  <ol class="rank">${rows.map((r, k) => `<li style="--mc:${colorOf(r.i)};--w:${(r.n / maxN) * 100}%;--d:${(0.2 + k * 0.06).toFixed(2)}s"><span class="no ${rankOf(r.n) === 1 && r.n > 0 ? "top" : ""}">${rankOf(r.n)}</span><span class="r-av">${ini(r.i)}</span><span class="nm">${esc(r.m.name)}${whyText(r.i) ? `<small>${esc(whyText(r.i))}</small>` : ""}</span><span class="r-bar"><i></i></span><span class="ct">${r.n}</span></li>`).join("")}</ol>
   <p class="tip">${MOON}<span>${esc(resultTip())}</span></p>
   <button class="share-btn" data-act="share">${ICON.share}<span>画像で保存・シェア</span></button>
   ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}

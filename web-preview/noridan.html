@@ -250,21 +250,34 @@ body[data-level="jigoku"] .odai .txt mark { background: none; text-decoration: u
 .gacha-txt .mark.ok { background: #ffd23f; color: #141210; }
 .gacha-txt .mark.ng { background: #e8202a; color: #fff; }
 
-/* 罰ガチャのマシン：最初の1.4秒ガラガラ回して、そのあと結果（中の演出は全部 --gt だけ遅らせる） */
-.odai.drum { --gt: 1.4s; position: relative; }
-.g-machine { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--card-fg, #141210); pointer-events: none; animation: gmOut .3s 1.15s ease-in forwards; }
-.g-machine svg { width: min(44%, 170px); height: auto; overflow: visible; animation: gmIn .35s cubic-bezier(.3,1.6,.5,1) both; }
-.g-machine b { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: .1em; animation: pulse .5s ease-in-out infinite; }
-.gm-body { animation: gmShake .18s linear infinite; transform-origin: 60px 150px; }
-.gm-balls { animation: gmBalls .3s linear infinite; transform-origin: 60px 56px; }
-.gm-handle { animation: gmHandle .7s cubic-bezier(.5,0,.5,1) 2 both; transform-origin: 60px 116px; }
-.gm-out { opacity: 0; animation: gmDrop .45s .95s cubic-bezier(.3,1.6,.5,1) both; }
+/* 罰ガチャのマシン：約1秒。ガタガタ→カプセルが出て真ん中へ→パカッと割れて結果（中の演出は全部 --gt だけ遅らせる） */
+.odai.drum { --gt: 1s; position: relative; }
+.g-machine { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; color: var(--card-fg, #141210); pointer-events: none; animation: gmOut .2s .95s ease-in forwards; }
+.g-machine > * { grid-area: 1 / 1; }
+.g-machine svg { width: min(58%, 220px); height: auto; overflow: visible; animation: gmIn .25s cubic-bezier(.3,1.6,.5,1) both, gmFade .2s .5s ease-in forwards; }
+.gm-body { animation: gmShake .14s linear 4; transform-origin: 60px 150px; }
+.gm-balls { animation: gmBalls .22s linear 3; transform-origin: 60px 56px; }
+.gm-handle { animation: gmHandle .5s cubic-bezier(.5,0,.5,1) both; transform-origin: 60px 116px; }
+.gm-cap { position: relative; width: 84px; height: 84px; opacity: 0; animation: gmCap .32s .42s cubic-bezier(.3,1.5,.5,1) both; }
+.gm-cap i { position: absolute; left: 0; right: 0; height: 50%; border: 4px solid #141210; box-sizing: border-box; }
+.gm-cap .t { top: 0; border-radius: 42px 42px 0 0; border-bottom-width: 2px; background: #e8202a; box-shadow: inset -8px 8px 0 rgba(255,255,255,.3); animation: capT .22s .76s ease-out forwards; }
+.gm-cap .b { bottom: 0; border-radius: 0 0 42px 42px; border-top-width: 2px; background: #f7f3ea; animation: capB .22s .76s ease-out forwards; }
+.g-machine.lucky .gm-cap .t { background: #ffd23f; }
+.gm-cap .ic { position: absolute; inset: 6px; opacity: 0; transform: scale(.4); animation: capIc .3s .78s cubic-bezier(.3,1.7,.5,1) forwards; }
+.gm-cap .ic svg { width: 100%; height: 100%; animation: none; }
+.gm-burst { width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, #fff 0, rgba(255,255,255,.7) 30%, transparent 70%); opacity: 0; animation: gmBurst .35s .76s ease-out both; }
+.g-machine.lucky .gm-burst { background: radial-gradient(circle, #fff6c2 0, rgba(255,210,63,.7) 30%, transparent 70%); }
 @keyframes gmIn { from { transform: scale(.4); opacity: 0; } }
-@keyframes gmShake { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-2.5deg); } 75% { transform: rotate(2.5deg); } }
-@keyframes gmBalls { 0% { transform: rotate(0) translateY(0); } 33% { transform: rotate(10deg) translateY(-3px); } 66% { transform: rotate(-8deg) translateY(2px); } 100% { transform: rotate(0); } }
+@keyframes gmFade { to { transform: scale(.85); opacity: 0; } }
+@keyframes gmShake { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+@keyframes gmBalls { 0% { transform: rotate(0) translateY(0); } 33% { transform: rotate(12deg) translateY(-3px); } 66% { transform: rotate(-10deg) translateY(2px); } 100% { transform: rotate(0); } }
 @keyframes gmHandle { to { transform: rotate(360deg); } }
-@keyframes gmDrop { from { opacity: 1; transform: translateY(-14px); } to { opacity: 1; transform: translateY(12px); } }
-@keyframes gmOut { to { opacity: 0; transform: scale(1.3); visibility: hidden; } }
+@keyframes gmCap { 0% { opacity: 1; transform: translateY(70px) scale(.3) rotate(-90deg); } 100% { opacity: 1; transform: translateY(0) scale(1.25) rotate(0); } }
+@keyframes capT { to { transform: translate(-34px, -46px) rotate(-50deg); opacity: 0; } }
+@keyframes capB { to { transform: translate(30px, 46px) rotate(40deg); opacity: 0; } }
+@keyframes capIc { 60% { opacity: 1; transform: scale(1.35); } 100% { opacity: 1; transform: scale(1.1); } }
+@keyframes gmBurst { 0% { opacity: 0; transform: scale(.3); } 40% { opacity: 1; } 100% { opacity: 0; transform: scale(2.4); } }
+@keyframes gmOut { to { opacity: 0; transform: scale(1.15); visibility: hidden; } }
 .odai.drum > :not(.g-machine) { animation: gmShow .01s var(--gt) both; }
 @keyframes gmShow { from { visibility: hidden; } to { visibility: visible; } }
 .odai.drum .skull { animation-delay: var(--gt), calc(var(--gt) + .6s); }
@@ -423,14 +436,65 @@ body[data-level="jigoku"] .sg-cell .in { box-shadow: 0 0 0 1px rgba(255,42,42,.3
 .res-head { font-family: var(--display); font-weight: 400; font-size: clamp(44px, 14vw, 68px); line-height: 1; margin: 18px 0 0; color: var(--blood); }
 .res-sub { margin: 0; color: var(--muted); font-weight: 700; }
 .mvp { padding: 22px 18px; border-radius: 20px; background: var(--yuru); color: var(--ink); display: flex; flex-direction: column; gap: 4px; animation: flipIn .7s cubic-bezier(.2,1.3,.4,1) both; box-shadow: 0 10px 0 rgba(0,0,0,.35); }
+/* 結果発表：放射光の上に、リボンの見出し・表彰台・MVP */
+.res-hero { position: relative; isolation: isolate; margin: 0 -16px; padding: 18px 16px 6px; display: flex; flex-direction: column; align-items: center; gap: 12px; overflow: hidden; text-align: center; }
+.rays { position: absolute; inset: -40% -40% auto; height: 180%; z-index: -1; background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(232,32,42,.22) 0 9deg, transparent 9deg 18deg); -webkit-mask: radial-gradient(circle at 50% 50%, #000 0, transparent 62%); mask: radial-gradient(circle at 50% 50%, #000 0, transparent 62%); animation: raySpin 30s linear infinite; }
+@keyframes raySpin { to { transform: rotate(360deg); } }
+.res-hero .res-sub { font-size: 12px; }
+.res-head { margin: 0; }
+.res-head span { display: inline-block; padding: 6px 22px 10px; background: var(--blood); color: #fff; transform: rotate(-3deg); box-shadow: 0 6px 0 rgba(0,0,0,.4); clip-path: polygon(0 0, 100% 0, 96% 50%, 100% 100%, 0 100%, 4% 50%); font-size: clamp(36px, 11vw, 54px); }
+.podium { width: 100%; display: grid; align-items: end; gap: 8px; margin-top: 8px; }
+.podium.n3 { grid-template-columns: 1fr 1.15fr 1fr; }
+.podium.n2 { grid-template-columns: 1fr 1.15fr; }
+.podium.n1 { grid-template-columns: 1fr; max-width: 200px; }
+.pod { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; position: relative; }
+.pod-skull { position: relative; width: 74px; margin-bottom: -6px; }
+.pod-skull .skull { width: 74px; height: 74px; animation: skullBob 1.4s ease-in-out infinite; }
+.pod-skull .crown { position: absolute; top: -14px; left: 50%; width: 40px; height: 27px; transform: translateX(-50%) rotate(-8deg); z-index: 2; animation: none; }
+@keyframes skullDrop { from { transform: translateY(-60px) scale(.3) rotate(-30deg); opacity: 0; } }
+.pod-av { width: 52px; height: 52px; border-radius: 50%; background: var(--mc); color: var(--ink); display: grid; place-items: center; font-weight: 900; font-size: 21px; box-shadow: 0 0 0 3px var(--ink), 0 0 0 5px var(--mc); animation: skullIn .5s var(--d) cubic-bezier(.3,1.6,.5,1) both; }
+.pod.first .pod-av { width: 64px; height: 64px; font-size: 26px; }
+.pod-nm { font-family: var(--display); font-weight: 400; font-size: clamp(15px, 4.4vw, 19px); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: reveal .3s calc(var(--d) + .2s) both; }
+.pod-block { width: 100%; border-radius: 12px 12px 4px 4px; background: linear-gradient(180deg, color-mix(in srgb, var(--mc) 85%, #fff), var(--mc)); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 6px; box-shadow: inset 0 -6px 0 rgba(0,0,0,.18), 0 6px 0 rgba(0,0,0,.35); animation: podUp .55s var(--d) cubic-bezier(.3,1.4,.5,1) both; transform-origin: bottom; }
+.pod-block em { font-style: normal; font-family: var(--display); font-size: 30px; line-height: 1; }
+.pod-block span { font-size: 12px; font-weight: 900; opacity: .75; }
+.pod.p1 .pod-block { height: 104px; }
+.pod.p2 .pod-block { height: 76px; }
+.pod.p3 .pod-block { height: 56px; }
+@keyframes podUp { from { transform: scaleY(0); } }
+.res-hero .mvp { width: 100%; box-sizing: border-box; padding: 12px 16px; flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px 10px; text-align: center; }
+.res-hero .mvp small { width: 100%; }
+.res-hero .mvp b { font-size: clamp(26px, 8vw, 36px); }
+.res-safe { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 6px; }
+.res-safe b { font-family: var(--display); font-weight: 400; font-size: 36px; color: var(--yuru); }
+.res-safe span { color: var(--muted); font-weight: 700; }
+/* 称号：メダルつきのバッジ */
+.titles li { flex-direction: row !important; align-items: center; gap: 10px !important; }
+.titles li > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.medal { width: 38px; height: 38px; flex: none; color: var(--fg, #f7f3ea); }
+.medal svg { width: 100%; height: 100%; }
+/* 罰ランキング：顔アイコン・名前・バー・数 */
+.rank li { grid-template-columns: 26px 34px minmax(0,1fr) minmax(48px, 30%) 30px !important; animation: reveal .35s var(--d) both; }
+.rank .no { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: rgba(247,243,234,.1); color: var(--fg) !important; }
+.rank .no.top { background: var(--blood); color: #fff !important; }
+.r-av { width: 32px; height: 32px; border-radius: 50%; background: var(--mc); color: var(--ink); display: grid; place-items: center; font-size: 14px; }
+.r-bar { height: 12px; border-radius: 6px; background: rgba(247,243,234,.1); overflow: hidden; }
+.r-bar i { display: block; height: 100%; width: var(--w); border-radius: 6px; background: var(--mc); animation: grow .7s calc(var(--d) + .2s) cubic-bezier(.3,1.2,.5,1) both; }
+.rank .ct { text-align: right; font-size: 20px; }
 /* 結果発表：名前がスロットで回って、止まったら揺れる */
 .mvp[data-slot] b { font-variant-numeric: tabular-nums; }
 .mvp.landed { animation: mvpLand .7s cubic-bezier(.3,1.7,.5,1) both; }
 @keyframes mvpLand { 0% { transform: scale(1.18) rotate(-3deg); } 40% { transform: scale(.96) rotate(2deg); } 70% { transform: scale(1.03) rotate(-1deg); } 100% { transform: none; } }
 .result.landed .res-head { animation: jolt .5s both; }
 /* 名前が止まるまで、下の称号やランキング（答えがバレる所）は隠しとく */
-.result.wait > :not(.res-head):not(.res-sub):not(.mvp) { visibility: hidden; }
-.result.wait.landed > :not(.res-head):not(.res-sub):not(.mvp) { visibility: visible; animation: reveal .5s .2s ease-out both; }
+.result.wait > :not(.res-hero) { visibility: hidden; }
+.result.wait.landed > :not(.res-hero) { visibility: visible; animation: reveal .5s .2s ease-out both; }
+.result.wait:not(.landed) .pod.first .real { display: none; }
+.result:not(.wait) .pod .q, .result.landed .pod .q { display: none; }
+.result.wait:not(.landed) .pod-skull { opacity: 0; }
+.result.wait.landed .pod-skull { animation: skullDrop .6s cubic-bezier(.3,1.6,.5,1) both; }
+.result.wait:not(.landed) .pod.first .pod-block { height: 30px; }
+.result.wait.landed .pod.first .pod-block { transition: height .5s cubic-bezier(.3,1.5,.5,1); }
 .result.wait .mvp span { visibility: hidden; }
 .result.wait.landed .mvp span { visibility: visible; animation: reveal .4s both; }
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
@@ -1957,8 +2021,9 @@ const SFX = (() => {
     lucky: () => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "sine", 0.14, 0, i * 0.07)); },
     // ガラガラ…（だんだんゆっくり）→ ポン
     rattle: (T) => { let t = 0, k = 0; while (t < T) { tone(k % 2 ? 1250 : 980, 0.03, "square", 0.05, 0, t); t += 0.07 + k * 0.006; k++; } },
-    gachaPop: () => { SFX.rattle(GACHA_T - 0.15); noise(0.25, 0.45, 900, GACHA_T); tone(140, 0.35, "sine", 0.4, 60, GACHA_T); tone(500, 0.09, "sine", 0.2, 1100, GACHA_T + 0.25); },
-    gachaLucky: () => { SFX.rattle(GACHA_T - 0.15); [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "sine", 0.14, 0, GACHA_T + i * 0.07)); },
+    // ガラガラ → コロン（カプセルが出る）→ パカッ（割れる）→ 結果
+    gachaPop: () => { SFX.rattle(0.5); tone(700, 0.06, "triangle", 0.12, 400, 0.45); noise(0.08, 0.4, 4000, 0.76); tone(1200, 0.05, "square", 0.06, 0, 0.76); noise(0.25, 0.45, 900, GACHA_T); tone(140, 0.35, "sine", 0.4, 60, GACHA_T); },
+    gachaLucky: () => { SFX.rattle(0.5); tone(700, 0.06, "triangle", 0.12, 400, 0.45); noise(0.08, 0.35, 5000, 0.76); [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "sine", 0.14, 0, 0.8 + i * 0.07)); },
     // ドラムロール（T秒）→ ジャーン
     drumroll: (T = 2.4) => { let t = 0, k = 0; while (t < T) { noise(0.05, 0.12 + 0.18 * (t / T), 1400, t); t += 0.055; k++; } [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.55 : 0.13, "triangle", 0.18, 0, T + i * 0.1)); noise(0.5, 0.35, 5000, T + 0.3); },
     hurry: () => { tone(1800, 0.04, "square", 0.07); },
@@ -2031,25 +2096,33 @@ const SKULL = `<svg class="skull" viewBox="0 0 100 100" aria-hidden="true">
 </svg>`;
 
 // 罰ガチャのマシン（札が出る前に1.4秒ガラガラ回る）
-const GACHA_T = 1.4;
+const GACHA_T = 1.0;
 const CROWN = `<svg class="crown" viewBox="0 0 24 16" aria-label="罰が一番多い"><path d="M2 14 1 4l6 4 5-7 5 7 6-4-1 10z" fill="#ffd23f" stroke="#141210" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="1.6" fill="#e8202a"/></svg>`;
 // 長押ししてる間だけ中身が見える目隠し（スマホを渡して1人だけ見る画面用）
 const peekBox = (inner, label = "長押しで見る", cls = "") => `<div class="peek ${cls}" data-peek>
   <div class="peek-in">${inner}</div>
   <div class="peek-cover"><span class="peek-ic">${ICON.eye}</span><b>${label}</b><small>指を離したら隠れる</small></div>
 </div>`;
-const gachaMachine = () => {
-  const balls = [[44, 40, "#ffd23f"], [70, 36, "#ff5aa5"], [56, 58, "#3ec7ff"], [36, 62, "#7be36b"], [80, 60, "#ff8a1a"], [60, 26, "#b48cff"], [48, 74, "#ff4d4d"], [74, 78, "#ffd23f"]];
-  return `<div class="g-machine" aria-hidden="true"><svg viewBox="0 0 120 160">
+// ドームの中のカプセル：ドクロ顔と天使顔（6:2）
+const miniSkull = (x, y) => `<g><circle cx="${x}" cy="${y}" r="10" fill="#f7f3ea" stroke="#141210" stroke-width="2"/><circle cx="${x - 3.6}" cy="${y - 1}" r="2.8" fill="#e8202a"/><circle cx="${x + 3.6}" cy="${y - 1}" r="2.8" fill="#e8202a"/><path d="M${x - 3} ${y + 5}h6" stroke="#141210" stroke-width="1.6" stroke-linecap="round"/></g>`;
+const miniAngel = (x, y) => `<g><ellipse cx="${x}" cy="${y - 12}" rx="6" ry="2" fill="none" stroke="#ffd23f" stroke-width="2"/><circle cx="${x}" cy="${y}" r="10" fill="#fff3d6" stroke="#141210" stroke-width="2"/><path d="M${x - 6} ${y - 1}q2.5-3 5 0M${x + 1} ${y - 1}q2.5-3 5 0" fill="none" stroke="#141210" stroke-width="1.6" stroke-linecap="round"/><circle cx="${x - 6}" cy="${y + 4}" r="1.6" fill="#ff9aa8"/><circle cx="${x + 6}" cy="${y + 4}" r="1.6" fill="#ff9aa8"/></g>`;
+const CAP_SKULL = `<svg viewBox="0 0 100 100"><path d="M50 10C28 10 16 25 16 44c0 12 7 20 15 24v10c0 3 3 6 6 6h26c3 0 6-3 6-6V68c8-4 15-12 15-24C84 25 72 10 50 10z" fill="#f7f3ea" stroke="#141210" stroke-width="4"/><ellipse cx="36" cy="46" rx="9" ry="10" fill="#e8202a"/><ellipse cx="64" cy="46" rx="9" ry="10" fill="#e8202a"/><path d="M50 56l-5 8h10z" fill="#141210"/></svg>`;
+const CAP_ANGEL = `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="14" rx="20" ry="6" fill="none" stroke="#ffd23f" stroke-width="5"/><circle cx="50" cy="56" r="30" fill="#fff3d6" stroke="#141210" stroke-width="4"/><path d="M34 52q6-7 12 0M54 52q6-7 12 0" fill="none" stroke="#141210" stroke-width="4" stroke-linecap="round"/><path d="M42 68q8 7 16 0" fill="none" stroke="#141210" stroke-width="4" stroke-linecap="round"/></svg>`;
+// 罰ガチャのマシン：ガタガタ回って、ドクロか天使のカプセルが出てきて、パカッと割れる（約1秒）
+const gachaMachine = (lucky = false) => {
+  const balls = [[44, 40, 0], [70, 36, 0], [56, 58, 1], [36, 62, 0], [80, 60, 0], [60, 24, 0], [46, 78, 1], [74, 78, 0]];
+  return `<div class="g-machine ${lucky ? "lucky" : ""}" aria-hidden="true"><svg viewBox="0 0 120 160">
     <g class="gm-body">
-      <circle cx="60" cy="56" r="46" fill="rgba(255,255,255,.18)" stroke="currentColor" stroke-width="4"/>
-      <g class="gm-balls">${balls.map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="10" fill="${c}" stroke="#141210" stroke-width="2"/>`).join("")}</g>
+      <circle cx="60" cy="56" r="46" fill="rgba(255,255,255,.16)" stroke="currentColor" stroke-width="4"/>
+      <g class="gm-balls">${balls.map(([x, y, a]) => (a ? miniAngel(x, y) : miniSkull(x, y))).join("")}</g>
+      <path d="M30 34a34 34 0 0 1 22-14" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".55"/>
       <path d="M24 98h72l6 52H18z" fill="#e8202a" stroke="#141210" stroke-width="4" stroke-linejoin="round"/>
       <rect x="50" y="134" width="20" height="12" rx="3" fill="#141210"/>
       <g class="gm-handle"><circle cx="60" cy="116" r="11" fill="#f7f3ea" stroke="#141210" stroke-width="4"/><rect x="57" y="104" width="6" height="24" rx="3" fill="#141210"/></g>
     </g>
-    <circle class="gm-out" cx="60" cy="146" r="9" fill="#ffd23f" stroke="#141210" stroke-width="2"/>
-  </svg><b>ガラガラ…</b></div>`;
+  </svg>
+  <div class="gm-cap"><i class="t"></i><i class="b"></i><span class="ic">${lucky ? CAP_ANGEL : CAP_SKULL}</span></div>
+  <i class="gm-burst"></i></div>`;
 };
 const ANGEL = `<svg class="angel" viewBox="0 0 120 100" aria-hidden="true">
   <ellipse class="halo" cx="60" cy="14" rx="22" ry="6" fill="none" stroke="#ffd23f" stroke-width="5"/>
@@ -2385,7 +2458,7 @@ function vCard() {
     const drum = S.anim; // 画面が切り替わった時だけマシンを回す（メニュー開閉などの再描画では回さへん）
     if (drum) S.gIntro = true;
     return `<div class="odai ${allLucky ? "lucky" : "batsu"} ${drum ? "drum" : anim}" id="card">
-      ${drum ? gachaMachine() : ""}
+      ${drum ? gachaMachine(allLucky) : ""}
       <div class="head"><span>罰ガチャ</span></div>
       ${S.dual ? `<div class="mirror-list">${g.gacha.map((x) => `<p><b>${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : "の罰"}</b>${x.html}</p>`).join("")}</div><hr class="dual-line">` : ""}
       <div class="skull-wrap">${allLucky ? `${ANGEL}<b>ラッキー！セーフ</b>` : `${SKULL}<b>罰ゲーム確定</b>`}</div>
@@ -2867,7 +2940,7 @@ function vWfCard() {
       </div>`;
     }
     case "group": { const r = wf.res; if (S.anim) S.gIntro = true; return `<div class="odai ${r.lucky ? "lucky" : "batsu"} mode-card center ${S.anim ? "drum" : ""}" id="card">
-      ${S.anim ? gachaMachine() : ""}
+      ${S.anim ? gachaMachine(r.lucky) : ""}
       <p class="prog">多数派全員の罰</p>
       <div class="skull-wrap sm">${r.lucky ? `${ANGEL}<b>天使！全員セーフ</b>` : `${SKULL}<b>罰ゲーム</b>`}</div>
       <p class="rule-pen">${r.html}</p>
@@ -3342,16 +3415,38 @@ function vResult() {
   const tie = rows.filter((r) => r.n === top.n);
   const who = top.n === 0 ? "該当者なし" : tie.map((r) => r.m.name).join("・");
   const slot = S.anim && top.n > 0 && S.members.length > 1;
+  const rankOf = (n) => 1 + rows.filter((r) => r.n > n).length; // 同点は同じ順位
+  const maxN = Math.max(1, top.n);
+  // 表彰台：真ん中が1位、左が2位、右が3位
+  const podN = Math.min(3, rows.length);
+  const order = podN === 3 ? [1, 0, 2] : podN === 2 ? [1, 0] : [0];
+  const pod = (k) => {
+    const r = rows[k], rk = rankOf(r.n), first = k === 0;
+    return `<div class="pod p${Math.min(rk, 3)} ${first ? "first" : ""}" style="--mc:${colorOf(r.i)};--d:${(0.15 + (podN - 1 - k) * 0.35).toFixed(2)}s">
+      ${first ? `<div class="pod-skull">${CROWN}${SKULL}</div>` : ""}
+      <div class="pod-av"><span class="real">${ini(r.i)}</span>${first && slot ? `<span class="q">？</span>` : ""}</div>
+      <b class="pod-nm">${first && slot ? `<span class="q">？？？</span>` : ""}<span class="real">${esc(r.m.name)}</span></b>
+      <div class="pod-block"><em>${rk}</em><span>罰${r.n}</span></div>
+    </div>`;
+  };
+  const hero = top.n === 0
+    ? `<div class="res-safe">${ANGEL}<b>全員セーフ</b><span>平和すぎる。もう一回いっとく？</span></div>`
+    : `<div class="podium n${podN}">${order.map(pod).join("")}</div>
+       <div class="mvp" ${slot ? "data-slot" : ""}><small>MVP（悪い意味で）</small><b data-final="${esc(who)}">${slot ? "？？？" : esc(who)}</b><span>罰 ${top.n}回${tie.length === 1 && whyText(top.i) ? `（${esc(whyText(top.i))}）` : ""}</span></div>`;
+  const MEDAL = (k) => `<i class="medal" style="--m:${["#ffd23f", "#ff5aa5", "#3ec7ff", "#7be36b", "#ff8a1a", "#b48cff"][k % 6]}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h4l1 5-3 2zM17 2h-4l-1 5 3 2z" fill="currentColor" opacity=".55"/><circle cx="12" cy="15" r="7" fill="var(--m)" stroke="#141210" stroke-width="1.6"/><path d="m12 11 1.2 2.5 2.7.3-2 1.9.6 2.7-2.5-1.4-2.5 1.4.6-2.7-2-1.9 2.7-.3z" fill="#fff"/></svg></i>`;
   return `<div class="result ${slot ? "wait" : ""}">
-  <h1 class="res-head">本日の戦犯</h1>
-  <p class="res-sub">${esc(modeLine(g))}</p>
-  <div class="mvp" ${slot ? "data-slot" : ""}><small>MVP（悪い意味で）</small><b data-final="${esc(who)}">${slot ? "？？？" : esc(who)}</b><span>${top.n === 0 ? "全員セーフ。平和すぎる" : `罰 ${top.n}回`}</span></div>
-  ${(() => { const ts = titles(); return ts.length ? `<h2 class="res-h2">称号</h2><ul class="titles">${ts.map((t, k) => `<li style="--d:${(0.3 + k * 0.12).toFixed(2)}s"><small>${esc(t.title)}</small><b>${esc(titleNames(t))}</b><span>${esc(t.desc)}</span></li>`).join("")}</ul>` : ""; })()}
+  <section class="res-hero">
+    <div class="rays" aria-hidden="true"></div>
+    <p class="res-sub">${esc(modeLine(g))}</p>
+    <h1 class="res-head"><span>本日の戦犯</span></h1>
+    ${hero}
+  </section>
+  ${(() => { const ts = titles(); return ts.length ? `<h2 class="res-h2">称号</h2><ul class="titles">${ts.map((t, k) => `<li style="--d:${(0.3 + k * 0.12).toFixed(2)}s">${MEDAL(k)}<div><small>${esc(t.title)}</small><b>${esc(titleNames(t))}</b><span>${esc(t.desc)}</span></div></li>`).join("")}</ul>` : ""; })()}
   ${g.mode === "gesture" && g.gs ? `<h2 class="res-h2">ジェスチャーの点数</h2><ul class="ng-list res">${S.members.map((m, j) => ({ m, j })).sort((a, b) => g.gs.score[b.j] - g.gs.score[a.j]).map(({ m, j }) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${g.gs.score[j]}点</b></li>`).join("")}</ul>` : ""}
   ${g.mode === "memory" && g.mm ? `<h2 class="res-h2">神経衰弱の点数</h2><ul class="ng-list res">${S.members.map((m, j) => ({ m, j })).sort((a, b) => g.mm.score[b.j] - g.mm.score[a.j]).map(({ m, j }) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${g.mm.score[j]}点</b></li>`).join("")}</ul>` : ""}
   ${g.mode === "ngword" && g.ng?.words.length ? `<h2 class="res-h2">みんなのNGワード</h2><ul class="ng-list res">${S.members.map((m, j) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${esc(g.ng.words[j])}</b></li>`).join("")}</ul>` : ""}
   <h2 class="res-h2">罰ランキング</h2>
-  <ol class="rank">${rows.map((r, k) => `<li><span class="no">${k + 1}</span><i class="pc" style="background:${colorOf(r.i)}"></i><span class="nm">${esc(r.m.name)}${whyText(r.i) ? `<small>${esc(whyText(r.i))}</small>` : ""}</span><span class="ct">${r.n}</span></li>`).join("")}</ol>
+  <ol class="rank">${rows.map((r, k) => `<li style="--mc:${colorOf(r.i)};--w:${(r.n / maxN) * 100}%;--d:${(0.2 + k * 0.06).toFixed(2)}s"><span class="no ${rankOf(r.n) === 1 && r.n > 0 ? "top" : ""}">${rankOf(r.n)}</span><span class="r-av">${ini(r.i)}</span><span class="nm">${esc(r.m.name)}${whyText(r.i) ? `<small>${esc(whyText(r.i))}</small>` : ""}</span><span class="r-bar"><i></i></span><span class="ct">${r.n}</span></li>`).join("")}</ol>
   <p class="tip">${MOON}<span>${esc(resultTip())}</span></p>
   <button class="share-btn" data-act="share">${ICON.share}<span>画像で保存・シェア</span></button>
   ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}

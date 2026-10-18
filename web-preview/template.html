@@ -250,21 +250,34 @@ body[data-level="jigoku"] .odai .txt mark { background: none; text-decoration: u
 .gacha-txt .mark.ok { background: #ffd23f; color: #141210; }
 .gacha-txt .mark.ng { background: #e8202a; color: #fff; }
 
-/* 罰ガチャのマシン：最初の1.4秒ガラガラ回して、そのあと結果（中の演出は全部 --gt だけ遅らせる） */
-.odai.drum { --gt: 1.4s; position: relative; }
-.g-machine { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--card-fg, #141210); pointer-events: none; animation: gmOut .3s 1.15s ease-in forwards; }
-.g-machine svg { width: min(44%, 170px); height: auto; overflow: visible; animation: gmIn .35s cubic-bezier(.3,1.6,.5,1) both; }
-.g-machine b { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: .1em; animation: pulse .5s ease-in-out infinite; }
-.gm-body { animation: gmShake .18s linear infinite; transform-origin: 60px 150px; }
-.gm-balls { animation: gmBalls .3s linear infinite; transform-origin: 60px 56px; }
-.gm-handle { animation: gmHandle .7s cubic-bezier(.5,0,.5,1) 2 both; transform-origin: 60px 116px; }
-.gm-out { opacity: 0; animation: gmDrop .45s .95s cubic-bezier(.3,1.6,.5,1) both; }
+/* 罰ガチャのマシン：約1秒。ガタガタ→カプセルが出て真ん中へ→パカッと割れて結果（中の演出は全部 --gt だけ遅らせる） */
+.odai.drum { --gt: 1s; position: relative; }
+.g-machine { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; color: var(--card-fg, #141210); pointer-events: none; animation: gmOut .2s .95s ease-in forwards; }
+.g-machine > * { grid-area: 1 / 1; }
+.g-machine svg { width: min(58%, 220px); height: auto; overflow: visible; animation: gmIn .25s cubic-bezier(.3,1.6,.5,1) both, gmFade .2s .5s ease-in forwards; }
+.gm-body { animation: gmShake .14s linear 4; transform-origin: 60px 150px; }
+.gm-balls { animation: gmBalls .22s linear 3; transform-origin: 60px 56px; }
+.gm-handle { animation: gmHandle .5s cubic-bezier(.5,0,.5,1) both; transform-origin: 60px 116px; }
+.gm-cap { position: relative; width: 84px; height: 84px; opacity: 0; animation: gmCap .32s .42s cubic-bezier(.3,1.5,.5,1) both; }
+.gm-cap i { position: absolute; left: 0; right: 0; height: 50%; border: 4px solid #141210; box-sizing: border-box; }
+.gm-cap .t { top: 0; border-radius: 42px 42px 0 0; border-bottom-width: 2px; background: #e8202a; box-shadow: inset -8px 8px 0 rgba(255,255,255,.3); animation: capT .22s .76s ease-out forwards; }
+.gm-cap .b { bottom: 0; border-radius: 0 0 42px 42px; border-top-width: 2px; background: #f7f3ea; animation: capB .22s .76s ease-out forwards; }
+.g-machine.lucky .gm-cap .t { background: #ffd23f; }
+.gm-cap .ic { position: absolute; inset: 6px; opacity: 0; transform: scale(.4); animation: capIc .3s .78s cubic-bezier(.3,1.7,.5,1) forwards; }
+.gm-cap .ic svg { width: 100%; height: 100%; animation: none; }
+.gm-burst { width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, #fff 0, rgba(255,255,255,.7) 30%, transparent 70%); opacity: 0; animation: gmBurst .35s .76s ease-out both; }
+.g-machine.lucky .gm-burst { background: radial-gradient(circle, #fff6c2 0, rgba(255,210,63,.7) 30%, transparent 70%); }
 @keyframes gmIn { from { transform: scale(.4); opacity: 0; } }
-@keyframes gmShake { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-2.5deg); } 75% { transform: rotate(2.5deg); } }
-@keyframes gmBalls { 0% { transform: rotate(0) translateY(0); } 33% { transform: rotate(10deg) translateY(-3px); } 66% { transform: rotate(-8deg) translateY(2px); } 100% { transform: rotate(0); } }
+@keyframes gmFade { to { transform: scale(.85); opacity: 0; } }
+@keyframes gmShake { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+@keyframes gmBalls { 0% { transform: rotate(0) translateY(0); } 33% { transform: rotate(12deg) translateY(-3px); } 66% { transform: rotate(-10deg) translateY(2px); } 100% { transform: rotate(0); } }
 @keyframes gmHandle { to { transform: rotate(360deg); } }
-@keyframes gmDrop { from { opacity: 1; transform: translateY(-14px); } to { opacity: 1; transform: translateY(12px); } }
-@keyframes gmOut { to { opacity: 0; transform: scale(1.3); visibility: hidden; } }
+@keyframes gmCap { 0% { opacity: 1; transform: translateY(70px) scale(.3) rotate(-90deg); } 100% { opacity: 1; transform: translateY(0) scale(1.25) rotate(0); } }
+@keyframes capT { to { transform: translate(-34px, -46px) rotate(-50deg); opacity: 0; } }
+@keyframes capB { to { transform: translate(30px, 46px) rotate(40deg); opacity: 0; } }
+@keyframes capIc { 60% { opacity: 1; transform: scale(1.35); } 100% { opacity: 1; transform: scale(1.1); } }
+@keyframes gmBurst { 0% { opacity: 0; transform: scale(.3); } 40% { opacity: 1; } 100% { opacity: 0; transform: scale(2.4); } }
+@keyframes gmOut { to { opacity: 0; transform: scale(1.15); visibility: hidden; } }
 .odai.drum > :not(.g-machine) { animation: gmShow .01s var(--gt) both; }
 @keyframes gmShow { from { visibility: hidden; } to { visibility: visible; } }
 .odai.drum .skull { animation-delay: var(--gt), calc(var(--gt) + .6s); }
@@ -423,14 +436,65 @@ body[data-level="jigoku"] .sg-cell .in { box-shadow: 0 0 0 1px rgba(255,42,42,.3
 .res-head { font-family: var(--display); font-weight: 400; font-size: clamp(44px, 14vw, 68px); line-height: 1; margin: 18px 0 0; color: var(--blood); }
 .res-sub { margin: 0; color: var(--muted); font-weight: 700; }
 .mvp { padding: 22px 18px; border-radius: 20px; background: var(--yuru); color: var(--ink); display: flex; flex-direction: column; gap: 4px; animation: flipIn .7s cubic-bezier(.2,1.3,.4,1) both; box-shadow: 0 10px 0 rgba(0,0,0,.35); }
+/* 結果発表：放射光の上に、リボンの見出し・表彰台・MVP */
+.res-hero { position: relative; isolation: isolate; margin: 0 -16px; padding: 18px 16px 6px; display: flex; flex-direction: column; align-items: center; gap: 12px; overflow: hidden; text-align: center; }
+.rays { position: absolute; inset: -40% -40% auto; height: 180%; z-index: -1; background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(232,32,42,.22) 0 9deg, transparent 9deg 18deg); -webkit-mask: radial-gradient(circle at 50% 50%, #000 0, transparent 62%); mask: radial-gradient(circle at 50% 50%, #000 0, transparent 62%); animation: raySpin 30s linear infinite; }
+@keyframes raySpin { to { transform: rotate(360deg); } }
+.res-hero .res-sub { font-size: 12px; }
+.res-head { margin: 0; }
+.res-head span { display: inline-block; padding: 6px 22px 10px; background: var(--blood); color: #fff; transform: rotate(-3deg); box-shadow: 0 6px 0 rgba(0,0,0,.4); clip-path: polygon(0 0, 100% 0, 96% 50%, 100% 100%, 0 100%, 4% 50%); font-size: clamp(36px, 11vw, 54px); }
+.podium { width: 100%; display: grid; align-items: end; gap: 8px; margin-top: 8px; }
+.podium.n3 { grid-template-columns: 1fr 1.15fr 1fr; }
+.podium.n2 { grid-template-columns: 1fr 1.15fr; }
+.podium.n1 { grid-template-columns: 1fr; max-width: 200px; }
+.pod { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; position: relative; }
+.pod-skull { position: relative; width: 74px; margin-bottom: -6px; }
+.pod-skull .skull { width: 74px; height: 74px; animation: skullBob 1.4s ease-in-out infinite; }
+.pod-skull .crown { position: absolute; top: -14px; left: 50%; width: 40px; height: 27px; transform: translateX(-50%) rotate(-8deg); z-index: 2; animation: none; }
+@keyframes skullDrop { from { transform: translateY(-60px) scale(.3) rotate(-30deg); opacity: 0; } }
+.pod-av { width: 52px; height: 52px; border-radius: 50%; background: var(--mc); color: var(--ink); display: grid; place-items: center; font-weight: 900; font-size: 21px; box-shadow: 0 0 0 3px var(--ink), 0 0 0 5px var(--mc); animation: skullIn .5s var(--d) cubic-bezier(.3,1.6,.5,1) both; }
+.pod.first .pod-av { width: 64px; height: 64px; font-size: 26px; }
+.pod-nm { font-family: var(--display); font-weight: 400; font-size: clamp(15px, 4.4vw, 19px); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: reveal .3s calc(var(--d) + .2s) both; }
+.pod-block { width: 100%; border-radius: 12px 12px 4px 4px; background: linear-gradient(180deg, color-mix(in srgb, var(--mc) 85%, #fff), var(--mc)); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 6px; box-shadow: inset 0 -6px 0 rgba(0,0,0,.18), 0 6px 0 rgba(0,0,0,.35); animation: podUp .55s var(--d) cubic-bezier(.3,1.4,.5,1) both; transform-origin: bottom; }
+.pod-block em { font-style: normal; font-family: var(--display); font-size: 30px; line-height: 1; }
+.pod-block span { font-size: 12px; font-weight: 900; opacity: .75; }
+.pod.p1 .pod-block { height: 104px; }
+.pod.p2 .pod-block { height: 76px; }
+.pod.p3 .pod-block { height: 56px; }
+@keyframes podUp { from { transform: scaleY(0); } }
+.res-hero .mvp { width: 100%; box-sizing: border-box; padding: 12px 16px; flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px 10px; text-align: center; }
+.res-hero .mvp small { width: 100%; }
+.res-hero .mvp b { font-size: clamp(26px, 8vw, 36px); }
+.res-safe { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 6px; }
+.res-safe b { font-family: var(--display); font-weight: 400; font-size: 36px; color: var(--yuru); }
+.res-safe span { color: var(--muted); font-weight: 700; }
+/* 称号：メダルつきのバッジ */
+.titles li { flex-direction: row !important; align-items: center; gap: 10px !important; }
+.titles li > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.medal { width: 38px; height: 38px; flex: none; color: var(--fg, #f7f3ea); }
+.medal svg { width: 100%; height: 100%; }
+/* 罰ランキング：顔アイコン・名前・バー・数 */
+.rank li { grid-template-columns: 26px 34px minmax(0,1fr) minmax(48px, 30%) 30px !important; animation: reveal .35s var(--d) both; }
+.rank .no { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: rgba(247,243,234,.1); color: var(--fg) !important; }
+.rank .no.top { background: var(--blood); color: #fff !important; }
+.r-av { width: 32px; height: 32px; border-radius: 50%; background: var(--mc); color: var(--ink); display: grid; place-items: center; font-size: 14px; }
+.r-bar { height: 12px; border-radius: 6px; background: rgba(247,243,234,.1); overflow: hidden; }
+.r-bar i { display: block; height: 100%; width: var(--w); border-radius: 6px; background: var(--mc); animation: grow .7s calc(var(--d) + .2s) cubic-bezier(.3,1.2,.5,1) both; }
+.rank .ct { text-align: right; font-size: 20px; }
 /* 結果発表：名前がスロットで回って、止まったら揺れる */
 .mvp[data-slot] b { font-variant-numeric: tabular-nums; }
 .mvp.landed { animation: mvpLand .7s cubic-bezier(.3,1.7,.5,1) both; }
 @keyframes mvpLand { 0% { transform: scale(1.18) rotate(-3deg); } 40% { transform: scale(.96) rotate(2deg); } 70% { transform: scale(1.03) rotate(-1deg); } 100% { transform: none; } }
 .result.landed .res-head { animation: jolt .5s both; }
 /* 名前が止まるまで、下の称号やランキング（答えがバレる所）は隠しとく */
-.result.wait > :not(.res-head):not(.res-sub):not(.mvp) { visibility: hidden; }
-.result.wait.landed > :not(.res-head):not(.res-sub):not(.mvp) { visibility: visible; animation: reveal .5s .2s ease-out both; }
+.result.wait > :not(.res-hero) { visibility: hidden; }
+.result.wait.landed > :not(.res-hero) { visibility: visible; animation: reveal .5s .2s ease-out both; }
+.result.wait:not(.landed) .pod.first .real { display: none; }
+.result:not(.wait) .pod .q, .result.landed .pod .q { display: none; }
+.result.wait:not(.landed) .pod-skull { opacity: 0; }
+.result.wait.landed .pod-skull { animation: skullDrop .6s cubic-bezier(.3,1.6,.5,1) both; }
+.result.wait:not(.landed) .pod.first .pod-block { height: 30px; }
+.result.wait.landed .pod.first .pod-block { transition: height .5s cubic-bezier(.3,1.5,.5,1); }
 .result.wait .mvp span { visibility: hidden; }
 .result.wait.landed .mvp span { visibility: visible; animation: reveal .4s both; }
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
