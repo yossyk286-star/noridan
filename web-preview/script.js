@@ -704,9 +704,9 @@ function wfGroupBatsu() {
 
 // ---------- 傾けたらアウト ----------
 // 画面を上にしてスマホを手のひらに乗せる。スタートした瞬間の向きを0°にして、10秒キープ。
-// 地獄度の角度（ゆるめ6°・普通4°・地獄2°）を超えたらアウトで罰。周りは触らんかったら邪魔してOK
+// 地獄度の角度（ゆるめ5°・普通3°・地獄1°）を超えたらアウトで罰。周りは触らんかったら邪魔してOK
 const TILT_SEC = 10;
-const TILT_LIMIT = { yurume: 6, futsu: 4, jigoku: 2 };
+const TILT_LIMIT = { yurume: 5, futsu: 3, jigoku: 1 };
 const tiltLimit = () => TILT_LIMIT[S.level] || 4;
 const tiltSensor = { beta: null, gamma: null, at: 0, on: false, perm: "unknown" }; // perm: unknown / granted / denied / none
 const tiltVec = (b, g) => { const B = (b * Math.PI) / 180, G = (g * Math.PI) / 180; return [Math.cos(B) * Math.sin(G), -Math.sin(B), Math.cos(B) * Math.cos(G)]; };
@@ -814,10 +814,10 @@ function tiltPaint() {
     // 0°からのずれを左右・前後に分けて、限界の角度でちょうど円のフチに来るように
     const dx = Math.asin(Math.max(-1, Math.min(1, v[0] - tl.base[0]))) * 180 / Math.PI, dy = Math.asin(Math.max(-1, Math.min(1, v[1] - tl.base[1]))) * 180 / Math.PI;
     dot.style.transform = `translate(${Math.max(-1.2, Math.min(1.2, dx / lim)) * 50}%, ${Math.max(-1.2, Math.min(1.2, -dy / lim)) * 50}%)`;
-    // 限界まで残り1°でオレンジ、0.5°で赤
-    const rem = lim - tl.angle;
-    dot.classList.toggle("warn", rem <= 1 && rem > 0.5);
-    dot.classList.toggle("crit", rem <= 0.5);
+    // 限界まで残り1°でオレンジ、0.5°で赤（地獄の1°は半分ずつ：0.5°・0.25°）
+    const rem = lim - tl.angle, o = Math.min(1, lim / 2), r = Math.min(0.5, lim / 4);
+    dot.classList.toggle("warn", rem <= o && rem > r);
+    dot.classList.toggle("crit", rem <= r);
   }
 }
 function tiltOut() {

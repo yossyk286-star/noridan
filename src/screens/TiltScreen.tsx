@@ -26,7 +26,7 @@ type Props = {
 type Phase = 'intro' | 'hand' | 'count' | 'play' | 'out' | 'safe' | 'batsu';
 
 const SEC = 10;
-const LIMIT: Record<Level, number> = { yurume: 6, futsu: 4, jigoku: 2 };
+const LIMIT: Record<Level, number> = { yurume: 5, futsu: 3, jigoku: 1 };
 type Vec = [number, number, number];
 /** 端末の傾き（ラジアン）から「画面の向き」のベクトル */
 const vecOf = (b: number, g: number): Vec => [Math.cos(b) * Math.sin(g), -Math.sin(b), Math.cos(b) * Math.cos(g)];
@@ -39,7 +39,7 @@ const angleOf = (v: Vec, w: Vec) => (Math.acos(Math.max(-1, Math.min(1, v[0] * w
 
 /**
  * 傾けたらアウト：画面を上にしてスマホを手のひらに乗せる。カウントダウンが0になった瞬間の向きを0°にして10秒キープ。
- * 地獄度の角度（ゆるめ6°・普通4°・地獄2°）を超えたら即アウトで罰。周りは触らんかったら邪魔してOK。
+ * 地獄度の角度（ゆるめ5°・普通3°・地獄1°）を超えたら即アウトで罰。周りは触らんかったら邪魔してOK。
  * センサーが使えへん時は、みんなの目で判定する
  */
 export default function TiltScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
@@ -247,7 +247,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     case 'intro':
       card = (
         <IntroCard pal={pal} mode="tilt" tag={`${n}人`}>
-          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${lim}°を超えたらアウト`} note="ゆるめ6°・普通4°・地獄2°" />
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${lim}°を超えたらアウト`} note="ゆるめ5°・普通3°・地獄1°" />
           {sensor === 'none' && <Text style={[s.small, { color: fg }]}>このスマホは角度がとられへんので、みんなの目で判定するモードになる</Text>}
         </IntroCard>
       );
@@ -310,7 +310,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
                 <View style={s.ring} />
                 <View style={[s.cross, { width: 2, height: '100%' }]} />
                 <View style={[s.cross, { height: 2, width: '100%' }]} />
-                <Animated.View style={[s.dot, { backgroundColor: lim - angle <= 0.5 ? '#ff2a2a' : lim - angle <= 1 ? '#ff8a1a' : '#5bd35b', transform: dot.getTranslateTransform() }]} />
+                <Animated.View style={[s.dot, { backgroundColor: lim - angle <= Math.min(0.5, lim / 4) ? '#ff2a2a' : lim - angle <= Math.min(1, lim / 2) ? '#ff8a1a' : '#5bd35b', transform: dot.getTranslateTransform() }]} />
               </View>
               <Text style={[s.deg, { color: fg }]}>
                 {angle.toFixed(1)}

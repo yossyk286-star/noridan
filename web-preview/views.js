@@ -1136,7 +1136,7 @@ function vTilt() {
   const tl = S.game.tl;
   if (tl.phase === "intro") {
     const none = typeof window.DeviceOrientationEvent === "undefined";
-    return vIntroStage("tilt", { extra: `${lvBox(`${tiltLimit()}°を超えたらアウト（ゆるめ6°・普通4°・地獄2°）`, false)}<p class="how-note">${none ? "このブラウザは角度がとられへんので、みんなの目で判定するモードになる" : "iPhoneは次に「動きと方向へのアクセス」を聞かれるので「許可」を押してな"}</p>`, btn: "スタート", act: "tiltStart" });
+    return vIntroStage("tilt", { extra: `${lvBox(`${tiltLimit()}°を超えたらアウト（ゆるめ5°・普通3°・地獄1°）`, false)}<p class="how-note">${none ? "このブラウザは角度がとられへんので、みんなの目で判定するモードになる" : "iPhoneは次に「動きと方向へのアクセス」を聞かれるので「許可」を押してな"}</p>`, btn: "スタート", act: "tiltStart" });
   }
   return `<div id="stage" class="${S.flip ? "flipped" : ""}">
     ${vBar()}
