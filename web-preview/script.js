@@ -158,10 +158,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : g.mode === "shake" ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
@@ -182,6 +182,7 @@ function newGame(mode, again = false) {
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "intro", round: 0 }; if (again) startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
   if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: store.get("nd_wf_min", 3), count: store.get("nd_wf_n", 0), peace: store.get("nd_wf_peace", true), wolves: [] }; render(true); return; }
+  if (mode === "shake") { S.game.doer = -1; S.game.sk = { phase: "intro", round: 0, k: 0, cnt: Array(n).fill(null), best: Array(n).fill(null), tapped: Array(n).fill(false), losers: [] }; render(true); return; }
   if (mode === "tilt") { S.game.doer = -1; S.game.tl = { phase: "intro", k: 0, max: Array(n).fill(null), tries: Array(n).fill(0), outs: Array(n).fill(0) }; render(true); return; }
   if (mode === "pittari") { S.game.doer = -1; S.game.pt = { phase: "intro", round: 0 }; if (again) ptRound(); render(true); return; }
   if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
@@ -477,6 +478,7 @@ function titles() {
   const h = top(st.hit, 2); if (h) add("押し付けられ体質", h, `押し付けられ ${st.hit[h[0]]}回`);
   if (g.mode === "pittari") { const e = top(st.exact, 1); if (e) add("ピッタリ職人", e, `ピッタリ ${st.exact[e[0]]}回`); }
   if (g.mode === "tilt" && g.tl) { const tl = g.tl, ok = S.members.map((_, i) => i).filter((i) => tl.tries[i] && tl.max[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => tl.max[i])); add("鋼の手", ok.filter((i) => tl.max[i] === m), `最大でも ${m.toFixed(1)}°`); } }
+  if (g.mode === "shake" && g.sk) { const b = g.sk.best.map((v) => v ?? 0); const t = top(b, 1); if (t && S.members.length > 1) add("シェイク王", t, `10秒で ${b[t[0]]}回`); }
   if (g.mode === "wolf") { const w = top(st.wolf, 1); if (w) add("名演技", w, `ウルフで逃げ切り ${st.wolf[w[0]]}回`); }
   if (g.mode === "vote" && st.votes) { const v = top(st.votes, 2); if (v) add("みんなの的", v, `合計 ${st.votes[v[0]]}票`); }
   const d = top(st.dbl, 1); if (d) add("ギャンブラー", d, `倍プッシュ ${st.dbl[d[0]]}回（成功${st.dwin[d[0]]}）`);
@@ -761,12 +763,14 @@ function tiltGo() {
   tiltClock(tl);
 }
 // 残り秒数：1秒ごとにドクンと跳ねて、目盛りが1個ずつ消える。ラスト3秒は赤
-function tiltClock(tl) {
+function tiltClock(tl) { secClock(tl, () => S.game?.tl === tl, tiltSafe); }
+// 10秒の大きい時計（傾けたらアウト・全力シェイク共通）。st.endAt まで数えて onEnd
+function secClock(tl, alive, onEnd) {
   stopTimer();
   const paint = () => {
-    if (S.game?.tl !== tl || tl.phase !== "play") { stopTimer(); return; }
+    if (!alive() || tl.phase !== "play") { stopTimer(); return; }
     const left = tl.endAt - Date.now();
-    if (left <= 0) { stopTimer(); tiltSafe(); return; }
+    if (left <= 0) { stopTimer(); onEnd(); return; }
     const sec = Math.ceil(left / 1000), clock = document.getElementById("tlClock");
     if (!clock) return;
     const s = Math.floor(left / 1000), f = Math.floor((left % 1000) / 100);
@@ -841,6 +845,111 @@ function tiltSafe() {
   g.turn++;
   play("fanfare");
   render(true);
+}
+
+// ---------- 全力シェイク ----------
+// 1人ずつ10秒間スマホを振って、振った回数を数える。全員振ったら一番少ない人が罰（地獄は2倍）
+// 加速度が「強い→弱い」を行き来するたびに1回。センサーが無いスマホは画面の連打で数える
+const SK_SEC = 10;
+const SK_HI = 15, SK_LO = 7; // m/s²（重力ぬき）。HIを超えたら1回、LOまで下がるまで次は数えへん
+const skSensor = { at: 0, on: false, perm: "unknown", g: null };
+function skListen() {
+  if (skSensor.on || typeof window.DeviceMotionEvent === "undefined") return;
+  skSensor.on = true;
+  window.addEventListener("devicemotion", (e) => {
+    let a = e.acceleration, x, y, z;
+    if (a && a.x != null) { x = a.x; y = a.y; z = a.z; }
+    else {
+      const G = e.accelerationIncludingGravity; if (!G || G.x == null) return;
+      // 重力をゆっくり追いかけて引く
+      const g = skSensor.g || (skSensor.g = [G.x, G.y, G.z]);
+      for (let k = 0; k < 3; k++) g[k] += ([G.x, G.y, G.z][k] - g[k]) * 0.1;
+      x = G.x - g[0]; y = G.y - g[1]; z = G.z - g[2];
+    }
+    skSensor.at = Date.now();
+    skTick(Math.hypot(x, y, z));
+  });
+}
+async function skAsk() {
+  if (typeof window.DeviceMotionEvent === "undefined") { skSensor.perm = "none"; return; }
+  try {
+    if (typeof DeviceMotionEvent.requestPermission === "function") {
+      const r = await DeviceMotionEvent.requestPermission();
+      skSensor.perm = r === "granted" ? "granted" : "denied";
+    } else skSensor.perm = "granted";
+  } catch { skSensor.perm = "denied"; }
+  if (skSensor.perm === "granted") skListen();
+}
+const skLive = () => skSensor.at && Date.now() - skSensor.at < 1500;
+// 今回の順番（毎回スタートの人をずらす）
+const skWho = (sk) => (sk.k + sk.round - 1) % S.members.length;
+function skBegin() {
+  const sk = S.game.sk;
+  sk.who = skWho(sk);
+  S.game.doer = sk.who;
+  sk.phase = "hand"; sk.cur = 0; sk.armed = true; sk.mag = 0; sk.manual = false;
+}
+function skCount() {
+  const sk = S.game.sk;
+  sk.phase = "count"; sk.n = 3;
+  const step = () => {
+    if (S.game?.sk !== sk || sk.phase !== "count") return;
+    sk.n--;
+    if (sk.n <= 0) { skGo(); return; }
+    play("tick"); render(); setTimeout(step, 800);
+  };
+  play("tick"); setTimeout(step, 800);
+}
+function skGo() {
+  const sk = S.game.sk;
+  sk.manual = !skLive();
+  sk.phase = "play"; sk.cur = 0; sk.armed = true; sk.last = 0;
+  sk.endAt = Date.now() + SK_SEC * 1000; sk.sec = SK_SEC;
+  play("coin");
+  render(true);
+  secClock(sk, () => S.game?.sk === sk, skDone);
+}
+function skTick(mag) {
+  const sk = S.game?.sk;
+  if (!sk || sk.phase !== "play" || sk.manual || S.screen !== "shake") return;
+  sk.mag = mag;
+  if (sk.armed && mag > SK_HI && Date.now() - sk.last > 60) skHit();
+  else if (mag < SK_LO) sk.armed = true;
+  if (!sk.raf) sk.raf = requestAnimationFrame(() => { sk.raf = 0; skPaint(); });
+}
+function skHit() {
+  const sk = S.game.sk;
+  sk.cur++; sk.armed = false; sk.last = Date.now();
+  const el = document.getElementById("skCnt");
+  if (el) { el.textContent = sk.cur; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
+  const ph = document.getElementById("skPhone");
+  if (ph) ph.style.setProperty("--r", (sk.cur % 2 ? 1 : -1) * 16 + "deg");
+}
+function skPaint() {
+  const sk = S.game?.sk; if (!sk) return;
+  const m = document.getElementById("skMeter");
+  if (m) m.style.setProperty("--m", Math.min(1, sk.mag / 40).toFixed(3));
+}
+function skDone() {
+  const g = S.game, sk = g.sk;
+  stopTimer();
+  sk.cnt[sk.who] = sk.cur;
+  if (sk.cur > (sk.best[sk.who] ?? -1)) sk.best[sk.who] = sk.cur;
+  if (sk.manual) sk.tapped[sk.who] = true;
+  g.turn++;
+  play("fanfare"); if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+  sk.phase = sk.k + 1 >= S.members.length ? "rank" : "done";
+  if (sk.phase === "rank") {
+    g.doer = -1;
+    const min = Math.min(...sk.cnt);
+    sk.losers = S.members.map((_, i) => i).filter((i) => sk.cnt[i] === min);
+  }
+  render(true);
+}
+function skRound() {
+  const sk = S.game.sk;
+  sk.round++; sk.k = 0; sk.cnt = Array(S.members.length).fill(null); sk.losers = [];
+  skBegin();
 }
 
 // ---------- ピッタリ予想 ----------

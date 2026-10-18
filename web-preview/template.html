@@ -347,6 +347,32 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .tl-lim { margin: 4px 0 0; font-family: var(--display); font-size: 44px; line-height: 1; }
 .tl-lim small { display: block; font-family: inherit; font-size: 13px; opacity: .65; margin-top: 4px; }
 .tl-count { margin: 0; font-family: var(--display); font-size: clamp(96px, 34vw, 150px); line-height: 1; animation: pulse .8s ease-in-out infinite; }
+/* 全力シェイク */
+.sk-safe { display: flex; flex-direction: column; gap: 4px; margin: 4px 0; padding: 10px 12px; border-radius: 12px; background: rgba(255, 176, 46, .16); border: 2px solid #ffb02e; text-align: left; font-size: 13px; line-height: 1.55; }
+.sk-safe b { color: #e8780a; font-size: 14px; }
+.sk-play { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.sk-phone { display: grid; place-items: center; width: 96px; height: 96px; color: var(--pc, currentColor); transform: rotate(var(--r, 0deg)); transition: transform .06s ease-out; }
+.sk-phone svg { width: 100%; height: 100%; }
+.sk-cnt { margin: 0; font-family: var(--display); line-height: 1; font-variant-numeric: tabular-nums; }
+.sk-cnt b { font-weight: 400; font-size: clamp(72px, 26vw, 120px); display: inline-block; }
+.sk-cnt b.pop { animation: skPop .18s ease-out; }
+.sk-cnt small { font-family: inherit; font-size: 20px; opacity: .6; margin-left: 4px; }
+.sk-cnt-l b { font-size: clamp(64px, 22vw, 96px); }
+@keyframes skPop { 0% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.sk-meter { width: min(100%, 260px); height: 14px; border-radius: 7px; background: color-mix(in srgb, currentColor 12%, transparent); overflow: hidden; }
+.sk-meter i { display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(var(--m, 0)); background: linear-gradient(90deg, #7be36b, #ffd23f 55%, #ff3b3b); transition: transform .06s linear; }
+.sk-board { list-style: none; margin: 4px 0 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.sk-board li { display: grid; grid-template-columns: 22px minmax(0, 5.5em) 1fr auto auto; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; }
+.sk-rk { font-family: var(--display); opacity: .55; text-align: center; }
+.sk-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.sk-bar { height: 12px; border-radius: 6px; background: var(--mc); transform-origin: left; transform: scaleX(var(--w, 0)); }
+.sk-board b { font-family: var(--display); font-weight: 400; font-size: 20px; min-width: 2.2em; text-align: right; font-variant-numeric: tabular-nums; }
+.sk-board small { font-size: 10px; opacity: .6; }
+.sk-board li.me { outline: 2px solid var(--mc); outline-offset: 3px; border-radius: 6px; }
+.sk-board li.lose b, .sk-board li.lose .sk-nm { color: #ff3b3b; }
+.sk-board li.lose .sk-bar { background: #ff3b3b; }
+.sk-board li.wait { opacity: .4; }
+.sk-board li.wait .sk-bar { transform: scaleX(0); }
 .tl-play { gap: 10px; justify-content: flex-start !important; padding-top: 14px; }
 .tl-mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; }
 /* 残り秒数：上に大きく。1秒ごとにドクン、目盛りが1個ずつ減る */
@@ -1172,7 +1198,10 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .menu-item.hot small { color: rgba(20,18,16,.65); }
 .rank li small { display: block; font-size: 11px; color: var(--muted); }
 /* 説明・ワード一覧は札の真ん中に寄せて、画面の高さに合わせて文字も大きくする（下にぽっかり余白が出んように） */
-.mode-card.mid .mid-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: clamp(10px, 2vh, 24px); overflow-y: auto; }
+/* はみ出す時は上から（center のままやと上が切れてスクロールでも戻られへん） */
+.mode-card.mid .mid-body > :first-child { margin-top: auto; }
+.mode-card.mid .mid-body > :last-child { margin-bottom: auto; }
+.mode-card.mid .mid-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: clamp(10px, 2vh, 24px); overflow-y: auto; }
 .mode-card.mid .how { font-size: clamp(14px, 2.3vh, 22px); gap: clamp(6px, 1.4vh, 16px); }
 .mode-card.mid .how-note { font-size: clamp(12px, 1.6vh, 14px); }
 .mode-card.mid .ng-min-wrap { margin-top: 0; }

@@ -83,6 +83,7 @@ const ICON = {
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v7h16v-7M12 3v12M7 8l5-5 5 5"/></svg>`,
   users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.5-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.5 3.5 5.4"/></svg>`,
   wolf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/><path d="M17.5 3.5v1"/></svg>`,
+  shake: ico("M10 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM4.6 8.6c-1 2.2-1 4.6 0 6.8M19.4 8.6c1 2.2 1 4.6 0 6.8M2.2 6.8c-1.5 3.3-1.5 7.1 0 10.4M21.8 6.8c1.5 3.3 1.5 7.1 0 10.4"),
   tilt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5" transform="rotate(14 12 12)"/><path d="M3 20h18"/><circle cx="12.4" cy="11" r="1.6"/></svg>`,
   target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>`,
   undo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>`,
@@ -266,6 +267,7 @@ function vHome2() {
       <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.vote.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="wolf" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.wolf}</i><b>ワードウルフ</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.wolf.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="tilt"><i class="mode-ic">${ICON.tilt}</i><b>傾けたらアウト</b><span>${HELP.tilt.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="shake"><i class="mode-ic">${ICON.shake}</i><b>全力シェイク</b><span>${HELP.shake.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="pittari" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.target}</i><b>ピッタリ予想</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.pittari.desc}</span><em class="go">開始</em></button>
     </div>
   </section>
@@ -336,8 +338,8 @@ const TUT = [
   {
     step: "1 / 3",
     title: "名前を入れて、<br>遊び方を選ぶ",
-    text: "遊ぶ人の名前を入れて、遊び方を選ぶだけ。遊び方は<b>11個</b>。どれも始める前に<b>説明が出る</b>から大丈夫。",
-    art: () => `<div class="tut-modes">${["アホお題", "すごろく", "神経衰弱", "価値観ナンバー", "ジェスチャー", "褒め殺し", "NGワード", "ぶっちゃけ投票", "ワードウルフ", "ピッタリ予想", "傾けたらアウト"].map((m) => `<span>${m}</span>`).join("")}</div>`,
+    text: "遊ぶ人の名前を入れて、遊び方を選ぶだけ。遊び方は<b>12個</b>。どれも始める前に<b>説明が出る</b>から大丈夫。",
+    art: () => `<div class="tut-modes">${["アホお題", "すごろく", "神経衰弱", "価値観ナンバー", "ジェスチャー", "褒め殺し", "NGワード", "ぶっちゃけ投票", "ワードウルフ", "ピッタリ予想", "傾けたらアウト", "全力シェイク"].map((m) => `<span>${m}</span>`).join("")}</div>`,
   },
   {
     step: "2 / 3",
@@ -698,7 +700,7 @@ function vRules() {
   </div>`;
 }
 // 結果発表の罰の内訳
-const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード", mfail: "答えられへん", skull: "ドクロ", mlow: "最下位", ito: "並び間違い", glow: "ジェスチャーで当てられへん", gquota: "ジェスチャーのノルマ未達", hmlaugh: "笑った", hmfail: "褒め負け", wolf: "ワードウルフ負け", pit: "予想が一番遠い", tilt: "傾けた" };
+const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード", mfail: "答えられへん", skull: "ドクロ", mlow: "最下位", ito: "並び間違い", glow: "ジェスチャーで当てられへん", gquota: "ジェスチャーのノルマ未達", hmlaugh: "笑った", hmfail: "褒め負け", wolf: "ワードウルフ負け", pit: "予想が一番遠い", tilt: "傾けた", shake: "振った回数が最下位" };
 function whyText(i) {
   const w = S.game.st?.why?.[i];
   if (!w) return "";
@@ -1074,6 +1076,81 @@ function vWolf() {
     ${vBar()}
     <div class="deck">${vWfCard()}</div>
     ${vWfControls()}
+  </div>`;
+}
+
+// ---------- 全力シェイク（画面） ----------
+const skSafe = () => `<div class="sk-safe" role="note"><b>⚠ スマホが飛ばんように</b><span>ガッチリ握る（ストラップは手首に）・周りの人やグラスから離れる・濡れた手はNG・手は絶対に離さへん</span></div>`;
+function skBoard(hi) {
+  const sk = S.game.sk, n = S.members.length;
+  const rows = S.members.map((_, i) => i).filter((i) => sk.cnt[i] != null).sort((a, b) => sk.cnt[b] - sk.cnt[a]);
+  const max = Math.max(1, ...rows.map((i) => sk.cnt[i]));
+  const lose = sk.phase === "rank" || sk.phase === "batsu" ? sk.losers : [];
+  return `<ol class="sk-board">${rows.map((i, r) => `<li class="${lose.includes(i) ? "lose" : ""} ${i === hi ? "me" : ""}" style="--mc:${colorOf(i)};--w:${(sk.cnt[i] / max).toFixed(3)}">
+      <span class="sk-rk">${r + 1}</span><span class="sk-nm">${esc(S.members[i].name)}</span><i class="sk-bar"></i><b>${sk.cnt[i]}</b>${sk.tapped[i] ? `<small>連打</small>` : ""}
+    </li>`).join("")}${S.members.map((_, i) => i).filter((i) => sk.cnt[i] == null).map((i) => `<li class="wait" style="--mc:${colorOf(i)}"><span class="sk-rk">-</span><span class="sk-nm">${esc(S.members[i].name)}</span><i class="sk-bar"></i><b>?</b></li>`).join("")}</ol>`;
+}
+function vShakeCard() {
+  const g = S.game, sk = g.sk, n = S.members.length;
+  switch (sk.phase) {
+    case "hand": return `<div class="odai mode-card center" id="card">
+      <p class="prog">第${sk.round}回戦・${sk.k + 1}/${n}人目</p>
+      ${bigWho(sk.who, "の番")}
+      ${skSafe()}
+      <p class="hand-note">3・2・1のあと${SK_SEC}秒間、ひたすら振る</p>
+    </div>`;
+    case "count": return `<div class="odai mode-card center" id="card">
+      <p class="prog">${mName(sk.who)}、ガッチリ握って…</p>
+      <p class="tl-count">${sk.n}</p>
+      <p class="hand-note">手は絶対に離さへんこと</p>
+    </div>`;
+    case "play": return `<div class="odai mode-card center tl-play sk-play" id="card" ${sk.manual ? `data-tap="sk"` : ""}>
+      <div class="tl-clock" id="tlClock">
+        <p class="tl-sec"><b id="tlSec">${SK_SEC}</b><span id="tlFrac">.0</span><small>秒</small></p>
+        <div class="tl-pips">${Array.from({ length: SK_SEC }, (_, i) => `<i class="tl-pip${i < SK_SEC - 1 ? " on" : " now"}"></i>`).join("")}</div>
+      </div>
+      <div class="tl-mid">
+        <i class="sk-phone" id="skPhone">${ICON.shake}</i>
+        <p class="sk-cnt"><b id="skCnt">0</b><small>回</small></p>
+        ${sk.manual ? `<p class="hand-note">このスマホは振ったのがとられへんので、<b>画面を連打</b>した回数で勝負</p>` : `<div class="sk-meter" id="skMeter"><i></i></div>`}
+      </div>
+    </div>`;
+    case "done": return `<div class="odai mode-card center" id="card">
+      <p class="prog">${mName(sk.who)}の記録</p>
+      <p class="sk-cnt sk-cnt-l"><b>${sk.cnt[sk.who]}</b><small>回</small></p>
+      ${skBoard(sk.who)}
+    </div>`;
+    case "rank": return `<div class="odai batsu mode-card center" id="card">
+      <p class="prog">第${sk.round}回戦の結果</p>
+      ${skBoard(-1)}
+      <p class="ng-lead">${sk.losers.map(mName).join("・")}が最下位${S.level === "jigoku" ? "（罰2倍）" : ""}</p>
+    </div>`;
+    case "batsu": return vCard();
+  }
+  return "";
+}
+function vShakeControls() {
+  const g = S.game, sk = g.sk, n = S.members.length;
+  switch (sk.phase) {
+    case "hand": return `<button class="big" data-act="skReady">ガッチリ握った → カウントダウン</button>`;
+    case "count": return `<p class="hint">まだ振らんといて</p>`;
+    case "play": return `<p class="hint">${sk.manual ? "画面を連打！" : "振れ振れ振れ！（手は離さへん）"}</p>`;
+    case "done": return `<button class="big" data-act="skNext">次は${mName(skWho({ k: sk.k + 1, round: sk.round }))}</button>`;
+    case "rank": return `<button class="big has-pen" data-act="skGacha">${sk.losers.map(mName).join("・")}に罰ガチャ</button>`;
+    case "batsu": return `<button class="big" data-act="skAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次の回戦</button>`;
+  }
+  return "";
+}
+function vShake() {
+  const sk = S.game.sk;
+  if (sk.phase === "intro") {
+    const none = typeof window.DeviceMotionEvent === "undefined";
+    return vIntroStage("shake", { extra: `${lvBox(S.level === "jigoku" ? "最下位の罰が2倍" : "最下位が罰", false)}${skSafe()}<p class="how-note">${none ? "このブラウザは振ったのがとられへんので、画面の連打で勝負するモードになる" : "iPhoneは次に「動きと方向へのアクセス」を聞かれるので「許可」を押してな"}</p>`, btn: "スタート", act: "skStart" });
+  }
+  return `<div id="stage" class="${S.flip ? "flipped" : ""}">
+    ${vBar()}
+    <div class="deck">${vShakeCard()}</div>
+    ${vShakeControls()}
   </div>`;
 }
 
@@ -1783,11 +1860,11 @@ function render(anim) {
   S.gIntro = false;
   // 画面が変わった時だけスライドして入ってくる
   const key = sc === "home" ? (S.nightAsk ? "night" : "home" + S.step) : sc;
-  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, memory: 2, ito: 2, gesture: 2, homeru: 2, ngword: 2, vote: 2, wolf: 2, pittari: 2, tilt: 2, result: 3 };
+  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, memory: 2, ito: 2, gesture: 2, homeru: 2, ngword: 2, vote: 2, wolf: 2, pittari: 2, tilt: 2, shake: 2, result: 3 };
   const moved = S.navKey && S.navKey !== key;
   const dir = moved && ORDER[key] < ORDER[S.navKey] ? "back" : "fwd";
   S.navKey = key;
-  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "memory" ? vMemory() : sc === "ito" ? vIto() : sc === "gesture" ? vGesture() : sc === "homeru" ? vHomeru() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : sc === "wolf" ? vWolf() : sc === "pittari" ? vPittari() : sc === "tilt" ? vTilt() : vResult();
+  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "memory" ? vMemory() : sc === "ito" ? vIto() : sc === "gesture" ? vGesture() : sc === "homeru" ? vHomeru() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : sc === "wolf" ? vWolf() : sc === "pittari" ? vPittari() : sc === "tilt" ? vTilt() : sc === "shake" ? vShake() : vResult();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
   overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   if (onStage) { fixHeight(); fitCard(); }
@@ -1849,6 +1926,7 @@ function cue() {
   if (sc === "homeru") { const p = S.game.hm.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "go" ? "coin" : "flip"); return; }
   if (sc === "ito") { const p = S.game.it.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? (S.game.it.bad.length ? "warn" : "fanfare") : "flip"); return; }
   if (sc === "memory") { const p = S.game.mm.phase; play(p === "skull" ? "boom" : p === "fail" || p === "low" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "match" ? "coin" : p === "miss" ? "warn" : p === "over" ? "fanfare" : "flip"); if (p === "skull") boomFlash(); return; }
+  if (sc === "shake") { if (S.game.sk.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
   if (sc === "tilt") { if (S.game.tl.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
   if (sc === "wolf") { const p = S.game.wf.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "group" ? (S.game.wf.res.lucky ? "lucky" : "pop") : p === "reveal" || p === "result" ? "fanfare" : "flip"); return; }
   if (sc === "pittari") { const p = S.game.pt.phase; if (p === "input" || p === "answer") return; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? "fanfare" : "flip"); return; }
@@ -1899,6 +1977,8 @@ function modeFrame() {
   if (g.wf && ["vhand", "vote"].includes(g.wf.phase)) return colorOf(g.wf.order[g.wf.k]);
   if (g.wf && g.wf.phase === "guess" && g.wf.wolves.length) return colorOf(g.wf.wolves[0]);
   if (g.pt && ["hand", "input"].includes(g.pt.phase)) return colorOf(g.pt.order[g.pt.k]);
+  if (g.sk && g.sk.phase === "rank" && g.sk.losers.length) return "#ff2a2a";
+  if (g.sk && g.sk.who != null && g.sk.phase !== "intro") return colorOf(g.sk.who);
   if (g.tl && g.tl.who != null && g.tl.phase !== "intro") return g.tl.phase === "out" ? "#ff2a2a" : colorOf(g.tl.who);
   if (g.it && ["hand", "look"].includes(g.it.phase)) return colorOf(g.it.viewer);
   if (g.hm && g.hm.phase === "batsu" && g.hm.loser != null) return colorOf(g.hm.loser);
@@ -2191,6 +2271,18 @@ function onClick(e) {
     case "tiltNext": g.tl.k++; tiltBegin(); render(true); break;
     case "tiltAccept": applyAdds(); g.gacha = []; g.phase = "play"; g.tl.k++; tiltBegin(); render(true); break;
 
+    // 全力シェイク
+    case "skStart": skAsk().finally(() => { skRound(); render(true); }); break;
+    case "skReady": skCount(); render(true); break;
+    case "skNext": g.sk.k++; skBegin(); render(true); break;
+    case "skGacha": {
+      const sk = g.sk, n = S.level === "jigoku" ? 2 : 1;
+      g.add = new Map(sk.losers.map((t) => [t, n])); g.addReason = "shake";
+      g.gacha = sk.losers.map((t) => ({ i: t, n, ...drawBatsu(t, n) }));
+      g.doer = -1; g.phase = "batsu"; sk.phase = "batsu"; render(true); break;
+    }
+    case "skAccept": applyAdds(); g.gacha = []; g.phase = "play"; skRound(); render(true); break;
+
     // ピッタリ予想
     case "ptBegin": ptRound(); render(true); break;
     case "ptSkip": g.pt.round--; ptRound(); render(true); break;
@@ -2294,6 +2386,8 @@ function onClick(e) {
   }
 }
 app.addEventListener("click", onClick);
+// 全力シェイクの連打モード：click だと遅いので押した瞬間に数える
+app.addEventListener("pointerdown", (e) => { if (e.target.closest('[data-tap="sk"]') && S.game?.sk?.phase === "play" && S.game.sk.manual) { e.preventDefault(); skHit(); } });
 // 長押しで見る：押してる間だけ .on
 app.addEventListener("pointerdown", (e) => {
   const pk = e.target.closest("[data-peek]");
