@@ -1,9 +1,10 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /** 線のアイコン（お試し版と同じ形）。色は color、太さは中で統一 */
-export type IconName = 'gear' | 'flip' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale';
+export type IconName = 'gear' | 'flip' | 'split' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale';
 
 const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
+  split: 'M6.5 3.5h11A2.5 2.5 0 0 1 20 6v12a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18V6a2.5 2.5 0 0 1 2.5-2.5zM4 12h16M9 7.5h6M9 16.5h6',
   flip: 'M7 4v16M7 4 3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4',
   back: 'M15 5l-7 7 7 7',
   close: 'M18 6 6 18M6 6l12 12',

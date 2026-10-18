@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Tap } from './Tap';
 import type React from 'react';
-import { Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { isSituational, mustPick, needsPick, othersOf, penHead } from '../lib/game';
 import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
@@ -41,14 +41,28 @@ export function Frame({ color }: { color: string }) {
 
 /** 上のバー：左に罰スコアの顔アイコン列、右に「⋯」メニュー */
 export function ScoreBar({
-  pal, members, pen, rev, doer, onMenu,
-}: { pal: Pal; members: Member[]; pen: number[]; rev: boolean[]; doer: number; onMenu: () => void }) {
+  pal, members, pen, rev, doer, onMenu, flipped, onFlip,
+}: { pal: Pal; members: Member[]; pen: number[]; rev: boolean[]; doer: number; onMenu: () => void; flipped?: boolean; onFlip?: () => void }) {
+  const { dual, setDual } = usePrefs();
+  const { width } = useWindowDimensions();
+  const [all, setAll] = useState(false);
+  // 右のボタン（上下反転・向かい合わせ・⋯）をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
+  const btns = (onFlip ? 1 : 0) + 2;
+  const fit = Math.max(2, Math.floor((Math.min(width, 560) - 32 - btns * 50 - 18) / 44));
+  let shown = members.map((_, i) => i);
+  if (members.length > fit) {
+    shown = shown.slice(0, fit - 1);
+    if (doer >= 0 && !shown.includes(doer)) shown[shown.length - 1] = doer; // 今の番の人は必ず見せる
+  }
+  const hidden = members.length - shown.length;
+  const ranking = members.map((m, i) => ({ m, i, n: pen[i] })).sort((a, b) => b.n - a.n);
+  const quick = (on: boolean) => [styles.menuBtn, { backgroundColor: on ? pal.fg : pal.chip }];
   return (
     <View style={styles.bar}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.score} style={{ flex: 1 }}>
-        {members.map((m, i) => (
+      <View style={[styles.score, { flex: 1, flexDirection: 'row', overflow: 'hidden' }]}>
+        {shown.map((i) => (
           <View key={i} style={[styles.av, { backgroundColor: colorOf(i) }, i === doer && { borderWidth: 3, transform: [{ scale: 1.08 }] }]}>
-            <Text style={styles.avText}>{m.name.slice(0, 1)}</Text>
+            <Text style={styles.avText}>{members[i].name.slice(0, 1)}</Text>
             {pen[i] > 0 && (
               <View style={[styles.cnt, { borderColor: pal.bg }]}>
                 <Text style={styles.cntText}>{pen[i]}</Text>
@@ -61,10 +75,46 @@ export function ScoreBar({
             )}
           </View>
         ))}
-      </ScrollView>
+        {hidden > 0 && (
+          <Tap onPress={() => setAll(true)} accessibilityLabel="全員の罰を見る" style={[styles.av, { backgroundColor: pal.chip, borderColor: pal.muted }]}>
+            <Text style={[styles.avText, { color: pal.fg }]}>…</Text>
+            <View style={[styles.cnt, { borderColor: pal.bg, backgroundColor: pal.fg }]}>
+              <Text style={[styles.cntText, { color: pal.bg }]}>{hidden}</Text>
+            </View>
+          </Tap>
+        )}
+      </View>
+      {onFlip && (
+        <Tap onPress={onFlip} accessibilityLabel="上下反転" accessibilityState={{ selected: !!flipped }} style={quick(!!flipped)}>
+          <Icon name="flip" color={flipped ? pal.bg : pal.fg} size={19} />
+        </Tap>
+      )}
+      <Tap onPress={() => setDual(!dual)} accessibilityLabel="向かい合わせ表示" accessibilityState={{ selected: dual }} style={quick(dual)}>
+        <Icon name="split" color={dual ? pal.bg : pal.fg} size={19} />
+      </Tap>
       <Tap onPress={onMenu} accessibilityLabel="メニュー" style={[styles.menuBtn, { backgroundColor: pal.chip }]}>
         <Icon name="more" color={pal.fg} size={20} />
       </Tap>
+      <Modal visible={all} transparent animationType="slide" onRequestClose={() => setAll(false)}>
+        <Pressable style={styles.sheetBack} onPress={() => setAll(false)}>
+          <Pressable style={[styles.sheet, { maxHeight: '88%' }]} onPress={() => {}}>
+            <ScrollView contentContainerStyle={{ gap: 8 }}>
+              <Text style={styles.sheetTitle}>全員の罰</Text>
+              {ranking.map((r, k) => (
+                <View key={r.i} style={[styles.ruleItem, { flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
+                  <Text style={[styles.ruleItemHead, { width: 22 }]}>{k + 1}</Text>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: colorOf(r.i) }} />
+                  <Text style={[styles.ruleItemHead, { flex: 1 }]} numberOfLines={1}>{r.m.name}{r.i === doer ? '（いまの番）' : ''}</Text>
+                  <Text style={styles.ruleItemHead}>{r.n}</Text>
+                </View>
+              ))}
+              <Tap onPress={() => setAll(false)} style={styles.sheetGhost}>
+                <Text style={styles.sheetGhostText}>閉じる</Text>
+              </Tap>
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -173,15 +223,47 @@ export function RuleSheet({
   );
 }
 
-/** 時限爆弾が作動中の表示。中身とあと何ターンかは出さない */
+/** 時限爆弾が作動中の表示。中身とあと何ターンかは出さない。仕掛け人だけ「中身を見る」で見直せる */
 export function BombBanner({ pal, members, bomb }: { pal: Pal; members: Member[]; bomb: Bomb | null }) {
+  const [look, setLook] = useState(0);
   if (!bomb) return null;
+  const nm = members[bomb.owner].name;
+  const close = () => setLook(0);
   return (
     <View style={[styles.rule, { borderColor: pal.fg, borderStyle: 'solid' }]}>
       <Fuse color={pal.fg} />
-      <Text style={[styles.ruleText, { color: pal.fg, flexShrink: 1 }]}>
-        <Text style={styles.ruleHead}>時限爆弾 作動中</Text>{'\n'}仕掛け人：{members[bomb.owner].name}
+      <Text style={[styles.ruleText, { color: pal.fg, flex: 1 }]}>
+        <Text style={styles.ruleHead}>時限爆弾 作動中</Text>{'\n'}仕掛け人：{nm}
       </Text>
+      <Tap onPress={() => setLook(1)} accessibilityLabel="時限爆弾の中身を見る" style={[styles.ruleOut, { borderWidth: 1.5, borderColor: pal.fg }]}>
+        <Text style={[styles.ruleOutText, { color: pal.fg }]}>中身を見る</Text>
+      </Tap>
+      <Modal visible={look > 0} transparent animationType="slide" onRequestClose={close}>
+        <Pressable style={styles.sheetBack} onPress={close}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            {look === 1 ? (
+              <>
+                <Text style={styles.sheetTitle}>{nm}だけ見て</Text>
+                <Text style={styles.ruleItemText}>ほかの人は目そらして！</Text>
+                <Tap onPress={() => setLook(2)} style={styles.sheetBig}>
+                  <Text style={styles.sheetBigText}>{nm}が見る</Text>
+                </Tap>
+              </>
+            ) : (
+              <>
+                <Text style={styles.sheetTitle}>時限爆弾の中身</Text>
+                <Text style={{ color: '#f7f3ea', fontSize: 22, fontWeight: '900', lineHeight: 34 }}>
+                  <Text style={{ backgroundColor: alpha('#ff7a1a', 0.55) }}>{bomb.cond}</Text>奴を、こっそり監視
+                </Text>
+                <Text style={styles.ruleItemText}>見たらすぐ閉じてな</Text>
+              </>
+            )}
+            <Tap onPress={close} style={styles.sheetGhost}>
+              <Text style={styles.sheetGhostText}>閉じる</Text>
+            </Tap>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -763,7 +845,7 @@ const styles = StyleSheet.create({
   cntText: { color: '#fff', fontSize: 10, fontWeight: '900' },
   rvDot: { position: 'absolute', bottom: -5, right: -5, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   rvText: { fontSize: 9, fontWeight: '900' },
-  menuBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  menuBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   nextUp: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nextText: { fontSize: 13, fontWeight: '900' },
   avSm: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },

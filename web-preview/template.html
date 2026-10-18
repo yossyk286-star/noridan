@@ -185,6 +185,11 @@ body:not(.stage) .frame { display: none; }
 .rule { border: 2px dashed var(--line); border-radius: 12px; padding: 8px 12px; font-size: 13px; font-weight: 700; display: flex; gap: 10px; align-items: center; }
 .rule b { font-size: 11px; letter-spacing: .12em; white-space: nowrap; }
 .rule.bomb { border-style: solid; border-color: var(--fg); }
+.rule.bomb > span:nth-child(2) { flex: 1; min-width: 0; }
+.rule-out.look { color: var(--fg); border-color: var(--fg); }
+.bomb-look .bomb-cond { font-size: 22px; font-weight: 900; line-height: 1.6; margin: 6px 0 2px; }
+.bomb-look .bomb-cond mark { background: color-mix(in srgb, var(--mc) 55%, transparent); color: inherit; padding: 0 2px; }
+.sheet-note { color: var(--muted); font-size: 13px; font-weight: 700; margin: 4px 0 8px; }
 .fuse { position: relative; width: 46px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; flex: none; }
 .fuse::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, var(--fg) 0 6px, transparent 6px 10px); animation: burn 1.2s linear infinite; }
 @keyframes burn { from { transform: translateX(-10px); } to { transform: translateX(0); } }
@@ -830,6 +835,17 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 #stage.mm .deck { min-height: 0; }
 .ng-lv { margin: 0; padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--card-edge) 16%, transparent); font-size: 14px; font-weight: 900; line-break: strict; }
 .ng-lv small { display: block; font-size: 12px; opacity: .75; margin-top: 2px; }
+/* 上のバー：上下反転・向かい合わせのボタン、入りきらん人の「…」 */
+.bar .bar-btn { width: 40px; height: 40px; border-radius: 50%; color: var(--muted); }
+.bar .bar-btn svg { width: 19px; height: 19px; }
+.bar .bar-btn[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.av.more { background: var(--chip); color: var(--fg); box-shadow: 0 0 0 2px var(--line); font-size: 16px; letter-spacing: -1px; }
+.av.more .cnt { background: var(--fg); color: var(--bg); }
+.score { overflow: hidden; }
+/* メニューの結果発表は目立たせる */
+.menu-item.hot { background: var(--yuru); color: var(--ink); }
+.menu-item.hot small { color: rgba(20,18,16,.65); }
+.rank li small { display: block; font-size: 11px; color: var(--muted); }
 /* 説明・ワード一覧は札の真ん中に寄せて、画面の高さに合わせて文字も大きくする（下にぽっかり余白が出んように） */
 .mode-card.mid .mid-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: clamp(10px, 2vh, 24px); overflow-y: auto; }
 .mode-card.mid .how { font-size: clamp(14px, 2.3vh, 22px); gap: clamp(6px, 1.4vh, 16px); }

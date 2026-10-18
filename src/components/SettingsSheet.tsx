@@ -60,9 +60,6 @@ export default function SettingsSheet({ visible, sound, dual, voice, night, onSo
                 </Tap>
               </View>
             )}
-            <Tap style={s.ghost} onPress={onTutorial}>
-              <Text style={s.ghostText}>遊び方を見る</Text>
-            </Tap>
             <Tap
               style={s.ghost}
               onPress={() => {
@@ -70,8 +67,8 @@ export default function SettingsSheet({ visible, sound, dual, voice, night, onSo
                 onTutorial();
               }}
             >
-              <Text style={s.ghostText}>説明をもう一回ぜんぶ出す</Text>
-              <Text style={s.ghostSub}>メンバー登録・モード選択・ゲーム中のひとこと説明</Text>
+              <Text style={s.ghostText}>遊び方をもう一回見る</Text>
+              <Text style={s.ghostSub}>最初の説明と、各画面のひとこと説明がまた出る</Text>
             </Tap>
             <Tap style={s.ghost} onPress={onClose}>
               <Text style={s.ghostText}>閉じる</Text>

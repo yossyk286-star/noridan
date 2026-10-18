@@ -70,6 +70,7 @@ const ICON = {
   edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>`,
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v7h16v-7M12 3v12M7 8l5-5 5 5"/></svg>`,
   users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.5-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.5 3.5 5.4"/></svg>`,
+  split: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 12h16M9 7.5h6M9 16.5h6"/></svg>`,
   hand: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11V4.5a1.5 1.5 0 0 1 3 0V12M14 11.5V6a1.5 1.5 0 0 1 3 0v7.5c0 4-2.5 7-6.5 7S5 18 4 15l-1-3a1.5 1.5 0 0 1 2.8-1L8 14"/></svg>`,
   heart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>`,
   num: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18h16"/><path d="M6 14v4M10 11v7M14 8v10M18 5v13"/></svg>`,
@@ -258,8 +259,7 @@ function vSheet() {
         <p class="note">夜はしゃべるだけ、深夜は軽いタッチあり（脱ぐは無し）。下ネタNGの人には振られへん。夜お題は「無理」で罰なしパス。</p>
         <button class="ghost" data-act="nightOff">夜モードをやめる</button>
       </div>` : ""}
-      <button class="ghost" data-act="tut">遊び方を見る</button>
-      <button class="ghost" data-act="coachReset">説明をもう一回ぜんぶ出す<small class="ghost-sub">メンバー登録・モード選択・ゲーム中のひとこと説明</small></button>
+      <button class="ghost" data-act="coachReset">遊び方をもう一回見る<small class="ghost-sub">最初の説明と、各画面のひとこと説明がまた出る</small></button>
       <button class="ghost" data-act="sheetClose">閉じる</button>
     </div>
   </div>`;
@@ -451,7 +451,7 @@ function fitSize(html, small, scale = 1) {
 function vRule() {
   const g = S.game;
   const bomb = g.bomb && !g.phase.startsWith("bomb")
-    ? `<div class="rule bomb"><span class="fuse" aria-hidden="true"></span><span><b>時限爆弾 作動中</b><br><span class="nowrap">仕掛け人：${esc(S.members[g.bomb.owner].name)}</span></span></div>` : "";
+    ? `<div class="rule bomb"><span class="fuse" aria-hidden="true"></span><span><b>時限爆弾 作動中</b><br><span class="nowrap">仕掛け人：${esc(S.members[g.bomb.owner].name)}</span></span><button class="rule-out look" data-act="bombLook">中身を見る</button></div>` : "";
   // ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので）
   // 新しい順に2つまで（画面を圧迫せんように）
   const list = g.rules.map((r, k) => ({ r, k })).filter(({ r }) => !(r.card && r.card === g.card && g.phase === "play")).reverse();
@@ -466,13 +466,58 @@ function vWho() {
 }
 // 上のバー：左に罰スコアの顔アイコン列、右に「⋯」メニューだけ
 function vBar() {
-  const g = S.game;
+  const g = S.game, n = S.members.length;
+  // 右のボタン3つ（上下反転・向かい合わせ・⋯）の分をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
+  const frameW = Math.min(window.innerWidth, 560) - 32;
+  const fit = Math.max(2, Math.floor((frameW - 3 * 46 - 18) / 44));
+  let shown = S.members.map((_, i) => i);
+  if (n > fit) {
+    shown = shown.slice(0, fit - 1);
+    if (g.doer >= 0 && !shown.includes(g.doer)) shown[shown.length - 1] = g.doer; // 今の番の人は必ず見せる
+  }
+  const hidden = n - shown.length;
+  const rv = (i) => g.rev[i] && (g.mode === "odai" || g.mode === "sugoroku");
   return `<div class="bar">
-    <div class="score" aria-label="罰スコア">${S.members.map((m, i) => `
-      <span class="av ${i === g.doer ? "is-turn" : ""}" style="--mc:${colorOf(i)}" title="${esc(m.name)} 罰${g.pen[i]}">
-        ${esc(m.name.slice(0, 1))}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${g.rev[i] && (g.mode === "odai" || g.mode === "sugoroku") ? `<i class="rv">↺</i>` : ""}
-      </span>`).join("")}</div>
+    <div class="score" aria-label="罰スコア">${shown.map((i) => `
+      <span class="av ${i === g.doer ? "is-turn" : ""}" style="--mc:${colorOf(i)}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
+        ${esc(S.members[i].name.slice(0, 1))}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
+      </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
+    <button class="icon-btn bar-btn" data-act="flip" aria-pressed="${S.flip}" aria-label="上下反転">${ICON.flip}</button>
+    <button class="icon-btn bar-btn" data-act="dual" aria-pressed="${S.dual}" aria-label="向かい合わせ表示">${ICON.split}</button>
     <button class="icon-btn menu-btn" data-act="menu" aria-label="メニュー">${ICON.more}</button>
+  </div>`;
+}
+// 時限爆弾の中身を仕掛け人だけ見直す（1段目で他の人に目をそらさせる）
+function vBombLook() {
+  const g = S.game, b = g.bomb;
+  if (!b) return "";
+  const nm = esc(S.members[b.owner].name);
+  return `
+  <div class="sheet-back" data-act="bombLookClose">
+    <div class="sheet bomb-look" role="dialog" aria-label="時限爆弾の中身" data-stop>
+      <div class="sheet-grip"></div>
+      ${S.bombLook === 1
+        ? `<h2>${nm}だけ見て</h2><p class="sheet-note">ほかの人は目そらして！</p>
+           <button class="big" data-act="bombLookShow">${nm}が見る</button>`
+        : `<h2>時限爆弾の中身</h2>
+           <p class="bomb-cond"><mark style="--mc:#ff7a1a">${esc(b.cond)}</mark>奴を、こっそり監視</p>
+           <p class="sheet-note">見たらすぐ閉じてな</p>`}
+      <button class="ghost" data-act="bombLookClose">閉じる</button>
+    </div>
+  </div>`;
+}
+// 「…」から開く、全員の罰の一覧
+function vScores() {
+  const g = S.game;
+  const rows = S.members.map((m, i) => ({ m, i, n: g.pen[i] })).sort((a, b) => b.n - a.n);
+  return `
+  <div class="sheet-back" data-act="scoresClose">
+    <div class="sheet" role="dialog" aria-label="全員の罰" data-stop>
+      <div class="sheet-grip"></div>
+      <h2>全員の罰</h2>
+      <ol class="rank">${rows.map((r, k) => `<li><span class="no">${k + 1}</span><i class="pc" style="background:${colorOf(r.i)}"></i><span class="nm">${esc(r.m.name)}${r.i === g.doer ? "<small>いまの番</small>" : ""}</span><span class="ct">${r.n}</span></li>`).join("")}</ol>
+      <button class="ghost" data-act="scoresClose">閉じる</button>
+    </div>
   </div>`;
 }
 function vMenu() {
@@ -482,9 +527,8 @@ function vMenu() {
     <div class="sheet menu" role="dialog" aria-label="メニュー" data-stop>
       <div class="sheet-grip"></div>
       <p class="menu-meta">${esc(modeLine(g))}</p>
-      <button class="menu-item" data-act="flip">${ICON.flip}<span>上下反転<small>向かいの人に見せる</small></span><b>${S.flip ? "ON" : "OFF"}</b></button>
+      <button class="menu-item hot" data-act="end">${ICON.flag}<span>結果発表<small>ここで終わって、罰が一番多い人を発表</small></span></button>
       <button class="menu-item" data-act="rules">${ICON.book}<span>ルール早見表<small>${MODE_NAME[g.mode]}の遊び方</small></span></button>
-      <button class="menu-item" data-act="end">${ICON.flag}<span>結果発表<small>ここで終わって戦犯を発表</small></span></button>
       <button class="menu-item" data-act="sheet">${ICON.gear}<span>設定<small>効果音・読み上げ・遊び方</small></span></button>
       <button class="menu-item danger" data-act="home">${ICON.exit}<span>ゲームをやめる<small>罰の記録は消える</small></span></button>
       <button class="ghost" data-act="menuClose">閉じる</button>
@@ -1259,7 +1303,7 @@ function render(anim) {
   S.navKey = key;
   app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "memory" ? vMemory() : sc === "ito" ? vIto() : sc === "gesture" ? vGesture() : sc === "homeru" ? vHomeru() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : vResult();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
-  overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
+  overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   if (onStage) { fixHeight(); fitCard(); }
   if (anim) { window.scrollTo(0, 0); cue(); speakNow(); }
   if (!onStage && sc !== "result") stopSpeak();
@@ -1354,7 +1398,7 @@ function onClick(e) {
   const b = e.target.closest("[data-act]");
   if (!b || b.disabled) return;
   // シートの中身をタップしても閉じないように
-  if ((b.dataset.act === "sheetClose" || b.dataset.act === "menuClose") && b.classList.contains("sheet-back") && e.target.closest("[data-stop]")) return;
+  if ((b.dataset.act === "sheetClose" || b.dataset.act === "menuClose" || b.dataset.act === "scoresClose" || b.dataset.act === "rulesClose" || b.dataset.act === "bombLookClose") && b.classList.contains("sheet-back") && e.target.closest("[data-stop]")) return;
   SFX.unlock();
   if (navigator.vibrate && b.tagName === "BUTTON") navigator.vibrate(6); // 押した手応え（Androidのみ）
   const act = b.dataset.act, g = S.game, i = +b.dataset.i;
@@ -1369,6 +1413,11 @@ function onClick(e) {
     case "again": S.shareMsg = ""; newGame(g.mode, true); break;
     case "end": stopTimer(); S.menu = false; applyAdds(); S.shareMsg = ""; S.screen = "result"; render(true); break;
     case "menu": S.menu = true; render(); break;
+    case "scores": S.scores = true; render(); break;
+    case "bombLook": S.bombLook = 1; render(); break;
+    case "bombLookShow": S.bombLook = 2; render(); break;
+    case "bombLookClose": S.bombLook = 0; render(); break;
+    case "scoresClose": S.scores = false; render(); break;
     case "menuClose": S.menu = false; render(); break;
     case "share": shareResult(); break;
     case "clearAll": S.members = []; saveMembers(); render(); document.getElementById("inName")?.focus(); break;

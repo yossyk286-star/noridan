@@ -138,7 +138,7 @@ export default function App() {
   }, [onStage]);
 
   return (
-    <PrefsContext.Provider value={{ dual, voice }}>
+    <PrefsContext.Provider value={{ dual, voice, setDual: updateDual }}>
     <SafeAreaProvider>
       <SafeAreaView style={[s.root, { backgroundColor: bg }]}>
         <StatusBar style="light" />

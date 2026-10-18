@@ -257,7 +257,7 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       {/* 1画面に固定（スクロールしない）。盤は残りの高さに収まるサイズにする */}
       <View style={[s.wrap, flipped && s.flipped]}>
-        <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} />
+        <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
         {/* ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので） */}
         <RuleBanner pal={pal} members={members} rules={st.rules} hideCard={st.phase === 'play' ? st.card : null} onViolate={(r) => { setRule(r); setRuleSheet('pick'); }} />
