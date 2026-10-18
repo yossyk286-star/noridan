@@ -361,6 +361,7 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .sp-rate.on { opacity: 1; transform: scale(1); }
 .sp-res { font-size: clamp(60px, 20vw, 90px); }
 .sp-res.over { color: #ff3b3b; }
+.sp-check { animation: skPop .35s cubic-bezier(.2,1.6,.4,1); }
 .sp-res.exact { color: #1f9d55; }
 .sp-verdict { font-size: clamp(26px, 8vw, 36px) !important; }
 .sk-board.sp-board li { grid-template-columns: 18px minmax(0, 4.6em) minmax(3.4em, 1fr) auto; gap: 6px; }
@@ -2306,17 +2307,26 @@ function spStop(auto = false) {
   if (exact) { sp.exactAny = true; sp.exact[sp.who]++; }
   if (!over && (sp.best[sp.who] == null || diff < sp.best[sp.who])) sp.best[sp.who] = diff;
   g.turn++;
-  if (over) { play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
-  else play(exact ? "fanfare" : "pop");
-  sp.phase = sp.k + 1 >= S.members.length ? "rank" : "done";
-  if (sp.phase === "rank") {
-    g.doer = -1;
+  // まず止めた秒数だけ見せて、ボタンで答え合わせ
+  play("pop");
+  sp.phase = "check";
+  sp.after = sp.k + 1 >= S.members.length ? "rank" : "done";
+  if (sp.after === "rank") {
     const r = sp.res, idx = S.members.map((_, i) => i);
     const overs = idx.filter((i) => r[i].over);
     if (overs.length) sp.losers = overs;
     else { const far = Math.max(...idx.map((i) => r[i].diff)); sp.losers = far > 0 ? idx.filter((i) => r[i].diff === far) : []; }
   }
   render(true);
+}
+
+// 止めた秒数を見たあと：結果を出す
+function spReveal() {
+  const sp = S.game.sp, r = sp.res[sp.who];
+  if (r.over) { play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
+  else play(r.exact ? "fanfare" : "coin");
+  sp.phase = sp.after;
+  if (sp.phase === "rank") S.game.doer = -1;
 }
 
 // ---------- ピッタリ予想 ----------
@@ -3713,6 +3723,11 @@ function vStopCard() {
       <div class="sp-box" id="spBox"><p class="sp-num" id="spNum">${spFmt(spShown(sp, 0))}</p><span class="sp-rate" id="spRate"></span></div>
       <p class="hand-note">${sp.dir === "down" ? "0を過ぎたらオーバー" : `${sp.target}秒を過ぎたらオーバー`}</p>
     </div>`;
+    case "check": { const r = sp.res[sp.who]; return `<div class="odai mode-card center" id="card">
+      <p class="prog">${mName(sp.who)}が止めた秒数は…</p>
+      <p class="sp-num sp-res sp-check">${spFmt(r.v)}</p>
+      <p class="hand-note">目標は <b>${spGoal(sp)}</b></p>
+    </div>`; }
     case "done": { const r = sp.res[sp.who]; return `<div class="odai mode-card center ${r.over ? "batsu" : ""}" id="card">
       <p class="prog">${mName(sp.who)}の記録</p>
       <p class="sp-num sp-res ${r.over ? "over" : r.exact ? "exact" : ""}">${spFmt(r.v)}</p>
@@ -3734,6 +3749,7 @@ function vStopControls() {
     case "hand": return `<button class="big" data-act="spReady">スタート</button>`;
     case "count": return `<p class="hint">ボタンに指を置いて待って</p>`;
     case "play": return `<button class="big sp-stop" data-tap="stop">ストップ！</button>`;
+    case "check": return `<button class="big" data-act="spReveal">結果を見る</button>`;
     case "done": return `<button class="big" data-act="spNext">次は${mName(spWho({ k: sp.k + 1, round: sp.round }))}</button>`;
     case "rank": return sp.losers.length ? `<button class="big has-pen" data-act="spGacha">${sp.losers.map(mName).join("・")}に罰ガチャ</button>` : `<button class="big" data-act="spAgain">次の回戦</button>`;
     case "batsu": return `<button class="big" data-act="spAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次の回戦</button>`;
@@ -4957,6 +4973,7 @@ function onClick(e) {
     case "spStart": spRound(); render(true); break;
     case "spReady": spCount(); render(true); break;
     case "spNext": g.sp.k++; spBegin(); render(true); break;
+    case "spReveal": spReveal(); render(true); break;
     case "spGacha": {
       const sp = g.sp, n = sp.exactAny ? 2 : 1;
       g.add = new Map(sp.losers.map((t) => [t, n])); g.addReason = "stop";

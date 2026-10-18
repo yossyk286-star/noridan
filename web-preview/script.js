@@ -1052,17 +1052,26 @@ function spStop(auto = false) {
   if (exact) { sp.exactAny = true; sp.exact[sp.who]++; }
   if (!over && (sp.best[sp.who] == null || diff < sp.best[sp.who])) sp.best[sp.who] = diff;
   g.turn++;
-  if (over) { play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
-  else play(exact ? "fanfare" : "pop");
-  sp.phase = sp.k + 1 >= S.members.length ? "rank" : "done";
-  if (sp.phase === "rank") {
-    g.doer = -1;
+  // まず止めた秒数だけ見せて、ボタンで答え合わせ
+  play("pop");
+  sp.phase = "check";
+  sp.after = sp.k + 1 >= S.members.length ? "rank" : "done";
+  if (sp.after === "rank") {
     const r = sp.res, idx = S.members.map((_, i) => i);
     const overs = idx.filter((i) => r[i].over);
     if (overs.length) sp.losers = overs;
     else { const far = Math.max(...idx.map((i) => r[i].diff)); sp.losers = far > 0 ? idx.filter((i) => r[i].diff === far) : []; }
   }
   render(true);
+}
+
+// 止めた秒数を見たあと：結果を出す
+function spReveal() {
+  const sp = S.game.sp, r = sp.res[sp.who];
+  if (r.over) { play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
+  else play(r.exact ? "fanfare" : "coin");
+  sp.phase = sp.after;
+  if (sp.phase === "rank") S.game.doer = -1;
 }
 
 // ---------- ピッタリ予想 ----------

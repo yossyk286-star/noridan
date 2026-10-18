@@ -23,7 +23,7 @@ type Props = {
   onFinish: (pen: number[], turns: number, stats: Stats) => void;
   skipIntro?: boolean;
 };
-type Phase = 'intro' | 'hand' | 'count' | 'play' | 'done' | 'rank' | 'batsu';
+type Phase = 'intro' | 'hand' | 'count' | 'play' | 'check' | 'done' | 'rank' | 'batsu';
 type Dir = 'down' | 'up';
 type Res = { v: number; diff: number; over: boolean; exact: boolean };
 
@@ -173,10 +173,8 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
       setExactAny(true);
     }
     setTurns((x) => x + 1);
-    if (r.over) {
-      play('boom');
-      Vibration.vibrate([0, 120, 60, 200]);
-    } else play(r.exact ? 'fanfare' : 'pop');
+    // まず止めた秒数だけ見せて、ボタンで答え合わせ
+    play('pop');
     if (k + 1 >= n) {
       const idx = members.map((_, i) => i);
       const overs = idx.filter((i) => nr[i]!.over);
@@ -185,8 +183,18 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         const far = Math.max(...idx.map((i) => nr[i]!.diff));
         setLosers(far > 0 ? idx.filter((i) => nr[i]!.diff === far) : []);
       }
-      setPhase('rank');
-    } else setPhase('done');
+      after.current = 'rank';
+    } else after.current = 'done';
+    setPhase('check');
+  };
+  const after = useRef<Phase>('done');
+  const reveal = () => {
+    const r = res[who]!;
+    if (r.over) {
+      play('boom');
+      Vibration.vibrate([0, 120, 60, 200]);
+    } else play(r.exact ? 'fanfare' : 'coin');
+    setPhase(after.current);
   };
   const doGacha = () => {
     const x = exactAny ? 2 : 1;
@@ -327,6 +335,16 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
           <Text style={s.stopText}>ストップ！</Text>
         </Pressable>
       );
+      break;
+    case 'check':
+      card = (
+        <ModeCard pal={pal} center>
+          <Prog fg={fg}>{`${members[who].name}が止めた秒数は…`}</Prog>
+          <Text style={[s.resNum, { color: fg }]}>{fmt(res[who]!.v)}</Text>
+          <Note fg={fg}>{`目標は ${goal}`}</Note>
+        </ModeCard>
+      );
+      controls = <BigButton pal={pal} label="結果を見る" onPress={reveal} />;
       break;
     case 'done': {
       const r = res[who]!;

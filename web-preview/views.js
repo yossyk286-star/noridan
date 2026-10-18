@@ -1115,6 +1115,11 @@ function vStopCard() {
       <div class="sp-box" id="spBox"><p class="sp-num" id="spNum">${spFmt(spShown(sp, 0))}</p><span class="sp-rate" id="spRate"></span></div>
       <p class="hand-note">${sp.dir === "down" ? "0を過ぎたらオーバー" : `${sp.target}秒を過ぎたらオーバー`}</p>
     </div>`;
+    case "check": { const r = sp.res[sp.who]; return `<div class="odai mode-card center" id="card">
+      <p class="prog">${mName(sp.who)}が止めた秒数は…</p>
+      <p class="sp-num sp-res sp-check">${spFmt(r.v)}</p>
+      <p class="hand-note">目標は <b>${spGoal(sp)}</b></p>
+    </div>`; }
     case "done": { const r = sp.res[sp.who]; return `<div class="odai mode-card center ${r.over ? "batsu" : ""}" id="card">
       <p class="prog">${mName(sp.who)}の記録</p>
       <p class="sp-num sp-res ${r.over ? "over" : r.exact ? "exact" : ""}">${spFmt(r.v)}</p>
@@ -1136,6 +1141,7 @@ function vStopControls() {
     case "hand": return `<button class="big" data-act="spReady">スタート</button>`;
     case "count": return `<p class="hint">ボタンに指を置いて待って</p>`;
     case "play": return `<button class="big sp-stop" data-tap="stop">ストップ！</button>`;
+    case "check": return `<button class="big" data-act="spReveal">結果を見る</button>`;
     case "done": return `<button class="big" data-act="spNext">次は${mName(spWho({ k: sp.k + 1, round: sp.round }))}</button>`;
     case "rank": return sp.losers.length ? `<button class="big has-pen" data-act="spGacha">${sp.losers.map(mName).join("・")}に罰ガチャ</button>` : `<button class="big" data-act="spAgain">次の回戦</button>`;
     case "batsu": return `<button class="big" data-act="spAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次の回戦</button>`;
@@ -2359,6 +2365,7 @@ function onClick(e) {
     case "spStart": spRound(); render(true); break;
     case "spReady": spCount(); render(true); break;
     case "spNext": g.sp.k++; spBegin(); render(true); break;
+    case "spReveal": spReveal(); render(true); break;
     case "spGacha": {
       const sp = g.sp, n = sp.exactAny ? 2 : 1;
       g.add = new Map(sp.losers.map((t) => [t, n])); g.addReason = "stop";
