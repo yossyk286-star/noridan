@@ -343,6 +343,23 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .gs-quota em { font-style: normal; font-family: var(--display); font-size: 22px; animation: stamp2 .35s .3s cubic-bezier(.3,1.6,.5,1) both; }
 .gs-quota.q-ok em { color: #1f9d55; }
 .gs-quota.q-ng em { color: #ff3b3b; }
+/* 傾けたらアウト：水準器 */
+.tl-lim { margin: 4px 0 0; font-family: var(--display); font-size: 44px; line-height: 1; }
+.tl-lim small { display: block; font-family: inherit; font-size: 13px; opacity: .65; margin-top: 4px; }
+.tl-count { margin: 0; font-family: var(--display); font-size: clamp(96px, 34vw, 150px); line-height: 1; animation: pulse .8s ease-in-out infinite; }
+.tl-play { gap: 14px; }
+.tl-timer { font-variant-numeric: tabular-nums; }
+.tl-level { position: relative; width: min(64vw, 240px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, #7be36b 26%, transparent) 0 48%, color-mix(in srgb, #ffd23f 22%, transparent) 48% 70%, color-mix(in srgb, #ff2a2a 20%, transparent) 70%); box-shadow: inset 0 0 0 3px color-mix(in srgb, currentColor 30%, transparent); overflow: hidden; }
+.tl-ring { position: absolute; inset: 25%; border-radius: 50%; border: 3px dashed #ff2a2a; }
+.tl-cross { position: absolute; inset: 0; background: linear-gradient(currentColor, currentColor) center / 2px 100% no-repeat, linear-gradient(currentColor, currentColor) center / 100% 2px no-repeat; opacity: .15; }
+.tl-dot { position: absolute; left: 37.5%; top: 37.5%; width: 25%; height: 25%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #7be36b 55%, #2f9e3a); box-shadow: 0 4px 10px rgba(0,0,0,.3); transition: transform .08s linear; }
+.tl-dot.warn { background: radial-gradient(circle at 35% 30%, #fff, #ffb02e 55%, #e8202a); }
+.tl-deg { margin: 0; font-family: var(--display); font-size: 22px; }
+.tl-deg b { font-weight: 400; font-size: clamp(44px, 15vw, 64px); font-variant-numeric: tabular-nums; }
+.tl-deg small { font-family: inherit; font-size: 16px; opacity: .6; }
+.tl-big { margin: 0; font-family: var(--display); font-size: clamp(54px, 18vw, 80px); line-height: 1.05; animation: stamp2 .4s cubic-bezier(.3,1.6,.5,1) both; }
+.tl-big.q-ng { color: #ff2a2a; }
+.tl-big.q-ok { color: #1f9d55; }
 /* gacha capsules */
 .gacha { display: flex; flex-direction: column; gap: 14px; width: 100%; }
 .gacha-item { display: grid; grid-template-columns: 64px minmax(0,1fr); gap: 12px; align-items: center; }

@@ -158,10 +158,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
@@ -182,6 +182,7 @@ function newGame(mode, again = false) {
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "intro", round: 0 }; if (again) startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
   if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: store.get("nd_wf_min", 3), count: store.get("nd_wf_n", 0), peace: store.get("nd_wf_peace", true), wolves: [] }; render(true); return; }
+  if (mode === "tilt") { S.game.doer = -1; S.game.tl = { phase: "intro", k: 0, max: Array(n).fill(null), tries: Array(n).fill(0), outs: Array(n).fill(0) }; render(true); return; }
   if (mode === "pittari") { S.game.doer = -1; S.game.pt = { phase: "intro", round: 0 }; if (again) ptRound(); render(true); return; }
   if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
   if (mode === "gesture") { S.game.doer = 0; S.game.gs = { phase: "intro", sec: store.get("nd_gs_sec", 60), score: Array(n).fill(0), actor: 0, acted: 0, word: null, got: 0, endAt: 0 }; render(true); return; }
@@ -475,6 +476,7 @@ function titles() {
   const r = top(st.rev, 1); if (r) add("リベンジの鬼", r, `押し付け ${st.rev[r[0]]}回`);
   const h = top(st.hit, 2); if (h) add("押し付けられ体質", h, `押し付けられ ${st.hit[h[0]]}回`);
   if (g.mode === "pittari") { const e = top(st.exact, 1); if (e) add("ピッタリ職人", e, `ピッタリ ${st.exact[e[0]]}回`); }
+  if (g.mode === "tilt" && g.tl) { const tl = g.tl, ok = S.members.map((_, i) => i).filter((i) => tl.tries[i] && tl.max[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => tl.max[i])); add("鋼の手", ok.filter((i) => tl.max[i] === m), `最大でも ${m.toFixed(1)}°`); } }
   if (g.mode === "wolf") { const w = top(st.wolf, 1); if (w) add("名演技", w, `ウルフで逃げ切り ${st.wolf[w[0]]}回`); }
   if (g.mode === "vote" && st.votes) { const v = top(st.votes, 2); if (v) add("みんなの的", v, `合計 ${st.votes[v[0]]}票`); }
   const d = top(st.dbl, 1); if (d) add("ギャンブラー", d, `倍プッシュ ${st.dbl[d[0]]}回（成功${st.dwin[d[0]]}）`);
@@ -700,6 +702,104 @@ function wfGroupBatsu() {
   return { lucky: false, html: esc(draw("batsu_group", pool) || "全員でひと口飲む（ソフドリでもOK）") };
 }
 
+// ---------- 傾けたらアウト ----------
+// 画面を上にしてスマホを手のひらに乗せる。スタートした瞬間の向きを0°にして、10秒キープ。
+// 地獄度の角度（ゆるめ6°・普通4°・地獄2°）を超えたらアウトで罰。周りは触らんかったら邪魔してOK
+const TILT_SEC = 10;
+const TILT_LIMIT = { yurume: 6, futsu: 4, jigoku: 2 };
+const tiltLimit = () => TILT_LIMIT[S.level] || 4;
+const tiltSensor = { beta: null, gamma: null, at: 0, on: false, perm: "unknown" }; // perm: unknown / granted / denied / none
+const tiltVec = (b, g) => { const B = (b * Math.PI) / 180, G = (g * Math.PI) / 180; return [Math.cos(B) * Math.sin(G), -Math.sin(B), Math.cos(B) * Math.cos(G)]; };
+const tiltAngle = (v, w) => (Math.acos(Math.max(-1, Math.min(1, v[0] * w[0] + v[1] * w[1] + v[2] * w[2]))) * 180) / Math.PI;
+function tiltListen() {
+  if (tiltSensor.on || typeof window.DeviceOrientationEvent === "undefined") return;
+  tiltSensor.on = true;
+  window.addEventListener("deviceorientation", (e) => {
+    if (e.beta == null || e.gamma == null) return;
+    tiltSensor.beta = e.beta; tiltSensor.gamma = e.gamma; tiltSensor.at = Date.now();
+    tiltTick();
+  });
+}
+// iPhone は押したタイミングで許可を取る必要がある
+async function tiltAsk() {
+  if (typeof window.DeviceOrientationEvent === "undefined") { tiltSensor.perm = "none"; return; }
+  try {
+    if (typeof DeviceOrientationEvent.requestPermission === "function") {
+      const r = await DeviceOrientationEvent.requestPermission();
+      tiltSensor.perm = r === "granted" ? "granted" : "denied";
+    } else tiltSensor.perm = "granted";
+  } catch { tiltSensor.perm = "denied"; }
+  if (tiltSensor.perm === "granted") tiltListen();
+}
+const tiltLive = () => tiltSensor.at && Date.now() - tiltSensor.at < 1500; // センサーの値が来てるか
+function tiltBegin() {
+  const tl = S.game.tl, n = S.members.length;
+  tl.who = (tl.k) % n;
+  S.game.doer = tl.who;
+  tl.phase = "hand"; tl.angle = 0; tl.peak = 0; tl.outAt = 0; tl.manual = false;
+}
+function tiltCount() {
+  const tl = S.game.tl;
+  tl.phase = "count"; tl.n = 3;
+  const step = () => {
+    if (S.game?.tl !== tl || tl.phase !== "count") return;
+    tl.n--;
+    if (tl.n <= 0) { tiltGo(); return; }
+    play("tick"); render(); setTimeout(step, 800);
+  };
+  play("tick"); setTimeout(step, 800);
+}
+function tiltGo() {
+  const tl = S.game.tl;
+  tl.manual = !tiltLive();
+  tl.base = tl.manual ? null : tiltVec(tiltSensor.beta, tiltSensor.gamma);
+  tl.phase = "play"; tl.angle = 0; tl.peak = 0; tl.startAt = Date.now();
+  play("coin");
+  tl.endAt = startTimer(TILT_SEC, () => { if (S.game?.tl === tl && tl.phase === "play") tiltSafe(); }, (ms) => (ms / 1000).toFixed(1), true);
+  render(true);
+}
+// 角度が来るたび：表示を更新して、超えたらアウト
+function tiltTick() {
+  const tl = S.game?.tl;
+  if (!tl || tl.phase !== "play" || !tl.base || S.screen !== "tilt") return;
+  const a = tiltAngle(tl.base, tiltVec(tiltSensor.beta, tiltSensor.gamma));
+  tl.angle = a; if (a > tl.peak) tl.peak = a;
+  if (a > tiltLimit()) { tiltOut(); return; }
+  if (!tl.raf) tl.raf = requestAnimationFrame(() => { tl.raf = 0; tiltPaint(); });
+}
+function tiltPaint() {
+  const tl = S.game?.tl; if (!tl) return;
+  const el = document.getElementById("tiltDeg"); if (el) el.textContent = tl.angle.toFixed(1);
+  const dot = document.getElementById("tiltDot");
+  if (dot && tl.base) {
+    const lim = tiltLimit(), v = tiltVec(tiltSensor.beta, tiltSensor.gamma);
+    // 0°からのずれを左右・前後に分けて、限界の角度でちょうど円のフチに来るように
+    const dx = Math.asin(Math.max(-1, Math.min(1, v[0] - tl.base[0]))) * 180 / Math.PI, dy = Math.asin(Math.max(-1, Math.min(1, v[1] - tl.base[1]))) * 180 / Math.PI;
+    dot.style.transform = `translate(${Math.max(-1.2, Math.min(1.2, dx / lim)) * 50}%, ${Math.max(-1.2, Math.min(1.2, -dy / lim)) * 50}%)`;
+    dot.classList.toggle("warn", tl.angle > lim * 0.7);
+  }
+}
+function tiltOut() {
+  const g = S.game, tl = g.tl;
+  stopTimer();
+  tl.phase = "out"; tl.outAt = Date.now();
+  tl.tries[tl.who]++; tl.outs[tl.who]++;
+  if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
+  g.turn++;
+  play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]);
+  render(true);
+}
+function tiltSafe() {
+  const g = S.game, tl = g.tl;
+  stopTimer();
+  tl.phase = "safe";
+  tl.tries[tl.who]++;
+  if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
+  g.turn++;
+  play("fanfare");
+  render(true);
+}
+
 // ---------- ピッタリ予想 ----------
 // 数字のお題に1人ずつこっそり予想を入れる。答え合わせで一番遠い人が罰。誰かがピッタリなら罰2倍
 function ptRound() {
@@ -877,14 +977,14 @@ function itCheck() {
 // ---------- 時計（ジェスチャー・褒め殺し共通） ----------
 // endAt まで数えて、0になったら onEnd を呼ぶ。画面は #modeTimer の数字だけ書き換える
 let modeTimer = null;
-function startTimer(sec, onEnd, fmt) {
+function startTimer(sec, onEnd, fmt, quiet = false) {
   stopTimer();
   const endAt = Date.now() + sec * 1000;
   modeTimer = setInterval(() => {
     const left = endAt - Date.now();
     const el = document.getElementById("modeTimer");
-    hurryFx(left);
-    if (left <= 0) { stopTimer(); play("alarm"); if (navigator.vibrate) navigator.vibrate([80, 40, 160]); onEnd(); return; }
+    if (!quiet) hurryFx(left);
+    if (left <= 0) { stopTimer(); if (!quiet) play("alarm"); if (navigator.vibrate) navigator.vibrate([80, 40, 160]); onEnd(); return; }
     if (el) { el.textContent = fmt ? fmt(left) : Math.ceil(left / 1000); el.classList.toggle("hurry", left < (fmt ? 30000 : 10000)); }
   }, 200);
   return endAt;

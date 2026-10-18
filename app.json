@@ -8,7 +8,10 @@
     "backgroundColor": "#111111",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.yoshi.noridan"
+      "bundleIdentifier": "com.yoshi.noridan",
+      "infoPlist": {
+        "NSMotionUsageDescription": "「傾けたらアウト」でスマホの傾きを測るのに使います"
+      }
     },
     "android": {
       "package": "com.yoshi.noridan"

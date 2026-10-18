@@ -11,11 +11,12 @@ export type Stats = {
   votes?: number[]; // ぶっちゃけ投票で集めた票
   exact?: number[]; // ピッタリ予想でピッタリ当てた回数
   wolf?: number[]; // ワードウルフでウルフとして逃げ切った回数
+  steady?: (number | null)[]; // 傾けたらアウトの最大角度（測れた人だけ）
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
-export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit';
-export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾', vote: '投票1位', ng: 'NGワード', mfail: '答えられへん', skull: 'ドクロ', mlow: '最下位', ito: '並び間違い', glow: 'ジェスチャーで当てられへん', gquota: 'ジェスチャーのノルマ未達', hmlaugh: '笑った', hmfail: '褒め負け', wolf: 'ワードウルフ負け', pit: '予想が一番遠い' };
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt';
+export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾', vote: '投票1位', ng: 'NGワード', mfail: '答えられへん', skull: 'ドクロ', mlow: '最下位', ito: '並び間違い', glow: 'ジェスチャーで当てられへん', gquota: 'ジェスチャーのノルマ未達', hmlaugh: '笑った', hmfail: '褒め負け', wolf: 'ワードウルフ負け', pit: '予想が一番遠い', tilt: '傾けた' };
 export function whyText(st: Stats | undefined, i: number) {
   const w = st?.why?.[i];
   if (!w) return '';
@@ -59,6 +60,14 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
   if (ex) add('ピッタリ職人', ex, `ピッタリ ${st.exact![ex[0]]}回`);
   const wf = st.wolf ? top(st.wolf, 1) : null;
   if (wf) add('名演技', wf, `ウルフで逃げ切り ${st.wolf![wf[0]]}回`);
+  if (st.steady) {
+    const sd = st.steady;
+    const ok = sd.map((_, i) => i).filter((i) => sd[i] != null);
+    if (ok.length > 1) {
+      const m = Math.min(...ok.map((i) => sd[i] as number));
+      add('鋼の手', ok.filter((i) => sd[i] === m), `最大でも ${m.toFixed(1)}°`);
+    }
+  }
   const d = top(st.dbl, 1);
   if (d) add('ギャンブラー', d, `倍プッシュ ${st.dbl[d[0]]}回（成功${st.dwin[d[0]]}）`);
   const p = top(st.pass, 2);

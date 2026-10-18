@@ -83,6 +83,7 @@ const ICON = {
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v7h16v-7M12 3v12M7 8l5-5 5 5"/></svg>`,
   users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.5-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.5 3.5 5.4"/></svg>`,
   wolf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/><path d="M17.5 3.5v1"/></svg>`,
+  tilt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5" transform="rotate(14 12 12)"/><path d="M3 20h18"/><circle cx="12.4" cy="11" r="1.6"/></svg>`,
   target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>`,
   undo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>`,
   split: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 12h16M9 7.5h6M9 16.5h6"/></svg>`,
@@ -264,6 +265,7 @@ function vHome2() {
       <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>${HELP.ngword.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.vote.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="wolf" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.wolf}</i><b>ワードウルフ</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.wolf.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="tilt"><i class="mode-ic">${ICON.tilt}</i><b>傾けたらアウト</b><span>${HELP.tilt.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="pittari" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.target}</i><b>ピッタリ予想</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.pittari.desc}</span><em class="go">開始</em></button>
     </div>
   </section>
@@ -334,8 +336,8 @@ const TUT = [
   {
     step: "1 / 3",
     title: "名前を入れて、<br>遊び方を選ぶ",
-    text: "遊ぶ人の名前を入れて、遊び方を選ぶだけ。遊び方は<b>10個</b>。どれも始める前に<b>説明が出る</b>から大丈夫。",
-    art: () => `<div class="tut-modes">${["アホお題", "すごろく", "神経衰弱", "価値観ナンバー", "ジェスチャー", "褒め殺し", "NGワード", "ぶっちゃけ投票", "ワードウルフ", "ピッタリ予想"].map((m) => `<span>${m}</span>`).join("")}</div>`,
+    text: "遊ぶ人の名前を入れて、遊び方を選ぶだけ。遊び方は<b>11個</b>。どれも始める前に<b>説明が出る</b>から大丈夫。",
+    art: () => `<div class="tut-modes">${["アホお題", "すごろく", "神経衰弱", "価値観ナンバー", "ジェスチャー", "褒め殺し", "NGワード", "ぶっちゃけ投票", "ワードウルフ", "ピッタリ予想", "傾けたらアウト"].map((m) => `<span>${m}</span>`).join("")}</div>`,
   },
   {
     step: "2 / 3",
@@ -696,7 +698,7 @@ function vRules() {
   </div>`;
 }
 // 結果発表の罰の内訳
-const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード", mfail: "答えられへん", skull: "ドクロ", mlow: "最下位", ito: "並び間違い", glow: "ジェスチャーで当てられへん", gquota: "ジェスチャーのノルマ未達", hmlaugh: "笑った", hmfail: "褒め負け", wolf: "ワードウルフ負け", pit: "予想が一番遠い" };
+const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード", mfail: "答えられへん", skull: "ドクロ", mlow: "最下位", ito: "並び間違い", glow: "ジェスチャーで当てられへん", gquota: "ジェスチャーのノルマ未達", hmlaugh: "笑った", hmfail: "褒め負け", wolf: "ワードウルフ負け", pit: "予想が一番遠い", tilt: "傾けた" };
 function whyText(i) {
   const w = S.game.st?.why?.[i];
   if (!w) return "";
@@ -1072,6 +1074,69 @@ function vWolf() {
     ${vBar()}
     <div class="deck">${vWfCard()}</div>
     ${vWfControls()}
+  </div>`;
+}
+
+// ---------- 傾けたらアウト（画面） ----------
+function vTiltCard() {
+  const g = S.game, tl = g.tl, lim = tiltLimit();
+  switch (tl.phase) {
+    case "hand": return `<div class="odai mode-card center" id="card">
+      <p class="prog">${tl.k + 1}人目</p>
+      ${bigWho(tl.who, "の番")}
+      <p class="hand-note">画面を上にして、手のひらに平らに乗せて。<br>周りは触らんかったら、しゃべって邪魔してOK</p>
+      <p class="tl-lim">${lim}°<small>超えたらアウト</small></p>
+    </div>`;
+    case "count": return `<div class="odai mode-card center" id="card">
+      <p class="prog">${mName(tl.who)}、動くな…</p>
+      <p class="tl-count">${tl.n}</p>
+      <p class="hand-note">0になった瞬間の向きが0°</p>
+    </div>`;
+    case "play": return `<div class="odai mode-card center tl-play" id="card">
+      <p class="gs-timer tl-timer" id="modeTimer">${TILT_SEC.toFixed(1)}</p>
+      ${tl.manual
+        ? `<p class="ng-lead">傾けんように<br>キープ！</p><p class="hand-note">このスマホでは角度がとられへんので、<br>傾いたらみんなで判定して押して</p>`
+        : `<div class="tl-level" style="--lim:${lim}"><i class="tl-ring"></i><i class="tl-cross"></i><b id="tiltDot" class="tl-dot"></b></div>
+           <p class="tl-deg"><b id="tiltDeg">0.0</b>°<small> / ${lim}°</small></p>`}
+    </div>`;
+    case "out": return `<div class="odai batsu mode-card center ${S.anim ? "shake" : ""}" id="card">
+      <p class="tl-big q-ng">アウト！</p>
+      ${tl.manual ? "" : `<p class="tl-deg"><b>${tl.peak.toFixed(1)}</b>°<small> 傾いた</small></p>`}
+      <p class="hand-note">${tl.manual ? "みんなの判定でアウト" : `${((tl.outAt - tl.startAt) / 1000).toFixed(1)}秒で${lim}°を超えた`}</p>
+    </div>`;
+    case "safe": return `<div class="odai lucky mode-card center" id="card">
+      <p class="tl-big q-ok">セーフ！</p>
+      ${tl.manual ? "" : `<p class="tl-deg"><b>${tl.peak.toFixed(1)}</b>°<small> まで（最大）</small></p>`}
+      <p class="hand-note">${TILT_SEC}秒キープ成功。${mName(tl.who)}は罰なし</p>
+    </div>`;
+    case "batsu": return vCard();
+  }
+  return "";
+}
+function vTiltControls() {
+  const g = S.game, tl = g.tl, n = S.members.length;
+  const nextName = mName((tl.k + 1) % n);
+  switch (tl.phase) {
+    case "hand": return `<button class="big" data-act="tiltReady">準備OK → カウントダウン</button>`;
+    case "count": return `<p class="hint">スマホを動かさんといて</p>`;
+    case "play": return tl.manual ? `<button class="big has-pen" data-act="tiltManualOut">傾いた！アウト</button>` : `<p class="hint">${lim0()}</p>`;
+    case "out": return `<button class="big has-pen" data-act="tiltGacha">${mName(tl.who)}に罰ガチャ</button>`;
+    case "safe": return `<button class="big" data-act="tiltNext">次は${nextName}</button>`;
+    case "batsu": return `<button class="big" data-act="tiltAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次は${nextName}</button>`;
+  }
+  return "";
+  function lim0() { return `${tiltLimit()}°を超えたら即アウト`; }
+}
+function vTilt() {
+  const tl = S.game.tl;
+  if (tl.phase === "intro") {
+    const none = typeof window.DeviceOrientationEvent === "undefined";
+    return vIntroStage("tilt", { extra: `${lvBox(`${tiltLimit()}°を超えたらアウト（ゆるめ6°・普通4°・地獄2°）`, false)}<p class="how-note">${none ? "このブラウザは角度がとられへんので、みんなの目で判定するモードになる" : "iPhoneは次に「動きと方向へのアクセス」を聞かれるので「許可」を押してな"}</p>`, btn: "スタート", act: "tiltStart" });
+  }
+  return `<div id="stage" class="${S.flip ? "flipped" : ""}">
+    ${vBar()}
+    <div class="deck">${vTiltCard()}</div>
+    ${vTiltControls()}
   </div>`;
 }
 
@@ -1712,11 +1777,11 @@ function render(anim) {
   S.gIntro = false;
   // 画面が変わった時だけスライドして入ってくる
   const key = sc === "home" ? (S.nightAsk ? "night" : "home" + S.step) : sc;
-  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, memory: 2, ito: 2, gesture: 2, homeru: 2, ngword: 2, vote: 2, wolf: 2, pittari: 2, result: 3 };
+  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, memory: 2, ito: 2, gesture: 2, homeru: 2, ngword: 2, vote: 2, wolf: 2, pittari: 2, tilt: 2, result: 3 };
   const moved = S.navKey && S.navKey !== key;
   const dir = moved && ORDER[key] < ORDER[S.navKey] ? "back" : "fwd";
   S.navKey = key;
-  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "memory" ? vMemory() : sc === "ito" ? vIto() : sc === "gesture" ? vGesture() : sc === "homeru" ? vHomeru() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : sc === "wolf" ? vWolf() : sc === "pittari" ? vPittari() : vResult();
+  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "memory" ? vMemory() : sc === "ito" ? vIto() : sc === "gesture" ? vGesture() : sc === "homeru" ? vHomeru() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : sc === "wolf" ? vWolf() : sc === "pittari" ? vPittari() : sc === "tilt" ? vTilt() : vResult();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
   overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   if (onStage) { fixHeight(); fitCard(); }
@@ -1778,6 +1843,7 @@ function cue() {
   if (sc === "homeru") { const p = S.game.hm.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "go" ? "coin" : "flip"); return; }
   if (sc === "ito") { const p = S.game.it.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? (S.game.it.bad.length ? "warn" : "fanfare") : "flip"); return; }
   if (sc === "memory") { const p = S.game.mm.phase; play(p === "skull" ? "boom" : p === "fail" || p === "low" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "match" ? "coin" : p === "miss" ? "warn" : p === "over" ? "fanfare" : "flip"); if (p === "skull") boomFlash(); return; }
+  if (sc === "tilt") { if (S.game.tl.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
   if (sc === "wolf") { const p = S.game.wf.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "group" ? (S.game.wf.res.lucky ? "lucky" : "pop") : p === "reveal" || p === "result" ? "fanfare" : "flip"); return; }
   if (sc === "pittari") { const p = S.game.pt.phase; if (p === "input" || p === "answer") return; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? "fanfare" : "flip"); return; }
   if (sc === "vote") { const p = S.game.vt.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? "fanfare" : "flip"); return; }
@@ -1827,6 +1893,7 @@ function modeFrame() {
   if (g.wf && ["vhand", "vote"].includes(g.wf.phase)) return colorOf(g.wf.order[g.wf.k]);
   if (g.wf && g.wf.phase === "guess" && g.wf.wolves.length) return colorOf(g.wf.wolves[0]);
   if (g.pt && ["hand", "input"].includes(g.pt.phase)) return colorOf(g.pt.order[g.pt.k]);
+  if (g.tl && g.tl.who != null && g.tl.phase !== "intro") return g.tl.phase === "out" ? "#ff2a2a" : colorOf(g.tl.who);
   if (g.it && ["hand", "look"].includes(g.it.phase)) return colorOf(g.it.viewer);
   if (g.hm && g.hm.phase === "batsu" && g.hm.loser != null) return colorOf(g.hm.loser);
   return "#8d857a";
@@ -2104,6 +2171,19 @@ function onClick(e) {
       render(true); break;
     }
     case "wfDone": applyAdds(); g.gacha = []; g.phase = "play"; wfRound(); render(true); break;
+
+    // 傾けたらアウト
+    case "tiltStart": tiltAsk().finally(() => { g.tl.k = 0; tiltBegin(); render(true); }); break;
+    case "tiltReady": tiltCount(); render(true); break;
+    case "tiltManualOut": if (g.tl.phase === "play") tiltOut(); break;
+    case "tiltGacha": {
+      const t = g.tl.who;
+      g.add = new Map([[t, 1]]); g.addReason = "tilt";
+      g.gacha = [{ i: t, n: 1, ...drawBatsu(t) }];
+      g.phase = "batsu"; g.tl.phase = "batsu"; render(true); break;
+    }
+    case "tiltNext": g.tl.k++; tiltBegin(); render(true); break;
+    case "tiltAccept": applyAdds(); g.gacha = []; g.phase = "play"; g.tl.k++; tiltBegin(); render(true); break;
 
     // ピッタリ予想
     case "ptBegin": ptRound(); render(true); break;
