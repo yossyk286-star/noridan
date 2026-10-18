@@ -121,6 +121,8 @@ const x2Meter = (html, n) => doubleAll(html, n).map((d) => `<div class="x2-meter
 // 罰ガチャのマシン（札が出る前に1.4秒ガラガラ回る）
 const GACHA_T = 1.0;
 const CROWN = `<svg class="crown" viewBox="0 0 24 16" aria-label="罰が一番多い"><path d="M2 14 1 4l6 4 5-7 5 7 6-4-1 10z" fill="#ffd23f" stroke="#141210" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="1.6" fill="#e8202a"/></svg>`;
+// 大きく見せる1語の文字サイズ（長い言葉ほど小さく、札からはみ出さんように）
+const wordSize = (t, big = 46) => { const n = [...t].length; const v = n <= 4 ? big : n <= 6 ? big * 0.8 : n <= 8 ? big * 0.64 : n <= 10 ? big * 0.54 : big * 0.46; return `font-size:clamp(${Math.round(v * 0.6)}px, ${(v / 4).toFixed(1)}vw, ${Math.round(v)}px)`; };
 // 長押ししてる間だけ中身が見える目隠し（スマホを渡して1人だけ見る画面用）
 const peekBox = (inner, label = "長押しで見る", cls = "") => `<div class="peek ${cls}" data-peek>
   <div class="peek-in">${inner}</div>
@@ -520,8 +522,10 @@ function vRule() {
   // ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので）
   // 新しい順に2つまで（画面を圧迫せんように）
   const list = g.rules.map((r, k) => ({ r, k })).filter(({ r }) => !(r.card && r.card === g.card && g.phase === "play")).reverse();
-  const shown = list.slice(0, 2);
-  return bomb + shown.map(({ r, k }, j) => `<div class="rule"><span class="rule-txt"><b>${r.who != null ? `${esc(S.members[r.who].name)}の次の番まで` : `発動中 残り${r.left}ターン`}${j === 0 && list.length > 2 ? `<em>ほか${list.length - 2}件</em>` : ""}</b><span>${r.html}</span></span><button class="rule-out" data-act="ruleOpen" data-k="${k}">違反者に罰</button></div>`).join("");
+  // 小さい画面で時限爆弾も出てる時は1つまで（札が潰れんように）。残りは「ほか○件」
+  const room = window.innerHeight < 740 && bomb ? 1 : 2;
+  const shown = list.slice(0, room);
+  return bomb + shown.map(({ r, k }, j) => `<div class="rule"><span class="rule-txt"><b>${r.who != null ? `${esc(S.members[r.who].name)}の次の番まで` : `発動中 残り${r.left}ターン`}${j === 0 && list.length > room ? `<em>ほか${list.length - room}件</em>` : ""}</b><span>${r.html}</span></span><button class="rule-out" data-act="ruleOpen" data-k="${k}">違反者に罰</button></div>`).join("");
 }
 // 誰の番か（札の上に1行でまとめる）
 function vWho() {
@@ -692,7 +696,7 @@ function vRules() {
   </div>`;
 }
 // 結果発表の罰の内訳
-const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード", mfail: "答えられへん", skull: "ドクロ", mlow: "最下位", ito: "並び間違い", glow: "ジェスチャー最下位", hmlaugh: "笑った", hmfail: "褒め負け", wolf: "ワードウルフ負け", pit: "予想が一番遠い" };
+const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード", mfail: "答えられへん", skull: "ドクロ", mlow: "最下位", ito: "並び間違い", glow: "ジェスチャーで当てられへん", gquota: "ジェスチャーのノルマ未達", hmlaugh: "笑った", hmfail: "褒め負け", wolf: "ワードウルフ負け", pit: "予想が一番遠い" };
 function whyText(i) {
   const w = S.game.st?.why?.[i];
   if (!w) return "";
@@ -745,7 +749,7 @@ const mName = (i) => esc(S.members[i].name);
 const bigWho = (i, sub) => `<div class="hand-who" style="--mc:${colorOf(i)}"><span class="hand-dot">${ini(i)}</span><b>${mName(i)}</b>${sub ? `<small>${sub}</small>` : ""}</div>`;
 function ngWordsFor(viewer) {
   const ng = S.game.ng;
-  return `<ul class="ng-list">${S.members.map((m, j) => j === viewer ? "" : `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${esc(ng.words[j])}</b></li>`).join("")}</ul>`;
+  return `<ul class="ng-list">${S.members.map((m, j) => j === viewer ? "" : `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b class="${ng.words[j].length >= 7 ? "l3" : ng.words[j].length >= 5 ? "l2" : ""}">${esc(ng.words[j])}</b></li>`).join("")}</ul>`;
 }
 function vNgCard() {
   const g = S.game, ng = g.ng, n = S.members.length;
@@ -774,7 +778,7 @@ function vNgCard() {
     </div>`;
     case "out": return `<div class="odai ${ng.res.lucky ? "lucky" : "batsu"} mode-card center ${S.anim ? "shake" : ""}" id="card">
       <p class="prog">${mName(ng.out)} アウト！</p>
-      <p class="ng-reveal"><small>NGワードは</small><b>「${esc(ng.words[ng.out])}」</b></p>
+      <p class="ng-reveal"><small>NGワードは</small><b style="${wordSize("「" + ng.words[ng.out] + "」")}">「${esc(ng.words[ng.out])}」</b></p>
       <div class="skull-wrap sm">${ng.res.lucky ? `${ANGEL}<b>天使！罰なし</b>` : `${SKULL}<b>罰ゲーム</b>`}</div>
       <p class="rule-pen">${ng.res.html}</p>
     </div>`;
@@ -784,7 +788,7 @@ function vNgCard() {
     </div>`;
     case "newword": return `<div class="odai mode-card center" id="card">
       <p class="prog">${mName(ng.out)}の新しいNGワード</p>
-      <p class="ng-reveal"><b>「${esc(ng.words[ng.out])}」</b></p>
+      <p class="ng-reveal"><b style="${wordSize("「" + ng.words[ng.out] + "」")}">「${esc(ng.words[ng.out])}」</b></p>
       <p class="hand-note">${mName(ng.out)}には見せたらアカン</p>
     </div>`;
     case "over": return `<div class="odai mode-card center" id="card">
@@ -953,7 +957,7 @@ function vWfCard() {
     </div>`;
     case "look": return `<div class="odai ${nc} mode-card center" id="card">
       <p class="prog">${mName(wf.viewer)}のお題</p>
-      ${peekBox(`<p class="ng-reveal wf-word"><b>${esc(wfWord(wf.viewer))}</b></p>`)}
+      ${peekBox(`<p class="ng-reveal wf-word"><b style="${wordSize(wfWord(wf.viewer), 52)}">${esc(wfWord(wf.viewer))}</b></p>`)}
       <p class="hand-note">自分が市民かウルフかは分からへん。<br>お題そのものは言うたらアカン</p>
     </div>`;
     case "talk": case "who": return `<div class="odai mode-card center" id="card">
@@ -1322,21 +1326,24 @@ function vGsCard() {
     case "act": return `<div class="odai ${gs.word.night === "shinya" ? "deep" : gs.word.night ? "yoru" : ""} mode-card center" id="card">
       <p class="gs-timer" id="modeTimer">${Math.max(0, Math.ceil((gs.endAt - Date.now()) / 1000))}</p>
       <p class="prog">${mName(gs.actor)}だけ見て、体で伝えろ</p>
-      <p class="gs-word">${esc(gs.word.text)}</p>
+      <p class="gs-word" style="${wordSize(gs.word.text, 60)}">${esc(gs.word.text)}</p>
       <p class="hand-note">正解 ${gs.got}問${gs.last != null && gs.got ? `（さっきは${mName(gs.last)}）` : ""}</p>
     </div>`;
-    case "timeup": return `<div class="odai mode-card center" id="card">
-      <p class="gs-timer">0</p>
+    case "timeup": {
+      const q = gsQuota(gs.sec), L = gsTurnLosers();
+      return `<div class="odai mode-card center" id="card">
       <p class="ng-lead">タイムアップ！</p>
-      <p class="hand-note">${mName(gs.actor)}は${gs.got}問正解${gs.got ? `（+${gs.got}点）` : ""}</p>
+      <div class="gs-quota ${L.why === "quota" ? "q-ng" : "q-ok"}"><small>ノルマ ${q}問</small><b>${gs.got}<span>問正解</span></b><em>${L.why === "quota" ? "未達成…" : "達成！"}</em></div>
+      <p class="hand-note">${L.why === "quota" ? `ノルマに届かへんかったので、演じた${mName(gs.actor)}に罰` : `当てた数が一番少ない${L.who.map(mName).join("・")}に罰${L.min ? `（${L.min}問）` : "（0問）"}`}</p>
     </div>`;
+    }
     case "over": case "low": case "end": {
       const low = gsLowest(), max = Math.max(...gs.score);
       const rows = S.members.map((m, i) => ({ i, v: gs.score[i] })).sort((a, b) => b.v - a.v);
       return `<div class="odai mode-card" id="card">
         <div class="head"><span class="who"><b>全員演じた！</b></span><span class="meta"><i class="tag">点数</i></span></div>
-        <ul class="vbars">${rows.map((r, k) => `<li class="${low.includes(r.i) ? "top" : ""}" style="--mc:${colorOf(r.i)};--d:${(0.15 + (rows.length - k) * 0.12).toFixed(2)}s"><span class="nm">${mName(r.i)}</span><span class="bar"><i style="--w:${max ? (r.v / max) * 100 : 0}%"></i></span><b>${r.v}</b>${low.includes(r.i) ? `<span class="stamp">罰</span>` : ""}</li>`).join("")}</ul>
-        <p class="vote-rule bad">点数が一番低い人が罰</p>
+        <ul class="vbars">${rows.map((r, k) => `<li style="--mc:${colorOf(r.i)};--d:${(0.15 + (rows.length - k) * 0.12).toFixed(2)}s"><span class="nm">${mName(r.i)}</span><span class="bar"><i style="--w:${max ? (r.v / max) * 100 : 0}%"></i></span><b>${r.v}</b></li>`).join("")}</ul>
+        <p class="vote-rule good">全員演じ終わった！罰は1人ごとに執行済み</p>
       </div>`;
     }
   }
@@ -1350,8 +1357,8 @@ function vGsControls() {
     case "act": return `<div class="pen-grid-wrap"><p class="pen-q">当てたのは？<span>タップで1点</span></p>
       <div class="pen-grid ${S.members.length > 7 ? "many" : ""}">${others(gs.actor).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="gsHit" data-i="${i}"><span class="bar"></span><span class="nm">${mName(i)}</span><span class="meta"><em>${gs.score[i]}点</em></span></button>`).join("")}</div></div>
       <button class="ghost" data-act="gsPass">パス（次のお題）</button>`;
-    case "timeup": return `<button class="big" data-act="gsNext">${gs.acted + 1 >= S.members.length ? "点数発表へ" : `次は${mName((gs.actor + 1) % S.members.length)}が演じる`}</button>`;
-    case "over": { const low = gsLowest(); return `<button class="big has-pen" data-act="gsLow">${low.map(mName).join("・")}に罰ガチャ</button>`; }
+    case "timeup": return `<button class="big has-pen" data-act="gsTurnGacha">${gsTurnLosers().who.map(mName).join("・")}に罰ガチャ</button>`;
+    case "over": return `<button class="big" data-act="end">結果発表</button>`;
     case "end": return `<button class="big" data-act="end">結果発表</button>`;
   }
   return "";
@@ -1359,7 +1366,7 @@ function vGsControls() {
 function vGesture() {
   const g = S.game, gs = g.gs;
   if (gs.phase === "intro") return vIntroStage("gesture", { extra: `${lvBox({ yurume: "簡単なお題", futsu: "ふつうのお題", jigoku: "むずいお題" }[S.level])}<div class="ng-min-wrap"><p class="ng-min-h">1人の持ち時間</p><div class="ng-min three">${GS_SEC.map((v) => `<button data-act="gsSec" data-v="${v}" aria-pressed="${gs.sec === v}">${v}秒</button>`).join("")}</div></div>`, btn: "ルーレットで最初の人を決める", act: "gsRoul" });
-  if (gs.phase === "low") return `<div id="stage" class="${S.flip ? "flipped" : ""}">${vBar()}<div class="deck">${vCard()}</div><button class="big" data-act="gsAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 結果発表へ</button></div>`;
+  if (gs.phase === "low") return `<div id="stage" class="${S.flip ? "flipped" : ""}">${vBar()}<div class="deck">${vCard()}</div><button class="big" data-act="gsAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → ${gs.acted + 1 >= S.members.length ? "点数を見る" : `次は${mName((gs.actor + 1) % S.members.length)}が演じる`}</button></div>`;
   return `<div id="stage" class="${S.flip ? "flipped" : ""}">
     ${vBar()}
     <div class="deck">${vGsCard()}</div>
@@ -2000,7 +2007,13 @@ function onClick(e) {
       g.gacha = low.map((t) => ({ i: t, n: 1, ...drawBatsu(t) }));
       g.phase = "batsu"; g.gs.phase = "low"; render(true); break;
     }
-    case "gsAccept": applyAdds(); g.gacha = []; g.phase = "play"; g.gs.phase = "end"; render(true); break;
+    case "gsTurnGacha": {
+      const L = gsTurnLosers();
+      g.add = new Map(L.who.map((t) => [t, 1])); g.addReason = L.why === "quota" ? "gquota" : "glow";
+      g.gacha = L.who.map((t) => ({ i: t, n: 1, ...drawBatsu(t) }));
+      g.phase = "batsu"; g.gs.phase = "low"; render(true); break;
+    }
+    case "gsAccept": applyAdds(); g.gacha = []; g.phase = "play"; gsNextActor(); render(true); break;
 
     // 褒め殺し
     case "hmRoul": g.hm.phase = "roul"; g.hm.picked = null; render(true); spinRoulette((i) => { g.hm.picked = i; g.hm.praiser = i; g.doer = g.cur = i; play("coin"); render(true); }); break;

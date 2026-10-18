@@ -230,7 +230,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
         <ModeCard pal={pal} center bg={res?.lucky ? '#eef6ff' : '#1a0606'} edge={res?.lucky ? C.yuru : '#e8202a'}>
           <Prog fg={res?.lucky ? '#1c2a4a' : '#fff'}>{`${members[out].name} アウト！`}</Prog>
           <Text style={[s.small, { color: res?.lucky ? '#1c2a4a' : '#fff', textAlign: 'center' }]}>NGワードは</Text>
-          <Text style={[s.reveal, { color: res?.lucky ? '#1c2a4a' : '#fff' }]}>「{words[out]}」</Text>
+          <Text style={[s.reveal, { color: res?.lucky ? '#1c2a4a' : '#fff', textAlign: 'center' }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.5}>「{words[out]}」</Text>
           {res?.lucky ? <Angel /> : <Skull />}
           <Text style={[s.pen, { color: res?.lucky ? '#1c2a4a' : '#fff' }]}>{res?.text}</Text>
         </ModeCard>
@@ -250,7 +250,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
       card = (
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`${members[out].name}の新しいNGワード`}</Prog>
-          <Text style={[s.reveal, { color: fg }]}>「{words[out]}」</Text>
+          <Text style={[s.reveal, { color: fg, textAlign: 'center' }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.5}>「{words[out]}」</Text>
           <Note fg={fg}>{`${members[out].name}には見せたらアカン`}</Note>
         </ModeCard>
       );

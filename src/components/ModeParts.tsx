@@ -166,7 +166,7 @@ export function WordList({ members, words, skip, fg, big, compact }: { members: 
         j === skip ? null : (
           <View key={j} style={[s.wordRow, big && { paddingVertical: 18 }, { borderLeftColor: colorOf(j), backgroundColor: alpha(fg.length === 7 ? fg : '#141210', 0.07) }]}>
             <Text style={[s.wordName, { color: fg }]} numberOfLines={1}>{m.name}</Text>
-            <Text style={[s.word, big && { fontSize: 30 }, { color: fg }]}>{words[j]}</Text>
+            <Text style={[s.word, big && { fontSize: 30 }, { color: fg, flexShrink: 1, textAlign: 'right' }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.5}>{words[j]}</Text>
           </View>
         ),
       )}

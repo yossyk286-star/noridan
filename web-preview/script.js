@@ -913,7 +913,9 @@ function spinRoulette(onDone) {
 }
 
 // ---------- 早押しジェスチャー ----------
-// 番の人だけお題を見て、声を出さずに体で伝える。当てた人と演じた人に1点。全員1回ずつ演じたら終わり、点数が一番低い人が罰
+// 番の人だけお題を見て、声を出さずに体で伝える。当てた人と演じた人に1点。
+// 1人演じ終わるごとに罰：ノルマ（持ち時間15秒ごとに1問）に届かんかったら演じた人、届いたら当てた数が一番少ない人
+const gsQuota = (sec) => Math.max(1, Math.round(sec / 15));
 function gsWord() {
   let key = S.level;
   if (S.night && !S.members.some((m) => m.ng) && Math.random() < (S.night === "shinya" ? 0.4 : 0.25)) key = S.night === "shinya" && Math.random() < 0.6 ? "shinya" : "yoru";
@@ -921,12 +923,13 @@ function gsWord() {
 }
 function gsStart() {
   const g = S.game, gs = g.gs;
-  gs.phase = "act"; gs.got = 0; gs.word = gsWord();
+  gs.phase = "act"; gs.got = 0; gs.word = gsWord(); gs.turnHits = Array(S.members.length).fill(0);
   gs.endAt = startTimer(gs.sec, () => { gs.phase = "timeup"; render(true); });
 }
 function gsHit(i) {
   const g = S.game, gs = g.gs;
   gs.score[i]++; gs.score[gs.actor]++; gs.got++; g.turn++;
+  gs.turnHits[i]++;
   gs.last = i;
   gs.word = gsWord();
 }
@@ -937,6 +940,14 @@ function gsNextActor() {
   gs.actor = (gs.actor + 1) % S.members.length;
   g.doer = g.cur = gs.actor;
   gs.phase = "hand";
+}
+// このターンの罰の人：ノルマ未達なら演じた人、達成なら当てた数が一番少ない人（当てる側）
+function gsTurnLosers() {
+  const gs = S.game.gs, n = S.members.length;
+  if (gs.got < gsQuota(gs.sec)) return { why: "quota", who: [gs.actor] };
+  const guessers = S.members.map((_, i) => i).filter((i) => i !== gs.actor);
+  const m = Math.min(...guessers.map((i) => gs.turnHits[i]));
+  return { why: "few", who: guessers.filter((i) => gs.turnHits[i] === m), min: m, n };
 }
 function gsLowest() {
   const sc = S.game.gs.score, m = Math.min(...sc);

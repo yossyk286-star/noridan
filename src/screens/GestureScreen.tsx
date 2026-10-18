@@ -48,6 +48,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
   const [word, setWord] = useState(() => decks.gesture(level, night, members));
   const [got, setGot] = useState(0);
   const [last, setLast] = useState<number | null>(null);
+  const [turnHits, setTurnHits] = useState<number[]>(() => Array(n).fill(0)); // このターンで当てた数
   const [score, setScore] = useState<number[]>(() => Array(n).fill(0));
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
   const [correct, setCorrect] = useState(0);
@@ -69,6 +70,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
   const go = () => {
     setGot(0);
     setLast(null);
+    setTurnHits(Array(n).fill(0));
     setWord(decks.gesture(level, night, members));
     setPhase('act');
     clock.start(sec);
@@ -76,6 +78,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
   const hit = (i: number) => {
     setScore((s) => s.map((v, j) => (j === i || j === actor ? v + 1 : v)));
     setGot(got + 1);
+    setTurnHits((t) => t.map((v, j) => (j === i ? v + 1 : v)));
     setCorrect(correct + 1);
     setLast(i);
     setWord(decks.gesture(level, night, members));
@@ -88,12 +91,17 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
     setActor((actor + 1) % n);
     setPhase('hand');
   };
-  const lowest = () => {
-    const m = Math.min(...score);
-    return score.map((v, i) => (v === m ? i : -1)).filter((i) => i >= 0);
+  // 1人終わるごとに罰：ノルマ（持ち時間15秒ごとに1問）に届かんかったら演じた人、届いたら当てた数が一番少ない人
+  const quota = Math.max(1, Math.round(sec / 15));
+  const turnLosers = (): { why: 'quota' | 'few'; who: number[]; min: number } => {
+    if (got < quota) return { why: 'quota', who: [actor], min: 0 };
+    const guessers = members.map((_, i) => i).filter((i) => i !== actor);
+    const m = Math.min(...guessers.map((i) => turnHits[i]));
+    return { why: 'few', who: guessers.filter((i) => turnHits[i] === m), min: m };
   };
   const doLow = () => {
-    const items = lowest().map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
+    const L = turnLosers();
+    const items = L.who.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
     setGacha(items);
     setPhase('low');
     play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
@@ -104,11 +112,12 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
       if (x.lucky) stats.lucky[x.i]++;
       else {
         np[x.i] += x.n;
-        stats.why[x.i].glow = (stats.why[x.i].glow ?? 0) + x.n;
+        const w = x.i === actor && got < quota ? 'gquota' : 'glow';
+        stats.why[x.i][w] = (stats.why[x.i][w] ?? 0) + x.n;
       }
     });
     setPen(np);
-    setPhase('end');
+    nextActor();
   };
   const finish = () => {
     clock.stop();
@@ -174,16 +183,27 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
     case 'timeup':
       card = (
         <ModeCard pal={pal} center>
-          <Text style={[s.timer, { color: fg }]}>0</Text>
           <Lead fg={fg}>タイムアップ！</Lead>
-          <Note fg={fg}>{`${members[actor].name}は${got}問正解${got ? `（+${got}点）` : ''}`}</Note>
+          {(() => {
+            const L = turnLosers();
+            const ok = L.why === 'few';
+            return (
+              <>
+                <View style={[s.quota, { backgroundColor: alpha('#888888', 0.12) }]}>
+                  <Text style={[s.small, { color: fg, opacity: 0.65 }]}>{`ノルマ ${quota}問`}</Text>
+                  <Text style={[s.timer, { color: fg, fontSize: 60, lineHeight: 66 }]}>{got}<Text style={{ fontSize: 16 }}>問正解</Text></Text>
+                  <Text style={[s.quotaRes, { color: ok ? '#1f9d55' : '#ff3b3b' }]}>{ok ? '達成！' : '未達成…'}</Text>
+                </View>
+                <Note fg={fg}>{ok ? `当てた数が一番少ない${L.who.map((i) => members[i].name).join('・')}に罰（${L.min}問）` : `ノルマに届かへんかったので、演じた${members[actor].name}に罰`}</Note>
+              </>
+            );
+          })()}
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label={acted + 1 >= n ? '点数発表へ' : `次は${members[(actor + 1) % n].name}が演じる`} onPress={nextActor} />;
+      controls = <BigButton pal={pal} danger label={`${turnLosers().who.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={doLow} />;
       break;
     case 'over':
     case 'end': {
-      const low = lowest();
       const rows = members.map((m, i) => ({ m, i, v: score[i] })).sort((a, b) => b.v - a.v);
       card = (
         <ModeCard pal={pal}>
@@ -191,15 +211,15 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
           <View style={{ flex: 1, justifyContent: 'center', gap: 8 }}>
             {rows.map((r) => (
               <View key={r.i} style={[s.row, { borderLeftColor: colorOf(r.i), backgroundColor: alpha('#888888', 0.12) }]}>
-                <Text style={[s.rowName, { color: low.includes(r.i) ? '#ff3b3b' : fg }]} numberOfLines={1}>{r.m.name}{low.includes(r.i) ? '　罰' : ''}</Text>
+                <Text style={[s.rowName, { color: fg }]} numberOfLines={1}>{r.m.name}</Text>
                 <Text style={[s.rowV, { color: fg }]}>{r.v}点</Text>
               </View>
             ))}
           </View>
-          <Text style={[s.small, { color: fg }]}>点数が一番低い人が罰</Text>
+          <Text style={[s.small, { color: fg }]}>全員演じ終わった！罰は1人ごとに執行済み</Text>
         </ModeCard>
       );
-      controls = phase === 'end' ? <BigButton pal={pal} label="結果発表" onPress={finish} /> : <BigButton pal={pal} danger label={`${low.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={doLow} />;
+      controls = <BigButton pal={pal} label="結果発表" onPress={finish} />;
       break;
     }
     case 'low':
@@ -208,7 +228,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
           <GachaCard pal={pal} members={members} items={gacha} />
         </DeckStack>
       );
-      controls = <BigButton pal={pal} label={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'} → 結果発表へ`} onPress={accept} />;
+      controls = <BigButton pal={pal} label={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'} → ${acted + 1 >= n ? '点数を見る' : `次は${members[(actor + 1) % n].name}が演じる`}`} onPress={accept} />;
       break;
   }
 
@@ -239,6 +259,8 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
 }
 
 const s = StyleSheet.create({
+  quota: { alignItems: 'center', gap: 2, paddingVertical: 12, paddingHorizontal: 22, borderRadius: 18 },
+  quotaRes: { fontFamily: F.display, fontSize: 22 },
   wrap: { flex: 1, padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
   title: { fontFamily: F.display, fontSize: 22 },
   how: { fontSize: 16, fontWeight: '700', lineHeight: 24 },

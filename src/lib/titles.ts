@@ -14,8 +14,8 @@ export type Stats = {
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
-export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit';
-export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾', vote: '投票1位', ng: 'NGワード', mfail: '答えられへん', skull: 'ドクロ', mlow: '最下位', ito: '並び間違い', glow: 'ジェスチャー最下位', hmlaugh: '笑った', hmfail: '褒め負け', wolf: 'ワードウルフ負け', pit: '予想が一番遠い' };
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit';
+export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾', vote: '投票1位', ng: 'NGワード', mfail: '答えられへん', skull: 'ドクロ', mlow: '最下位', ito: '並び間違い', glow: 'ジェスチャーで当てられへん', gquota: 'ジェスチャーのノルマ未達', hmlaugh: '笑った', hmfail: '褒め負け', wolf: 'ワードウルフ負け', pit: '予想が一番遠い' };
 export function whyText(st: Stats | undefined, i: number) {
   const w = st?.why?.[i];
   if (!w) return '';

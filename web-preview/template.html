@@ -186,6 +186,7 @@ body:not(.stage) .frame { display: none; }
 .rule b { font-size: 11px; letter-spacing: .12em; white-space: nowrap; }
 .rule.bomb { border-style: solid; border-color: var(--fg); }
 .rule.bomb > span:nth-child(2) { flex: 1; min-width: 0; }
+.rule.bomb .nowrap { display: block; overflow: hidden; text-overflow: ellipsis; }
 .rule-out.look { color: var(--fg); border-color: var(--fg); }
 .bomb-look .bomb-cond { font-size: 22px; font-weight: 900; line-height: 1.6; margin: 6px 0 2px; }
 .bomb-look .bomb-cond mark { background: color-mix(in srgb, var(--mc) 55%, transparent); color: inherit; padding: 0 2px; }
@@ -334,6 +335,14 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 @keyframes x2Arrow { 50% { transform: translateX(4px); } }
 @keyframes x2Glow { to { text-shadow: 0 0 22px rgba(255,210,63,1), 0 3px 0 #b3001b; } }
 .odai.drum .x2-skulls .skull:nth-of-type(1) { animation-delay: var(--gt), calc(var(--gt) + .6s); }
+/* ジェスチャー：ノルマの判定 */
+.gs-quota { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 22px; border-radius: 18px; background: color-mix(in srgb, currentColor 7%, transparent); }
+.gs-quota small { font-size: 12px; font-weight: 900; opacity: .65; }
+.gs-quota b { font-family: var(--display); font-weight: 400; font-size: clamp(48px, 16vw, 68px); line-height: 1; }
+.gs-quota b span { font-family: inherit; font-size: 16px; margin-left: 4px; }
+.gs-quota em { font-style: normal; font-family: var(--display); font-size: 22px; animation: stamp2 .35s .3s cubic-bezier(.3,1.6,.5,1) both; }
+.gs-quota.q-ok em { color: #1f9d55; }
+.gs-quota.q-ng em { color: #ff3b3b; }
 /* gacha capsules */
 .gacha { display: flex; flex-direction: column; gap: 14px; width: 100%; }
 .gacha-item { display: grid; grid-template-columns: 64px minmax(0,1fr); gap: 12px; align-items: center; }
@@ -736,6 +745,12 @@ body.stage.neon .vd.ok { background: transparent; color: #fff; border: 2px solid
 .rule .rule-txt { display: flex; flex-direction: column; gap: 2px; line-break: strict; }
 .rule .rule-txt > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .rule .rule-txt em { font-style: normal; margin-left: 8px; opacity: .7; }
+/* 小さい画面：ルールの枠は1行に詰めて、札が潰れんようにする（全文は「違反者に罰」を押すと出る） */
+@media (max-height: 740px) {
+  .rule { padding: 5px 10px; }
+  .rule .rule-txt > span { -webkit-line-clamp: 1; }
+  .rule .rule-out { padding: 6px 9px; font-size: 11px; }
+}
 .rule + .rule { margin-top: -8px; }
 .rule .nowrap { white-space: nowrap; }
 .rule-out { flex: none; padding: 8px 10px; border-radius: 999px; background: #e8202a; color: #fff; font-size: 12px; font-weight: 900; white-space: nowrap; }
@@ -894,7 +909,7 @@ body.stage[data-level="jigoku"] { --acc: var(--blood); --card-edge: var(--blood)
 .ng-topic small { display: block; font-size: 11px; letter-spacing: .14em; opacity: .6; }
 .ng-reveal { margin: 0; display: flex; flex-direction: column; gap: 4px; align-items: center; }
 .ng-reveal small { font-size: 13px; font-weight: 900; opacity: .7; }
-.ng-reveal b { font-family: var(--display); font-weight: 400; font-size: clamp(30px, 11vw, 46px); line-height: 1.15; word-break: keep-all; }
+.ng-reveal b { font-family: var(--display); font-weight: 400; font-size: clamp(30px, 11vw, 46px); line-height: 1.15; word-break: keep-all; overflow-wrap: anywhere; max-width: 100%; }
 .skull-wrap.sm svg { width: 64px; height: 64px; }
 .mode-card .rule-pen { font-size: 19px; line-break: strict; }
 .sub-acts.two { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -1121,7 +1136,9 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .mode-card.mid .ng-list { flex: 0 1 auto; gap: clamp(8px, 1.3vh, 12px); }
 .mode-card.mid .ng-list li { padding: clamp(10px, 2.4vh, 26px) 16px; }
 .mode-card.mid .ng-list .nm { font-size: clamp(15px, 2vh, 18px); }
-.mode-card.mid .ng-list b { font-size: clamp(22px, 4.4vh, 40px); }
+.mode-card.mid .ng-list b { font-size: clamp(22px, 4.4vh, 40px); white-space: normal; text-align: right; line-height: 1.2; min-width: 0; overflow-wrap: anywhere; }
+.mode-card.mid .ng-list b.l2 { font-size: clamp(19px, 3.6vh, 30px); }
+.mode-card.mid .ng-list b.l3 { font-size: clamp(16px, 3vh, 24px); }
 /* 札の上の名前：左の丸が切れんように少しすき間 */
 .odai .head .who { padding-left: 3px; margin-left: -3px; }
 .vote-rule { margin: 0; align-self: flex-start; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 900; line-break: strict; }
