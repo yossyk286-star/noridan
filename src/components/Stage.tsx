@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Tap } from './Tap';
 import type React from 'react';
 import { Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { iniFit, initialOf, isSituational, mustPick, needsPick, othersOf, penHead } from '../lib/game';
+import { doubleSegments, iniFit, initialOf, isSituational, mustPick, needsPick, othersOf, penHead } from '../lib/game';
 import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
 import { useSeen } from '../lib/coach';
@@ -19,6 +19,8 @@ export function SegText({ segments, style, underline, fit }: { segments: Segment
   return (
     <Text style={style} lineBreakStrategyIOS="standard" {...(fit ? { adjustsFontSizeToFit: true, numberOfLines: 9, minimumFontScale: 0.45 } : null)}>
       {segments.map((s, i) => {
+        if (s.x2 === 'old') return <Text key={i} style={{ color: '#ff6b62', textDecorationLine: 'line-through', textDecorationColor: '#ff2a2a', fontSize: 0.82 * ((StyleSheet.flatten(style as object) as { fontSize?: number })?.fontSize ?? 20) }}>{s.text}</Text>;
+        if (s.x2 === 'new') return <Text key={i} style={{ color: '#ffd23f', backgroundColor: 'rgba(255,42,42,0.32)' }}>{` ${s.text} `}</Text>;
         if (!s.hl) return <Text key={i}>{s.text}</Text>;
         const col = s.who !== undefined ? colorOf(s.who) : '#ffd23f';
         return (
@@ -440,7 +442,7 @@ export function GachaCard({ members, items }: { pal: Pal; members: Member[]; ite
             {items.map((g) => (
               <Text key={g.i} style={[styles.mirrorText, { color: look.fg }]}>
                 <Text style={{ fontWeight: '900' }}>{members[g.i].name}{g.lucky ? 'はセーフ　' : 'の罰　'}</Text>
-                {g.segments.map((x) => x.text).join('')}
+                {(g.lucky ? g.segments : doubleSegments(g.segments, g.n, true)).map((x) => x.text).join('')}
               </Text>
             ))}
           </View>
@@ -449,7 +451,7 @@ export function GachaCard({ members, items }: { pal: Pal; members: Member[]; ite
       )}
       <View style={{ alignItems: 'center', gap: 4 }}>
         {allLucky ? <Angel /> : <Skull />}
-        <Text style={[styles.batsuHead, allLucky && { color: '#d99a00' }]}>{allLucky ? 'ラッキー！セーフ' : '罰ゲーム確定'}</Text>
+        <Text style={[styles.batsuHead, allLucky && { color: '#d99a00' }]}>{allLucky ? 'ラッキー！セーフ' : items.some((g) => g.n > 1 && !g.lucky) ? '罰ゲーム2倍！' : '罰ゲーム確定'}</Text>
       </View>
       <View style={[styles.cardBody, { gap: 14 }]}>
         {items.map((g, k) => (
@@ -476,10 +478,13 @@ function GachaRow({ name, color, item, delay, fg, mark }: { name: string; color:
             </View>
           )}
           <Text style={[styles.gachaWho, { color: fg }]}>
-            {name}{item.lucky ? 'はセーフ' : item.night === 'shinya' ? 'の深夜の罰' : item.night ? 'の夜の罰' : 'の罰'}{item.n > 1 && !item.lucky ? `　×${item.n}` : ''}
+            {name}{item.lucky ? 'はセーフ' : item.night === 'shinya' ? 'の深夜の罰' : item.night ? 'の夜の罰' : 'の罰'}
           </Text>
+          {item.n > 1 && !item.lucky && (
+            <View style={styles.x2Badge}><Text style={styles.x2BadgeText}>×{item.n}</Text></View>
+          )}
         </View>
-        <SegText segments={item.segments} style={[styles.gachaText, { color: fg }]} />
+        <SegText segments={item.lucky ? item.segments : doubleSegments(item.segments, item.n)} style={[styles.gachaText, { color: fg }]} />
       </Animated.View>
     </View>
   );
@@ -883,6 +888,8 @@ export function BigButton({
 }
 
 const styles = StyleSheet.create({
+  x2Badge: { backgroundColor: '#ff2a2a', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 1, marginLeft: 6 },
+  x2BadgeText: { color: '#fff', fontFamily: F.display, fontSize: 14 },
   frame: { borderWidth: 3, zIndex: 10 },
   bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   score: { gap: 10, paddingVertical: 10, paddingLeft: 8, paddingRight: 10, alignItems: 'center' },

@@ -2,6 +2,7 @@ import { GACHA_MS } from '../components/Fx';
 import { useEffect, useState } from 'react';
 import { Vibration } from 'react-native';
 import { play } from './sound';
+import { doubleSegments } from './game';
 import type { TurnFlow } from './useTurnFlow';
 import { usePrefs } from './prefs';
 import { plain, speak } from './speech';
@@ -29,7 +30,7 @@ export function useStageCues(flow: TurnFlow, muted = false) {
       const say = (t: string) => (st.phase === 'batsu' ? setTimeout(() => speak(t), GACHA_MS) : speak(t));
       say(
         st.phase === 'batsu'
-          ? st.gacha.map((g) => `${members[g.i].name}${g.lucky ? 'はセーフ。' : 'の罰。'}${plain(g.segments)}`).join('。')
+          ? st.gacha.map((g) => `${members[g.i].name}${g.lucky ? 'はセーフ。' : g.n > 1 ? 'の罰、2倍。' : 'の罰。'}${plain(g.lucky ? g.segments : doubleSegments(g.segments, g.n, true))}`).join('。')
           : plain(st.card.segments),
       );
     }

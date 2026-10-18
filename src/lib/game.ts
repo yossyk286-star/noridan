@@ -81,6 +81,35 @@ export const PERSONAL = /次の(自分の)?番まで/;
 const DOUBLEABLE = /ひと口|ふた口|飲む|\d+\s*(秒|回|つ|個|件|枚|小節|発)|[一二三]回/;
 export const canDouble = (t: string) => DOUBLEABLE.test(t) && !PERSONAL.test(t);
 
+/** 罰2倍：お題の中の数を倍にする（元の数と倍の数を返す） */
+const KAN: Record<string, number> = { 一: 1, 二: 2, 三: 3 };
+function doubleText(t: string, n: number): { at: number; from: string; to: string } | null {
+  let m = t.match(/(\d+)(\s*)(秒|回|つ|個|件|枚|小節|発)/);
+  if (m) return { at: m.index!, from: m[0], to: `${+m[1] * n}${m[2]}${m[3]}` };
+  if ((m = t.match(/ひと口/))) return { at: m.index!, from: m[0], to: n === 2 ? 'ふた口' : `${n}口` };
+  if ((m = t.match(/ふた口/))) return { at: m.index!, from: m[0], to: `${2 * n}口` };
+  if ((m = t.match(/([一二三])回/))) return { at: m.index!, from: m[0], to: `${KAN[m[1]] * n}回` };
+  if ((m = t.match(/飲む/))) return { at: m.index!, from: m[0], to: `${n}回飲む` };
+  return null;
+}
+/** 罰2倍の文：最初に見つかった数を「元の数（取り消し線）＋倍の数」に分ける。plain=true なら倍の数だけ（読み上げ用） */
+export function doubleSegments(segs: Segment[], n: number, plain = false): Segment[] {
+  if (n < 2) return segs;
+  const out: Segment[] = [];
+  let done = false;
+  for (const sg of segs) {
+    const d = !done && !sg.hl ? doubleText(sg.text, n) : null;
+    if (!d) { out.push(sg); continue; }
+    done = true;
+    if (d.at) out.push({ text: sg.text.slice(0, d.at) });
+    if (!plain) out.push({ text: d.from, x2: 'old' });
+    out.push({ text: d.to, x2: plain ? undefined : 'new' });
+    const rest = sg.text.slice(d.at + d.from.length);
+    if (rest) out.push({ text: rest });
+  }
+  return out;
+}
+
 /** お題テンプレからカードを作る */
 export function makeCard(kind: string, tpl: string, members: Member[], p: number, extra: Partial<Card> = {}): Card {
   return {
@@ -232,7 +261,7 @@ export class Decks {
     if (!d || !d.length) d = this.decks[key] = shuffle(list.slice());
     return d.pop()!;
   }
-  /** ワードウルフのお題の組。どっちが多数派かはランダム。夜は下ネタNGの人がおらん時だけ */
+  /** ワードウルフのお題の組。どっちが市民のお題かはランダム。夜は下ネタNGの人がおらん時だけ */
   wolf(level: Level, night: Night, members: Member[]): { maj: string; min: string; night: 'yoru' | 'shinya' | false } {
     let key: Level | 'yoru' | 'shinya' = level;
     const shinya = night === 'shinya' && ALLOW_SHINYA;
@@ -245,7 +274,7 @@ export class Decks {
   pittari(level: Level): { t: string; u: string } {
     return this.obj('pit_' + level, (pittariJson as unknown as Record<string, { t: string; u: string }[]>)[level]);
   }
-  /** 多数派全員の罰：全員で同じ罰を1つ（人で中身が変わるもの・「次の自分の番まで」系は外す） */
+  /** 市民全員の罰：全員で同じ罰を1つ（人で中身が変わるもの・「次の自分の番まで」系は外す） */
   groupBatsu(members: Member[]): { segments: Segment[]; lucky: boolean } {
     if (Math.random() < CHANCE.lucky) {
       const t = this.obj('lucky_group', batsu.lucky.filter((x) => !/\{[PXY]\}/.test(x))) ?? 'セーフ！';

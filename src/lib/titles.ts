@@ -10,7 +10,7 @@ export type Stats = {
   solo: number[]; // 自分のお題をやった枚数
   votes?: number[]; // ぶっちゃけ投票で集めた票
   exact?: number[]; // ピッタリ予想でピッタリ当てた回数
-  wolf?: number[]; // ワードウルフで少数派として逃げ切った回数
+  wolf?: number[]; // ワードウルフでウルフとして逃げ切った回数
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
@@ -58,7 +58,7 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
   const ex = st.exact ? top(st.exact, 1) : null;
   if (ex) add('ピッタリ職人', ex, `ピッタリ ${st.exact![ex[0]]}回`);
   const wf = st.wolf ? top(st.wolf, 1) : null;
-  if (wf) add('名演技', wf, `少数派で逃げ切り ${st.wolf![wf[0]]}回`);
+  if (wf) add('名演技', wf, `ウルフで逃げ切り ${st.wolf![wf[0]]}回`);
   const d = top(st.dbl, 1);
   if (d) add('ギャンブラー', d, `倍プッシュ ${st.dbl[d[0]]}回（成功${st.dwin[d[0]]}）`);
   const p = top(st.pass, 2);

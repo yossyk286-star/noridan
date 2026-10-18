@@ -476,12 +476,12 @@ function vCard() {
     return `<div class="odai ${allLucky ? "lucky" : "batsu"} ${drum ? "drum" : anim}" id="card">
       ${drum ? gachaMachine(allLucky) : ""}
       <div class="head"><span>罰ガチャ</span></div>
-      ${S.dual ? `<div class="mirror-list">${g.gacha.map((x) => `<p><b>${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : "の罰"}</b>${x.html}</p>`).join("")}</div><hr class="dual-line">` : ""}
-      <div class="skull-wrap">${allLucky ? `${ANGEL}<b>ラッキー！セーフ</b>` : `${SKULL}<b>罰ゲーム確定</b>`}</div>
+      ${S.dual ? `<div class="mirror-list">${g.gacha.map((x) => `<p><b>${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : "の罰"}</b>${x.lucky ? x.html : doubledPlain(x.html, x.n)}</p>`).join("")}</div><hr class="dual-line">` : ""}
+      <div class="skull-wrap">${allLucky ? `${ANGEL}<b>ラッキー！セーフ</b>` : `${SKULL}<b>${g.gacha.some((x) => x.n > 1 && !x.lucky) ? "罰ゲーム2倍！" : "罰ゲーム確定"}</b>`}</div>
       <div class="gacha">${g.gacha.map((x, k) => `
         <div class="gacha-item ${x.night ? "night " + x.night : ""}" style="--d:calc(var(--gt, 0s) + ${(k * 0.35).toFixed(2)}s);--mc:${colorOf(x.i)}">
           <div class="capsule"><i class="top"></i><i class="bot"></i><i class="res ${x.lucky ? "ok" : ""}">${x.lucky ? "天" : "罰"}</i></div>
-          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="badge">×${x.n}</span>` : ""}</b><p>${x.html}</p></div>
+          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="x2-badge">×${x.n}</span>` : ""}</b><p>${x.lucky ? x.html : doubleHtml(x.html, x.n)}</p></div>
         </div>`).join("")}</div>
     </div>`;
   }
@@ -892,12 +892,25 @@ function vVote() {
 }
 
 // ---------- ワードウルフ（画面） ----------
+// ウルフの顔（cls: "caught" つかまった / "win" 逃げ切り）
+const WOLF = (cls = "") => `<svg class="wolf ${cls}" viewBox="0 0 100 100" aria-hidden="true">
+  <path d="M18 44 26 6l20 24zM82 44 74 6 54 30z" fill="#6b6f7a" stroke="#141210" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M25 34 28 16l10 12zM75 34 72 16 62 28z" fill="#ff9aa8"/>
+  <path d="M50 22C30 22 15 36 15 54c0 12 8 21 19 27l16 13 16-13c11-6 19-15 19-27 0-18-15-32-35-32z" fill="#8a8f9c" stroke="#141210" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M34 64q16-9 32 0l-6 16-10 9-10-9z" fill="#f7f3ea" stroke="#141210" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M27 42l14 5M73 42l-14 5" stroke="#141210" stroke-width="3.5" stroke-linecap="round"/>
+  <ellipse class="w-eye" cx="37" cy="52" rx="6.5" ry="5" fill="#ffd23f" stroke="#141210" stroke-width="2"/>
+  <ellipse class="w-eye" cx="63" cy="52" rx="6.5" ry="5" fill="#ffd23f" stroke="#141210" stroke-width="2"/>
+  <path d="M37 48v8M63 48v8" stroke="#141210" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="50" cy="66" rx="6" ry="4" fill="#141210"/>
+  <path d="M43 77l3 6 2-6M57 77l-3 6-2-6" fill="#fff" stroke="#141210" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>`;
 function vWfCard() {
   const g = S.game, wf = g.wf, n = S.members.length;
   const nc = wf.night === "shinya" ? "deep" : wf.night ? "yoru" : "";
   const words = (showMaj = true) => `<div class="wf-words ${wf.phase === "reveal" && S.anim ? "late" : ""}" style="--late:${(voteFxTime(wf.counts) + 0.2).toFixed(2)}s">
-      <p><small>少数派</small><b>${esc(wf.min)}</b><span style="--mc:${colorOf(wf.wolf)}"><i></i>${mName(wf.wolf)}</span></p>
-      <p><small>多数派</small><b>${showMaj ? esc(wf.maj) : "？？？"}</b><span>ほか${n - 1}人</span></p>
+      <p class="w"><small>${WOLF()}ウルフ</small><b>${esc(wf.min)}</b><span style="--mc:${colorOf(wf.wolf)}"><i></i>${mName(wf.wolf)}</span></p>
+      <p class="c"><small>市民</small><b>${showMaj ? esc(wf.maj) : "？？？"}</b><span>ほか${n - 1}人</span></p>
     </div>`;
   switch (wf.phase) {
     case "hand": return `<div class="odai mode-card center" id="card">
@@ -908,12 +921,12 @@ function vWfCard() {
     case "look": return `<div class="odai ${nc} mode-card center" id="card">
       <p class="prog">${mName(wf.viewer)}のお題</p>
       ${peekBox(`<p class="ng-reveal wf-word"><b>${esc(wfWord(wf.viewer))}</b></p>`)}
-      <p class="hand-note">自分が多数派か少数派かは分からへん。<br>お題そのものは言うたらアカン</p>
+      <p class="hand-note">自分が市民かウルフかは分からへん。<br>お題そのものは言うたらアカン</p>
     </div>`;
     case "talk": case "who": return `<div class="odai mode-card center" id="card">
       <p class="ng-timer ${wf.timeUp ? "" : "run"}" id="${wf.timeUp ? "" : "modeTimer"}">${wf.timeUp ? "0:00" : fmtTime(wf.endAt - Date.now())}</p>
-      <p class="ng-lead">${wf.timeUp ? "時間切れ！<br>投票へ" : "お題の話をして<br>少数派を探せ！"}</p>
-      <p class="hand-note">${n}人のうち1人だけ、ちょっと違うお題。<br>自分が少数派かもしれへん</p>
+      <p class="ng-lead">${wf.timeUp ? "時間切れ！<br>投票へ" : "お題の話をして<br>ウルフを探せ！"}</p>
+      <p class="hand-note">${n}人のうち1人だけ、ちょっと違うお題。<br>自分がウルフかもしれへん</p>
     </div>`;
     case "vhand": { const v = wf.order[wf.k]; return `<div class="odai mode-card center" id="card">
       <p class="prog">投票 ${wf.k + 1} / ${n}</p>
@@ -922,7 +935,7 @@ function vWfCard() {
     </div>`; }
     case "vote": { const v = wf.order[wf.k]; return `<div class="odai mode-card" id="card">
       <div class="head"><span class="who" style="--mc:${colorOf(v)}"><i></i><b>${mName(v)}</b><small>の投票</small></span></div>
-      <p class="vote-q">少数派やと思うのは？</p>
+      <p class="vote-q">ウルフやと思うのは？</p>
       <div class="pen-grid vote-grid ${n > 6 ? "many" : ""}">${S.members.map((_, i) => i).filter((i) => i !== v).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="wfPick" data-i="${i}"><span class="bar"></span><span class="nm">${mName(i)}</span></button>`).join("")}</div>
     </div>`; }
     case "done": return `<div class="odai mode-card center" id="card">
@@ -932,7 +945,7 @@ function vWfCard() {
     case "reveal": {
       const c = wf.counts, max = Math.max(...c);
       const rows = S.members.map((_, i) => ({ i, v: c[i] })).sort((a, b) => b.v - a.v);
-      const res = wf.caught ? `少数派を当てた！${mName(wf.wolf)}に逆転チャンス` : wf.top.length > 1 ? "同票で決まらず。少数派の逃げ切り！" : `${mName(wf.top[0])}は多数派。少数派の逃げ切り！`;
+      const res = wf.caught ? `ウルフを見つけた！でも${mName(wf.wolf)}に逆転チャンス` : wf.top.length > 1 ? "同票で決まらず。ウルフの逃げ切り！" : `${mName(wf.top[0])}は市民。ウルフの逃げ切り！`;
       return `<div class="odai mode-card" id="card">
         <div class="head"><span class="who"><b>第${wf.round}回戦</b></span><span class="meta"><i class="tag">結果</i></span></div>
         ${vbars(rows, max, (i) => i === wf.wolf, false)}
@@ -942,22 +955,25 @@ function vWfCard() {
     }
     case "guess": return `<div class="odai mode-card center" id="card">
       <p class="prog">逆転チャンス</p>
-      ${bigWho(wf.wolf, "")}
-      <p class="ng-lead">多数派のお題を<br>当てろ！</p>
-      <p class="hand-note">${mName(wf.wolf)}が声に出して答える。<br>合ってるかは多数派のみんなが判定</p>
+      <div class="wf-wolf">${WOLF()}<span style="--mc:${colorOf(wf.wolf)}"><i></i>ウルフ：${mName(wf.wolf)}</span></div>
+      <p class="ng-lead">市民のお題を<br>当てろ！</p>
+      <p class="hand-note">${mName(wf.wolf)}が声に出して答える。<br>合ってるかは市民のみんなが判定</p>
     </div>`;
     case "result": {
       const lose = wfLosers(), wolfLose = lose.length === 1 && lose[0] === wf.wolf;
-      return `<div class="odai mode-card center" id="card">
+      const how = wolfLose ? "ウルフをつかまえた" : wf.caught ? "ウルフが市民のお題を当てた" : wf.top.length > 1 ? "同票でウルフを決められへんかった" : "ウルフを見抜けへんかった";
+      return `<div class="odai mode-card center wf-res ${wolfLose ? "cit" : "wolf"}" id="card">
         <p class="prog">第${wf.round}回戦</p>
+        <div class="wf-wolf ${wolfLose ? "caught" : "win"}">${WOLF(wolfLose ? "caught" : "win")}<em class="wf-stamp">${wolfLose ? "御用！" : wf.caught ? "逆転！" : "逃げ切り！"}</em><span style="--mc:${colorOf(wf.wolf)}"><i></i>ウルフは${mName(wf.wolf)}</span></div>
+        <p class="wf-win">${wolfLose ? "市民の勝ち！" : wf.caught ? "ウルフの逆転勝ち！" : "ウルフの勝ち！"}</p>
+        <p class="hand-note">${how}</p>
         ${words(true)}
-        <p class="ng-lead">${wolfLose ? "少数派の負け" : wf.caught ? "逆転！多数派の負け" : "少数派の逃げ切り"}</p>
-        <p class="vote-rule bad">${wolfLose ? `${mName(wf.wolf)}に罰` : `多数派の${n - 1}人全員に罰`}</p>
+        <p class="vote-rule bad">${wolfLose ? `ウルフの${mName(wf.wolf)}に罰` : `市民の${n - 1}人全員に罰`}</p>
       </div>`;
     }
     case "group": { const r = wf.res; if (S.anim) S.gIntro = true; return `<div class="odai ${r.lucky ? "lucky" : "batsu"} mode-card center ${S.anim ? "drum" : ""}" id="card">
       ${S.anim ? gachaMachine(r.lucky) : ""}
-      <p class="prog">多数派全員の罰</p>
+      <p class="prog">市民全員の罰</p>
       <div class="skull-wrap sm">${r.lucky ? `${ANGEL}<b>天使！全員セーフ</b>` : `${SKULL}<b>罰ゲーム</b>`}</div>
       <p class="rule-pen">${r.html}</p>
       <p class="hand-note">${wfLosers().map(mName).join("・")}</p>
@@ -978,7 +994,7 @@ function vWfControls() {
     case "vote": return `<p class="hint">押したらすぐ次の人へ。誰に入れたかは出えへん</p>`;
     case "done": return `<button class="big" data-act="wfReveal">結果発表</button>`;
     case "reveal": return wf.caught ? `<button class="big" data-act="wfGuess">逆転チャンスへ</button>` : `<button class="big has-pen" data-act="wfResult">罰を決める</button>`;
-    case "guess": return `<div class="verdict"><button class="vd ng" data-act="wfMiss"><b>外れ</b><small>${mName(wf.wolf)}に罰</small></button><button class="vd ok" data-act="wfHit"><b>当たり！</b><small>多数派に罰</small></button></div>`;
+    case "guess": return `<div class="verdict"><button class="vd ng" data-act="wfMiss"><b>外れ</b><small>${mName(wf.wolf)}に罰</small></button><button class="vd ok" data-act="wfHit"><b>当たり！</b><small>市民に罰</small></button></div>`;
     case "result": return `<button class="big has-pen" data-act="wfGacha">罰ガチャ</button>`;
     case "group": return `<button class="big" data-act="wfDone">${wf.res.lucky ? "ラッキー！" : "受け入れた"} → 次の回戦</button>`;
     case "batsu": return `<button class="big" data-act="wfDone">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次の回戦</button>`;

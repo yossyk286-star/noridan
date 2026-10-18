@@ -243,6 +243,22 @@ function finishCard() {
 // 罰2倍（×2）の時は、2倍にしても意味が通る罰だけ（「ひと口飲む」「10秒」「3つ言う」みたいに数があるやつ）
 const DOUBLEABLE = /ひと口|ふた口|飲む|\d+\s*(秒|回|つ|個|件|枚|小節|発)|[一二三]回/;
 const canDouble = (t) => DOUBLEABLE.test(t) && !PERSONAL.test(t);
+// 罰2倍：お題の中の数を倍にする。元の数は赤い取り消し線、倍の数を横に出す
+const KAN = { 一: 1, 二: 2, 三: 3 };
+function doubleText(t, n = 2) {
+  let m = t.match(/(\d+)(\s*)(秒|回|つ|個|件|枚|小節|発)/);
+  if (m) return { at: m.index, from: m[0], to: `${+m[1] * n}${m[2]}${m[3]}` };
+  if ((m = t.match(/ひと口/))) return { at: m.index, from: m[0], to: n === 2 ? "ふた口" : `${n}口` };
+  if ((m = t.match(/ふた口/))) return { at: m.index, from: m[0], to: `${2 * n}口` };
+  if ((m = t.match(/([一二三])回/))) return { at: m.index, from: m[0], to: `${KAN[m[1]] * n}回` };
+  if ((m = t.match(/飲む/))) return { at: m.index, from: m[0], to: `${n}回飲む` };
+  return null;
+}
+function doubleHtml(html, n) {
+  const d = n > 1 ? doubleText(html, n) : null;
+  return d ? `${html.slice(0, d.at)}<s class="x2-old">${d.from}</s><ins class="x2-new">${d.to}</ins>${html.slice(d.at + d.from.length)}` : html;
+}
+const doubledPlain = (html, n) => { const d = n > 1 ? doubleText(html, n) : null; return d ? html.slice(0, d.at) + d.to + html.slice(d.at + d.from.length) : html; };
 function drawBatsuFrom(key, list, n) {
   if (n < 2) return draw(key, list);
   const pool = list.filter(canDouble);
@@ -453,7 +469,7 @@ function titles() {
   const r = top(st.rev, 1); if (r) add("リベンジの鬼", r, `押し付け ${st.rev[r[0]]}回`);
   const h = top(st.hit, 2); if (h) add("押し付けられ体質", h, `押し付けられ ${st.hit[h[0]]}回`);
   if (g.mode === "pittari") { const e = top(st.exact, 1); if (e) add("ピッタリ職人", e, `ピッタリ ${st.exact[e[0]]}回`); }
-  if (g.mode === "wolf") { const w = top(st.wolf, 1); if (w) add("名演技", w, `少数派で逃げ切り ${st.wolf[w[0]]}回`); }
+  if (g.mode === "wolf") { const w = top(st.wolf, 1); if (w) add("名演技", w, `ウルフで逃げ切り ${st.wolf[w[0]]}回`); }
   if (g.mode === "vote" && st.votes) { const v = top(st.votes, 2); if (v) add("みんなの的", v, `合計 ${st.votes[v[0]]}票`); }
   const d = top(st.dbl, 1); if (d) add("ギャンブラー", d, `倍プッシュ ${st.dbl[d[0]]}回（成功${st.dwin[d[0]]}）`);
   const p = top(st.pass, 2); if (p) add("パス魔", p, `パス ${st.pass[p[0]]}回`);
@@ -498,7 +514,7 @@ function cardSpeech() {
   if (!g) return "";
   if (g.phase === "bombPeek") return "";
   if (g.phase === "batsu") {
-    return g.gacha.map((x) => `${S.members[x.i].name}${x.lucky ? "はセーフ。" : "の罰。"}${plain(x.html)}`).join("。");
+    return g.gacha.map((x) => `${S.members[x.i].name}${x.lucky ? "はセーフ。" : x.n > 1 ? "の罰、2倍。" : "の罰。"}${plain(x.lucky ? x.html : doubledPlain(x.html, x.n))}`).join("。");
   }
   return g.card ? plain(g.card.html) : "";
 }
@@ -609,8 +625,8 @@ function deckPop(key, list) {
 }
 
 // ---------- ワードウルフ ----------
-// 全員にお題。1人（少数派）だけちょっと違うお題で、自分がどっちかは分からへん。話して投票、
-// 少数派が一番票を集めたら少数派の負け（ただし多数派のお題を当てたら逆転）。外したら・同票なら多数派全員の負け
+// 全員にお題。1人（ウルフ）だけちょっと違うお題で、自分がどっちかは分からへん。話して投票、
+// ウルフが一番票を集めたらウルフの負け（ただし市民のお題を当てたら逆転）。外したら・同票なら市民全員の負け
 const WF_MIN = [2, 3, 5];
 function wfRound() {
   const g = S.game, wf = g.wf, n = S.members.length;
@@ -650,14 +666,14 @@ function wfReveal() {
   g.turn++;
   wf.phase = "reveal";
 }
-// 負けた人：バレて逆転できず → 少数派だけ。逃げ切り・逆転 → 多数派全員
+// 負けた人：バレて逆転できず → ウルフだけ。逃げ切り・逆転 → 市民全員
 function wfLosers() {
   const wf = S.game.wf;
   if (wf.caught && !wf.guessed) return [wf.wolf];
   return S.members.map((_, i) => i).filter((i) => i !== wf.wolf);
 }
 
-// 多数派全員の罰：全員で同じ罰を1つ（人によって中身が変わるもの・「次の自分の番まで」系は外す）
+// 市民全員の罰：全員で同じ罰を1つ（人によって中身が変わるもの・「次の自分の番まで」系は外す）
 function wfGroupBatsu() {
   if (Math.random() < CHANCE.lucky) return { lucky: true, html: esc(draw("lucky_group", DATA.batsu.lucky.filter((t) => !/\{[PXY]\}/.test(t))) || "セーフ！") };
   const pool = DATA.batsu.bad.filter((t) => !/\{[PXY]\}/.test(t) && !PERSONAL.test(t));

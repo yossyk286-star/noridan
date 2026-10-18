@@ -9,6 +9,7 @@ import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '..
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, Peek } from '../components/ModeParts';
 import { Angel, GACHA_MS, GachaMachine, Skull } from '../components/Fx';
 import { Tap } from '../components/Tap';
+import Svg, { Ellipse, Path } from 'react-native-svg';
 import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
@@ -35,8 +36,8 @@ const MINUTES = [2, 3, 5];
 const fmt = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 
 /**
- * ワードウルフ：全員にお題。1人（少数派）だけちょっと違うお題で、自分がどっちかは分からへん。
- * 話して投票、少数派が一番票を集めたら少数派の負け（多数派のお題を当てたら逆転）。外したら・同票なら多数派全員の負け
+ * ワードウルフ：全員にお題。1人（ウルフ）だけちょっと違うお題で、自分がどっちかは分からへん。
+ * 話して投票、ウルフが一番票を集めたらウルフの負け（市民のお題を当てたら逆転）。外したら・同票なら市民全員の負け
  */
 export default function WolfScreen({ members, level, night, onQuit, onSettings, onFinish }: Props) {
   useKeepAwake();
@@ -62,7 +63,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
   const [played, setPlayed] = useState(0);
   const [gacha, setGacha] = useState<GachaItem[]>([]);
   const [group, setGroup] = useState<{ segments: Segment[]; lucky: boolean } | null>(null);
-  const [groupRoll, setGroupRoll] = useState(false); // 多数派全員の罰もマシンが回ってから出す
+  const [groupRoll, setGroupRoll] = useState(false); // 市民全員の罰もマシンが回ってから出す
   const stats = useRef<Stats>(newStats(n)).current;
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
@@ -178,8 +179,11 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
   const frame = phase === 'hand' || phase === 'look' ? colorOf(viewer) : phase === 'vhand' || phase === 'vote' ? colorOf(voter) : phase === 'guess' ? colorOf(round.wolf) : C.muted;
   const words = (showMaj: boolean) => (
     <View style={s.words}>
-      <View style={[s.wordBox, { backgroundColor: alpha('#888888', 0.12) }]}>
-        <Text style={[s.wordLab, { color: fg }]}>少数派</Text>
+      <View style={[s.wordBox, { backgroundColor: alpha('#888888', 0.12), borderWidth: 2, borderColor: 'rgba(255,59,59,0.45)' }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <WolfFace size={22} />
+          <Text style={[s.wordLab, { color: '#ff3b3b', opacity: 1 }]}>ウルフ</Text>
+        </View>
         <Text style={[s.wordText, { color: fg }]}>{round.min}</Text>
         <View style={s.wordWho}>
           <View style={[s.dot, { backgroundColor: colorOf(round.wolf) }]} />
@@ -187,7 +191,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
         </View>
       </View>
       <View style={[s.wordBox, { backgroundColor: alpha('#888888', 0.12) }]}>
-        <Text style={[s.wordLab, { color: fg }]}>多数派</Text>
+        <Text style={[s.wordLab, { color: fg }]}>市民</Text>
         <Text style={[s.wordText, { color: fg }]}>{showMaj ? round.maj : '？？？'}</Text>
         <Text style={[s.wordLab, { color: fg }]}>ほか{n - 1}人</Text>
       </View>
@@ -238,7 +242,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
           <Peek fg={fg}>
             <Text style={[s.bigWord, { color: fg }]} adjustsFontSizeToFit numberOfLines={2}>{word(viewer)}</Text>
           </Peek>
-          <Note fg={fg}>{'自分が多数派か少数派かは分からへん。\nお題そのものは言うたらアカン'}</Note>
+          <Note fg={fg}>{'自分が市民かウルフかは分からへん。\nお題そのものは言うたらアカン'}</Note>
         </ModeCard>
       );
       controls = (
@@ -253,8 +257,8 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       card = (
         <ModeCard pal={pal} center>
           <Text style={[s.timer, { color: !timeUp && clock.left < 30 ? '#ff3b3b' : fg }]}>{fmt(timeUp ? 0 : clock.left)}</Text>
-          <Lead fg={fg}>{timeUp ? '時間切れ！\n投票へ' : 'お題の話をして\n少数派を探せ！'}</Lead>
-          <Note fg={fg}>{`${n}人のうち1人だけ、ちょっと違うお題。\n自分が少数派かもしれへん`}</Note>
+          <Lead fg={fg}>{timeUp ? '時間切れ！\n投票へ' : 'お題の話をして\nウルフを探せ！'}</Lead>
+          <Note fg={fg}>{`${n}人のうち1人だけ、ちょっと違うお題。\n自分がウルフかもしれへん`}</Note>
         </ModeCard>
       );
       controls = (
@@ -288,7 +292,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       card = (
         <ModeCard pal={pal}>
           <Text style={[s.voter, { color: fg }]}>{members[voter].name}<Text style={s.voterSub}> の投票</Text></Text>
-          <Text style={[s.qSmall, { color: fg }]}>少数派やと思うのは？</Text>
+          <Text style={[s.qSmall, { color: fg }]}>ウルフやと思うのは？</Text>
           <View style={{ flex: 1 }} />
           <NameTiles members={members} list={members.map((_, i) => i).filter((i) => i !== voter)} fg={fg} cols={2} onPress={vote} />
         </ModeCard>
@@ -306,7 +310,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       break;
     case 'reveal': {
       const rows = members.map((_, i) => ({ i, v: counts[i] })).sort((a, b) => b.v - a.v);
-      const res = caught ? `少数派を当てた！${members[round.wolf].name}に逆転チャンス` : top.length > 1 ? '同票で決まらず。少数派の逃げ切り！' : `${members[top[0]].name}は多数派。少数派の逃げ切り！`;
+      const res = caught ? `ウルフを見つけた！でも${members[round.wolf].name}に逆転チャンス` : top.length > 1 ? '同票で決まらず。ウルフの逃げ切り！' : `${members[top[0]].name}は市民。ウルフの逃げ切り！`;
       card = (
         <ModeCard pal={pal}>
           <Text style={[s.no, { color: fg }]}>第{round.no}回戦</Text>
@@ -327,9 +331,10 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       card = (
         <ModeCard pal={pal} center>
           <Prog fg={fg}>逆転チャンス</Prog>
-          <HandWho members={members} i={round.wolf} fg={fg} />
-          <Lead fg={fg}>{'多数派のお題を\n当てろ！'}</Lead>
-          <Note fg={fg}>{`${members[round.wolf].name}が声に出して答える。\n合ってるかは多数派のみんなが判定`}</Note>
+          <WolfFace size={104} />
+          <WolfTag name={members[round.wolf].name} color={colorOf(round.wolf)} fg={fg} label="ウルフ：" />
+          <Lead fg={fg}>{'市民のお題を\n当てろ！'}</Lead>
+          <Note fg={fg}>{`${members[round.wolf].name}が声に出して答える。\n合ってるかは市民のみんなが判定`}</Note>
         </ModeCard>
       );
       controls = (
@@ -340,19 +345,27 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
           </Tap>
           <Tap style={[s.vd, { backgroundColor: pal.fg }]} onPress={() => { setGuessed(true); setPhase('result'); }}>
             <Text style={[s.vdText, { color: pal.bg }]}>当たり！</Text>
-            <Text style={[s.vdSub, { color: pal.bg }]}>多数派に罰</Text>
+            <Text style={[s.vdSub, { color: pal.bg }]}>市民に罰</Text>
           </Tap>
         </View>
       );
       break;
     case 'result': {
       const wolfLose = losers.length === 1 && losers[0] === round.wolf;
+      const how = wolfLose ? 'ウルフをつかまえた' : caught ? 'ウルフが市民のお題を当てた' : top.length > 1 ? '同票でウルフを決められへんかった' : 'ウルフを見抜けへんかった';
+      const winColor = wolfLose ? '#1f9d55' : '#ff3b3b';
       card = (
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round.no}回戦`}</Prog>
+          <View>
+            <WolfFace size={104} mood={wolfLose ? 'caught' : 'win'} />
+            <Stamp text={wolfLose ? '御用！' : caught ? '逆転！' : '逃げ切り！'} color={winColor} />
+          </View>
+          <WolfTag name={members[round.wolf].name} color={colorOf(round.wolf)} fg={fg} label="ウルフは" />
+          <Text style={[s.win, { color: winColor }]} numberOfLines={1} adjustsFontSizeToFit>{wolfLose ? '市民の勝ち！' : caught ? 'ウルフの逆転勝ち！' : 'ウルフの勝ち！'}</Text>
+          <Note fg={fg}>{how}</Note>
           {words(true)}
-          <Lead fg={fg}>{wolfLose ? '少数派の負け' : caught ? '逆転！多数派の負け' : '少数派の逃げ切り'}</Lead>
-          <Text style={[s.rule, s.ruleBad, { alignSelf: 'center' }]}>{wolfLose ? `${members[round.wolf].name}に罰` : `多数派の${n - 1}人全員に罰`}</Text>
+          <Text style={[s.rule, s.ruleBad, { alignSelf: 'center' }]}>{wolfLose ? `ウルフの${members[round.wolf].name}に罰` : `市民の${n - 1}人全員に罰`}</Text>
         </ModeCard>
       );
       controls = <BigButton pal={pal} danger label="罰ガチャ" onPress={doGacha} />;
@@ -365,7 +378,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
         </ModeCard>
       ) : (
         <ModeCard pal={pal} center bg={group?.lucky ? undefined : '#1a0606'} edge={group?.lucky ? undefined : '#e8202a'}>
-          <Prog fg={group?.lucky ? fg : '#f7f3ea'}>多数派全員の罰</Prog>
+          <Prog fg={group?.lucky ? fg : '#f7f3ea'}>市民全員の罰</Prog>
           {group?.lucky ? <Angel /> : <Skull />}
           <Text style={[s.groupHead, { color: group?.lucky ? fg : '#ff3b3b' }]}>{group?.lucky ? '天使！全員セーフ' : '罰ゲーム'}</Text>
           <Text style={[s.groupText, { color: group?.lucky ? fg : '#f7f3ea' }]}>{group?.segments.map((x) => x.text).join('')}</Text>
@@ -409,7 +422,64 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
 }
 
 /** 票数のバー（下の人から順に伸びる） */
-/** 数え終わったら少数派の正体がめくれて出てくる */
+/** ウルフの顔（caught=つかまった、win=逃げ切りでゆらゆら） */
+function WolfFace({ size, mood }: { size: number; mood?: 'caught' | 'win' }) {
+  const pop = useRef(new Animated.Value(0)).current;
+  const sway = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.spring(pop, { toValue: 1, friction: 4, tension: 90, useNativeDriver: true }).start();
+    if (mood === 'win') {
+      const a = Animated.loop(Animated.sequence([
+        Animated.timing(sway, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(sway, { toValue: 0, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]));
+      a.start();
+      return () => a.stop();
+    }
+  }, []);
+  const eye = mood === 'caught' ? '#ffffff' : '#ffd23f';
+  return (
+    <Animated.View style={{ transform: [{ scale: pop }, { rotate: sway.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-8deg'] }) }] }}>
+      <Svg width={size} height={size} viewBox="0 0 100 100">
+        <Path d="M18 44 26 6l20 24zM82 44 74 6 54 30z" fill="#6b6f7a" stroke="#141210" strokeWidth={3} strokeLinejoin="round" />
+        <Path d="M25 34 28 16l10 12zM75 34 72 16 62 28z" fill="#ff9aa8" />
+        <Path d="M50 22C30 22 15 36 15 54c0 12 8 21 19 27l16 13 16-13c11-6 19-15 19-27 0-18-15-32-35-32z" fill="#8a8f9c" stroke="#141210" strokeWidth={3} strokeLinejoin="round" />
+        <Path d="M34 64q16-9 32 0l-6 16-10 9-10-9z" fill="#f7f3ea" stroke="#141210" strokeWidth={2.5} strokeLinejoin="round" />
+        <Path d="M27 42l14 5M73 42l-14 5" stroke="#141210" strokeWidth={3.5} strokeLinecap="round" />
+        <Ellipse cx={37} cy={52} rx={6.5} ry={5} fill={eye} stroke="#141210" strokeWidth={2} />
+        <Ellipse cx={63} cy={52} rx={6.5} ry={5} fill={eye} stroke="#141210" strokeWidth={2} />
+        <Path d="M37 48v8M63 48v8" stroke="#141210" strokeWidth={2.5} strokeLinecap="round" />
+        <Ellipse cx={50} cy={66} rx={6} ry={4} fill="#141210" />
+        <Path d="M43 77l3 6 2-6M57 77l-3 6-2-6" fill="#fff" stroke="#141210" strokeWidth={1.5} strokeLinejoin="round" />
+      </Svg>
+    </Animated.View>
+  );
+}
+
+/** 「ウルフは〇〇」の札 */
+function WolfTag({ name, color, fg, label }: { name: string; color: string; fg: string; label: string }) {
+  return (
+    <View style={[s.wolfTag, { backgroundColor: alpha('#888888', 0.14) }]}>
+      <View style={[s.dot, { backgroundColor: color }]} />
+      <Text style={[s.wolfTagText, { color: fg }]} numberOfLines={1}>{label}{name}</Text>
+    </View>
+  );
+}
+
+/** 斜めのハンコ（御用！・逃げ切り！） */
+function Stamp({ text, color }: { text: string; color: string }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.sequence([Animated.delay(600), Animated.spring(v, { toValue: 1, friction: 5, tension: 160, useNativeDriver: true })]).start();
+  }, []);
+  return (
+    <Animated.View style={[s.stamp, { borderColor: color, opacity: v, transform: [{ rotate: '14deg' }, { scale: v.interpolate({ inputRange: [0, 1], outputRange: [2.4, 1] }) }] }]}>
+      <Text style={[s.stampText, { color }]}>{text}</Text>
+    </Animated.View>
+  );
+}
+
+/** 数え終わったらウルフの正体がめくれて出てくる */
 function FlipIn({ children }: { children: React.ReactNode }) {
   const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -465,6 +535,11 @@ const s = StyleSheet.create({
   wordText: { fontFamily: F.display, fontSize: 22, lineHeight: 30, textAlign: 'center' },
   wordWho: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%' },
   dot: { width: 9, height: 9, borderRadius: 5 },
+  wolfTag: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingHorizontal: 12, borderRadius: 999, maxWidth: '90%' },
+  wolfTagText: { fontWeight: '900', fontSize: 14 },
+  stamp: { position: 'absolute', top: 4, right: -64, borderWidth: 3, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
+  stampText: { fontFamily: F.display, fontSize: 17 },
+  win: { fontFamily: F.display, fontSize: 32, lineHeight: 40 },
   verdict: { flexDirection: 'row', gap: 10 },
   vd: { flex: 1, borderRadius: 18, paddingVertical: 14, alignItems: 'center' },
   vdText: { fontFamily: F.display, fontSize: 22 },

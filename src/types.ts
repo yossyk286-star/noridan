@@ -6,7 +6,7 @@ export type Mode = 'odai' | 'sugoroku' | 'memory' | 'ito' | 'gesture' | 'homeru'
 export type Member = { name: string; /** 夜モードで下ネタを振らない */ ng?: boolean };
 
 /** お題の表示用。hl=true の部分は名前として強調する */
-export type Segment = { text: string; hl?: boolean; /** 名前の場合、その人の番号（色分け用） */ who?: number };
+export type Segment = { text: string; hl?: boolean; /** 名前の場合、その人の番号（色分け用） */ who?: number; /** 罰2倍の時：old=元の数（赤い取り消し線）、new=倍の数 */ x2?: 'old' | 'new' };
 
 export type Card = {
   kind: string;
