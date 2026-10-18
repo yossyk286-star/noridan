@@ -11,6 +11,7 @@ import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
 import { usePrefs } from '../lib/prefs';
 import { speak } from '../lib/speech';
+import { useVoteCount } from '../lib/useVoteCount';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf, neonPal } from '../theme';
 import type { GachaItem, Level, Member, Night } from '../types';
@@ -62,6 +63,7 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
   const cv = round.cands.map((i) => counts[i]);
   const goal = round.good ? Math.min(...cv) : Math.max(...cv);
   const top = round.cands.filter((i) => counts[i] === goal);
+  const tally = useVoteCount(counts, phase === 'reveal');
   const ruleTag = (
     <Text style={[s.rule, round.good ? s.ruleGood : s.ruleBad]}>
       {round.good ? '褒める系：票が一番少ない人が罰' : 'イジる系：票が一番多い人が罰'}
@@ -90,13 +92,12 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
     counts.forEach((v, i) => (stats.votes![i] += v));
     setDone(done + 1);
     setPhase('reveal');
-    play('fanfare');
   };
   const doGacha = () => {
     const items = top.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
     setGacha(items);
     setPhase('batsu');
-    play(items.every((x) => x.lucky) ? 'lucky' : 'pop');
+    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   };
   const accept = () => {
@@ -196,7 +197,7 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
           <View style={{ flex: 1 }} />
           <View style={{ gap: 8 }}>
             {rows.map((r, j) => (
-              <Bar key={r.i} name={members[r.i].name} color={colorOf(r.i)} v={r.v} max={max} top={top.includes(r.i)} fg={fg} delay={150 + (rows.length - j) * 120} />
+              <Bar key={r.i} name={members[r.i].name} color={colorOf(r.i)} v={tally.shown[r.i] ?? 0} max={max} top={tally.done && top.includes(r.i)} fg={fg} delay={0} />
             ))}
           </View>
         </ModeCard>
@@ -242,16 +243,21 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
 /** 票数のバー（下の人から順に伸びる） */
 function Bar({ name, color, v, max, top, fg, delay }: { name: string; color: string; v: number; max: number; top: boolean; fg: string; delay: number }) {
   const w = useRef(new Animated.Value(0)).current;
+  const pop = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(w, { toValue: max ? v / max : 0, duration: 700, delay, easing: Easing.out(Easing.back(1.2)), useNativeDriver: false }).start();
-  }, []);
+    Animated.timing(w, { toValue: max ? v / max : 0, duration: 250, delay, easing: Easing.out(Easing.back(1.4)), useNativeDriver: false }).start();
+    if (v > 0) {
+      pop.setValue(1);
+      Animated.spring(pop, { toValue: 0, friction: 4, tension: 160, useNativeDriver: false }).start();
+    }
+  }, [v]);
   return (
     <View style={s.barRow}>
       <Text style={[s.barName, { color: top ? '#ff3b3b' : fg }]} numberOfLines={1}>{name}</Text>
       <View style={[s.barTrack, { backgroundColor: alpha('#888888', 0.18) }]}>
         <Animated.View style={[s.barFill, { backgroundColor: color, width: w.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
       </View>
-      <Text style={[s.barV, { color: fg }]}>{v}</Text>
+      <Animated.Text style={[s.barV, { color: fg, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [1, 1.8] }) }] }]}>{v}</Animated.Text>
       {top && <Text style={s.stamp}>罰</Text>}
     </View>
   );

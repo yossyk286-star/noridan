@@ -11,6 +11,10 @@ const FILES = {
   warn: require('../../assets/sounds/warn.wav'),
   fanfare: require('../../assets/sounds/fanfare.wav'),
   lucky: require('../../assets/sounds/lucky.wav'),
+  gacha: require('../../assets/sounds/gacha.wav'),
+  gachaLucky: require('../../assets/sounds/gachaLucky.wav'),
+  drumroll: require('../../assets/sounds/drumroll.wav'),
+  hurry: require('../../assets/sounds/hurry.wav'),
 };
 export type SoundName = keyof typeof FILES;
 

@@ -110,7 +110,7 @@ export default function PittariScreen({ members, level, night, onQuit, onSetting
     const items = losers.map((i) => ({ i, n: times, ...decks.batsu(members, i, times) }));
     setGacha(items);
     setPhase('batsu');
-    play(items.every((x) => x.lucky) ? 'lucky' : 'pop');
+    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   };
   const accept = () => {

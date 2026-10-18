@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, Frame, GachaCard, RulesSheet, ScoreBar } from '../components/Stage';
-import { HandWho, IntroCard, LevelBox, ModeCard, NameTiles, Note, Outline, Prog } from '../components/ModeParts';
+import { HandWho, IntroCard, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, Peek } from '../components/ModeParts';
 import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
@@ -109,7 +109,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
     const items = bad.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
     setGacha(items);
     setPhase('batsu');
-    play(items.every((x) => x.lucky) ? 'lucky' : 'pop');
+    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
   };
   const accept = () => {
     const np = pen.slice();
@@ -170,7 +170,9 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
       card = (
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`${members[viewer].name}の数字`}</Prog>
-          <Text style={[s.num, { color: fg }]}>{nums[viewer]}</Text>
+          <Peek fg={fg}>
+            <Text style={[s.num, { color: fg, textAlign: 'center' }]}>{nums[viewer]}</Text>
+          </Peek>
           <Text style={[s.topicSmall, { color: fg }]}>お題：{topic.t}</Text>
           {scale}
         </ModeCard>

@@ -95,7 +95,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
     setGacha(items);
     setWhy(w);
     setPhase(ph);
-    play(items.every((x) => x.lucky) ? 'lucky' : 'pop');
+    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
   };
   const flip = (k: number) => {

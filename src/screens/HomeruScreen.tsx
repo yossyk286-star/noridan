@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { iniFit, initialOf } from '../lib/game';
 import type React from 'react';
+import { HurryFrame } from '../components/Fx';
+import { useHurry } from '../lib/useHurry';
 import { StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -75,13 +77,14 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
     const items = [{ i, n: 1, ...decks.batsu(members, i) }];
     setGacha(items);
     setPhase('batsu');
-    play(items[0].lucky ? 'lucky' : 'pop');
+    play(items[0].lucky ? 'gachaLucky' : 'gacha');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
   };
   const clock = useCountdown(() => {
     play('alarm');
     lose(praiser);
   });
+  const hurry = useHurry(clock.left, phase === 'go');
   /** その人の次の番（褒める番）が終わるまで何回あるか */
   const untilNext = (i: number) => (((i - praiser + n) % n) || n) + 1;
   const addRule = (r: Rule) => {
@@ -210,6 +213,7 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
         {controls}
       </View>
       <Frame color={phase === 'intro' ? C.muted : phase === 'batsu' && loser != null ? colorOf(loser) : colorOf(praiser)} />
+      <HurryFrame on={hurry} />
       <RuleSheet members={members} rule={rule} state={ruleSheet} onPick={(i) => setRuleSheet(rulePenalty(i))} onClose={() => setRuleSheet(null)} />
       <RulesSheet visible={rulesOpen} custom={HELP.homeru.rules} onClose={() => setRulesOpen(false)} />
       <GameMenu

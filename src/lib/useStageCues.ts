@@ -1,3 +1,4 @@
+import { GACHA_MS } from '../components/Fx';
 import { useEffect, useState } from 'react';
 import { Vibration } from 'react-native';
 import { play } from './sound';
@@ -12,7 +13,7 @@ export function useStageCues(flow: TurnFlow, muted = false) {
   const { voice } = usePrefs();
   useEffect(() => {
     if (!st.card.kind || muted) return; // すごろくのサイコロ待ちの間は鳴らさない
-    if (st.phase === 'batsu') play(st.gacha.every((g) => g.lucky) ? 'lucky' : 'pop');
+    if (st.phase === 'batsu') play(st.gacha.every((g) => g.lucky) ? 'gachaLucky' : 'gacha');
     else if (st.card.kind.includes('ドカン')) {
       play('boom');
       setFlash((x) => x + 1);
@@ -24,7 +25,9 @@ export function useStageCues(flow: TurnFlow, muted = false) {
     // 読み上げ（仕掛け人だけが見る爆弾の中身は絶対読まない）
     if (voice && st.phase !== 'bombPeek') {
       const members = flow.members;
-      speak(
+      // 罰ガチャはマシンが回り終わってから読む
+      const say = (t: string) => (st.phase === 'batsu' ? setTimeout(() => speak(t), GACHA_MS) : speak(t));
+      say(
         st.phase === 'batsu'
           ? st.gacha.map((g) => `${members[g.i].name}${g.lucky ? 'はセーフ。' : 'の罰。'}${plain(g.segments)}`).join('。')
           : plain(st.card.segments),

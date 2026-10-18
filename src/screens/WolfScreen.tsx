@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
+import { HurryFrame } from '../components/Fx';
+import { useHurry } from '../lib/useHurry';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
-import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog } from '../components/ModeParts';
-import { Angel, Skull } from '../components/Fx';
+import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, Peek } from '../components/ModeParts';
+import { Angel, GACHA_MS, GachaMachine, Skull } from '../components/Fx';
 import { Tap } from '../components/Tap';
 import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
@@ -13,6 +15,7 @@ import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
 import { load, save } from '../lib/storage';
 import { useCountdown } from '../lib/useCountdown';
+import { useVoteCount } from '../lib/useVoteCount';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf, neonPal } from '../theme';
 import type { GachaItem, Level, Member, Night, Segment } from '../types';
@@ -59,6 +62,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
   const [played, setPlayed] = useState(0);
   const [gacha, setGacha] = useState<GachaItem[]>([]);
   const [group, setGroup] = useState<{ segments: Segment[]; lucky: boolean } | null>(null);
+  const [groupRoll, setGroupRoll] = useState(false); // 多数派全員の罰もマシンが回ってから出す
   const stats = useRef<Stats>(newStats(n)).current;
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
@@ -68,6 +72,8 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
     play('alarm');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   });
+  const talkRunning = useRef(false);
+  const hurry = useHurry(clock.left, talkRunning.current && !timeUp && ['talk', 'who', 'hand', 'look'].includes(phase));
   const talkStarted = useRef(false);
 
   useEffect(() => {
@@ -82,6 +88,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
   const caught = top.length === 1 && top[0] === round.wolf;
   const losers = caught && !guessed ? [round.wolf] : members.map((_, i) => i).filter((i) => i !== round.wolf);
   const voter = round.order[k];
+  const tally = useVoteCount(counts, phase === 'reveal');
 
   const startRound = (no: number) => {
     const r = newRound(no);
@@ -95,6 +102,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
     setGacha([]);
     setGroup(null);
     talkStarted.current = false;
+    talkRunning.current = false;
     clock.stop();
     setPhase('hand');
   };
@@ -104,6 +112,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
     if (!talkStarted.current) {
       talkStarted.current = true;
       clock.start(minutes * 60);
+      talkRunning.current = true;
     }
   };
   const afterLook = () => {
@@ -127,7 +136,6 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
   const reveal = () => {
     setPlayed(played + 1);
     setPhase('reveal');
-    play('fanfare');
   };
   const doGacha = () => {
     if (!caught) stats.wolf![round.wolf]++;
@@ -135,12 +143,14 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       const items = losers.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
       setGacha(items);
       setPhase('batsu');
-      play(items.every((x) => x.lucky) ? 'lucky' : 'pop');
+      play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
     } else {
       const g = decks.groupBatsu(members);
       setGroup(g);
+      setGroupRoll(true);
+      setTimeout(() => setGroupRoll(false), GACHA_MS);
       setPhase('group');
-      play(g.lucky ? 'lucky' : 'pop');
+      play(g.lucky ? 'gachaLucky' : 'gacha');
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   };
@@ -225,7 +235,9 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       card = (
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`${members[viewer].name}のお題`}</Prog>
-          <Text style={[s.bigWord, { color: fg }]} adjustsFontSizeToFit numberOfLines={2}>{word(viewer)}</Text>
+          <Peek fg={fg}>
+            <Text style={[s.bigWord, { color: fg }]} adjustsFontSizeToFit numberOfLines={2}>{word(viewer)}</Text>
+          </Peek>
           <Note fg={fg}>{'自分が多数派か少数派かは分からへん。\nお題そのものは言うたらアカン'}</Note>
         </ModeCard>
       );
@@ -247,7 +259,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       );
       controls = (
         <View style={{ gap: 8 }}>
-          <BigButton pal={pal} label={timeUp ? '投票へ' : '話し終わった → 投票へ'} onPress={() => { clock.stop(); setK(0); setPhase('vhand'); }} />
+          <BigButton pal={pal} label={timeUp ? '投票へ' : '話し終わった → 投票へ'} onPress={() => { clock.stop(); talkRunning.current = false; setK(0); setPhase('vhand'); }} />
           <Outline label="お題を見直す" fg={pal.fg} onPress={() => setPhase('who')} style={{ flex: 0 }} />
         </View>
       );
@@ -301,11 +313,11 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
           <View style={{ flex: 1 }} />
           <View style={{ gap: 8 }}>
             {rows.map((r, j) => (
-              <Bar key={r.i} name={members[r.i].name} color={colorOf(r.i)} v={r.v} max={max} red={r.i === round.wolf} fg={fg} delay={150 + (rows.length - j) * 100} />
+              <Bar key={r.i} name={members[r.i].name} color={colorOf(r.i)} v={tally.shown[r.i] ?? 0} max={max} red={tally.done && r.i === round.wolf} fg={fg} />
             ))}
           </View>
-          {words(!caught)}
-          <Text style={[s.rule, caught ? s.ruleGood : s.ruleBad]}>{res}</Text>
+          {tally.done ? <FlipIn>{words(!caught)}</FlipIn> : <View style={{ height: 96 }} />}
+          {tally.done && <Text style={[s.rule, caught ? s.ruleGood : s.ruleBad]}>{res}</Text>}
         </ModeCard>
       );
       controls = caught ? <BigButton pal={pal} label="逆転チャンスへ" onPress={() => setPhase('guess')} /> : <BigButton pal={pal} danger label="罰を決める" onPress={() => setPhase('result')} />;
@@ -347,7 +359,11 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       break;
     }
     case 'group':
-      card = (
+      card = groupRoll ? (
+        <ModeCard pal={pal} center bg={group?.lucky ? undefined : '#1a0606'} edge={group?.lucky ? undefined : '#e8202a'}>
+          <GachaMachine color={group?.lucky ? fg : '#f7f3ea'} />
+        </ModeCard>
+      ) : (
         <ModeCard pal={pal} center bg={group?.lucky ? undefined : '#1a0606'} edge={group?.lucky ? undefined : '#e8202a'}>
           <Prog fg={group?.lucky ? fg : '#f7f3ea'}>多数派全員の罰</Prog>
           {group?.lucky ? <Angel /> : <Skull />}
@@ -376,6 +392,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
         {controls}
       </View>
       <Frame color={frame} />
+      <HurryFrame on={hurry} />
       <RulesSheet visible={rules} custom={HELP.wolf.rules} onClose={() => setRules(false)} />
       <GameMenu
         visible={menu}
@@ -392,18 +409,36 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
 }
 
 /** 票数のバー（下の人から順に伸びる） */
-function Bar({ name, color, v, max, red, fg, delay }: { name: string; color: string; v: number; max: number; red: boolean; fg: string; delay: number }) {
-  const w = useRef(new Animated.Value(0)).current;
+/** 数え終わったら少数派の正体がめくれて出てくる */
+function FlipIn({ children }: { children: React.ReactNode }) {
+  const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(w, { toValue: max ? v / max : 0, duration: 700, delay, easing: Easing.out(Easing.back(1.2)), useNativeDriver: false }).start();
+    Animated.spring(v, { toValue: 1, friction: 6, tension: 70, useNativeDriver: true }).start();
   }, []);
+  return (
+    <Animated.View style={{ opacity: v, transform: [{ perspective: 800 }, { rotateY: v.interpolate({ inputRange: [0, 1], outputRange: ['-100deg', '0deg'] }) }] }}>
+      {children}
+    </Animated.View>
+  );
+}
+
+function Bar({ name, color, v, max, red, fg }: { name: string; color: string; v: number; max: number; red: boolean; fg: string }) {
+  const w = useRef(new Animated.Value(0)).current;
+  const pop = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(w, { toValue: max ? v / max : 0, duration: 250, easing: Easing.out(Easing.back(1.4)), useNativeDriver: false }).start();
+    if (v > 0) {
+      pop.setValue(1);
+      Animated.spring(pop, { toValue: 0, friction: 4, tension: 160, useNativeDriver: false }).start();
+    }
+  }, [v]);
   return (
     <View style={s.barRow}>
       <Text style={[s.barName, { color: red ? '#ff3b3b' : fg }]} numberOfLines={1}>{name}</Text>
       <View style={[s.barTrack, { backgroundColor: alpha('#888888', 0.18) }]}>
         <Animated.View style={[s.barFill, { backgroundColor: color, width: w.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
       </View>
-      <Text style={[s.barV, { color: fg }]}>{v}</Text>
+      <Animated.Text style={[s.barV, { color: fg, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [1, 1.8] }) }] }]}>{v}</Animated.Text>
     </View>
   );
 }

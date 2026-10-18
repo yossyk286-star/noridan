@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { iniFit, initialOf } from '../lib/game';
 import type React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { play } from '../lib/sound';
 import { Tap } from './Tap';
 import { F, alpha, colorOf } from '../theme';
 import type { STAGE } from '../theme';
@@ -143,7 +145,21 @@ export function NameTiles({ members, list, fg, onPress, count, cols = 3 }: { mem
 }
 
 /** 名前 → ワード の一覧 */
-export function WordList({ members, words, skip, fg, big }: { members: Member[]; words: string[]; skip?: number; fg: string; /** 大きめ（覚える画面用） */ big?: boolean }) {
+export function WordList({ members, words, skip, fg, big, compact }: { members: Member[]; words: string[]; skip?: number; fg: string; /** 大きめ（覚える画面用） */ big?: boolean; /** 人数が多い時の2列（長押ししたまま全部見えるように） */ compact?: boolean }) {
+  if (compact) {
+    return (
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {members.map((m, j) =>
+          j === skip ? null : (
+            <View key={j} style={[s.wordCell, { borderLeftColor: colorOf(j), backgroundColor: alpha(fg.length === 7 ? fg : '#141210', 0.07) }]}>
+              <Text style={[s.wordName, { color: fg, fontSize: 12 }]} numberOfLines={1}>{m.name}</Text>
+              <Text style={[s.word, { color: fg, fontSize: 18 }]} numberOfLines={2}>{words[j]}</Text>
+            </View>
+          ),
+        )}
+      </View>
+    );
+  }
   return (
     <View style={{ gap: 8 }}>
       {members.map((m, j) =>
@@ -155,6 +171,34 @@ export function WordList({ members, words, skip, fg, big }: { members: Member[];
         ),
       )}
     </View>
+  );
+}
+
+/** 長押ししてる間だけ中身が見える目隠し（スマホを渡して1人だけ見る画面用） */
+export function Peek({ fg, children }: { fg: string; children: React.ReactNode }) {
+  const [on, setOn] = useState(false);
+  const v = useRef(new Animated.Value(0)).current;
+  const press = (x: boolean) => {
+    setOn(x);
+    if (x) {
+      play('flip');
+      Haptics.selectionAsync().catch(() => {});
+      v.setValue(0);
+      Animated.spring(v, { toValue: 1, friction: 6, tension: 120, useNativeDriver: true }).start();
+    }
+  };
+  const line = alpha(fg.length === 7 ? fg : '#141210', 0.35);
+  return (
+    <Pressable onPressIn={() => press(true)} onPressOut={() => press(false)} accessibilityRole="button" accessibilityLabel="長押しで見る" style={s.peek}>
+      <Animated.View style={{ alignSelf: 'stretch', opacity: on ? 1 : 0, transform: [{ perspective: 800 }, { rotateX: v.interpolate({ inputRange: [0, 1], outputRange: ['-70deg', '0deg'] }) }] }}>{children}</Animated.View>
+      {!on && (
+        <View style={[StyleSheet.absoluteFill, s.peekCover, { borderColor: line, backgroundColor: alpha(fg.length === 7 ? fg : '#141210', 0.06) }]}>
+          <Icon name="eye" color={fg} size={30} />
+          <Text style={[s.peekText, { color: fg }]}>長押しで見る</Text>
+          <Text style={[s.peekSub, { color: fg }]}>指を離したら隠れる</Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
 
@@ -186,6 +230,11 @@ const s = StyleSheet.create({
   tileBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 7 },
   tileName: { fontSize: 16, fontWeight: '900' },
   tileCount: { fontSize: 10, fontWeight: '900', opacity: 0.7, alignSelf: 'flex-end' },
+  wordCell: { width: '48.5%', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12, borderLeftWidth: 5 },
+  peek: { alignSelf: 'stretch', minHeight: 120, justifyContent: 'center', alignItems: 'center' },
+  peekCover: { borderRadius: 18, borderWidth: 2.5, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4 },
+  peekText: { fontFamily: F.display, fontSize: 22 },
+  peekSub: { fontSize: 12, fontWeight: '900', opacity: 0.6 },
   wordRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 14, borderLeftWidth: 6 },
   wordName: { fontWeight: '900', fontSize: 15, flexShrink: 1 },
   word: { fontFamily: F.display, fontSize: 22 },

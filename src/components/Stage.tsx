@@ -8,7 +8,7 @@ import { usePrefs } from '../lib/prefs';
 import { useSeen } from '../lib/coach';
 import { CARD_LOOK, F, STAGE, alpha, colorOf } from '../theme';
 import type { Bomb, Card, GachaItem, Level, Member, Rule, Segment } from '../types';
-import { Angel, BombArt, Capsule, Coin, Fuse, Skull } from './Fx';
+import { Angel, BombArt, Capsule, Coin, Crown, Fuse, GACHA_MS, GachaMachine, Skull } from './Fx';
 import { Icon } from './Icon';
 import { HELP } from '../lib/help';
 
@@ -54,14 +54,25 @@ export function ScoreBar({
     shown = shown.slice(0, fit - 1);
     if (doer >= 0 && !shown.includes(doer)) shown[shown.length - 1] = doer; // 今の番の人は必ず見せる
   }
+  // 罰が一番多い人に王冠（同点なら全員）。入りきらん時も王冠の人は顔を出す
+  const maxPen = Math.max(...pen);
+  const kings = maxPen > 0 ? pen.map((v, i) => (v === maxPen ? i : -1)).filter((i) => i >= 0) : [];
+  if (members.length > fit) {
+    kings.forEach((k) => {
+      if (shown.includes(k) || shown.length < 2) return;
+      const slot = shown.length - (shown[shown.length - 1] === doer ? 2 : 1);
+      if (slot >= 0 && shown[slot] !== doer) shown[slot] = k;
+    });
+  }
   const hidden = members.length - shown.length;
   const ranking = members.map((m, i) => ({ m, i, n: pen[i] })).sort((a, b) => b.n - a.n);
   const quick = (on: boolean) => [styles.menuBtn, { backgroundColor: on ? pal.fg : pal.chip }];
   return (
     <View style={styles.bar}>
-      <View style={[styles.score, { flex: 1, flexDirection: 'row', overflow: 'hidden' }]}>
+      <View style={[styles.score, { flex: 1, flexDirection: 'row', overflow: 'hidden', paddingTop: 14 }]}>
         {shown.map((i) => (
-          <View key={i} style={[styles.av, { backgroundColor: colorOf(i) }, i === doer && { borderWidth: 3, transform: [{ scale: 1.08 }] }]}>
+          <Bump key={i} n={pen[i]} style={[styles.av, { backgroundColor: colorOf(i) }, i === doer && { borderWidth: 3 }]} big={i === doer}>
+            {kings.includes(i) && <Crown />}
             <Text style={[styles.avText, iniFit(initialOf(members, i))]}>{initialOf(members, i)}</Text>
             {pen[i] > 0 && (
               <View style={[styles.cnt, { borderColor: pal.bg }]}>
@@ -73,7 +84,7 @@ export function ScoreBar({
                 <Text style={[styles.rvText, { color: pal.bg }]}>↺</Text>
               </View>
             )}
-          </View>
+          </Bump>
         ))}
         {hidden > 0 && (
           <Tap onPress={() => setAll(true)} accessibilityLabel="全員の罰を見る" style={[styles.av, { backgroundColor: pal.chip, borderColor: pal.muted }]}>
@@ -116,6 +127,28 @@ export function ScoreBar({
         </Pressable>
       </Modal>
     </View>
+  );
+}
+
+/** 罰が増えた時にポンと跳ねる顔アイコン */
+function Bump({ n, style, big, children }: { n: number; style: object; big?: boolean; children: React.ReactNode }) {
+  const v = useRef(new Animated.Value(0)).current;
+  const prev = useRef(n);
+  useEffect(() => {
+    if (n > prev.current) {
+      v.setValue(0);
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: 160, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.spring(v, { toValue: 0, friction: 3, tension: 160, useNativeDriver: true }),
+      ]).start();
+    }
+    prev.current = n;
+  }, [n]);
+  const base = big ? 1.08 : 1;
+  return (
+    <Animated.View style={[style, { transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [base, base * 1.35] }) }, { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }] }]}>
+      {children}
+    </Animated.View>
   );
 }
 
@@ -384,6 +417,20 @@ export function GachaCard({ members, items }: { pal: Pal; members: Member[]; ite
   const mixed = !allLucky && items.some((g) => g.lucky);
   const look = allLucky ? LUCKY_LOOK : BATSU_LOOK;
   const { dual } = usePrefs();
+  // 最初の1.4秒はマシンがガラガラ回って、そのあと結果（ドクロ・カプセルはここで初めて出すので、出た瞬間から動く）
+  const [rolling, setRolling] = useState(true);
+  useEffect(() => {
+    setRolling(true);
+    const t = setTimeout(() => setRolling(false), GACHA_MS);
+    return () => clearTimeout(t);
+  }, [items]);
+  if (rolling) {
+    return (
+      <Animated.View style={[styles.card, { backgroundColor: look.bg, borderColor: look.edge, borderWidth: 3 }, anim]}>
+        <GachaMachine color={look.fg} />
+      </Animated.View>
+    );
+  }
   return (
     <Animated.View style={[styles.card, { backgroundColor: look.bg, borderColor: look.edge, borderWidth: 3 }, anim]}>
       <Text style={[styles.kind, { color: look.fg }]}>罰ガチャ</Text>

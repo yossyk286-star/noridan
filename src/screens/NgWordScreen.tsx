@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
+import { HurryFrame } from '../components/Fx';
+import { useHurry } from '../lib/useHurry';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Tap } from '../components/Tap';
 import { BigButton, Frame, RulesSheet, ScoreBar } from '../components/Stage';
-import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, WordList } from '../components/ModeParts';
+import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, WordList, Peek } from '../components/ModeParts';
 import { HELP } from '../lib/help';
 import { Skull, Angel } from '../components/Fx';
 import GameMenu from '../components/GameMenu';
@@ -122,6 +124,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
   const finish = () => onFinish(pen, pen.reduce((a, b) => a + b, 0), stats, words);
 
   const remaining = endAt.current ? endAt.current - now : left.current;
+  const hurry = useHurry(Math.ceil(remaining / 1000), phase === 'play' && !!endAt.current);
   const frame = ['hand', 'look'].includes(phase) ? colorOf(viewer) : ['confirm', 'out', 'eyes', 'newword'].includes(phase) ? colorOf(out) : C.muted;
 
   let card: React.ReactNode = null;
@@ -166,8 +169,10 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
         <ModeCard pal={pal}>
           <Text style={[s.lookHead, { color: fg }]}>{members[viewer].name}<Text style={s.lookSub}> 以外のNGワード</Text></Text>
           <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', gap: 14, paddingBottom: 4 }}>
-            <WordList members={members} words={words} skip={viewer} fg={fg} big />
-            <Text style={[s.small, { color: fg }]}>自分のワードはここに出えへん。覚えたら隠してな</Text>
+            <Peek fg={fg}>
+              <WordList members={members} words={words} skip={viewer} fg={fg} big={n <= 5} compact={n > 5} />
+            </Peek>
+            <Text style={[s.small, { color: fg }]}>自分のワードはここに出えへん。覚えたら指を離してな</Text>
           </ScrollView>
         </ModeCard>
       );
@@ -271,6 +276,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
         {controls}
       </View>
       <Frame color={frame} />
+      <HurryFrame on={hurry} />
       <RulesSheet visible={rules} custom={HELP.ngword.rules} onClose={() => setRules(false)} />
       <GameMenu
         visible={menu}

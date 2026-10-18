@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { F } from '../theme';
 
 const loop = (v: Animated.Value, duration: number, to = 1) =>
@@ -201,7 +202,126 @@ export function Angel() {
   );
 }
 
+/** 罰ガチャのマシンが回る時間（このあと結果が出る） */
+export const GACHA_MS = 1400;
+
+/** 罰ガチャのマシン。ガタガタ揺れてハンドルが回り、カプセルが出て消える */
+export function GachaMachine({ color = '#141210' }: { color?: string }) {
+  const shake = useRef(new Animated.Value(0)).current;
+  const handle = useRef(new Animated.Value(0)).current;
+  const out = useRef(new Animated.Value(0)).current;
+  const pop = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.spring(pop, { toValue: 1, friction: 5, tension: 120, useNativeDriver: true }).start();
+    const sh = loop(shake, 180);
+    sh.start();
+    Animated.timing(handle, { toValue: 2, duration: 1400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }).start();
+    Animated.sequence([Animated.delay(1150), Animated.timing(out, { toValue: 1, duration: 250, useNativeDriver: true })]).start();
+    return () => sh.stop();
+  }, []);
+  const rock = shake.interpolate({ inputRange: [0, 0.25, 0.75, 1], outputRange: ['0deg', '-3deg', '3deg', '0deg'] });
+  const spin = handle.interpolate({ inputRange: [0, 2], outputRange: ['0deg', '720deg'] });
+  const balls: [number, number, string][] = [[44, 40, '#ffd23f'], [70, 36, '#ff5aa5'], [56, 58, '#3ec7ff'], [36, 62, '#7be36b'], [80, 60, '#ff8a1a'], [60, 26, '#b48cff'], [48, 74, '#ff4d4d'], [74, 78, '#ffd23f']];
+  return (
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, fx.machine, { opacity: out.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ scale: out.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }] }]}>
+      <Animated.View style={{ width: 150, height: 200, transform: [{ scale: pop }, { rotate: rock }] }}>
+        <Svg width={150} height={200} viewBox="0 0 120 160">
+          <Circle cx={60} cy={56} r={46} fill="rgba(255,255,255,0.18)" stroke={color} strokeWidth={4} />
+          {balls.map(([x, y, c], k) => (
+            <Circle key={k} cx={x} cy={y} r={10} fill={c} stroke="#141210" strokeWidth={2} />
+          ))}
+          <Path d="M24 98h72l6 52H18z" fill="#e8202a" stroke="#141210" strokeWidth={4} strokeLinejoin="round" />
+          <Rect x={50} y={134} width={20} height={12} rx={3} fill="#141210" />
+        </Svg>
+        <Animated.View style={[fx.handle, { transform: [{ rotate: spin }] }]}>
+          <Svg width={30} height={36} viewBox="0 0 30 36">
+            <Circle cx={15} cy={18} r={11} fill="#f7f3ea" stroke="#141210" strokeWidth={4} />
+            <Rect x={12} y={6} width={6} height={24} rx={3} fill="#141210" />
+          </Svg>
+        </Animated.View>
+      </Animated.View>
+      <Text style={[fx.machineText, { color }]}>ガラガラ…</Text>
+    </Animated.View>
+  );
+}
+
+/** 罰が一番多い人の王冠 */
+export function Crown() {
+  return (
+    <View pointerEvents="none" style={fx.crown}>
+      <Svg width={22} height={15} viewBox="0 0 24 16">
+        <Path d="M2 14 1 4l6 4 5-7 5 7 6-4-1 10z" fill="#ffd23f" stroke="#141210" strokeWidth={1.6} strokeLinejoin="round" />
+        <Circle cx={12} cy={10} r={1.6} fill="#e8202a" />
+      </Svg>
+    </View>
+  );
+}
+
+/** 紙吹雪（trigger が変わるたびに降る） */
+export function Confetti({ trigger }: { trigger: number }) {
+  const { width, height } = useWindowDimensions();
+  const pieces = useRef(
+    Array.from({ length: 60 }, (_, k) => ({
+      x: Math.random(),
+      dx: (Math.random() * 2 - 1) * 120,
+      r: Math.random() * 720 - 360,
+      d: Math.random() * 350,
+      t: 1600 + Math.random() * 1400,
+      w: 6 + Math.random() * 6,
+      h: 10 + Math.random() * 8,
+      c: ['#ffd23f', '#ff5aa5', '#3ec7ff', '#7be36b', '#ff8a1a', '#e8202a', '#b48cff'][k % 7],
+      v: new Animated.Value(0),
+    })),
+  ).current;
+  useEffect(() => {
+    if (!trigger) return;
+    pieces.forEach((p) => {
+      p.v.setValue(0);
+      Animated.sequence([Animated.delay(p.d), Animated.timing(p.v, { toValue: 1, duration: p.t, easing: Easing.bezier(0.25, 0.6, 0.4, 1), useNativeDriver: true })]).start();
+    });
+  }, [trigger]);
+  if (!trigger) return null;
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {pieces.map((p, k) => (
+        <Animated.View
+          key={k}
+          style={{
+            position: 'absolute', left: p.x * width, top: -20, width: p.w, height: p.h, borderRadius: 2, backgroundColor: p.c,
+            transform: [
+              { translateX: p.v.interpolate({ inputRange: [0, 1], outputRange: [0, p.dx] }) },
+              { translateY: p.v.interpolate({ inputRange: [0, 1], outputRange: [0, height + 40] }) },
+              { rotate: p.v.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${p.r}deg`] }) },
+            ],
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+/** 残り10秒の赤いフチ（on の間、脈打つ） */
+export function HurryFrame({ on }: { on: boolean }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!on) return;
+    const a = Animated.loop(Animated.sequence([
+      Animated.timing(v, { toValue: 1, duration: 150, useNativeDriver: true }),
+      Animated.timing(v, { toValue: 0.35, duration: 850, useNativeDriver: true }),
+    ]));
+    a.start();
+    return () => a.stop();
+  }, [on]);
+  if (!on) return null;
+  return <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, fx.hurry, { opacity: v }]} />;
+}
+
 const fx = StyleSheet.create({
+  machine: { alignItems: 'center', justifyContent: 'center', gap: 10, zIndex: 5 },
+  machineText: { fontFamily: F.display, fontSize: 22, letterSpacing: 2 },
+  handle: { position: 'absolute', left: 60, top: 127 },
+  crown: { position: 'absolute', top: -13, alignSelf: 'center', transform: [{ rotate: '-8deg' }], zIndex: 2 },
+  hurry: { borderWidth: 6, borderColor: '#ff2a2a', shadowColor: '#ff2a2a', shadowOpacity: 1, shadowRadius: 30, zIndex: 50 },
   angel: { width: 128, height: 104, alignSelf: 'center' },
   wing: { position: 'absolute', top: 40, width: 40, height: 28, borderRadius: 18, backgroundColor: '#fff', borderWidth: 2.5, borderColor: '#9ab0ff' },
   halo: { position: 'absolute', left: 42, top: 4, width: 44, height: 12, borderRadius: 22, borderWidth: 5, borderColor: '#ffd23f' },

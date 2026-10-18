@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
+import { HurryFrame } from '../components/Fx';
+import { useHurry } from '../lib/useHurry';
 import { StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -59,6 +61,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
     play('alarm');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   });
+  const hurry = useHurry(clock.left, phase === 'act');
   useEffect(() => {
     load<number>('nd_gs_sec', 60).then(setSec);
   }, []);
@@ -93,7 +96,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
     const items = lowest().map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
     setGacha(items);
     setPhase('low');
-    play(items.every((x) => x.lucky) ? 'lucky' : 'pop');
+    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
   };
   const accept = () => {
     const np = pen.slice();
@@ -217,6 +220,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
         {controls}
       </View>
       <Frame color={phase === 'intro' ? C.muted : colorOf(actor)} />
+      <HurryFrame on={hurry} />
       <RulesSheet visible={rulesOpen} custom={HELP.gesture.rules} onClose={() => setRulesOpen(false)} />
       <GameMenu
         visible={menu}

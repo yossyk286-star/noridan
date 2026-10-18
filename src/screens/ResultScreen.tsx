@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Tap } from '../components/Tap';
-import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import Svg, { Ellipse, Path } from 'react-native-svg';
+import { Confetti } from '../components/Fx';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Icon } from '../components/Icon';
@@ -37,18 +40,55 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
   const ts = titles(pen, stats);
   const [tip] = useState(() => resultTip(night ?? false));
   const { voice } = usePrefs();
+  const line = mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' || mode === 'ito' || mode === 'pittari' ? '問' : mode === 'wolf' ? '回戦' : mode === 'memory' ? 'ペア' : mode === 'gesture' ? '問正解' : mode === 'homeru' ? '回' : 'ターン'}`;
+  // 戦犯の名前がスロットみたいに回って、止まったら揺れて紙吹雪（それまで下の称号やランキングは隠す）
+  const slot = top > 0 && members.length > 1;
+  const SLOT_MS = 2400;
+  const [shown, setShown] = useState(slot ? '？？？' : who);
+  const [landed, setLanded] = useState(!slot);
+  const [boom, setBoom] = useState(0);
+  const land = useRef(new Animated.Value(slot ? 0 : 1)).current;
   useEffect(() => {
-    play('fanfare');
-    if (voice) speak(top === 0 ? '本日の戦犯は、該当者なし。平和すぎる' : `本日の戦犯は、${who.replace(/・/g, 'と')}。罰${top}回`);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const say = () => voice && speak(top === 0 ? '本日の戦犯は、該当者なし。平和すぎる' : `本日の戦犯は、${who.replace(/・/g, 'と')}。罰${top}回`);
+    if (!slot) {
+      play('fanfare');
+      say();
+      return;
+    }
+    play('drumroll');
+    let t = 0;
+    let k = 0;
+    while (t < SLOT_MS) {
+      const nm = members[k % members.length].name;
+      timers.push(setTimeout(() => setShown(nm), t));
+      t += 60 + (t / SLOT_MS) ** 2 * 260;
+      k++;
+    }
+    timers.push(setTimeout(() => {
+      setShown(who);
+      setLanded(true);
+      setBoom(1);
+      Animated.spring(land, { toValue: 1, friction: 3, tension: 140, useNativeDriver: true }).start();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      say();
+    }, SLOT_MS));
+    return () => timers.forEach(clearTimeout);
   }, []);
+  const mvpAnim = {
+    transform: [
+      { scale: land.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.15, 1] }) },
+      { rotate: land.interpolate({ inputRange: [0, 0.4, 0.7, 1], outputRange: ['0deg', '-3deg', '2deg', '0deg'] }) },
+    ],
+  };
 
-  const shot = useRef<View>(null);
+  const shot = useRef<View>(null); // シェア用のストーリー画像（画面の外に置いて撮る）
   const [msg, setMsg] = useState('');
 
   /** 結果を画像にして共有シートを出す（そのままストーリーに貼れる） */
   const share = async () => {
     try {
-      const uri = await captureRef(shot, { format: 'png', quality: 1 });
+      const uri = await captureRef(shot, { format: 'png', quality: 1, width: 1080, height: 1920 });
       if (Platform.OS !== 'web' && (await Sharing.isAvailableAsync())) {
         await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '本日の戦犯' });
       } else setMsg('この端末では共有できへんかった。スクショで撮ってな');
@@ -58,20 +98,19 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
   };
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView contentContainerStyle={s.wrap}>
-      {/* ここから下が画像になる */}
-      <View ref={shot} collapsable={false} style={s.shot}>
+      <View style={s.shot}>
       <Text style={s.brand}>ノリダン</Text>
       <Text style={s.head}>本日の戦犯</Text>
-      <Text style={s.sub}>
-        {mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' || mode === 'ito' ? '問' : mode === 'memory' ? 'ペア' : mode === 'gesture' ? '問正解' : mode === 'homeru' ? '回' : 'ターン'}`}
-      </Text>
+      <Text style={s.sub}>{line}</Text>
 
-      <View style={s.mvp}>
+      <Animated.View style={[s.mvp, mvpAnim]}>
         <Text style={s.mvpLabel}>MVP（悪い意味で）</Text>
-        <Text style={s.mvpName}>{who}</Text>
-        <Text style={s.mvpCount}>{top === 0 ? '全員セーフ。平和すぎる' : `罰 ${top}回`}</Text>
-      </View>
+        <Text style={s.mvpName}>{shown}</Text>
+        <Text style={[s.mvpCount, !landed && { opacity: 0 }]}>{top === 0 ? '全員セーフ。平和すぎる' : `罰 ${top}回`}</Text>
+      </Animated.View>
+      <View style={[{ gap: 18 }, !landed && { opacity: 0 }]} pointerEvents={landed ? 'auto' : 'none'}>
 
       {ts.length > 0 && (
         <View style={{ gap: 8 }}>
@@ -125,6 +164,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
         ))}
       </View>
       </View>
+      </View>
 
       <View style={s.tipRow}>
         <Icon name="moon" color={C.muted} size={14} />
@@ -145,8 +185,116 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
         </Tap>
       </View>
     </ScrollView>
+    {/* シェア用のストーリー画像（360×640 で組んで 1080×1920 で撮る） */}
+    <View pointerEvents="none" style={s.offscreen}>
+      <View ref={shot} collapsable={false}>
+        <StoryCard members={members} rows={rows} top={top} who={who} line={line} ts={ts.slice(0, 4)} why={top > 0 && rows.filter((r) => r.n === top).length === 1 ? whyText(stats, rows[0].i) : ''} />
+      </View>
+    </View>
+    <Confetti trigger={boom} />
+    </View>
   );
 }
+
+/** シェア画像：黒地に赤い光、傾いたMVPステッカーとドクロ、罰ランキングのバー、称号バッジ */
+function StoryCard({ members, rows, top, who, line, ts, why }: { members: Member[]; rows: { m: Member; i: number; n: number }[]; top: number; who: string; line: string; ts: { title: string; idx: number[] }[]; why: string }) {
+  const maxRows = ts.length > 2 ? 5 : ts.length ? 6 : 8;
+  const d = new Date();
+  return (
+    <View style={st.card}>
+      <View style={st.glow} />
+      <View style={st.topRow}>
+        <Text style={st.logo}>ノリダン</Text>
+        <Text style={st.date}>{`${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`}</Text>
+      </View>
+      <Text style={st.line} numberOfLines={1}>{line}</Text>
+      <Text style={st.title}>本日の戦犯</Text>
+      <View style={st.mvpWrap}>
+        <View style={st.mvpShadow} />
+        <View style={st.mvp}>
+          <Text style={st.mvpLabel}>MVP（悪い意味で）</Text>
+          <Text style={st.mvpName} numberOfLines={1} adjustsFontSizeToFit>{who}</Text>
+          <Text style={st.mvpCount}>{top === 0 ? '全員セーフ。平和すぎる' : `罰 ${top}回`}</Text>
+          {!!why && <Text style={st.mvpWhy} numberOfLines={1}>{why}</Text>}
+        </View>
+        <View style={st.skull}>
+          <Svg width={78} height={78} viewBox="0 0 100 100">
+            <Path d="M50 6C25 6 10 23 10 45c0 14 8 23 17 27v11c0 4 3 7 7 7h32c4 0 7-3 7-7V72c9-4 17-13 17-27C90 23 75 6 50 6z" fill="#f7f3ea" stroke="#141210" strokeWidth={3} />
+            <Ellipse cx={33} cy={47} rx={11} ry={12} fill="#e8202a" />
+            <Ellipse cx={67} cy={47} rx={11} ry={12} fill="#e8202a" />
+            <Path d="M50 58l-6 10h12z" fill="#141210" />
+            <Path d="M40 76v14M50 76v14M60 76v14" stroke="#141210" strokeWidth={3} />
+          </Svg>
+        </View>
+      </View>
+      <Text style={st.h2}>罰ランキング</Text>
+      {rows.slice(0, maxRows).map((r, k) => (
+        <View key={r.i} style={st.row}>
+          <View style={[st.no, k === 0 && r.n > 0 && { backgroundColor: '#e8202a' }]}><Text style={st.noText}>{k + 1}</Text></View>
+          <View style={[st.dot, { backgroundColor: colorOf(r.i) }]} />
+          <Text style={st.name} numberOfLines={1}>{r.m.name}</Text>
+          <View style={st.track}>{r.n > 0 && <View style={[st.fill, { backgroundColor: colorOf(r.i), width: `${Math.max(8, (r.n / Math.max(1, top)) * 100)}%` }]} />}</View>
+          <Text style={st.ct}>{r.n}</Text>
+        </View>
+      ))}
+      {rows.length > maxRows && <Text style={st.more}>ほか{rows.length - maxRows}人</Text>}
+      {ts.length > 0 && (
+        <>
+          <Text style={st.tsHead}>称号</Text>
+          <View style={st.badges}>
+            {ts.map((t) => (
+              <View key={t.title} style={st.badge}>
+                <Text style={st.badgeTitle} numberOfLines={1}>{t.title}</Text>
+                <Text style={st.badgeWho} numberOfLines={1} adjustsFontSizeToFit>{t.idx.map((i) => members[i].name).join('・')}</Text>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
+      <View style={{ flex: 1 }} />
+      <View style={st.foot}>
+        <Text style={st.footLogo}>ノリダン</Text>
+        <Text style={st.footText}>ノリで断れない飲み会ゲーム</Text>
+      </View>
+    </View>
+  );
+}
+
+const st = StyleSheet.create({
+  card: { width: 360, height: 640, backgroundColor: '#141210', paddingHorizontal: 30, paddingTop: 40, paddingBottom: 30, overflow: 'hidden' },
+  glow: { position: 'absolute', left: -60, top: 60, width: 480, height: 420, borderRadius: 240, backgroundColor: 'rgba(232,32,42,0.28)' },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  logo: { fontFamily: F.display, fontSize: 24, color: C.yuru },
+  date: { color: C.muted, fontSize: 11, fontWeight: '900' },
+  line: { color: C.muted, fontSize: 11, fontWeight: '900', marginTop: 2 },
+  title: { fontFamily: F.display, fontSize: 48, lineHeight: 60, color: '#e8202a', marginTop: 14, transform: [{ rotate: '-2deg' }], textShadowColor: C.yuru, textShadowRadius: 1, textShadowOffset: { width: 2, height: 2 } },
+  mvpWrap: { marginTop: 22, transform: [{ rotate: '-1.5deg' }] },
+  mvpShadow: { position: 'absolute', left: 4, top: 8, right: -4, bottom: -8, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.5)' },
+  mvp: { backgroundColor: C.yuru, borderRadius: 16, borderWidth: 2, borderColor: '#141210', paddingVertical: 16, paddingHorizontal: 20, gap: 2 },
+  mvpLabel: { color: '#141210', fontSize: 12, fontWeight: '900' },
+  mvpName: { fontFamily: F.display, fontSize: 40, lineHeight: 50, color: '#141210', marginRight: 70 },
+  mvpCount: { color: '#141210', fontSize: 15, fontWeight: '900' },
+  mvpWhy: { color: 'rgba(20,18,16,0.6)', fontSize: 10, fontWeight: '900' },
+  skull: { position: 'absolute', right: -14, top: -26, transform: [{ rotate: '10deg' }] },
+  h2: { color: C.muted, fontSize: 11, fontWeight: '900', marginTop: 26, marginBottom: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 22 },
+  no: { width: 18, height: 18, borderRadius: 9, backgroundColor: 'rgba(247,243,234,0.12)', alignItems: 'center', justifyContent: 'center' },
+  noText: { fontFamily: F.display, fontSize: 10, color: C.paper },
+  dot: { width: 9, height: 9, borderRadius: 5 },
+  name: { width: 100, color: C.paper, fontWeight: '900', fontSize: 14 },
+  track: { flex: 1, height: 9, borderRadius: 5, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 5 },
+  ct: { width: 26, textAlign: 'right', fontFamily: F.display, fontSize: 17, color: C.paper },
+  more: { color: C.muted, fontSize: 10, fontWeight: '900', marginLeft: 44 },
+  tsHead: { fontFamily: F.display, fontSize: 16, color: C.yuru, marginTop: 14, marginBottom: 6 },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  badge: { width: '48%', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,210,63,0.45)', backgroundColor: 'rgba(247,243,234,0.08)', paddingVertical: 6, paddingHorizontal: 9 },
+  badgeTitle: { color: C.yuru, fontSize: 10, fontWeight: '900' },
+  badgeWho: { color: C.paper, fontSize: 15, fontWeight: '900' },
+  foot: { flexDirection: 'row', alignItems: 'baseline', gap: 12, borderTopWidth: 1, borderTopColor: 'rgba(247,243,234,0.18)', paddingTop: 10, marginBottom: 30 },
+  footLogo: { fontFamily: F.display, fontSize: 17, color: C.paper },
+  footText: { color: C.muted, fontSize: 11, fontWeight: '900' },
+});
 
 /** 結果画面のひとこと。夜モードに入ってない人には噂として隠しモードをにおわせる */
 const TIPS = ['罰ガチャの天使はだいたい7回に1回', 'リベンジ権は罰を食らった人だけのご褒美', '倍プッシュは勝てば誰かに罰、負けたら罰2倍', '設定の「向かい合わせ表示」で机の真ん中に置ける'];
@@ -162,6 +310,7 @@ const s = StyleSheet.create({
   tip: { flex: 1, color: C.muted, fontSize: 13, fontWeight: '700' },
   wrap: { padding: 16, paddingBottom: 40, gap: 18, maxWidth: 560, width: '100%', alignSelf: 'center' },
   shot: { gap: 18, backgroundColor: C.ink, padding: 4 },
+  offscreen: { position: 'absolute', left: -2000, top: 0, width: 360, height: 640 },
   brand: { fontFamily: F.display, fontSize: 28, color: C.yuru },
   share: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, borderRadius: 16, backgroundColor: '#ff6f6f',
