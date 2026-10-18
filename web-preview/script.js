@@ -241,24 +241,30 @@ function finishCard() {
 }
 // 罰ガチャの中身を1つ引く。夜・深夜は罰も過激に（下ネタNGの人には普通の罰）
 // 罰2倍（×2）の時は、2倍にしても意味が通る罰だけ（「ひと口飲む」「10秒」「3つ言う」みたいに数があるやつ）
-const DOUBLEABLE = /ひと口|ふた口|飲む|\d+\s*(秒|回|つ|個|件|枚|小節|発)|[一二三]回/;
+const DOUBLEABLE = /ひと口|ふた口|飲む|\d+\s*(秒|回|つ|個|件|枚|小節|連発|発|杯|周|曲|本|段|行|文字)|[一二三]回/;
 const canDouble = (t) => DOUBLEABLE.test(t) && !PERSONAL.test(t);
-// 罰2倍：お題の中の数を倍にする。元の数は赤い取り消し線、倍の数を横に出す
+// 罰2倍：お題の中の数を全部倍にする（「無理なら〜」の方も。「10秒以内」みたいな制限時間は倍にしたら楽になるので除く）。元の数は赤い取り消し線、倍の数を横に出す
 const KAN = { 一: 1, 二: 2, 三: 3 };
-function doubleText(t, n = 2) {
-  let m = t.match(/(\d+)(\s*)(秒|回|つ|個|件|枚|小節|発)/);
-  if (m) return { at: m.index, from: m[0], to: `${+m[1] * n}${m[2]}${m[3]}` };
-  if ((m = t.match(/ひと口/))) return { at: m.index, from: m[0], to: n === 2 ? "ふた口" : `${n}口` };
-  if ((m = t.match(/ふた口/))) return { at: m.index, from: m[0], to: `${2 * n}口` };
-  if ((m = t.match(/([一二三])回/))) return { at: m.index, from: m[0], to: `${KAN[m[1]] * n}回` };
-  if ((m = t.match(/飲む/))) return { at: m.index, from: m[0], to: `${n}回飲む` };
-  return null;
+const X2_RE = /(\d+)(\s*)(秒|回|つ|個|件|枚|小節|連発|発|杯|周|曲|本|段|行|文字)(?!以内)|ひと口|ふた口|([一二三])回/g;
+function doubleAll(t, n = 2) {
+  const out = [];
+  t.replace(X2_RE, (m, num, sp, unit, kan, at) => {
+    const to = num ? `${+num * n}${sp}${unit}` : m === "ひと口" ? (n === 2 ? "ふた口" : `${n}口`) : m === "ふた口" ? `${2 * n}口` : `${KAN[kan] * n}回`;
+    out.push({ at, from: m, to });
+    return m;
+  });
+  if (!out.length) { const k = t.indexOf("飲む"); if (k >= 0) out.push({ at: k, from: "飲む", to: `${n}回飲む` }); }
+  return out;
 }
-function doubleHtml(html, n) {
-  const d = n > 1 ? doubleText(html, n) : null;
-  return d ? `${html.slice(0, d.at)}<s class="x2-old">${d.from}</s><ins class="x2-new">${d.to}</ins>${html.slice(d.at + d.from.length)}` : html;
+const doubleText = (t, n = 2) => doubleAll(t, n)[0] || null;
+function doubleWith(html, n, fmt) {
+  if (n < 2) return html;
+  let res = "", last = 0;
+  doubleAll(html, n).forEach((d) => { res += html.slice(last, d.at) + fmt(d); last = d.at + d.from.length; });
+  return res + html.slice(last);
 }
-const doubledPlain = (html, n) => { const d = n > 1 ? doubleText(html, n) : null; return d ? html.slice(0, d.at) + d.to + html.slice(d.at + d.from.length) : html; };
+const doubleHtml = (html, n) => doubleWith(html, n, (d) => `<s class="x2-old">${d.from}</s><ins class="x2-new">${d.to}</ins>`);
+const doubledPlain = (html, n) => doubleWith(html, n, (d) => d.to);
 function drawBatsuFrom(key, list, n) {
   if (n < 2) return draw(key, list);
   const pool = list.filter(canDouble);

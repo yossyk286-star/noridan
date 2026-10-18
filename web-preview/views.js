@@ -117,7 +117,7 @@ const X2_BURST = (() => {
   return `<svg class="x2-burst" viewBox="0 0 100 100" aria-label="罰2倍"><polygon points="${pts}" fill="#ff2a2a" stroke="#141210" stroke-width="3" stroke-linejoin="round"/><polygon points="${pts}" fill="none" stroke="#ffd23f" stroke-width="2" stroke-linejoin="round" transform="translate(50 50) scale(.78) translate(-50 -50)"/><text x="50" y="62" text-anchor="middle" font-family="Dela Gothic One, sans-serif" font-size="34" fill="#ffd23f" stroke="#141210" stroke-width="1.5">×2</text></svg>`;
 })();
 // 罰2倍の「元の数 → 倍の数」のメーター
-const x2Meter = (html, n) => { const d = doubleText(html, n); return d ? `<div class="x2-meter"><span class="old">${esc(d.from)}</span><i>${ICON.next}</i><span class="new">${esc(d.to)}</span></div>` : ""; };
+const x2Meter = (html, n) => doubleAll(html, n).map((d) => `<div class="x2-meter"><span class="old">${esc(d.from)}</span><i>${ICON.next}</i><span class="new">${esc(d.to)}</span></div>`).join("");
 // 罰ガチャのマシン（札が出る前に1.4秒ガラガラ回る）
 const GACHA_T = 1.0;
 const CROWN = `<svg class="crown" viewBox="0 0 24 16" aria-label="罰が一番多い"><path d="M2 14 1 4l6 4 5-7 5 7 6-4-1 10z" fill="#ffd23f" stroke="#141210" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="1.6" fill="#e8202a"/></svg>`;

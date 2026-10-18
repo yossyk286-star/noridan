@@ -323,6 +323,7 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 @keyframes x2Burst { from { transform: scale(0) rotate(-120deg); } }
 @keyframes x2Spin { from { transform: rotate(0); } 50% { transform: rotate(12deg) scale(1.06); } to { transform: rotate(0); } }
 .skull-wrap.x2 b { font-size: 26px; color: #ff2a2a; text-shadow: 0 0 12px rgba(255,42,42,.6); }
+.x2-meter + .x2-meter { margin-left: 0; }
 .x2-meter { margin-top: 8px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 14px; background: rgba(0,0,0,.35); box-shadow: inset 0 0 0 2px rgba(255,42,42,.6); animation: reveal .35s calc(var(--d, 0s) + 1s) both; }
 .x2-meter .old { position: relative; font-family: var(--display); font-size: 18px; color: #ff8a80; opacity: .8; }
 .x2-meter .old::after { content: ""; position: absolute; left: -3px; right: -3px; top: 52%; height: 4px; border-radius: 2px; background: #ff2a2a; transform: scaleX(0) rotate(-8deg); transform-origin: left; animation: x2Line .3s calc(var(--d, 0s) + 1.25s) ease-out forwards; }
@@ -1370,24 +1371,30 @@ function finishCard() {
 }
 // 罰ガチャの中身を1つ引く。夜・深夜は罰も過激に（下ネタNGの人には普通の罰）
 // 罰2倍（×2）の時は、2倍にしても意味が通る罰だけ（「ひと口飲む」「10秒」「3つ言う」みたいに数があるやつ）
-const DOUBLEABLE = /ひと口|ふた口|飲む|\d+\s*(秒|回|つ|個|件|枚|小節|発)|[一二三]回/;
+const DOUBLEABLE = /ひと口|ふた口|飲む|\d+\s*(秒|回|つ|個|件|枚|小節|連発|発|杯|周|曲|本|段|行|文字)|[一二三]回/;
 const canDouble = (t) => DOUBLEABLE.test(t) && !PERSONAL.test(t);
-// 罰2倍：お題の中の数を倍にする。元の数は赤い取り消し線、倍の数を横に出す
+// 罰2倍：お題の中の数を全部倍にする（「無理なら〜」の方も。「10秒以内」みたいな制限時間は倍にしたら楽になるので除く）。元の数は赤い取り消し線、倍の数を横に出す
 const KAN = { 一: 1, 二: 2, 三: 3 };
-function doubleText(t, n = 2) {
-  let m = t.match(/(\d+)(\s*)(秒|回|つ|個|件|枚|小節|発)/);
-  if (m) return { at: m.index, from: m[0], to: `${+m[1] * n}${m[2]}${m[3]}` };
-  if ((m = t.match(/ひと口/))) return { at: m.index, from: m[0], to: n === 2 ? "ふた口" : `${n}口` };
-  if ((m = t.match(/ふた口/))) return { at: m.index, from: m[0], to: `${2 * n}口` };
-  if ((m = t.match(/([一二三])回/))) return { at: m.index, from: m[0], to: `${KAN[m[1]] * n}回` };
-  if ((m = t.match(/飲む/))) return { at: m.index, from: m[0], to: `${n}回飲む` };
-  return null;
+const X2_RE = /(\d+)(\s*)(秒|回|つ|個|件|枚|小節|連発|発|杯|周|曲|本|段|行|文字)(?!以内)|ひと口|ふた口|([一二三])回/g;
+function doubleAll(t, n = 2) {
+  const out = [];
+  t.replace(X2_RE, (m, num, sp, unit, kan, at) => {
+    const to = num ? `${+num * n}${sp}${unit}` : m === "ひと口" ? (n === 2 ? "ふた口" : `${n}口`) : m === "ふた口" ? `${2 * n}口` : `${KAN[kan] * n}回`;
+    out.push({ at, from: m, to });
+    return m;
+  });
+  if (!out.length) { const k = t.indexOf("飲む"); if (k >= 0) out.push({ at: k, from: "飲む", to: `${n}回飲む` }); }
+  return out;
 }
-function doubleHtml(html, n) {
-  const d = n > 1 ? doubleText(html, n) : null;
-  return d ? `${html.slice(0, d.at)}<s class="x2-old">${d.from}</s><ins class="x2-new">${d.to}</ins>${html.slice(d.at + d.from.length)}` : html;
+const doubleText = (t, n = 2) => doubleAll(t, n)[0] || null;
+function doubleWith(html, n, fmt) {
+  if (n < 2) return html;
+  let res = "", last = 0;
+  doubleAll(html, n).forEach((d) => { res += html.slice(last, d.at) + fmt(d); last = d.at + d.from.length; });
+  return res + html.slice(last);
 }
-const doubledPlain = (html, n) => { const d = n > 1 ? doubleText(html, n) : null; return d ? html.slice(0, d.at) + d.to + html.slice(d.at + d.from.length) : html; };
+const doubleHtml = (html, n) => doubleWith(html, n, (d) => `<s class="x2-old">${d.from}</s><ins class="x2-new">${d.to}</ins>`);
+const doubledPlain = (html, n) => doubleWith(html, n, (d) => d.to);
 function drawBatsuFrom(key, list, n) {
   if (n < 2) return draw(key, list);
   const pool = list.filter(canDouble);
@@ -2208,7 +2215,7 @@ const X2_BURST = (() => {
   return `<svg class="x2-burst" viewBox="0 0 100 100" aria-label="罰2倍"><polygon points="${pts}" fill="#ff2a2a" stroke="#141210" stroke-width="3" stroke-linejoin="round"/><polygon points="${pts}" fill="none" stroke="#ffd23f" stroke-width="2" stroke-linejoin="round" transform="translate(50 50) scale(.78) translate(-50 -50)"/><text x="50" y="62" text-anchor="middle" font-family="Dela Gothic One, sans-serif" font-size="34" fill="#ffd23f" stroke="#141210" stroke-width="1.5">×2</text></svg>`;
 })();
 // 罰2倍の「元の数 → 倍の数」のメーター
-const x2Meter = (html, n) => { const d = doubleText(html, n); return d ? `<div class="x2-meter"><span class="old">${esc(d.from)}</span><i>${ICON.next}</i><span class="new">${esc(d.to)}</span></div>` : ""; };
+const x2Meter = (html, n) => doubleAll(html, n).map((d) => `<div class="x2-meter"><span class="old">${esc(d.from)}</span><i>${ICON.next}</i><span class="new">${esc(d.to)}</span></div>`).join("");
 // 罰ガチャのマシン（札が出る前に1.4秒ガラガラ回る）
 const GACHA_T = 1.0;
 const CROWN = `<svg class="crown" viewBox="0 0 24 16" aria-label="罰が一番多い"><path d="M2 14 1 4l6 4 5-7 5 7 6-4-1 10z" fill="#ffd23f" stroke="#141210" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="1.6" fill="#e8202a"/></svg>`;

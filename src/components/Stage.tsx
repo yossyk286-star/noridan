@@ -493,8 +493,8 @@ function GachaRow({ name, color, item, delay, fg, mark }: { name: string; color:
 
 /** 罰2倍の「元の数 → 倍の数」（元の数に赤い線、倍の数が光る） */
 function X2Meter({ segments }: { segments: Segment[] }) {
-  const from = segments.find((x) => x.x2 === 'old')?.text;
-  const to = segments.find((x) => x.x2 === 'new')?.text;
+  const olds = segments.filter((x) => x.x2 === 'old').map((x) => x.text);
+  const news = segments.filter((x) => x.x2 === 'new').map((x) => x.text);
   const v = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -506,15 +506,19 @@ function X2Meter({ segments }: { segments: Segment[] }) {
     a.start();
     return () => a.stop();
   }, []);
-  if (!from || !to) return null;
+  if (!olds.length) return null;
   return (
-    <View style={styles.x2Meter}>
-      <View>
-        <Text style={styles.x2Old}>{from}</Text>
-        <Animated.View style={[styles.x2Line, { transform: [{ rotate: '-8deg' }, { scaleX: v }] }]} />
-      </View>
-      <Icon name="next" size={18} color="#ffd23f" />
-      <Animated.Text style={[styles.x2New, { opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [2.6, 1] }) }, { scale: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) }] }]}>{to}</Animated.Text>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      {olds.map((from, k) => (
+        <View key={k} style={styles.x2Meter}>
+          <View>
+            <Text style={styles.x2Old}>{from}</Text>
+            <Animated.View style={[styles.x2Line, { transform: [{ rotate: '-8deg' }, { scaleX: v }] }]} />
+          </View>
+          <Icon name="next" size={18} color="#ffd23f" />
+          <Animated.Text style={[styles.x2New, { opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [2.6, 1] }) }, { scale: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) }] }]}>{news[k]}</Animated.Text>
+        </View>
+      ))}
     </View>
   );
 }

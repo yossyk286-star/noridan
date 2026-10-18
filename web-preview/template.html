@@ -323,6 +323,7 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 @keyframes x2Burst { from { transform: scale(0) rotate(-120deg); } }
 @keyframes x2Spin { from { transform: rotate(0); } 50% { transform: rotate(12deg) scale(1.06); } to { transform: rotate(0); } }
 .skull-wrap.x2 b { font-size: 26px; color: #ff2a2a; text-shadow: 0 0 12px rgba(255,42,42,.6); }
+.x2-meter + .x2-meter { margin-left: 0; }
 .x2-meter { margin-top: 8px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 14px; background: rgba(0,0,0,.35); box-shadow: inset 0 0 0 2px rgba(255,42,42,.6); animation: reveal .35s calc(var(--d, 0s) + 1s) both; }
 .x2-meter .old { position: relative; font-family: var(--display); font-size: 18px; color: #ff8a80; opacity: .8; }
 .x2-meter .old::after { content: ""; position: absolute; left: -3px; right: -3px; top: 52%; height: 4px; border-radius: 2px; background: #ff2a2a; transform: scaleX(0) rotate(-8deg); transform-origin: left; animation: x2Line .3s calc(var(--d, 0s) + 1.25s) ease-out forwards; }

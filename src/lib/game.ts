@@ -78,36 +78,53 @@ export function markOf(t: string): string | null {
 export const PERSONAL = /次の(自分の)?番まで/;
 
 /** 罰2倍（×2）にしても意味が通る罰（「ひと口飲む」「10秒」「3つ言う」みたいに数があるやつ） */
-const DOUBLEABLE = /ひと口|ふた口|飲む|\d+\s*(秒|回|つ|個|件|枚|小節|発)|[一二三]回/;
+const DOUBLEABLE = /ひと口|ふた口|飲む|\d+\s*(秒|回|つ|個|件|枚|小節|連発|発|杯|周|曲|本|段|行|文字)|[一二三]回/;
 export const canDouble = (t: string) => DOUBLEABLE.test(t) && !PERSONAL.test(t);
 
-/** 罰2倍：お題の中の数を倍にする（元の数と倍の数を返す） */
+/** 罰2倍：お題の中の数を全部倍にする（「無理なら〜」の方も） */
 const KAN: Record<string, number> = { 一: 1, 二: 2, 三: 3 };
-function doubleText(t: string, n: number): { at: number; from: string; to: string } | null {
-  let m = t.match(/(\d+)(\s*)(秒|回|つ|個|件|枚|小節|発)/);
-  if (m) return { at: m.index!, from: m[0], to: `${+m[1] * n}${m[2]}${m[3]}` };
-  if ((m = t.match(/ひと口/))) return { at: m.index!, from: m[0], to: n === 2 ? 'ふた口' : `${n}口` };
-  if ((m = t.match(/ふた口/))) return { at: m.index!, from: m[0], to: `${2 * n}口` };
-  if ((m = t.match(/([一二三])回/))) return { at: m.index!, from: m[0], to: `${KAN[m[1]] * n}回` };
-  if ((m = t.match(/飲む/))) return { at: m.index!, from: m[0], to: `${n}回飲む` };
-  return null;
+const X2_RE = /(\d+)(\s*)(秒|回|つ|個|件|枚|小節|連発|発|杯|周|曲|本|段|行|文字)(?!以内)|ひと口|ふた口|([一二三])回/g;
+function doubleAll(t: string, n: number): { at: number; from: string; to: string }[] {
+  const out: { at: number; from: string; to: string }[] = [];
+  for (const m of t.matchAll(X2_RE)) {
+    const [all, num, sp, unit, kan] = m;
+    const to = num ? `${+num * n}${sp}${unit}` : all === 'ひと口' ? (n === 2 ? 'ふた口' : `${n}口`) : all === 'ふた口' ? `${2 * n}口` : `${KAN[kan] * n}回`;
+    out.push({ at: m.index!, from: all, to });
+  }
+  return out;
 }
-/** 罰2倍の文：最初に見つかった数を「元の数（取り消し線）＋倍の数」に分ける。plain=true なら倍の数だけ（読み上げ用） */
+/** 罰2倍の文：数を「元の数（取り消し線）＋倍の数」に分ける。plain=true なら倍の数だけ（読み上げ用） */
 export function doubleSegments(segs: Segment[], n: number, plain = false): Segment[] {
   if (n < 2) return segs;
   const out: Segment[] = [];
+  let any = false;
+  for (const sg of segs) {
+    const ds = sg.hl ? [] : doubleAll(sg.text, n);
+    if (!ds.length) { out.push(sg); continue; }
+    any = true;
+    let last = 0;
+    for (const d of ds) {
+      if (d.at > last) out.push({ text: sg.text.slice(last, d.at) });
+      if (!plain) out.push({ text: d.from, x2: 'old' });
+      out.push({ text: d.to, x2: plain ? undefined : 'new' });
+      last = d.at + d.from.length;
+    }
+    if (last < sg.text.length) out.push({ text: sg.text.slice(last) });
+  }
+  if (any) return out;
+  // 数が無い時は「飲む」→「2回飲む」
+  const res: Segment[] = [];
   let done = false;
   for (const sg of segs) {
-    const d = !done && !sg.hl ? doubleText(sg.text, n) : null;
-    if (!d) { out.push(sg); continue; }
+    const k = !done && !sg.hl ? sg.text.indexOf('飲む') : -1;
+    if (k < 0) { res.push(sg); continue; }
     done = true;
-    if (d.at) out.push({ text: sg.text.slice(0, d.at) });
-    if (!plain) out.push({ text: d.from, x2: 'old' });
-    out.push({ text: d.to, x2: plain ? undefined : 'new' });
-    const rest = sg.text.slice(d.at + d.from.length);
-    if (rest) out.push({ text: rest });
+    if (k > 0) res.push({ text: sg.text.slice(0, k) });
+    if (!plain) res.push({ text: '飲む', x2: 'old' });
+    res.push({ text: `${n}回飲む`, x2: plain ? undefined : 'new' });
+    if (k + 2 < sg.text.length) res.push({ text: sg.text.slice(k + 2) });
   }
-  return out;
+  return res;
 }
 
 /** お題テンプレからカードを作る */
