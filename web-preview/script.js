@@ -756,8 +756,33 @@ function tiltGo() {
   tl.base = tl.manual ? null : tiltVec(tiltSensor.beta, tiltSensor.gamma);
   tl.phase = "play"; tl.angle = 0; tl.peak = 0; tl.startAt = Date.now();
   play("coin");
-  tl.endAt = startTimer(TILT_SEC, () => { if (S.game?.tl === tl && tl.phase === "play") tiltSafe(); }, (ms) => (ms / 1000).toFixed(1), true);
+  tl.endAt = Date.now() + TILT_SEC * 1000; tl.sec = TILT_SEC;
   render(true);
+  tiltClock(tl);
+}
+// 残り秒数：1秒ごとにドクンと跳ねて、目盛りが1個ずつ消える。ラスト3秒は赤
+function tiltClock(tl) {
+  stopTimer();
+  const paint = () => {
+    if (S.game?.tl !== tl || tl.phase !== "play") { stopTimer(); return; }
+    const left = tl.endAt - Date.now();
+    if (left <= 0) { stopTimer(); tiltSafe(); return; }
+    const sec = Math.ceil(left / 1000), clock = document.getElementById("tlClock");
+    if (!clock) return;
+    const s = Math.floor(left / 1000), f = Math.floor((left % 1000) / 100);
+    clock.querySelector("#tlSec").textContent = s;
+    clock.querySelector("#tlFrac").textContent = "." + f;
+    clock.style.setProperty("--f", ((left % 1000) / 1000).toFixed(3));
+    clock.querySelectorAll(".tl-pip").forEach((p, i) => { p.classList.toggle("on", i < sec - 1); p.classList.toggle("now", i === sec - 1); });
+    if (sec !== tl.sec) {
+      tl.sec = sec;
+      clock.classList.toggle("hurry", sec <= 3);
+      clock.classList.remove("beat"); void clock.offsetWidth; clock.classList.add("beat");
+      play("tick");
+    }
+  };
+  paint();
+  modeTimer = setInterval(paint, 50);
 }
 // 角度が来るたび：表示を更新して、超えたらアウト
 function tiltTick() {
@@ -789,7 +814,10 @@ function tiltPaint() {
     // 0°からのずれを左右・前後に分けて、限界の角度でちょうど円のフチに来るように
     const dx = Math.asin(Math.max(-1, Math.min(1, v[0] - tl.base[0]))) * 180 / Math.PI, dy = Math.asin(Math.max(-1, Math.min(1, v[1] - tl.base[1]))) * 180 / Math.PI;
     dot.style.transform = `translate(${Math.max(-1.2, Math.min(1.2, dx / lim)) * 50}%, ${Math.max(-1.2, Math.min(1.2, -dy / lim)) * 50}%)`;
-    dot.classList.toggle("warn", tl.angle > lim * 0.7);
+    // 限界まで残り1°でオレンジ、0.5°で赤
+    const rem = lim - tl.angle;
+    dot.classList.toggle("warn", rem <= 1 && rem > 0.5);
+    dot.classList.toggle("crit", rem <= 0.5);
   }
 }
 function tiltOut() {

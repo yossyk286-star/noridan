@@ -74,6 +74,8 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   phaseRef.current = phase;
   const startAt = useRef(0);
   const peakRef = useRef(0);
+  const beat = useRef(new Animated.Value(1)).current;
+  const lastSec = useRef(SEC);
   const dot = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const clear = () => {
@@ -146,6 +148,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     startAt.current = Date.now();
     peakRef.current = 0;
     setLeft(SEC);
+    lastSec.current = SEC;
     setPhase('play');
     phaseRef.current = 'play';
     play('coin');
@@ -154,7 +157,15 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
       if (phaseRef.current !== 'play') return;
       if (ms <= 0) return safe();
       setLeft(ms / 1000);
-      timers.current.push(setTimeout(tick, 100));
+      // 1秒ごとにドクンと跳ねてカチッ
+      const sec = Math.ceil(ms / 1000);
+      if (sec !== lastSec.current) {
+        lastSec.current = sec;
+        beat.setValue(1.28);
+        Animated.spring(beat, { toValue: 1, friction: 4, tension: 160, useNativeDriver: true }).start();
+        play('tick');
+      }
+      timers.current.push(setTimeout(tick, 50));
     };
     timers.current.push(setTimeout(tick, 100));
   };
@@ -267,7 +278,25 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     case 'play':
       card = (
         <ModeCard pal={pal} center>
-          <Text style={[s.timer, { color: left <= 3 ? '#ff3b3b' : fg }]}>{left.toFixed(1)}</Text>
+          <View style={s.clock}>
+            <Animated.Text style={[s.sec, { color: left <= 3 ? '#ff3b3b' : fg, transform: [{ scale: beat }] }]}>
+              {Math.floor(left)}
+              <Text style={s.frac}>.{Math.floor((left % 1) * 10)}</Text>
+              <Text style={s.secUnit}> 秒</Text>
+            </Animated.Text>
+            <View style={s.pips}>
+              {Array.from({ length: SEC }, (_, i) => {
+                const now = Math.ceil(left) - 1;
+                const col = left <= 3 ? '#ff3b3b' : colorOf(who);
+                return (
+                  <View key={i} style={[s.pip, { backgroundColor: i < now ? col : alpha('#888888', 0.22) }]}>
+                    {i === now && <View style={{ width: `${(left % 1 || 1) * 100}%`, height: '100%', backgroundColor: col }} />}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+          <View style={s.mid}>
           {manual ? (
             <>
               <Lead fg={fg}>{'傾けんように\nキープ！'}</Lead>
@@ -281,7 +310,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
                 <View style={s.ring} />
                 <View style={[s.cross, { width: 2, height: '100%' }]} />
                 <View style={[s.cross, { height: 2, width: '100%' }]} />
-                <Animated.View style={[s.dot, { backgroundColor: angle > lim * 0.7 ? '#ff8a1a' : '#5bd35b', transform: dot.getTranslateTransform() }]} />
+                <Animated.View style={[s.dot, { backgroundColor: lim - angle <= 0.5 ? '#ff2a2a' : lim - angle <= 1 ? '#ff8a1a' : '#5bd35b', transform: dot.getTranslateTransform() }]} />
               </View>
               <Text style={[s.deg, { color: fg }]}>
                 {angle.toFixed(1)}
@@ -289,6 +318,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
               </Text>
             </>
           )}
+          </View>
         </ModeCard>
       );
       controls = manual ? <BigButton pal={pal} danger label="傾いた！アウト" onPress={out} /> : <Text style={[s.hint, { color: pal.muted }]}>{`${lim}°を超えたら即アウト`}</Text>;
@@ -364,7 +394,13 @@ const s = StyleSheet.create({
   hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
   lim: { fontFamily: F.display, fontSize: 44, lineHeight: 50 },
   count: { fontFamily: F.display, fontSize: 130, lineHeight: 140 },
-  timer: { fontFamily: F.display, fontSize: 56, lineHeight: 64, fontVariant: ['tabular-nums'] },
+  clock: { width: '100%', alignItems: 'center', gap: 8, paddingTop: 4 },
+  sec: { fontFamily: F.display, fontSize: 96, lineHeight: 100, fontVariant: ['tabular-nums'] },
+  frac: { fontSize: 36, opacity: 0.55 },
+  secUnit: { fontSize: 18, opacity: 0.6 },
+  pips: { flexDirection: 'row', gap: 5, width: '100%', maxWidth: 280 },
+  pip: { flex: 1, height: 10, borderRadius: 5, overflow: 'hidden' },
+  mid: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', gap: 12 },
   level: { width: 240, height: 240, borderRadius: 120, borderWidth: 3, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,42,42,0.16)' },
   zoneY: { position: 'absolute', width: 168, height: 168, borderRadius: 84, backgroundColor: 'rgba(255,210,63,0.24)' },
   zoneG: { position: 'absolute', width: 115, height: 115, borderRadius: 58, backgroundColor: 'rgba(123,227,107,0.3)' },

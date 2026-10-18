@@ -347,7 +347,22 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .tl-lim { margin: 4px 0 0; font-family: var(--display); font-size: 44px; line-height: 1; }
 .tl-lim small { display: block; font-family: inherit; font-size: 13px; opacity: .65; margin-top: 4px; }
 .tl-count { margin: 0; font-family: var(--display); font-size: clamp(96px, 34vw, 150px); line-height: 1; animation: pulse .8s ease-in-out infinite; }
-.tl-play { gap: 14px; }
+.tl-play { gap: 10px; justify-content: flex-start !important; padding-top: 14px; }
+.tl-mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; }
+/* 残り秒数：上に大きく。1秒ごとにドクン、目盛りが1個ずつ減る */
+.tl-clock { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.tl-sec { margin: 0; font-family: var(--display); line-height: .9; font-variant-numeric: tabular-nums; transform-origin: 50% 70%; }
+.tl-sec b { font-weight: 400; font-size: clamp(72px, 24vw, 104px); }
+.tl-sec span { font-size: clamp(30px, 9vw, 40px); opacity: .55; }
+.tl-sec small { font-family: inherit; font-size: 18px; opacity: .6; margin-left: 4px; }
+.tl-clock.beat .tl-sec { animation: tlBeat .45s cubic-bezier(.2,1.6,.4,1); }
+.tl-clock.hurry .tl-sec { color: #ff3b3b; }
+.tl-pips { display: flex; gap: 5px; width: min(100%, 280px); }
+.tl-pip { flex: 1; height: 10px; border-radius: 5px; background: color-mix(in srgb, currentColor 14%, transparent); position: relative; overflow: hidden; }
+.tl-pip.on { background: var(--pc, #7be36b); }
+.tl-pip.now::after { content: ""; position: absolute; inset: 0; background: var(--pc, #7be36b); transform-origin: left; transform: scaleX(var(--f, 1)); }
+.tl-clock.hurry .tl-pip.on, .tl-clock.hurry .tl-pip.now::after { background: #ff3b3b; }
+@keyframes tlBeat { 0% { transform: scale(1.28); } 100% { transform: scale(1); } }
 /* 傾けたらアウト：限界に近づくほどフチが赤く太く、画面の端から赤がにじむ */
 body.tl-hot .frame { transition: box-shadow .08s linear, background .08s linear; box-shadow: inset 0 0 0 calc(3px + 13px * var(--tr)) color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), var(--pc)), inset 0 0 calc(90px * var(--tr)) color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), var(--pc)); background: radial-gradient(ellipse at center, transparent 45%, rgba(255, 30, 30, calc(var(--tr) * var(--tr) * .5)) 100%); }
 body.tl-edge .frame { animation: tlPulse .35s ease-in-out infinite alternate; }
@@ -363,7 +378,8 @@ body.tl-hot .tl-ring { border-width: calc(3px + 3px * var(--tr)); }
 .tl-ring { position: absolute; inset: 25%; border-radius: 50%; border: 3px dashed #ff2a2a; }
 .tl-cross { position: absolute; inset: 0; background: linear-gradient(currentColor, currentColor) center / 2px 100% no-repeat, linear-gradient(currentColor, currentColor) center / 100% 2px no-repeat; opacity: .15; }
 .tl-dot { position: absolute; left: 37.5%; top: 37.5%; width: 25%; height: 25%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #7be36b 55%, #2f9e3a); box-shadow: 0 4px 10px rgba(0,0,0,.3); transition: transform .08s linear; }
-.tl-dot.warn { background: radial-gradient(circle at 35% 30%, #fff, #ffb02e 55%, #e8202a); }
+.tl-dot.warn { background: radial-gradient(circle at 35% 30%, #fff, #ffb02e 55%, #e8780a); }
+.tl-dot.crit { background: radial-gradient(circle at 35% 30%, #fff, #ff3b3b 55%, #b5101a); box-shadow: 0 0 0 3px rgba(255,42,42,.35), 0 4px 12px rgba(255,0,0,.5); }
 .tl-deg { margin: 0; font-family: var(--display); font-size: 22px; }
 .tl-deg b { font-weight: 400; font-size: clamp(44px, 15vw, 64px); font-variant-numeric: tabular-nums; }
 .tl-deg small { font-family: inherit; font-size: 16px; opacity: .6; }

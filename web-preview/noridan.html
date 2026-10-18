@@ -347,7 +347,22 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .tl-lim { margin: 4px 0 0; font-family: var(--display); font-size: 44px; line-height: 1; }
 .tl-lim small { display: block; font-family: inherit; font-size: 13px; opacity: .65; margin-top: 4px; }
 .tl-count { margin: 0; font-family: var(--display); font-size: clamp(96px, 34vw, 150px); line-height: 1; animation: pulse .8s ease-in-out infinite; }
-.tl-play { gap: 14px; }
+.tl-play { gap: 10px; justify-content: flex-start !important; padding-top: 14px; }
+.tl-mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; }
+/* 残り秒数：上に大きく。1秒ごとにドクン、目盛りが1個ずつ減る */
+.tl-clock { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.tl-sec { margin: 0; font-family: var(--display); line-height: .9; font-variant-numeric: tabular-nums; transform-origin: 50% 70%; }
+.tl-sec b { font-weight: 400; font-size: clamp(72px, 24vw, 104px); }
+.tl-sec span { font-size: clamp(30px, 9vw, 40px); opacity: .55; }
+.tl-sec small { font-family: inherit; font-size: 18px; opacity: .6; margin-left: 4px; }
+.tl-clock.beat .tl-sec { animation: tlBeat .45s cubic-bezier(.2,1.6,.4,1); }
+.tl-clock.hurry .tl-sec { color: #ff3b3b; }
+.tl-pips { display: flex; gap: 5px; width: min(100%, 280px); }
+.tl-pip { flex: 1; height: 10px; border-radius: 5px; background: color-mix(in srgb, currentColor 14%, transparent); position: relative; overflow: hidden; }
+.tl-pip.on { background: var(--pc, #7be36b); }
+.tl-pip.now::after { content: ""; position: absolute; inset: 0; background: var(--pc, #7be36b); transform-origin: left; transform: scaleX(var(--f, 1)); }
+.tl-clock.hurry .tl-pip.on, .tl-clock.hurry .tl-pip.now::after { background: #ff3b3b; }
+@keyframes tlBeat { 0% { transform: scale(1.28); } 100% { transform: scale(1); } }
 /* 傾けたらアウト：限界に近づくほどフチが赤く太く、画面の端から赤がにじむ */
 body.tl-hot .frame { transition: box-shadow .08s linear, background .08s linear; box-shadow: inset 0 0 0 calc(3px + 13px * var(--tr)) color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), var(--pc)), inset 0 0 calc(90px * var(--tr)) color-mix(in srgb, #ff2a2a calc(var(--tr) * 100%), var(--pc)); background: radial-gradient(ellipse at center, transparent 45%, rgba(255, 30, 30, calc(var(--tr) * var(--tr) * .5)) 100%); }
 body.tl-edge .frame { animation: tlPulse .35s ease-in-out infinite alternate; }
@@ -363,7 +378,8 @@ body.tl-hot .tl-ring { border-width: calc(3px + 3px * var(--tr)); }
 .tl-ring { position: absolute; inset: 25%; border-radius: 50%; border: 3px dashed #ff2a2a; }
 .tl-cross { position: absolute; inset: 0; background: linear-gradient(currentColor, currentColor) center / 2px 100% no-repeat, linear-gradient(currentColor, currentColor) center / 100% 2px no-repeat; opacity: .15; }
 .tl-dot { position: absolute; left: 37.5%; top: 37.5%; width: 25%; height: 25%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #7be36b 55%, #2f9e3a); box-shadow: 0 4px 10px rgba(0,0,0,.3); transition: transform .08s linear; }
-.tl-dot.warn { background: radial-gradient(circle at 35% 30%, #fff, #ffb02e 55%, #e8202a); }
+.tl-dot.warn { background: radial-gradient(circle at 35% 30%, #fff, #ffb02e 55%, #e8780a); }
+.tl-dot.crit { background: radial-gradient(circle at 35% 30%, #fff, #ff3b3b 55%, #b5101a); box-shadow: 0 0 0 3px rgba(255,42,42,.35), 0 4px 12px rgba(255,0,0,.5); }
 .tl-deg { margin: 0; font-family: var(--display); font-size: 22px; }
 .tl-deg b { font-weight: 400; font-size: clamp(44px, 15vw, 64px); font-variant-numeric: tabular-nums; }
 .tl-deg small { font-family: inherit; font-size: 16px; opacity: .6; }
@@ -1938,8 +1954,33 @@ function tiltGo() {
   tl.base = tl.manual ? null : tiltVec(tiltSensor.beta, tiltSensor.gamma);
   tl.phase = "play"; tl.angle = 0; tl.peak = 0; tl.startAt = Date.now();
   play("coin");
-  tl.endAt = startTimer(TILT_SEC, () => { if (S.game?.tl === tl && tl.phase === "play") tiltSafe(); }, (ms) => (ms / 1000).toFixed(1), true);
+  tl.endAt = Date.now() + TILT_SEC * 1000; tl.sec = TILT_SEC;
   render(true);
+  tiltClock(tl);
+}
+// 残り秒数：1秒ごとにドクンと跳ねて、目盛りが1個ずつ消える。ラスト3秒は赤
+function tiltClock(tl) {
+  stopTimer();
+  const paint = () => {
+    if (S.game?.tl !== tl || tl.phase !== "play") { stopTimer(); return; }
+    const left = tl.endAt - Date.now();
+    if (left <= 0) { stopTimer(); tiltSafe(); return; }
+    const sec = Math.ceil(left / 1000), clock = document.getElementById("tlClock");
+    if (!clock) return;
+    const s = Math.floor(left / 1000), f = Math.floor((left % 1000) / 100);
+    clock.querySelector("#tlSec").textContent = s;
+    clock.querySelector("#tlFrac").textContent = "." + f;
+    clock.style.setProperty("--f", ((left % 1000) / 1000).toFixed(3));
+    clock.querySelectorAll(".tl-pip").forEach((p, i) => { p.classList.toggle("on", i < sec - 1); p.classList.toggle("now", i === sec - 1); });
+    if (sec !== tl.sec) {
+      tl.sec = sec;
+      clock.classList.toggle("hurry", sec <= 3);
+      clock.classList.remove("beat"); void clock.offsetWidth; clock.classList.add("beat");
+      play("tick");
+    }
+  };
+  paint();
+  modeTimer = setInterval(paint, 50);
 }
 // 角度が来るたび：表示を更新して、超えたらアウト
 function tiltTick() {
@@ -1971,7 +2012,10 @@ function tiltPaint() {
     // 0°からのずれを左右・前後に分けて、限界の角度でちょうど円のフチに来るように
     const dx = Math.asin(Math.max(-1, Math.min(1, v[0] - tl.base[0]))) * 180 / Math.PI, dy = Math.asin(Math.max(-1, Math.min(1, v[1] - tl.base[1]))) * 180 / Math.PI;
     dot.style.transform = `translate(${Math.max(-1.2, Math.min(1.2, dx / lim)) * 50}%, ${Math.max(-1.2, Math.min(1.2, -dy / lim)) * 50}%)`;
-    dot.classList.toggle("warn", tl.angle > lim * 0.7);
+    // 限界まで残り1°でオレンジ、0.5°で赤
+    const rem = lim - tl.angle;
+    dot.classList.toggle("warn", rem <= 1 && rem > 0.5);
+    dot.classList.toggle("crit", rem <= 0.5);
   }
 }
 function tiltOut() {
@@ -3369,11 +3413,16 @@ function vTiltCard() {
       <p class="hand-note">0になった瞬間の向きが0°</p>
     </div>`;
     case "play": return `<div class="odai mode-card center tl-play" id="card">
-      <p class="gs-timer tl-timer" id="modeTimer">${TILT_SEC.toFixed(1)}</p>
+      <div class="tl-clock" id="tlClock">
+        <p class="tl-sec"><b id="tlSec">${TILT_SEC}</b><span id="tlFrac">.0</span><small>秒</small></p>
+        <div class="tl-pips">${Array.from({ length: TILT_SEC }, (_, i) => `<i class="tl-pip${i < TILT_SEC - 1 ? " on" : " now"}"></i>`).join("")}</div>
+      </div>
+      <div class="tl-mid">
       ${tl.manual
         ? `<p class="ng-lead">傾けんように<br>キープ！</p><p class="hand-note">このスマホでは角度がとられへんので、<br>傾いたらみんなで判定して押して</p>`
         : `<div class="tl-level" style="--lim:${lim}"><i class="tl-ring"></i><i class="tl-cross"></i><b id="tiltDot" class="tl-dot"></b></div>
            <p class="tl-deg"><b id="tiltDeg">0.0</b>°<small> / ${lim}°</small></p>`}
+      </div>
     </div>`;
     case "out": return `<div class="odai batsu mode-card center ${S.anim ? "shake" : ""}" id="card">
       <p class="tl-big q-ng">アウト！</p>

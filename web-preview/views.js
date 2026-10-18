@@ -1093,11 +1093,16 @@ function vTiltCard() {
       <p class="hand-note">0になった瞬間の向きが0°</p>
     </div>`;
     case "play": return `<div class="odai mode-card center tl-play" id="card">
-      <p class="gs-timer tl-timer" id="modeTimer">${TILT_SEC.toFixed(1)}</p>
+      <div class="tl-clock" id="tlClock">
+        <p class="tl-sec"><b id="tlSec">${TILT_SEC}</b><span id="tlFrac">.0</span><small>秒</small></p>
+        <div class="tl-pips">${Array.from({ length: TILT_SEC }, (_, i) => `<i class="tl-pip${i < TILT_SEC - 1 ? " on" : " now"}"></i>`).join("")}</div>
+      </div>
+      <div class="tl-mid">
       ${tl.manual
         ? `<p class="ng-lead">傾けんように<br>キープ！</p><p class="hand-note">このスマホでは角度がとられへんので、<br>傾いたらみんなで判定して押して</p>`
         : `<div class="tl-level" style="--lim:${lim}"><i class="tl-ring"></i><i class="tl-cross"></i><b id="tiltDot" class="tl-dot"></b></div>
            <p class="tl-deg"><b id="tiltDeg">0.0</b>°<small> / ${lim}°</small></p>`}
+      </div>
     </div>`;
     case "out": return `<div class="odai batsu mode-card center ${S.anim ? "shake" : ""}" id="card">
       <p class="tl-big q-ng">アウト！</p>
