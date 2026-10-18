@@ -999,10 +999,12 @@ function spCount() {
 function spGo() {
   const sp = S.game.sp, now = performance.now();
   sp.phase = "play"; sp.el = 0; sp.t0 = now; sp.prev = now;
-  sp.rate = 1; sp.nextChange = now + 900 + Math.random() * 900;
+  // 普通・地獄は最初から速さが違う（×0.5〜×2）。そこから途中でも変わる
+  sp.rate = S.level === "yurume" ? 1 : SP_RATES.filter((r) => r !== 1)[rnd(6)];
+  sp.nextChange = now + 900 + Math.random() * 900;
   sp.hideUntil = 0; sp.nextHide = now + 1400 + Math.random() * 1500;
   sp.jamUntil = 0; sp.jamVal = 0; sp.nextJam = now + 1100 + Math.random() * 1600;
-  sp.rateShow = 0;
+  sp.rateShow = S.level === "yurume" ? 0 : now + 1100;
   play("coin");
   render(true);
   cancelAnimationFrame(sp.raf);

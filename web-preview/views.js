@@ -1120,13 +1120,13 @@ function vStopCard() {
       <p class="sp-num sp-res sp-check">${spFmt(r.v)}</p>
       <p class="hand-note">目標は <b>${spGoal(sp)}</b></p>
     </div>`; }
-    case "done": { const r = sp.res[sp.who]; return `<div class="odai mode-card center ${r.over ? "batsu" : ""}" id="card">
+    case "done": { const r = sp.res[sp.who]; return `<div class="odai mode-card center board-card ${n >= 7 ? "dense" : ""} ${r.over ? "batsu" : ""}" id="card">
       <p class="prog">${mName(sp.who)}の記録</p>
       <p class="sp-num sp-res ${r.over ? "over" : r.exact ? "exact" : ""}">${spFmt(r.v)}</p>
       <p class="tl-big ${r.over ? "q-ng" : "q-ok"} sp-verdict">${spDiffText(r)}</p>
       ${spBoard(sp.who)}
     </div>`; }
-    case "rank": return `<div class="odai batsu mode-card center" id="card">
+    case "rank": return `<div class="odai batsu mode-card center board-card ${n >= 7 ? "dense" : ""}" id="card">
       <p class="prog">第${sp.round}回戦の結果</p>
       ${spBoard(-1)}
       <p class="ng-lead">${sp.losers.length ? `${sp.losers.map(mName).join("・")}が${sp.losers.some((i) => sp.res[i].over) ? "オーバー" : "一番遠い"}${sp.exactAny ? "（ピッタリが出たので罰2倍）" : ""}` : "全員ピッタリ！罰なし"}</p>
@@ -1178,7 +1178,7 @@ function skBoard(hi) {
 function vShakeCard() {
   const g = S.game, sk = g.sk, n = S.members.length;
   switch (sk.phase) {
-    case "hand": return `<div class="odai mode-card center" id="card">
+    case "hand": return `<div class="odai mode-card center sk-hand" id="card">
       <p class="prog">第${sk.round}回戦・${sk.k + 1}/${n}人目</p>
       ${bigWho(sk.who, "の番")}
       ${skSafe()}
@@ -1200,12 +1200,12 @@ function vShakeCard() {
         ${sk.manual ? `<p class="hand-note">このスマホは振ったのがとられへんので、<b>画面を連打</b>した回数で勝負</p>` : `<div class="sk-meter" id="skMeter"><i></i></div>`}
       </div>
     </div>`;
-    case "done": return `<div class="odai mode-card center" id="card">
+    case "done": return `<div class="odai mode-card center board-card ${n >= 7 ? "dense" : ""}" id="card">
       <p class="prog">${mName(sk.who)}の記録</p>
       <p class="sk-cnt sk-cnt-l"><b>${sk.cnt[sk.who]}</b><small>回</small></p>
       ${skBoard(sk.who)}
     </div>`;
-    case "rank": return `<div class="odai batsu mode-card center" id="card">
+    case "rank": return `<div class="odai batsu mode-card center board-card ${n >= 7 ? "dense" : ""}" id="card">
       <p class="prog">第${sk.round}回戦の結果</p>
       ${skBoard(-1)}
       <p class="ng-lead">${sk.losers.map(mName).join("・")}が最下位${S.level === "jigoku" ? "（罰2倍）" : ""}</p>

@@ -347,6 +347,18 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .tl-lim { margin: 4px 0 0; font-family: var(--display); font-size: 44px; line-height: 1; }
 .tl-lim small { display: block; font-family: inherit; font-size: 13px; opacity: .65; margin-top: 4px; }
 .tl-count { margin: 0; font-family: var(--display); font-size: clamp(96px, 34vw, 150px); line-height: 1; animation: pulse .8s ease-in-out infinite; }
+/* 全力シェイク・ピタッとストップの順位表：人数が多い時は詰めて、それでも入らん時は札の中でスクロール（上から） */
+body.stage .odai.board-card { overflow-y: auto; justify-content: flex-start !important; }
+.mode-card.board-card > :first-child { margin-top: auto; }
+.mode-card.board-card > :last-child { margin-bottom: auto; }
+.board-card.dense .sk-board { gap: 2px; }
+.board-card.dense .sk-board li { font-size: 13px; }
+.board-card.dense .sk-board:not(.sp-board) b { font-size: 16px; }
+.board-card.dense .sk-bar { height: 8px; }
+.board-card.dense .sk-cnt-l b, .board-card.dense .sp-res { font-size: clamp(44px, 14vw, 64px); }
+.board-card.dense .sp-verdict { font-size: 22px !important; }
+.board-card.dense .ng-lead { font-size: 20px; margin: 4px 0 0; }
+@media (max-height: 600px) { .sk-hand .hand-note { display: none; } .sk-safe { font-size: 12px; padding: 8px 10px; line-height: 1.45; } .sk-safe b { font-size: 13px; } }
 /* ピタッとストップ */
 .sp-goal { margin: 6px 0 0; font-weight: 800; font-size: 15px; line-height: 1.6; }
 .sp-goal b { font-family: var(--display); font-weight: 400; font-size: 34px; margin-right: 4px; }
@@ -2254,10 +2266,12 @@ function spCount() {
 function spGo() {
   const sp = S.game.sp, now = performance.now();
   sp.phase = "play"; sp.el = 0; sp.t0 = now; sp.prev = now;
-  sp.rate = 1; sp.nextChange = now + 900 + Math.random() * 900;
+  // 普通・地獄は最初から速さが違う（×0.5〜×2）。そこから途中でも変わる
+  sp.rate = S.level === "yurume" ? 1 : SP_RATES.filter((r) => r !== 1)[rnd(6)];
+  sp.nextChange = now + 900 + Math.random() * 900;
   sp.hideUntil = 0; sp.nextHide = now + 1400 + Math.random() * 1500;
   sp.jamUntil = 0; sp.jamVal = 0; sp.nextJam = now + 1100 + Math.random() * 1600;
-  sp.rateShow = 0;
+  sp.rateShow = S.level === "yurume" ? 0 : now + 1100;
   play("coin");
   render(true);
   cancelAnimationFrame(sp.raf);
@@ -3728,13 +3742,13 @@ function vStopCard() {
       <p class="sp-num sp-res sp-check">${spFmt(r.v)}</p>
       <p class="hand-note">目標は <b>${spGoal(sp)}</b></p>
     </div>`; }
-    case "done": { const r = sp.res[sp.who]; return `<div class="odai mode-card center ${r.over ? "batsu" : ""}" id="card">
+    case "done": { const r = sp.res[sp.who]; return `<div class="odai mode-card center board-card ${n >= 7 ? "dense" : ""} ${r.over ? "batsu" : ""}" id="card">
       <p class="prog">${mName(sp.who)}の記録</p>
       <p class="sp-num sp-res ${r.over ? "over" : r.exact ? "exact" : ""}">${spFmt(r.v)}</p>
       <p class="tl-big ${r.over ? "q-ng" : "q-ok"} sp-verdict">${spDiffText(r)}</p>
       ${spBoard(sp.who)}
     </div>`; }
-    case "rank": return `<div class="odai batsu mode-card center" id="card">
+    case "rank": return `<div class="odai batsu mode-card center board-card ${n >= 7 ? "dense" : ""}" id="card">
       <p class="prog">第${sp.round}回戦の結果</p>
       ${spBoard(-1)}
       <p class="ng-lead">${sp.losers.length ? `${sp.losers.map(mName).join("・")}が${sp.losers.some((i) => sp.res[i].over) ? "オーバー" : "一番遠い"}${sp.exactAny ? "（ピッタリが出たので罰2倍）" : ""}` : "全員ピッタリ！罰なし"}</p>
@@ -3786,7 +3800,7 @@ function skBoard(hi) {
 function vShakeCard() {
   const g = S.game, sk = g.sk, n = S.members.length;
   switch (sk.phase) {
-    case "hand": return `<div class="odai mode-card center" id="card">
+    case "hand": return `<div class="odai mode-card center sk-hand" id="card">
       <p class="prog">第${sk.round}回戦・${sk.k + 1}/${n}人目</p>
       ${bigWho(sk.who, "の番")}
       ${skSafe()}
@@ -3808,12 +3822,12 @@ function vShakeCard() {
         ${sk.manual ? `<p class="hand-note">このスマホは振ったのがとられへんので、<b>画面を連打</b>した回数で勝負</p>` : `<div class="sk-meter" id="skMeter"><i></i></div>`}
       </div>
     </div>`;
-    case "done": return `<div class="odai mode-card center" id="card">
+    case "done": return `<div class="odai mode-card center board-card ${n >= 7 ? "dense" : ""}" id="card">
       <p class="prog">${mName(sk.who)}の記録</p>
       <p class="sk-cnt sk-cnt-l"><b>${sk.cnt[sk.who]}</b><small>回</small></p>
       ${skBoard(sk.who)}
     </div>`;
-    case "rank": return `<div class="odai batsu mode-card center" id="card">
+    case "rank": return `<div class="odai batsu mode-card center board-card ${n >= 7 ? "dense" : ""}" id="card">
       <p class="prog">第${sk.round}回戦の結果</p>
       ${skBoard(-1)}
       <p class="ng-lead">${sk.losers.map(mName).join("・")}が最下位${S.level === "jigoku" ? "（罰2倍）" : ""}</p>

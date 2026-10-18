@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { Animated, StyleSheet, Text, Vibration, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, Vibration, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
 import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
@@ -252,7 +252,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     const max = Math.max(1, ...done.map((i) => cnt[i] as number));
     const lose = phase === 'rank' || phase === 'batsu' ? losers : [];
     return (
-      <View style={s.board}>
+      <ScrollView style={s.boardScroll} contentContainerStyle={s.board}>
         {done.map((i, r) => {
           const bad = lose.includes(i);
           return (
@@ -275,7 +275,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
             <Text style={[s.num, { color: fg }]}>?</Text>
           </View>
         ))}
-      </View>
+      </ScrollView>
     );
   };
 
@@ -431,7 +431,8 @@ const s = StyleSheet.create({
   cntUnit: { fontSize: 20, opacity: 0.6 },
   meter: { width: '100%', maxWidth: 260, height: 14, borderRadius: 7, backgroundColor: 'rgba(136,136,136,0.2)', overflow: 'hidden' },
   meterFill: { height: '100%', backgroundColor: '#ffb02e' },
-  board: { alignSelf: 'stretch', gap: 6, marginTop: 4 },
+  boardScroll: { alignSelf: 'stretch', flexGrow: 0, flexShrink: 1 },
+  board: { gap: 6, marginTop: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 2, borderColor: 'transparent', borderRadius: 8, paddingHorizontal: 4, paddingVertical: 2 },
   rk: { width: 18, textAlign: 'center', fontFamily: F.display, opacity: 0.55 },
   nm: { width: 78, fontSize: 15, fontWeight: '800' },

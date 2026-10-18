@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { Animated, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
+import { Animated, ScrollView, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
@@ -108,7 +108,9 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const go = () => {
     const now = performance.now();
     const R = run.current;
-    Object.assign(R, { el: 0, prev: now, rate: 1, nextChange: now + 900 + Math.random() * 900, hideUntil: 0, nextHide: now + 1400 + Math.random() * 1500, jamUntil: 0, jamVal: 0, nextJam: now + 1100 + Math.random() * 1600, rateShow: 0 });
+    // 普通・地獄は最初から速さが違う（×0.5〜×2）。そこから途中でも変わる
+    const rate0 = level === 'yurume' ? 1 : RATES.filter((r) => r !== 1)[rnd(6)];
+    Object.assign(R, { el: 0, prev: now, rate: rate0, nextChange: now + 900 + Math.random() * 900, hideUntil: 0, nextHide: now + 1400 + Math.random() * 1500, jamUntil: 0, jamVal: 0, nextJam: now + 1100 + Math.random() * 1600, rateShow: level === 'yurume' ? 0 : now + 1100 });
     setView({ text: fmt(shown(0)), hide: false, jam: false, over: false, badge: '' });
     setPhase('play');
     phaseRef.current = 'play';
@@ -240,7 +242,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
     const wait = members.map((_, i) => i).filter((i) => !res[i]);
     const lose = phase === 'rank' || phase === 'batsu' ? losers : [];
     return (
-      <View style={s.board}>
+      <ScrollView style={s.boardScroll} contentContainerStyle={s.board}>
         {rows.map((i, r) => {
           const x = res[i]!;
           const bad = lose.includes(i);
@@ -262,7 +264,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
             <Text style={[s.d, { color: fg }]}>?</Text>
           </View>
         ))}
-      </View>
+      </ScrollView>
     );
   };
 
@@ -422,7 +424,8 @@ const s = StyleSheet.create({
   stopText: { color: '#fff', fontSize: 26, fontWeight: '900' },
   resNum: { fontFamily: F.display, fontSize: 84, lineHeight: 92, fontVariant: ['tabular-nums'] },
   verdict: { fontFamily: F.display, fontSize: 30, lineHeight: 36 },
-  board: { alignSelf: 'stretch', gap: 6, marginTop: 8 },
+  boardScroll: { alignSelf: 'stretch', flexGrow: 0, flexShrink: 1 },
+  board: { gap: 6, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 2, borderColor: 'transparent', borderRadius: 8, paddingHorizontal: 4, paddingVertical: 2 },
   rk: { width: 16, textAlign: 'center', fontFamily: F.display, opacity: 0.55 },
   nm: { width: 68, fontSize: 15, fontWeight: '800' },

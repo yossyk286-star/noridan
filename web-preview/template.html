@@ -347,6 +347,18 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .tl-lim { margin: 4px 0 0; font-family: var(--display); font-size: 44px; line-height: 1; }
 .tl-lim small { display: block; font-family: inherit; font-size: 13px; opacity: .65; margin-top: 4px; }
 .tl-count { margin: 0; font-family: var(--display); font-size: clamp(96px, 34vw, 150px); line-height: 1; animation: pulse .8s ease-in-out infinite; }
+/* 全力シェイク・ピタッとストップの順位表：人数が多い時は詰めて、それでも入らん時は札の中でスクロール（上から） */
+body.stage .odai.board-card { overflow-y: auto; justify-content: flex-start !important; }
+.mode-card.board-card > :first-child { margin-top: auto; }
+.mode-card.board-card > :last-child { margin-bottom: auto; }
+.board-card.dense .sk-board { gap: 2px; }
+.board-card.dense .sk-board li { font-size: 13px; }
+.board-card.dense .sk-board:not(.sp-board) b { font-size: 16px; }
+.board-card.dense .sk-bar { height: 8px; }
+.board-card.dense .sk-cnt-l b, .board-card.dense .sp-res { font-size: clamp(44px, 14vw, 64px); }
+.board-card.dense .sp-verdict { font-size: 22px !important; }
+.board-card.dense .ng-lead { font-size: 20px; margin: 4px 0 0; }
+@media (max-height: 600px) { .sk-hand .hand-note { display: none; } .sk-safe { font-size: 12px; padding: 8px 10px; line-height: 1.45; } .sk-safe b { font-size: 13px; } }
 /* ピタッとストップ */
 .sp-goal { margin: 6px 0 0; font-weight: 800; font-size: 15px; line-height: 1.6; }
 .sp-goal b { font-family: var(--display); font-weight: 400; font-size: 34px; margin-right: 4px; }
