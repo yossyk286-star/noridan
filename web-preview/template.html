@@ -464,6 +464,7 @@ body[data-level="jigoku"] .sg-cell .in { box-shadow: 0 0 0 1px rgba(255,42,42,.3
 
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { transform: translateY(40px); opacity: 0; } }
+@keyframes fadeIn { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
 /* ===== 夜モード：ネオン看板 ===== */
@@ -598,7 +599,7 @@ body[data-level="jigoku"] .rule-out { background: var(--blood); color: #000; }
 /* ===== 分かりやすさ ===== */
 .odai .head .tag { font-style: normal; display: inline-block; margin-right: 8px; padding: 2px 8px; border-radius: 999px; background: currentColor; letter-spacing: .06em; }
 .odai .head .tag { color: inherit; background: color-mix(in srgb, currentColor 14%, transparent); border: 1px solid color-mix(in srgb, currentColor 45%, transparent); }
-.coach { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 700; line-height: 1.5; position: relative; animation: rise .3s cubic-bezier(.2,1.2,.4,1); }
+.coach { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 700; line-height: 1.5; position: relative; animation: fadeIn .25s ease-out; }
 .coach::before { content: ""; position: absolute; top: -6px; left: 28px; width: 12px; height: 12px; background: var(--ink); transform: rotate(45deg); }
 .coach span { flex: 1; }
 .coach button { flex: none; padding: 8px 12px; border-radius: 999px; background: var(--yuru); color: var(--ink); font-size: 12px; font-weight: 900; }
@@ -846,6 +847,9 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .score { overflow: hidden; }
 /* メニューの結果発表は目立たせる */
 .menu-item.hot { background: var(--yuru); color: var(--ink); }
+.menu-item:disabled { opacity: .45; }
+.big.danger-btn { background: #e8202a; color: #fff; }
+.i2 { font-size: .74em; letter-spacing: -.06em; white-space: nowrap; }
 .menu-item.hot small { color: rgba(20,18,16,.65); }
 .rank li small { display: block; font-size: 11px; color: var(--muted); }
 /* 説明・ワード一覧は札の真ん中に寄せて、画面の高さに合わせて文字も大きくする（下にぽっかり余白が出んように） */

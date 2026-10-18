@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Tap } from './Tap';
 import type React from 'react';
 import { Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { isSituational, mustPick, needsPick, othersOf, penHead } from '../lib/game';
+import { iniFit, initialOf, isSituational, mustPick, needsPick, othersOf, penHead } from '../lib/game';
 import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
 import { useSeen } from '../lib/coach';
@@ -62,7 +62,7 @@ export function ScoreBar({
       <View style={[styles.score, { flex: 1, flexDirection: 'row', overflow: 'hidden' }]}>
         {shown.map((i) => (
           <View key={i} style={[styles.av, { backgroundColor: colorOf(i) }, i === doer && { borderWidth: 3, transform: [{ scale: 1.08 }] }]}>
-            <Text style={styles.avText}>{members[i].name.slice(0, 1)}</Text>
+            <Text style={[styles.avText, iniFit(initialOf(members, i))]}>{initialOf(members, i)}</Text>
             {pen[i] > 0 && (
               <View style={[styles.cnt, { borderColor: pal.bg }]}>
                 <Text style={styles.cntText}>{pen[i]}</Text>

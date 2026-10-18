@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { iniFit, initialOf } from '../lib/game';
 import type React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Tap } from './Tap';
@@ -70,7 +71,7 @@ export function HandWho({ members, i, sub, fg }: { members: Member[]; i: number;
   return (
     <View style={{ alignItems: 'center', gap: 10 }}>
       <View style={[s.handDot, { backgroundColor: colorOf(i) }]}>
-        <Text style={s.handDotText}>{members[i].name.slice(0, 1)}</Text>
+        <Text style={[s.handDotText, iniFit(initialOf(members, i))]}>{initialOf(members, i)}</Text>
       </View>
       <Text style={[s.handName, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>{members[i].name}</Text>
       {!!sub && <Text style={[s.handSub, { color: fg }]}>{sub}</Text>}
@@ -116,7 +117,7 @@ export function Roulette({ members, fg, onDone, tick }: { members: Member[]; fg:
         return (
           <View key={i} style={[s.roul, { width: `${100 / cols - 2}%` as const, borderColor: on ? colorOf(i) : alpha('#888888', 0.3), backgroundColor: on ? alpha(colorOf(i).length === 7 ? colorOf(i) : '#888888', 0.22) : 'transparent', transform: [{ scale: on ? (hit ? 1.1 : 1.05) : 1 }] }]}>
             <View style={[s.roulDot, { backgroundColor: colorOf(i), opacity: on ? 1 : 0.45 }]}>
-              <Text style={s.roulDotText}>{m.name.slice(0, 1)}</Text>
+              <Text style={[s.roulDotText, iniFit(initialOf(members, i))]}>{initialOf(members, i)}</Text>
             </View>
             <Text style={[s.roulName, { color: fg, opacity: on ? 1 : 0.55 }]} numberOfLines={1}>{m.name}</Text>
           </View>

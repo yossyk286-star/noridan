@@ -16,7 +16,7 @@ const EXAMPLE = [
 ];
 
 const S = {
-  screen: "home",
+  screen: "home", hist: [], ask: null,
   members: (store.get("nd_members", EXAMPLE) || EXAMPLE).map((m) => ({ name: m.name, ...(m.ng ? { ng: true } : {}) })),
   isExample: store.get("nd_members", null) === null,
   level: store.get("nd_level", "futsu"),
@@ -163,7 +163,7 @@ const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
 const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" ? "問" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
-  S.scores = false; S.bombLook = 0;
+  S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null;
   const n = S.members.length;
   S.game = {
     mode, turn: 0, cur: 0, doer: 0,
@@ -747,6 +747,7 @@ function stopTimer() { if (modeTimer) { clearInterval(modeTimer); modeTimer = nu
 // ---------- 最初の人ルーレット（ジェスチャー・褒め殺し） ----------
 // 名前のタイルを光らせながら回して、だんだん遅くなって1人に止まる
 function spinRoulette(onDone) {
+  S.spinning = true;
   const n = S.members.length, goal = rnd(n);
   const base = 16 + rnd(n);
   const steps = base + ((goal - (base % n) + n) % n); // steps % n === goal で止まる
@@ -756,7 +757,7 @@ function spinRoulette(onDone) {
     document.querySelectorAll(".roul-chip").forEach((el, j) => el.classList.toggle("on", j === idx));
     play("tick");
     if (navigator.vibrate) navigator.vibrate(5);
-    if (k >= steps) { setTimeout(() => onDone(idx), 450); return; }
+    if (k >= steps) { setTimeout(() => { S.spinning = false; onDone(idx); }, 450); return; }
     k++;
     const p = k / steps;
     setTimeout(tick, 55 + p * p * 330);

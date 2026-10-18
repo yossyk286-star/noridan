@@ -287,3 +287,13 @@ export function needsPick(tpl?: string): boolean {
   if (/黙秘は罰/.test(tpl)) return false;
   return /が罰|は罰|2人とも罰|両方罰/.test(tpl) || /^\{P\}と\{X\}/.test(tpl);
 }
+
+/** 顔アイコンの文字：頭1文字。同じ頭文字の人がおる時だけ頭2文字 */
+export function initialOf(members: { name: string }[], i: number): string {
+  const first = (nm: string) => Array.from(nm.trim())[0] ?? '';
+  const nm = members[i]?.name ?? '';
+  const f = first(nm);
+  return members.some((m, j) => j !== i && first(m.name) === f) ? Array.from(nm.trim()).slice(0, 2).join('') : f;
+}
+/** 2文字の時は丸からはみ出さんように少し縮める */
+export const iniFit = (t: string) => (Array.from(t).length > 1 ? { transform: [{ scale: 0.74 }] } : null);

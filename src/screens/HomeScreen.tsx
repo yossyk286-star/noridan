@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { iniFit, initialOf } from '../lib/game';
 import { Tap } from '../components/Tap';
 import { Animated, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { C, F, LEVEL_LABEL, LEVEL_SUB, colorOf } from '../theme';
@@ -76,7 +77,7 @@ export default function HomeScreen(props: Props) {
 function Dot({ i, name, size = 34 }: { i: number; name: string; size?: number }) {
   return (
     <View style={[s.dot, { width: size, height: size, borderRadius: size / 2, backgroundColor: colorOf(i) }]}>
-      <Text style={[s.dotText, { fontSize: size * 0.44 }]}>{name.slice(0, 1)}</Text>
+      <Text style={[s.dotText, { fontSize: size * 0.44 }, iniFit(name)]}>{name}</Text>
     </View>
   );
 }
@@ -178,7 +179,7 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
 
         {members.map((m, i) => (
           <View key={`${m.name}-${i}`} style={s.mem}>
-            <Dot i={i} name={m.name} />
+            <Dot i={i} name={initialOf(members, i)} />
             <Text style={[s.memName, { flex: 1 }]} numberOfLines={1}>{m.name}</Text>
             {night && (
               <Tap onPress={() => toggleNg(i)} accessibilityState={{ selected: !!m.ng }} style={[s.ng, m.ng && s.ngOn]}>
@@ -226,7 +227,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       <View style={s.mchips}>
         {members.map((m, i) => (
           <View key={i} style={s.mchip}>
-            <Dot i={i} name={m.name} size={26} />
+            <Dot i={i} name={initialOf(members, i)} size={26} />
             <Text style={s.mchipText}>{m.name}</Text>
           </View>
         ))}

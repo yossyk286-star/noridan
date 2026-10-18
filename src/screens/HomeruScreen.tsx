@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { iniFit, initialOf } from '../lib/game';
 import type React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -128,7 +129,7 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
   const person = (i: number, label: string) => (
     <View style={s.person}>
       <View style={[s.dot, { backgroundColor: colorOf(i) }]}>
-        <Text style={s.dotText}>{members[i].name.slice(0, 1)}</Text>
+        <Text style={[s.dotText, iniFit(initialOf(members, i))]}>{initialOf(members, i)}</Text>
       </View>
       <Text style={[s.pName, { color: fg }]} numberOfLines={1}>{members[i].name}</Text>
       <Text style={[s.pLabel, { color: fg }]}>{label}</Text>

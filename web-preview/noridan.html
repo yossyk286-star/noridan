@@ -464,6 +464,7 @@ body[data-level="jigoku"] .sg-cell .in { box-shadow: 0 0 0 1px rgba(255,42,42,.3
 
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { transform: translateY(40px); opacity: 0; } }
+@keyframes fadeIn { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
 /* ===== 夜モード：ネオン看板 ===== */
@@ -598,7 +599,7 @@ body[data-level="jigoku"] .rule-out { background: var(--blood); color: #000; }
 /* ===== 分かりやすさ ===== */
 .odai .head .tag { font-style: normal; display: inline-block; margin-right: 8px; padding: 2px 8px; border-radius: 999px; background: currentColor; letter-spacing: .06em; }
 .odai .head .tag { color: inherit; background: color-mix(in srgb, currentColor 14%, transparent); border: 1px solid color-mix(in srgb, currentColor 45%, transparent); }
-.coach { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 700; line-height: 1.5; position: relative; animation: rise .3s cubic-bezier(.2,1.2,.4,1); }
+.coach { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 700; line-height: 1.5; position: relative; animation: fadeIn .25s ease-out; }
 .coach::before { content: ""; position: absolute; top: -6px; left: 28px; width: 12px; height: 12px; background: var(--ink); transform: rotate(45deg); }
 .coach span { flex: 1; }
 .coach button { flex: none; padding: 8px 12px; border-radius: 999px; background: var(--yuru); color: var(--ink); font-size: 12px; font-weight: 900; }
@@ -846,6 +847,9 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .score { overflow: hidden; }
 /* メニューの結果発表は目立たせる */
 .menu-item.hot { background: var(--yuru); color: var(--ink); }
+.menu-item:disabled { opacity: .45; }
+.big.danger-btn { background: #e8202a; color: #fff; }
+.i2 { font-size: .74em; letter-spacing: -.06em; white-space: nowrap; }
 .menu-item.hot small { color: rgba(20,18,16,.65); }
 .rank li small { display: block; font-size: 11px; color: var(--muted); }
 /* 説明・ワード一覧は札の真ん中に寄せて、画面の高さに合わせて文字も大きくする（下にぽっかり余白が出んように） */
@@ -890,7 +894,7 @@ const EXAMPLE = [
 ];
 
 const S = {
-  screen: "home",
+  screen: "home", hist: [], ask: null,
   members: (store.get("nd_members", EXAMPLE) || EXAMPLE).map((m) => ({ name: m.name, ...(m.ng ? { ng: true } : {}) })),
   isExample: store.get("nd_members", null) === null,
   level: store.get("nd_level", "futsu"),
@@ -1037,7 +1041,7 @@ const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
 const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" ? "問" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
-  S.scores = false; S.bombLook = 0;
+  S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null;
   const n = S.members.length;
   S.game = {
     mode, turn: 0, cur: 0, doer: 0,
@@ -1621,6 +1625,7 @@ function stopTimer() { if (modeTimer) { clearInterval(modeTimer); modeTimer = nu
 // ---------- 最初の人ルーレット（ジェスチャー・褒め殺し） ----------
 // 名前のタイルを光らせながら回して、だんだん遅くなって1人に止まる
 function spinRoulette(onDone) {
+  S.spinning = true;
   const n = S.members.length, goal = rnd(n);
   const base = 16 + rnd(n);
   const steps = base + ((goal - (base % n) + n) % n); // steps % n === goal で止まる
@@ -1630,7 +1635,7 @@ function spinRoulette(onDone) {
     document.querySelectorAll(".roul-chip").forEach((el, j) => el.classList.toggle("on", j === idx));
     play("tick");
     if (navigator.vibrate) navigator.vibrate(5);
-    if (k >= steps) { setTimeout(() => onDone(idx), 450); return; }
+    if (k >= steps) { setTimeout(() => { S.spinning = false; onDone(idx); }, 450); return; }
     k++;
     const p = k / steps;
     setTimeout(tick, 55 + p * p * 330);
@@ -1764,6 +1769,7 @@ const ICON = {
   edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>`,
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v7h16v-7M12 3v12M7 8l5-5 5 5"/></svg>`,
   users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.5-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.5 3.5 5.4"/></svg>`,
+  undo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>`,
   split: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 12h16M9 7.5h6M9 16.5h6"/></svg>`,
   hand: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11V4.5a1.5 1.5 0 0 1 3 0V12M14 11.5V6a1.5 1.5 0 0 1 3 0v7.5c0 4-2.5 7-6.5 7S5 18 4 15l-1-3a1.5 1.5 0 0 1 2.8-1L8 14"/></svg>`,
   heart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>`,
@@ -1802,7 +1808,16 @@ const ANGEL = `<svg class="angel" viewBox="0 0 120 100" aria-hidden="true">
 
 // ---------- views: home ----------
 const LV_SUB = { yurume: "初手はこれ", futsu: "いつもの", jigoku: "覚悟しろ" };
-const dot = (i, size = "") => `<span class="dot" style="background:${colorOf(i)}">${esc(S.members[i].name.slice(0, 1))}</span>`;
+// 顔アイコンの文字：頭1文字。同じ頭文字の人がおる時だけ頭2文字
+function iniOf(i) {
+  const first = (nm) => Array.from(nm.trim())[0] || "";
+  const nm = S.members[i]?.name || "";
+  const f = first(nm);
+  const clash = S.members.some((m, j) => j !== i && first(m.name) === f);
+  return clash ? Array.from(nm.trim()).slice(0, 2).join("") : f;
+}
+const ini = (i) => { const t = iniOf(i); return Array.from(t).length > 1 ? `<span class="i2">${esc(t)}</span>` : esc(t); };
+const dot = (i, size = "") => `<span class="dot" style="background:${colorOf(i)}">${ini(i)}</span>`;
 
 function vHome() {
   if (S.nightAsk) return vNightAsk();
@@ -2174,7 +2189,7 @@ function vBar() {
   return `<div class="bar">
     <div class="score" aria-label="罰スコア">${shown.map((i) => `
       <span class="av ${i === g.doer ? "is-turn" : ""}" style="--mc:${colorOf(i)}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
-        ${esc(S.members[i].name.slice(0, 1))}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
+        ${ini(i)}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
     <button class="icon-btn bar-btn" data-act="flip" aria-pressed="${S.flip}" aria-label="上下反転">${ICON.flip}</button>
     <button class="icon-btn bar-btn" data-act="dual" aria-pressed="${S.dual}" aria-label="向かい合わせ表示">${ICON.split}</button>
@@ -2216,15 +2231,31 @@ function vScores() {
 }
 function vMenu() {
   const g = S.game;
+  // 結果発表・やめるは押し間違えたら戻れへんので、1回だけ確認を挟む
+  if (S.ask) {
+    const end = S.ask === "end";
+    return `
+  <div class="sheet-back" data-act="menuClose">
+    <div class="sheet menu" role="dialog" aria-label="確認" data-stop>
+      <div class="sheet-grip"></div>
+      <h2>${end ? "ここで結果発表する？" : "ゲームをやめる？"}</h2>
+      <p class="sheet-note">${end ? "ゲームはここで終わり。罰が一番多い人を発表するで" : "罰の記録は消えて、最初の画面に戻る"}</p>
+      <button class="${end ? "big" : "big danger-btn"}" data-act="${end ? "end" : "home"}">${end ? "結果発表する" : "やめる"}</button>
+      <button class="ghost" data-act="askNo">続ける</button>
+    </div>
+  </div>`;
+  }
+  const canUndo = S.hist.length > 0 && !busyGame();
   return `
   <div class="sheet-back" data-act="menuClose">
     <div class="sheet menu" role="dialog" aria-label="メニュー" data-stop>
       <div class="sheet-grip"></div>
       <p class="menu-meta">${esc(modeLine(g))}</p>
-      <button class="menu-item hot" data-act="end">${ICON.flag}<span>結果発表<small>ここで終わって、罰が一番多い人を発表</small></span></button>
+      <button class="menu-item hot" data-act="ask" data-v="end">${ICON.flag}<span>結果発表<small>ここで終わって、罰が一番多い人を発表</small></span></button>
+      <button class="menu-item" data-act="undo" ${canUndo ? "" : "disabled"}>${ICON.undo}<span>1手戻す<small>${canUndo ? "押し間違えた時に、直前の操作を取り消す" : "まだ戻せる操作がない"}</small></span></button>
       <button class="menu-item" data-act="rules">${ICON.book}<span>ルール早見表<small>${MODE_NAME[g.mode]}の遊び方</small></span></button>
       <button class="menu-item" data-act="sheet">${ICON.gear}<span>設定<small>効果音・読み上げ・遊び方</small></span></button>
-      <button class="menu-item danger" data-act="home">${ICON.exit}<span>ゲームをやめる<small>罰の記録は消える</small></span></button>
+      <button class="menu-item danger" data-act="ask" data-v="home">${ICON.exit}<span>ゲームをやめる<small>罰の記録は消える</small></span></button>
       <button class="ghost" data-act="menuClose">閉じる</button>
     </div>
   </div>`;
@@ -2329,7 +2360,7 @@ function vRuleSheet() {
 const nextIdx = () => (S.game.cur + 1) % S.members.length;
 function vNextUp() {
   const n = nextIdx();
-  return `<p class="next-up">次の番 ${ICON.next}<span class="av sm" style="--mc:${colorOf(n)}">${esc(S.members[n].name.slice(0, 1))}</span>${esc(S.members[n].name)}</p>`;
+  return `<p class="next-up">次の番 ${ICON.next}<span class="av sm" style="--mc:${colorOf(n)}">${ini(n)}</span>${esc(S.members[n].name)}</p>`;
 }
 
 function vOdai() {
@@ -2347,7 +2378,7 @@ function vOdai() {
 // ---------- NGワード（画面） ----------
 const NG_MIN = [3, 5, 10, 15, 0];
 const mName = (i) => esc(S.members[i].name);
-const bigWho = (i, sub) => `<div class="hand-who" style="--mc:${colorOf(i)}"><span class="hand-dot">${esc(S.members[i].name.slice(0, 1))}</span><b>${mName(i)}</b>${sub ? `<small>${sub}</small>` : ""}</div>`;
+const bigWho = (i, sub) => `<div class="hand-who" style="--mc:${colorOf(i)}"><span class="hand-dot">${ini(i)}</span><b>${mName(i)}</b>${sub ? `<small>${sub}</small>` : ""}</div>`;
 function ngWordsFor(viewer) {
   const ng = S.game.ng;
   return `<ul class="ng-list">${S.members.map((m, j) => j === viewer ? "" : `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${esc(ng.words[j])}</b></li>`).join("")}</ul>`;
@@ -2652,7 +2683,7 @@ const lvBox = (text = "", noNg = true) => `<p class="ng-lv">地獄度は「${LV[
 function vRoulette(title, picked, label) {
   return `<div class="odai mode-card center" id="card">
     <p class="prog">${title}</p>
-    <div class="roul" style="grid-template-columns:repeat(${S.members.length <= 4 ? 2 : S.members.length <= 6 || S.members.length === 9 ? 3 : 4}, minmax(0,1fr))">${S.members.map((m, i) => `<span class="roul-chip ${picked === i ? "on hit" : ""}" style="--mc:${colorOf(i)}"><i>${esc(m.name.slice(0, 1))}</i><b>${esc(m.name)}</b></span>`).join("")}</div>
+    <div class="roul" style="grid-template-columns:repeat(${S.members.length <= 4 ? 2 : S.members.length <= 6 || S.members.length === 9 ? 3 : 4}, minmax(0,1fr))">${S.members.map((m, i) => `<span class="roul-chip ${picked === i ? "on hit" : ""}" style="--mc:${colorOf(i)}"><i>${ini(i)}</i><b>${esc(m.name)}</b></span>`).join("")}</div>
     <p class="ng-lead roul-res">${picked != null ? `${mName(picked)}${label}` : "ルーレット中…"}</p>
   </div>`;
 }
@@ -2725,9 +2756,9 @@ function vHmCard() {
     case "ready": case "go": return `<div class="odai ${nc} mode-card center" id="card">
       ${hm.phase === "go" ? `<p class="gs-timer" id="modeTimer">${Math.max(0, Math.ceil((hm.endAt - Date.now()) / 1000))}</p>` : `<p class="prog">第${g.turn + 1}戦</p>`}
       <div class="hm-vs">
-        <span style="--mc:${colorOf(hm.praiser)}"><i>${esc(S.members[hm.praiser].name.slice(0, 1))}</i><b>${mName(hm.praiser)}</b><small>褒める</small></span>
+        <span style="--mc:${colorOf(hm.praiser)}"><i>${ini(hm.praiser)}</i><b>${mName(hm.praiser)}</b><small>褒める</small></span>
         <em>→</em>
-        <span style="--mc:${colorOf(hm.target)}"><i>${esc(S.members[hm.target].name.slice(0, 1))}</i><b>${mName(hm.target)}</b><small>耐える</small></span>
+        <span style="--mc:${colorOf(hm.target)}"><i>${ini(hm.target)}</i><b>${mName(hm.target)}</b><small>耐える</small></span>
       </div>
       <p class="ng-topic"><small>褒めるところ</small>${esc(hm.theme)}</p>
       <p class="hand-note">${hm.phase === "go" ? `${mName(hm.target)}、笑ったら負けやで` : `${mName(hm.target)}は真顔で耐えろ`}</p>
@@ -2800,7 +2831,7 @@ function vBoard() {
       return `<div class="sg-cell ${f.cls}" style="left:${(col / COLS) * 100}%;top:${(r / ROWS) * 100}%;width:${100 / COLS}%;height:${100 / ROWS}%" title="${esc(c.label || "お題")}">
         <div class="in"><span class="no">${c.type === "start" || c.type === "goal" ? "" : i}</span><b>${esc(f.g)}</b></div></div>`;
     }).join("")}
-    ${S.members.map((m, i) => `<div class="sg-tok ${i === g.cur ? "is-cur" : ""}" id="tok${i}" style="${tokenStyle(i)}">${esc(m.name.slice(0, 1))}</div>`).join("")}
+    ${S.members.map((m, i) => `<div class="sg-tok ${i === g.cur ? "is-cur" : ""}" id="tok${i}" style="${tokenStyle(i)}">${ini(i)}</div>`).join("")}
   </div>`;
 }
 // コマだけ動かす（DOMを作り直さないのでスッと動く）
@@ -3088,6 +3119,29 @@ function rememberGroup() {
   store.set("nd_groups", gs.slice(0, 3));
 }
 
+// ---------- 1手戻す ----------
+// ゲームの中身が変わる操作の直前を覚えとく（最大20手）。タイマー・サイコロ・ルーレットの途中は戻さへん
+const snapKey = (g) => { try { return JSON.stringify(g, (k, v) => (v instanceof Map || v instanceof Set ? [...v] : v)); } catch { return ""; } };
+function busyGame() { const g = S.game; return !!(g && (g.rolling || g.hopping || S.spinning || modeTimer)); }
+function rememberStep(act) {
+  if (act === "undo" || !S.game || !isStage(S.screen) || busyGame()) return;
+  const g = S.game, key = snapKey(g);
+  let snap;
+  try { snap = structuredClone(g); } catch { return; }
+  queueMicrotask(() => {
+    if (S.game !== g || !isStage(S.screen) || snapKey(g) === key) return;
+    S.hist.push(snap);
+    if (S.hist.length > 20) S.hist.shift();
+  });
+}
+function undoGame() {
+  if (!S.hist.length || busyGame()) return;
+  stopTimer();
+  S.game = S.hist.pop();
+  S.menu = false; S.scores = false; S.bombLook = 0; S.ruleSheet = null;
+  render(true);
+}
+
 function onClick(e) {
   const b = e.target.closest("[data-act]");
   if (!b || b.disabled) return;
@@ -3096,6 +3150,7 @@ function onClick(e) {
   SFX.unlock();
   if (navigator.vibrate && b.tagName === "BUTTON") navigator.vibrate(6); // 押した手応え（Androidのみ）
   const act = b.dataset.act, g = S.game, i = +b.dataset.i;
+  rememberStep(act);
   switch (act) {
     // home
     case "del": S.members.splice(i, 1); saveMembers(); render(); break;
@@ -3103,16 +3158,19 @@ function onClick(e) {
     case "step1": S.step = 1; render(); break;
     case "step2": S.step = 2; render(); window.scrollTo(0, 0); break;
     case "start": rememberGroup(); newGame(b.dataset.m); break;
-    case "home": stopTimer(); S.menu = false; S.screen = "home"; S.step = 2; render(); break;
+    case "home": stopTimer(); S.menu = false; S.ask = null; S.screen = "home"; S.step = 2; render(); break;
     case "again": S.shareMsg = ""; newGame(g.mode, true); break;
-    case "end": stopTimer(); S.menu = false; applyAdds(); S.shareMsg = ""; S.screen = "result"; render(true); break;
-    case "menu": S.menu = true; render(); break;
+    case "end": stopTimer(); S.menu = false; S.ask = null; applyAdds(); S.shareMsg = ""; S.screen = "result"; render(true); break;
+    case "menu": S.menu = true; S.ask = null; render(); break;
+    case "ask": S.ask = b.dataset.v; render(); break;
+    case "askNo": S.ask = null; render(); break;
+    case "undo": undoGame(); break;
     case "scores": S.scores = true; render(); break;
     case "bombLook": S.bombLook = 1; render(); break;
     case "bombLookShow": S.bombLook = 2; render(); break;
     case "bombLookClose": S.bombLook = 0; render(); break;
     case "scoresClose": S.scores = false; render(); break;
-    case "menuClose": S.menu = false; render(); break;
+    case "menuClose": S.menu = false; S.ask = null; render(); break;
     case "share": shareResult(); break;
     case "clearAll": S.members = []; saveMembers(); render(); document.getElementById("inName")?.focus(); break;
     case "loadGroup": {

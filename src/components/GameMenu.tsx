@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Tap } from './Tap';
 import { C } from '../theme';
@@ -20,11 +21,16 @@ type Props = {
 
 /** ゲーム中の「⋯」メニュー。画面をスッキリさせるために、たまにしか使わん操作はここに寄せる */
 export default function GameMenu({ visible, meta, onEnd, onRules, onSettings, onQuit, onClose, rulesSub }: Props) {
-  const item = (icon: IconName, title: string, sub: string, onPress: () => void, extra?: { danger?: boolean; state?: string; hot?: boolean }) => (
+  // 結果発表・やめるは押し間違えたら戻れへんので、1回だけ確認を挟む
+  const [ask, setAsk] = useState<null | 'end' | 'quit'>(null);
+  useEffect(() => {
+    if (!visible) setAsk(null);
+  }, [visible]);
+  const item = (icon: IconName, title: string, sub: string, onPress: () => void, extra?: { danger?: boolean; state?: string; hot?: boolean; keep?: boolean }) => (
     <Tap
       style={({ pressed }) => [s.item, extra?.hot && s.hot, pressed && { opacity: 0.7 }]}
       onPress={() => {
-        onClose();
+        if (!extra?.keep) onClose();
         onPress();
       }}
     >
@@ -42,13 +48,36 @@ export default function GameMenu({ visible, meta, onEnd, onRules, onSettings, on
         <Pressable style={s.sheet} onPress={() => {}}>
           <View style={s.grip} />
           <Text style={s.meta}>{meta}</Text>
-          {item('flag', '結果発表', 'ここで終わって、罰が一番多い人を発表', onEnd, { hot: true })}
+          {ask ? (
+            <>
+              <Text style={s.askTitle}>{ask === 'end' ? 'ここで結果発表する？' : 'ゲームをやめる？'}</Text>
+              <Text style={s.sub}>{ask === 'end' ? 'ゲームはここで終わり。罰が一番多い人を発表するで' : '罰の記録は消えて、最初の画面に戻る'}</Text>
+              <Tap
+                style={[s.askBtn, { backgroundColor: ask === 'end' ? '#ffd23f' : '#e8202a' }]}
+                onPress={() => {
+                  const go = ask === 'end' ? onEnd : onQuit;
+                  setAsk(null);
+                  onClose();
+                  go();
+                }}
+              >
+                <Text style={[s.askBtnText, { color: ask === 'end' ? C.ink : '#fff' }]}>{ask === 'end' ? '結果発表する' : 'やめる'}</Text>
+              </Tap>
+              <Tap style={s.ghost} onPress={() => setAsk(null)}>
+                <Text style={s.ghostText}>続ける</Text>
+              </Tap>
+            </>
+          ) : (
+          <>
+          {item('flag', '結果発表', 'ここで終わって、罰が一番多い人を発表', () => setAsk('end'), { hot: true, keep: true })}
           {item('book', 'ルール早見表', rulesSub ?? '倍プッシュ・時限爆弾・リベンジ権…', onRules)}
           {item('gear', '設定', '効果音・読み上げ・遊び方', onSettings)}
-          {item('exit', 'ゲームをやめる', '罰の記録は消える', onQuit, { danger: true })}
+          {item('exit', 'ゲームをやめる', '罰の記録は消える', () => setAsk('quit'), { danger: true, keep: true })}
           <Tap style={s.ghost} onPress={onClose}>
             <Text style={s.ghostText}>閉じる</Text>
           </Tap>
+          </>
+          )}
         </Pressable>
       </Pressable>
     </Modal>
@@ -62,6 +91,9 @@ const s = StyleSheet.create({
   meta: { color: C.muted, fontSize: 12, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.06)' },
   hot: { backgroundColor: '#ffd23f' },
+  askTitle: { color: C.paper, fontSize: 22, fontWeight: '900' },
+  askBtn: { borderRadius: 16, padding: 18, alignItems: 'center', marginTop: 8 },
+  askBtnText: { fontSize: 18, fontWeight: '900' },
   title: { color: C.paper, fontWeight: '900', fontSize: 16 },
   sub: { color: C.muted, fontSize: 11, fontWeight: '700', marginTop: 2 },
   state: { color: C.paper, fontSize: 12, fontWeight: '900', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { iniFit, initialOf } from '../lib/game';
 import { Tap } from './Tap';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { BOARD, GOAL } from '../lib/game';
@@ -98,7 +99,7 @@ export function Board({ pal, members, vpos, cur, callout, height }: { pal: Pal; 
               ? { x: (k - (n - 1) / 2) * Math.min(14, 44 / Math.max(1, n - 1)), y: cellH * 0.28 }
               : n === 1 ? { x: 0, y: 0 } : { x: ((k % 2) - 0.5) * 18, y: (Math.floor(k / 2) - (n > 2 ? 0.5 : 0)) * 18 };
             const c = center(vpos[i]);
-            return <Token key={i} name={m.name} color={colorOf(i)} x={c.x + off.x} y={c.y + off.y} active={i === cur} small={atStart} />;
+            return <Token key={i} name={initialOf(members, i)} color={colorOf(i)} x={c.x + off.x} y={c.y + off.y} active={i === cur} small={atStart} />;
           })}
           {callout && <Bubble key={callout.key} text={callout.text} kind={callout.kind} x={center(callout.at).x} y={center(callout.at).y} width={w} />}
         </>
@@ -177,7 +178,7 @@ function Token({ name, color, x, y, active, small }: { name: string; color: stri
         active && { shadowColor: color, shadowOpacity: 1, shadowRadius: 6, shadowOffset: { width: 0, height: 0 } },
       ]}
     >
-      <Text style={[s.tokText, { fontSize: small ? 10 : active ? 15 : 13 }]}>{name.slice(0, 1)}</Text>
+      <Text style={[s.tokText, { fontSize: small ? 10 : active ? 15 : 13 }, iniFit(name)]}>{name}</Text>
     </Animated.View>
   );
 }
