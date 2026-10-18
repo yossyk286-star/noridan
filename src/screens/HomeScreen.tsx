@@ -331,7 +331,8 @@ function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () 
     return (
       <ScrollView contentContainerStyle={s.wrap}>
         <Text style={[s.h2, { color: C.deep, marginTop: 24 }]}>さらに奥へ…</Text>
-        <Neon color={C.deep} style={s.nightTitle}>エロがりモード</Neon>
+        <Neon color={C.deep} style={s.nightTitle}>深夜</Neon>
+        <Neon color={C.deep} style={[s.nightTitle, { fontSize: 28, lineHeight: 34, marginTop: -6 }]}>（エロがりモード）</Neon>
         <Text style={s.nightLead}>お題が全部下ネタになる。ハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</Text>
         <View style={{ gap: 8 }}>
           {['全員20歳以上で、全員がOKしてること', '触られるのが嫌な人は「下ネタNG」に。NGの人には振られへん', '戻りたくなったらモード選択の「夜」で戻れる'].map((r) => (
