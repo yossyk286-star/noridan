@@ -361,7 +361,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
     case 'group':
       card = groupRoll ? (
         <ModeCard pal={pal} center bg={group?.lucky ? undefined : '#1a0606'} edge={group?.lucky ? undefined : '#e8202a'}>
-          <GachaMachine color={group?.lucky ? fg : '#f7f3ea'} />
+          <GachaMachine color={group?.lucky ? fg : '#f7f3ea'} lucky={!!group?.lucky} />
         </ModeCard>
       ) : (
         <ModeCard pal={pal} center bg={group?.lucky ? undefined : '#1a0606'} edge={group?.lucky ? undefined : '#e8202a'}>

@@ -427,7 +427,7 @@ export function GachaCard({ members, items }: { pal: Pal; members: Member[]; ite
   if (rolling) {
     return (
       <Animated.View style={[styles.card, { backgroundColor: look.bg, borderColor: look.edge, borderWidth: 3 }, anim]}>
-        <GachaMachine color={look.fg} />
+        <GachaMachine color={look.fg} lucky={allLucky} />
       </Animated.View>
     );
   }

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
 import { F } from '../theme';
 
 const loop = (v: Animated.Value, duration: number, to = 1) =>
@@ -203,44 +203,104 @@ export function Angel() {
 }
 
 /** 罰ガチャのマシンが回る時間（このあと結果が出る） */
-export const GACHA_MS = 1400;
+export const GACHA_MS = 1000;
 
-/** 罰ガチャのマシン。ガタガタ揺れてハンドルが回り、カプセルが出て消える */
-export function GachaMachine({ color = '#141210' }: { color?: string }) {
+/** ドームの中のカプセル：ドクロ顔と天使顔 */
+function MiniFace({ x, y, angel }: { x: number; y: number; angel?: boolean }) {
+  if (angel) {
+    return (
+      <>
+        <Ellipse cx={x} cy={y - 12} rx={6} ry={2} fill="none" stroke="#ffd23f" strokeWidth={2} />
+        <Circle cx={x} cy={y} r={10} fill="#fff3d6" stroke="#141210" strokeWidth={2} />
+        <Path d={`M${x - 6} ${y - 1}q2.5-3 5 0M${x + 1} ${y - 1}q2.5-3 5 0`} fill="none" stroke="#141210" strokeWidth={1.6} strokeLinecap="round" />
+      </>
+    );
+  }
+  return (
+    <>
+      <Circle cx={x} cy={y} r={10} fill="#f7f3ea" stroke="#141210" strokeWidth={2} />
+      <Circle cx={x - 3.6} cy={y - 1} r={2.8} fill="#e8202a" />
+      <Circle cx={x + 3.6} cy={y - 1} r={2.8} fill="#e8202a" />
+      <Path d={`M${x - 3} ${y + 5}h6`} stroke="#141210" strokeWidth={1.6} strokeLinecap="round" />
+    </>
+  );
+}
+
+/** 罰ガチャのマシン（約1秒）：ガタガタ回って、ドクロか天使のカプセルが出てきて真ん中でパカッと割れる */
+export function GachaMachine({ color = '#141210', lucky }: { color?: string; lucky?: boolean }) {
   const shake = useRef(new Animated.Value(0)).current;
   const handle = useRef(new Animated.Value(0)).current;
-  const out = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(0)).current; // マシンが消える
+  const cap = useRef(new Animated.Value(0)).current; // カプセルが出て真ん中へ
+  const crack = useRef(new Animated.Value(0)).current; // 割れる
+  const out = useRef(new Animated.Value(0)).current; // 全体が消える
   const pop = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.spring(pop, { toValue: 1, friction: 5, tension: 120, useNativeDriver: true }).start();
-    const sh = loop(shake, 180);
+    Animated.spring(pop, { toValue: 1, friction: 5, tension: 140, useNativeDriver: true }).start();
+    const sh = Animated.loop(Animated.timing(shake, { toValue: 1, duration: 140, easing: Easing.linear, useNativeDriver: true }), { iterations: 4 });
     sh.start();
-    Animated.timing(handle, { toValue: 2, duration: 1400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }).start();
-    Animated.sequence([Animated.delay(1150), Animated.timing(out, { toValue: 1, duration: 250, useNativeDriver: true })]).start();
+    Animated.timing(handle, { toValue: 1, duration: 500, easing: Easing.inOut(Easing.quad), useNativeDriver: true }).start();
+    Animated.sequence([Animated.delay(500), Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true })]).start();
+    Animated.sequence([Animated.delay(420), Animated.spring(cap, { toValue: 1, friction: 6, tension: 120, useNativeDriver: true })]).start();
+    Animated.sequence([Animated.delay(760), Animated.timing(crack, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true })]).start();
+    Animated.sequence([Animated.delay(930), Animated.timing(out, { toValue: 1, duration: 180, useNativeDriver: true })]).start();
     return () => sh.stop();
   }, []);
   const rock = shake.interpolate({ inputRange: [0, 0.25, 0.75, 1], outputRange: ['0deg', '-3deg', '3deg', '0deg'] });
-  const spin = handle.interpolate({ inputRange: [0, 2], outputRange: ['0deg', '720deg'] });
-  const balls: [number, number, string][] = [[44, 40, '#ffd23f'], [70, 36, '#ff5aa5'], [56, 58, '#3ec7ff'], [36, 62, '#7be36b'], [80, 60, '#ff8a1a'], [60, 26, '#b48cff'], [48, 74, '#ff4d4d'], [74, 78, '#ffd23f']];
+  const spin = handle.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const balls: [number, number, boolean][] = [[44, 40, false], [70, 36, false], [56, 58, true], [36, 62, false], [80, 60, false], [60, 24, false], [46, 78, true], [74, 78, false]];
+  const half = (top: boolean) => ({
+    opacity: crack.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+    transform: [
+      { translateX: crack.interpolate({ inputRange: [0, 1], outputRange: [0, top ? -34 : 30] }) },
+      { translateY: crack.interpolate({ inputRange: [0, 1], outputRange: [0, top ? -46 : 46] }) },
+      { rotate: crack.interpolate({ inputRange: [0, 1], outputRange: ['0deg', top ? '-50deg' : '40deg'] }) },
+    ],
+  });
   return (
-    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, fx.machine, { opacity: out.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ scale: out.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }] }]}>
-      <Animated.View style={{ width: 150, height: 200, transform: [{ scale: pop }, { rotate: rock }] }}>
-        <Svg width={150} height={200} viewBox="0 0 120 160">
-          <Circle cx={60} cy={56} r={46} fill="rgba(255,255,255,0.18)" stroke={color} strokeWidth={4} />
-          {balls.map(([x, y, c], k) => (
-            <Circle key={k} cx={x} cy={y} r={10} fill={c} stroke="#141210" strokeWidth={2} />
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, fx.machine, { opacity: out.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}>
+      <Animated.View style={{ position: 'absolute', width: 180, height: 240, opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ scale: pop }, { rotate: rock }] }}>
+        <Svg width={180} height={240} viewBox="0 0 120 160">
+          <Circle cx={60} cy={56} r={46} fill="rgba(255,255,255,0.16)" stroke={color} strokeWidth={4} />
+          {balls.map(([x, y, a], k) => (
+            <MiniFace key={k} x={x} y={y} angel={a} />
           ))}
+          <Path d="M30 34a34 34 0 0 1 22-14" fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round" opacity={0.55} />
           <Path d="M24 98h72l6 52H18z" fill="#e8202a" stroke="#141210" strokeWidth={4} strokeLinejoin="round" />
           <Rect x={50} y={134} width={20} height={12} rx={3} fill="#141210" />
         </Svg>
         <Animated.View style={[fx.handle, { transform: [{ rotate: spin }] }]}>
-          <Svg width={30} height={36} viewBox="0 0 30 36">
+          <Svg width={36} height={43} viewBox="0 0 30 36">
             <Circle cx={15} cy={18} r={11} fill="#f7f3ea" stroke="#141210" strokeWidth={4} />
             <Rect x={12} y={6} width={6} height={24} rx={3} fill="#141210" />
           </Svg>
         </Animated.View>
       </Animated.View>
-      <Text style={[fx.machineText, { color }]}>ガラガラ…</Text>
+      {/* 出てきたカプセル */}
+      <Animated.View style={{ width: 84, height: 84, opacity: cap.interpolate({ inputRange: [0, 0.05, 1], outputRange: [0, 1, 1] }), transform: [{ translateY: cap.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }, { scale: cap.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1.25] }) }, { rotate: cap.interpolate({ inputRange: [0, 1], outputRange: ['-90deg', '0deg'] }) }] }}>
+        <Animated.View style={[fx.capFace, { opacity: crack, transform: [{ scale: crack.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.4, 1.35, 1.1] }) }] }]}>
+          <Svg width={72} height={72} viewBox="0 0 100 100">
+            {lucky ? (
+              <>
+                <Ellipse cx={50} cy={14} rx={20} ry={6} fill="none" stroke="#ffd23f" strokeWidth={5} />
+                <Circle cx={50} cy={56} r={30} fill="#fff3d6" stroke="#141210" strokeWidth={4} />
+                <Path d="M34 52q6-7 12 0M54 52q6-7 12 0M42 68q8 7 16 0" fill="none" stroke="#141210" strokeWidth={4} strokeLinecap="round" />
+              </>
+            ) : (
+              <>
+                <Path d="M50 10C28 10 16 25 16 44c0 12 7 20 15 24v10c0 3 3 6 6 6h26c3 0 6-3 6-6V68c8-4 15-12 15-24C84 25 72 10 50 10z" fill="#f7f3ea" stroke="#141210" strokeWidth={4} />
+                <Ellipse cx={36} cy={46} rx={9} ry={10} fill="#e8202a" />
+                <Ellipse cx={64} cy={46} rx={9} ry={10} fill="#e8202a" />
+                <Path d="M50 56l-5 8h10z" fill="#141210" />
+              </>
+            )}
+          </Svg>
+        </Animated.View>
+        <Animated.View style={[fx.capHalf, fx.capT, { backgroundColor: lucky ? '#ffd23f' : '#e8202a' }, half(true)]} />
+        <Animated.View style={[fx.capHalf, fx.capB, half(false)]} />
+      </Animated.View>
+      {/* パカッと割れた時の光 */}
+      <Animated.View style={[fx.burst, { backgroundColor: lucky ? 'rgba(255,224,120,0.8)' : 'rgba(255,255,255,0.8)', opacity: crack.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 1, 0] }), transform: [{ scale: crack.interpolate({ inputRange: [0, 1], outputRange: [0.3, 2.4] }) }] }]} />
     </Animated.View>
   );
 }
@@ -318,8 +378,12 @@ export function HurryFrame({ on }: { on: boolean }) {
 
 const fx = StyleSheet.create({
   machine: { alignItems: 'center', justifyContent: 'center', gap: 10, zIndex: 5 },
-  machineText: { fontFamily: F.display, fontSize: 22, letterSpacing: 2 },
-  handle: { position: 'absolute', left: 60, top: 127 },
+  handle: { position: 'absolute', left: 72, top: 152 },
+  capHalf: { position: 'absolute', left: 0, right: 0, height: 42, borderWidth: 4, borderColor: '#141210' },
+  capT: { top: 0, borderTopLeftRadius: 42, borderTopRightRadius: 42, borderBottomWidth: 2 },
+  capB: { bottom: 0, borderBottomLeftRadius: 42, borderBottomRightRadius: 42, borderTopWidth: 2, backgroundColor: '#f7f3ea' },
+  capFace: { position: 'absolute', left: 6, top: 6 },
+  burst: { position: 'absolute', width: 110, height: 110, borderRadius: 55 },
   crown: { position: 'absolute', top: -13, alignSelf: 'center', transform: [{ rotate: '-8deg' }], zIndex: 2 },
   hurry: { borderWidth: 6, borderColor: '#ff2a2a', shadowColor: '#ff2a2a', shadowOpacity: 1, shadowRadius: 30, zIndex: 50 },
   angel: { width: 128, height: 104, alignSelf: 'center' },

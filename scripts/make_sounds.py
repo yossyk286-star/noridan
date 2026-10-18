@@ -47,16 +47,16 @@ b = blank(1.2); add_noise(b, 1.1, .9, 700); add_tone(b, 90, .8, 'sine', .8, 35);
 b = blank(0.35); add_tone(b, 660, .12, 'saw', .25); add_tone(b, 440, .18, 'saw', .25, 0, .12); save('warn', b)
 b = blank(0.9); [add_tone(b, f, .45 if i == 3 else .13, 'triangle', .4, 0, i * .12) for i, f in enumerate((523, 659, 784, 1047))]; save('fanfare', b)
 b = blank(0.5); [add_tone(b, f, .18, 'sine', .35, 0, i * .07) for i, f in enumerate((784, 988, 1175, 1568))]; save('lucky', b)
-# 罰ガチャのガラガラ（1.4秒、だんだんゆっくり）→ ドン
-GT = 1.4
-b = blank(GT + 0.5); t, k = 0.0, 0
-while t < GT - 0.15:
-    add_tone(b, 1250 if k % 2 else 980, .03, 'square', .18, 0, t); t += .07 + k * .006; k += 1
-add_noise(b, .25, .8, 900, GT); add_tone(b, 140, .35, 'sine', .7, 60, GT); add_tone(b, 500, .09, 'sine', .4, 1100, GT + .25); save('gacha', b)
-b = blank(GT + 0.5); t, k = 0.0, 0
-while t < GT - 0.15:
-    add_tone(b, 1250 if k % 2 else 980, .03, 'square', .18, 0, t); t += .07 + k * .006; k += 1
-[add_tone(b, f, .18, 'sine', .35, 0, GT + i * .07) for i, f in enumerate((784, 988, 1175, 1568))]; save('gachaLucky', b)
+# 罰ガチャ（約1秒）：ガラガラ → コロン（カプセルが出る）→ パカッ（割れる）→ ドン／キラキラ
+GT = 1.0
+def rattle(buf, T):
+    t, k = 0.0, 0
+    while t < T:
+        add_tone(buf, 1250 if k % 2 else 980, .03, 'square', .18, 0, t); t += .07 + k * .006; k += 1
+b = blank(GT + 0.4); rattle(b, .5); add_tone(b, 700, .06, 'triangle', .3, 400, .45); add_noise(b, .08, .7, 4000, .76); add_tone(b, 1200, .05, 'square', .15, 0, .76)
+add_noise(b, .25, .8, 900, GT); add_tone(b, 140, .35, 'sine', .7, 60, GT); save('gacha', b)
+b = blank(GT + 0.4); rattle(b, .5); add_tone(b, 700, .06, 'triangle', .3, 400, .45); add_noise(b, .08, .6, 5000, .76)
+[add_tone(b, f, .18, 'sine', .35, 0, .8 + i * .07) for i, f in enumerate((784, 988, 1175, 1568))]; save('gachaLucky', b)
 # 結果発表のドラムロール（2.4秒）→ ジャーン
 DT = 2.4
 b = blank(DT + 1.0); t = 0.0

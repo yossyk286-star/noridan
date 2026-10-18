@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Tap } from '../components/Tap';
-import { Animated, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import Svg, { Ellipse, Path } from 'react-native-svg';
-import { Confetti } from '../components/Fx';
+import Svg, { Circle, Defs, Ellipse, Path, RadialGradient, Stop } from 'react-native-svg';
+import { Angel, Confetti, Crown, Skull } from '../components/Fx';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Icon } from '../components/Icon';
@@ -13,7 +13,7 @@ import { speak } from '../lib/speech';
 import { titles, whyText, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, colorOf } from '../theme';
 import type { Level, Member, Mode, Night } from '../types';
-import { ALLOW_SHINYA } from '../lib/game';
+import { ALLOW_SHINYA, iniFit, initialOf } from '../lib/game';
 
 type Props = {
   members: Member[];
@@ -101,26 +101,42 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
     <View style={{ flex: 1 }}>
     <ScrollView contentContainerStyle={s.wrap}>
       <View style={s.shot}>
-      <Text style={s.brand}>ノリダン</Text>
-      <Text style={s.head}>本日の戦犯</Text>
-      <Text style={s.sub}>{line}</Text>
-
-      <Animated.View style={[s.mvp, mvpAnim]}>
-        <Text style={s.mvpLabel}>MVP（悪い意味で）</Text>
-        <Text style={s.mvpName}>{shown}</Text>
-        <Text style={[s.mvpCount, !landed && { opacity: 0 }]}>{top === 0 ? '全員セーフ。平和すぎる' : `罰 ${top}回`}</Text>
-      </Animated.View>
+      {/* 放射光の上に、リボンの見出し・表彰台・MVP */}
+      <View style={s.hero}>
+        <Rays />
+        <Text style={s.sub}>{line}</Text>
+        <View style={s.ribbon}><Text style={s.ribbonText}>本日の戦犯</Text></View>
+        {top === 0 ? (
+          <View style={{ alignItems: 'center', gap: 6, paddingVertical: 10 }}>
+            <Angel />
+            <Text style={s.safe}>全員セーフ</Text>
+            <Text style={s.sub}>平和すぎる。もう一回いっとく？</Text>
+          </View>
+        ) : (
+          <>
+            <Podium members={members} rows={rows} landed={landed} land={land} />
+            <Animated.View style={[s.mvp, mvpAnim]}>
+              <Text style={s.mvpLabel}>MVP（悪い意味で）</Text>
+              <Text style={s.mvpName}>{shown}</Text>
+              <Text style={[s.mvpCount, !landed && { opacity: 0 }]}>{`罰 ${top}回${rows.filter((r) => r.n === top).length === 1 && whyText(stats, rows[0].i) ? `（${whyText(stats, rows[0].i)}）` : ''}`}</Text>
+            </Animated.View>
+          </>
+        )}
+      </View>
       <View style={[{ gap: 18 }, !landed && { opacity: 0 }]} pointerEvents={landed ? 'auto' : 'none'}>
 
       {ts.length > 0 && (
         <View style={{ gap: 8 }}>
           <Text style={s.h2}>称号</Text>
           <View style={s.titles}>
-            {ts.map((t) => (
-              <View key={t.title} style={s.title}>
-                <Text style={s.titleName}>{t.title}</Text>
-                <Text style={s.titleWho}>{t.idx.map((i) => members[i].name).join('・')}</Text>
-                <Text style={s.titleDesc}>{t.desc}</Text>
+            {ts.map((t, k) => (
+              <View key={t.title} style={[s.title, { flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
+                <Medal color={MEDAL_COLORS[k % MEDAL_COLORS.length]} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={s.titleName}>{t.title}</Text>
+                  <Text style={s.titleWho}>{t.idx.map((i) => members[i].name).join('・')}</Text>
+                  <Text style={s.titleDesc}>{t.desc}</Text>
+                </View>
               </View>
             ))}
           </View>
@@ -151,17 +167,21 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
           </View>
         )}
         <Text style={s.h2}>罰ランキング</Text>
-        {rows.map((r, i) => (
-          <View key={i} style={s.rank}>
-            <Text style={s.no}>{i + 1}</Text>
-            <View style={[s.pc, { backgroundColor: colorOf(r.i) }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={s.name}>{r.m.name}</Text>
-              {!!whyText(stats, r.i) && <Text style={s.why}>{whyText(stats, r.i)}</Text>}
+        {rows.map((r, i) => {
+          const rk = rankOf(rows, r.n);
+          return (
+            <View key={i} style={s.rank}>
+              <View style={[s.no, rk === 1 && r.n > 0 && { backgroundColor: C.blood }]}><Text style={s.noText}>{rk}</Text></View>
+              <View style={[s.av, { backgroundColor: colorOf(r.i) }]}><Text style={[s.avText, iniFit(initialOf(members, r.i))]}>{initialOf(members, r.i)}</Text></View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.name} numberOfLines={1}>{r.m.name}</Text>
+                {!!whyText(stats, r.i) && <Text style={s.why} numberOfLines={1}>{whyText(stats, r.i)}</Text>}
+              </View>
+              <View style={s.track}>{r.n > 0 && <View style={[s.fill, { backgroundColor: colorOf(r.i), width: `${(r.n / Math.max(1, top)) * 100}%` }]} />}</View>
+              <Text style={s.ct}>{r.n}</Text>
             </View>
-            <Text style={s.ct}>{r.n}</Text>
-          </View>
-        ))}
+          );
+        })}
       </View>
       </View>
       </View>
@@ -193,6 +213,91 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
     </View>
     <Confetti trigger={boom} />
     </View>
+  );
+}
+
+/** 同点は同じ順位（1, 1, 3…） */
+const rankOf = (rows: { n: number }[], n: number) => 1 + rows.filter((r) => r.n > n).length;
+const MEDAL_COLORS = ['#ffd23f', '#ff5aa5', '#3ec7ff', '#7be36b', '#ff8a1a', '#b48cff'];
+
+/** 後ろでゆっくり回る放射光 */
+function Rays() {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const a = Animated.loop(Animated.timing(v, { toValue: 1, duration: 30000, easing: Easing.linear, useNativeDriver: true }));
+    a.start();
+    return () => a.stop();
+  }, []);
+  const R = 340;
+  const wedges = Array.from({ length: 20 }, (_, k) => {
+    const a0 = (k * 18 * Math.PI) / 180, a1 = ((k * 18 + 9) * Math.PI) / 180;
+    return `M${R} ${R}L${R + R * Math.cos(a0)} ${R + R * Math.sin(a0)}L${R + R * Math.cos(a1)} ${R + R * Math.sin(a1)}z`;
+  }).join('');
+  return (
+    <View pointerEvents="none" style={s.raysWrap}>
+      <Animated.View style={{ transform: [{ rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
+        <Svg width={R * 2} height={R * 2}>
+          <Defs>
+            <RadialGradient id="fade" cx="50%" cy="50%" r="50%">
+              <Stop offset="0" stopColor="#e8202a" stopOpacity="0.32" />
+              <Stop offset="1" stopColor="#e8202a" stopOpacity="0" />
+            </RadialGradient>
+          </Defs>
+          <Path d={wedges} fill="url(#fade)" />
+        </Svg>
+      </Animated.View>
+    </View>
+  );
+}
+
+/** 表彰台：真ん中が1位、左が2位、右が3位。1位の上にドクロと王冠（名前が止まるまで「？」） */
+function Podium({ members, rows, landed, land }: { members: Member[]; rows: { m: Member; i: number; n: number }[]; landed: boolean; land: Animated.Value }) {
+  const podN = Math.min(3, rows.length);
+  const order = podN === 3 ? [1, 0, 2] : podN === 2 ? [1, 0] : [0];
+  const rise = useRef(rows.slice(0, podN).map(() => new Animated.Value(0))).current;
+  useEffect(() => {
+    // 3位 → 2位 → 1位の順に台がせり上がる
+    rise.forEach((v, k) => Animated.sequence([Animated.delay(150 + (podN - 1 - k) * 350), Animated.spring(v, { toValue: 1, friction: 6, tension: 80, useNativeDriver: false })]).start());
+  }, []);
+  return (
+    <View style={s.podium}>
+      {order.map((k) => {
+        const r = rows[k];
+        const rk = rankOf(rows, r.n);
+        const first = k === 0;
+        const h = rk === 1 ? 104 : rk === 2 ? 76 : 56;
+        const hide = first && !landed;
+        return (
+          <View key={r.i} style={[s.pod, { flex: first ? 1.15 : 1 }]}>
+            {first && (
+              <Animated.View style={{ height: 80, alignItems: 'center', justifyContent: 'flex-end', opacity: land, transform: [{ translateY: land.interpolate({ inputRange: [0, 1], outputRange: [-40, 0] }) }, { scale: land.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.72] }) }] }}>
+                <View style={{ position: 'absolute', top: -2, zIndex: 2 }}><Crown /></View>
+                <Skull />
+              </Animated.View>
+            )}
+            <View style={[s.podAv, first && { width: 64, height: 64, borderRadius: 32 }, { backgroundColor: hide ? '#2a2622' : colorOf(r.i), borderColor: colorOf(r.i) }]}>
+              <Text style={[s.podAvText, first && { fontSize: 26 }, hide && { color: C.paper }, iniFit(initialOf(members, r.i))]}>{hide ? '？' : initialOf(members, r.i)}</Text>
+            </View>
+            <Text style={s.podName} numberOfLines={1}>{hide ? '？？？' : r.m.name}</Text>
+            <Animated.View style={[s.podBlock, { backgroundColor: colorOf(r.i), height: rise[k].interpolate({ inputRange: [0, 1], outputRange: [0, hide ? 30 : h] }) }]}>
+              <Text style={s.podRank}>{rk}</Text>
+              <Text style={s.podPen}>罰{r.n}</Text>
+            </Animated.View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/** 称号のメダル */
+function Medal({ color }: { color: string }) {
+  return (
+    <Svg width={38} height={38} viewBox="0 0 24 24">
+      <Path d="M7 2h4l1 5-3 2zM17 2h-4l-1 5 3 2z" fill="#f7f3ea" opacity={0.55} />
+      <Circle cx={12} cy={15} r={7} fill={color} stroke="#141210" strokeWidth={1.6} />
+      <Path d="m12 11 1.2 2.5 2.7.3-2 1.9.6 2.7-2.5-1.4-2.5 1.4.6-2.7-2-1.9 2.7-.3z" fill="#fff" />
+    </Svg>
   );
 }
 
@@ -310,6 +415,24 @@ const s = StyleSheet.create({
   tip: { flex: 1, color: C.muted, fontSize: 13, fontWeight: '700' },
   wrap: { padding: 16, paddingBottom: 40, gap: 18, maxWidth: 560, width: '100%', alignSelf: 'center' },
   shot: { gap: 18, backgroundColor: C.ink, padding: 4 },
+  hero: { alignItems: 'center', gap: 12, paddingTop: 10, overflow: 'hidden', marginHorizontal: -20, paddingHorizontal: 20 },
+  raysWrap: { position: 'absolute', top: -120, alignSelf: 'center' },
+  ribbon: { backgroundColor: C.blood, paddingHorizontal: 24, paddingTop: 4, paddingBottom: 8, transform: [{ rotate: '-3deg' }], shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
+  ribbonText: { fontFamily: F.display, fontSize: 40, lineHeight: 50, color: '#fff' },
+  safe: { fontFamily: F.display, fontSize: 34, color: C.yuru },
+  podium: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, alignSelf: 'stretch', marginTop: 4 },
+  pod: { alignItems: 'center', gap: 6, minWidth: 0 },
+  podAv: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 3 },
+  podAvText: { color: C.ink, fontWeight: '900', fontSize: 21 },
+  podName: { fontFamily: F.display, fontSize: 16, color: C.paper, maxWidth: '100%' },
+  podBlock: { alignSelf: 'stretch', borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 4, borderBottomRightRadius: 4, alignItems: 'center', paddingTop: 6, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  podRank: { fontFamily: F.display, fontSize: 30, lineHeight: 34, color: C.ink },
+  podPen: { fontSize: 12, fontWeight: '900', color: 'rgba(20,18,16,0.75)' },
+  av: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  avText: { color: C.ink, fontWeight: '900', fontSize: 14 },
+  noText: { color: C.paper, fontWeight: '900', fontSize: 12 },
+  track: { width: '28%', height: 12, borderRadius: 6, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 6 },
   offscreen: { position: 'absolute', left: -2000, top: 0, width: 360, height: 640 },
   brand: { fontFamily: F.display, fontSize: 28, color: C.yuru },
   share: {
@@ -320,7 +443,7 @@ const s = StyleSheet.create({
   head: { fontFamily: F.display, fontSize: 52, lineHeight: 60, color: C.blood, marginTop: 12 },
   sub: { color: C.muted, fontWeight: '700' },
   mvp: {
-    backgroundColor: C.yuru, borderRadius: 20, padding: 22, gap: 4,
+    alignSelf: 'stretch', alignItems: 'center', backgroundColor: C.yuru, borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16, gap: 2,
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 10 }, elevation: 6,
   },
   pc: { width: 12, height: 12, borderRadius: 6 },
@@ -328,9 +451,9 @@ const s = StyleSheet.create({
   mvpName: { fontFamily: F.display, fontSize: 40, lineHeight: 48, color: C.ink },
   mvpCount: { color: C.ink, fontWeight: '700' },
   rank: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(247,243,234,0.16)' },
-  no: { width: 28, color: C.muted, fontWeight: '900' },
+  no: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(247,243,234,0.1)' },
   name: { flex: 1, color: C.paper, fontWeight: '900' },
-  ct: { fontFamily: F.display, color: C.paper },
+  ct: { width: 28, textAlign: 'right', fontFamily: F.display, fontSize: 20, color: C.paper },
   row: { flexDirection: 'row', gap: 10 },
   ngRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 14, borderLeftWidth: 6, backgroundColor: 'rgba(247,243,234,0.06)' },
   ngName: { color: C.paper, fontWeight: '900', fontSize: 15, flexShrink: 1 },
