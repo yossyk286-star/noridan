@@ -8,7 +8,7 @@ import { usePrefs } from '../lib/prefs';
 import { useSeen } from '../lib/coach';
 import { CARD_LOOK, F, STAGE, alpha, colorOf } from '../theme';
 import type { Bomb, Card, GachaItem, Level, Member, Rule, Segment } from '../types';
-import { Angel, BombArt, Capsule, Coin, Crown, Fuse, GACHA_MS, GachaMachine, Skull } from './Fx';
+import { Angel, BombArt, Capsule, Coin, Crown, Fuse, GACHA_MS, GachaMachine, Skull, TwinSkulls } from './Fx';
 import { Icon } from './Icon';
 import { HELP } from '../lib/help';
 
@@ -450,8 +450,8 @@ export function GachaCard({ members, items }: { pal: Pal; members: Member[]; ite
         </>
       )}
       <View style={{ alignItems: 'center', gap: 4 }}>
-        {allLucky ? <Angel /> : <Skull />}
-        <Text style={[styles.batsuHead, allLucky && { color: '#d99a00' }]}>{allLucky ? 'ラッキー！セーフ' : items.some((g) => g.n > 1 && !g.lucky) ? '罰ゲーム2倍！' : '罰ゲーム確定'}</Text>
+        {allLucky ? <Angel /> : items.some((g) => g.n > 1 && !g.lucky) ? <TwinSkulls /> : <Skull />}
+        <Text style={[styles.batsuHead, allLucky && { color: '#d99a00' }, !allLucky && items.some((g) => g.n > 1 && !g.lucky) && { fontSize: 26, color: '#ff2a2a' }]}>{allLucky ? 'ラッキー！セーフ' : items.some((g) => g.n > 1 && !g.lucky) ? '罰ゲーム2倍！' : '罰ゲーム確定'}</Text>
       </View>
       <View style={[styles.cardBody, { gap: 14 }]}>
         {items.map((g, k) => (
@@ -485,7 +485,36 @@ function GachaRow({ name, color, item, delay, fg, mark }: { name: string; color:
           )}
         </View>
         <SegText segments={item.lucky ? item.segments : doubleSegments(item.segments, item.n)} style={[styles.gachaText, { color: fg }]} />
+        {!item.lucky && item.n > 1 && <X2Meter segments={doubleSegments(item.segments, item.n)} />}
       </Animated.View>
+    </View>
+  );
+}
+
+/** 罰2倍の「元の数 → 倍の数」（元の数に赤い線、倍の数が光る） */
+function X2Meter({ segments }: { segments: Segment[] }) {
+  const from = segments.find((x) => x.x2 === 'old')?.text;
+  const to = segments.find((x) => x.x2 === 'new')?.text;
+  const v = useRef(new Animated.Value(0)).current;
+  const glow = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.sequence([Animated.delay(1300), Animated.spring(v, { toValue: 1, friction: 4, tension: 140, useNativeDriver: true })]).start();
+    const a = Animated.loop(Animated.sequence([
+      Animated.timing(glow, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(glow, { toValue: 0, duration: 600, useNativeDriver: true }),
+    ]));
+    a.start();
+    return () => a.stop();
+  }, []);
+  if (!from || !to) return null;
+  return (
+    <View style={styles.x2Meter}>
+      <View>
+        <Text style={styles.x2Old}>{from}</Text>
+        <Animated.View style={[styles.x2Line, { transform: [{ rotate: '-8deg' }, { scaleX: v }] }]} />
+      </View>
+      <Icon name="next" size={18} color="#ffd23f" />
+      <Animated.Text style={[styles.x2New, { opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [2.6, 1] }) }, { scale: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) }] }]}>{to}</Animated.Text>
     </View>
   );
 }
@@ -888,6 +917,10 @@ export function BigButton({
 }
 
 const styles = StyleSheet.create({
+  x2Meter: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.35)', borderWidth: 2, borderColor: 'rgba(255,42,42,0.6)' },
+  x2Old: { fontFamily: F.display, fontSize: 18, color: '#ff8a80', opacity: 0.8 },
+  x2Line: { position: 'absolute', left: -3, right: -3, top: '50%', height: 4, borderRadius: 2, backgroundColor: '#ff2a2a' },
+  x2New: { fontFamily: F.display, fontSize: 30, lineHeight: 36, color: '#ffd23f', textShadowColor: 'rgba(255,210,63,0.8)', textShadowRadius: 12 },
   x2Badge: { backgroundColor: '#ff2a2a', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 1, marginLeft: 6 },
   x2BadgeText: { color: '#fff', fontFamily: F.display, fontSize: 14 },
   frame: { borderWidth: 3, zIndex: 10 },

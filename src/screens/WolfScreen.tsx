@@ -9,7 +9,7 @@ import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '..
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, Peek } from '../components/ModeParts';
 import { Angel, GACHA_MS, GachaMachine, Skull } from '../components/Fx';
 import { Tap } from '../components/Tap';
-import Svg, { Ellipse, Path } from 'react-native-svg';
+import Svg, { Defs, Ellipse, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
@@ -437,20 +437,34 @@ function WolfFace({ size, mood }: { size: number; mood?: 'caught' | 'win' }) {
       return () => a.stop();
     }
   }, []);
-  const eye = mood === 'caught' ? '#ffffff' : '#ffd23f';
+  const eyeFill = mood === 'caught' ? '#e8ecf5' : 'url(#eg)';
   return (
     <Animated.View style={{ transform: [{ scale: pop }, { rotate: sway.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-8deg'] }) }] }}>
       <Svg width={size} height={size} viewBox="0 0 100 100">
-        <Path d="M18 44 26 6l20 24zM82 44 74 6 54 30z" fill="#6b6f7a" stroke="#141210" strokeWidth={3} strokeLinejoin="round" />
-        <Path d="M25 34 28 16l10 12zM75 34 72 16 62 28z" fill="#ff9aa8" />
-        <Path d="M50 22C30 22 15 36 15 54c0 12 8 21 19 27l16 13 16-13c11-6 19-15 19-27 0-18-15-32-35-32z" fill="#8a8f9c" stroke="#141210" strokeWidth={3} strokeLinejoin="round" />
-        <Path d="M34 64q16-9 32 0l-6 16-10 9-10-9z" fill="#f7f3ea" stroke="#141210" strokeWidth={2.5} strokeLinejoin="round" />
-        <Path d="M27 42l14 5M73 42l-14 5" stroke="#141210" strokeWidth={3.5} strokeLinecap="round" />
-        <Ellipse cx={37} cy={52} rx={6.5} ry={5} fill={eye} stroke="#141210" strokeWidth={2} />
-        <Ellipse cx={63} cy={52} rx={6.5} ry={5} fill={eye} stroke="#141210" strokeWidth={2} />
-        <Path d="M37 48v8M63 48v8" stroke="#141210" strokeWidth={2.5} strokeLinecap="round" />
-        <Ellipse cx={50} cy={66} rx={6} ry={4} fill="#141210" />
-        <Path d="M43 77l3 6 2-6M57 77l-3 6-2-6" fill="#fff" stroke="#141210" strokeWidth={1.5} strokeLinejoin="round" />
+        <Defs>
+          <RadialGradient id="eg" cx="50%" cy="50%" r="50%"><Stop offset="0" stopColor="#fff6b0" /><Stop offset=".55" stopColor="#ffd23f" /><Stop offset="1" stopColor="#ff8a1a" /></RadialGradient>
+          <LinearGradient id="fur" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor="#4b556e" /><Stop offset="1" stopColor="#262c3b" /></LinearGradient>
+        </Defs>
+        <Path d="M50 19 35 23 21 38 12 58l11 1-6 11 14 2 8 16 11 9 11-9 8-16 14-2-6-11 11-1-9-20-14-15zM19 47 25 3l23 26zM81 47 75 3 52 29z" fill="none" stroke="#9fb2e6" strokeOpacity={0.35} strokeWidth={8} strokeLinejoin="round" />
+        <Path d="M19 47 25 3l23 26zM81 47 75 3 52 29z" fill="#262c3b" stroke="#0b0d12" strokeWidth={3} strokeLinejoin="round" />
+        <Path d="M25 37 27 14l12 14zM75 37 73 14 61 28z" fill="#5d6782" />
+        <Path d="M50 19 35 23 21 38 12 58l11 1-6 11 14 2 8 16 11 9 11-9 8-16 14-2-6-11 11-1-9-20-14-15z" fill="url(#fur)" stroke="#0b0d12" strokeWidth={3} strokeLinejoin="round" />
+        <Path d="M50 21 43 38 50 57 57 38z" fill="#6b7590" opacity={0.9} />
+        <Path d="M23 58 33 56 38 64M77 58 67 56 62 64" fill="none" stroke="#7d87a3" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <Path d="M37 63 50 58 63 63 59 80 50 90 41 80z" fill="#d7dcea" stroke="#0b0d12" strokeWidth={2.5} strokeLinejoin="round" />
+        <Path d="M22 40 45 47M78 40 55 47" stroke="#0b0d12" strokeWidth={5} strokeLinecap="round" />
+        {mood !== 'caught' && (
+          <>
+            <Ellipse cx="35" cy="52" rx="12" ry="7" fill="#ffd23f" opacity={0.22} />
+            <Ellipse cx="65" cy="52" rx="12" ry="7" fill="#ffd23f" opacity={0.22} />
+          </>
+        )}
+        <Path d="M25 45 45 50.5 41 58 28 53.5z" fill={eyeFill} stroke="#0b0d12" strokeWidth={2} strokeLinejoin="round" />
+        <Path d="M75 45 55 50.5 59 58 72 53.5z" fill={eyeFill} stroke="#0b0d12" strokeWidth={2} strokeLinejoin="round" />
+        <Path d="M37 49v7.5M63 49v7.5" stroke="#0b0d12" strokeWidth={2.4} strokeLinecap="round" />
+        <Path d="M43 61.5h14l-7 7.5z" fill="#0b0d12" />
+        <Path d="M41 75q9 5 18 0" fill="none" stroke="#0b0d12" strokeWidth={2.2} strokeLinecap="round" />
+        <Path d="M42.5 76 45 85 47.5 77.5M57.5 76 55 85 52.5 77.5" fill="#fff" stroke="#0b0d12" strokeWidth={1.4} strokeLinejoin="round" />
       </Svg>
     </Animated.View>
   );

@@ -313,6 +313,26 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 @keyframes x2Pop { from { transform: scale(2.6) rotate(-10deg); opacity: 0; } }
 .x2-badge { display: inline-block; margin-left: 6px; padding: 2px 9px; border-radius: 999px; background: #ff2a2a; color: #fff; font-family: var(--display); font-weight: 400; font-size: 14px; letter-spacing: 0; opacity: 1; animation: x2Pop .4s calc(var(--d, 0s) + 1s) cubic-bezier(.3,1.8,.5,1) both; }
 .odai.batsu .gacha-txt b .x2-badge { opacity: 1; }
+/* 罰2倍：ドクロが2体に増えて、ギザギザの「×2」がドン。下に「元の数 → 倍の数」のメーター */
+.x2-skulls { position: relative; width: 170px; height: 112px; }
+.x2-skulls .skull { position: absolute; top: 4px; width: 100px; height: 100px; }
+.x2-skulls .skull:nth-of-type(1) { left: 6px; z-index: 1; }
+.x2-skulls .skull:nth-of-type(2) { left: 64px; animation: x2Twin .5s calc(var(--gt, 0s) + .45s) cubic-bezier(.3,1.6,.5,1) both, skullBob 1.4s calc(var(--gt, 0s) + 1s) ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes x2Twin { from { transform: translateX(-58px) scale(.8); opacity: 0; } 60% { opacity: 1; } }
+.x2-burst { position: absolute; right: -26px; top: -18px; width: 74px; height: 74px; z-index: 2; filter: drop-shadow(0 4px 0 rgba(0,0,0,.45)); animation: x2Burst .5s calc(var(--gt, 0s) + .75s) cubic-bezier(.3,1.8,.5,1) both, x2Spin 6s calc(var(--gt, 0s) + 1.3s) linear infinite; }
+@keyframes x2Burst { from { transform: scale(0) rotate(-120deg); } }
+@keyframes x2Spin { from { transform: rotate(0); } 50% { transform: rotate(12deg) scale(1.06); } to { transform: rotate(0); } }
+.skull-wrap.x2 b { font-size: 26px; color: #ff2a2a; text-shadow: 0 0 12px rgba(255,42,42,.6); }
+.x2-meter { margin-top: 8px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 14px; background: rgba(0,0,0,.35); box-shadow: inset 0 0 0 2px rgba(255,42,42,.6); animation: reveal .35s calc(var(--d, 0s) + 1s) both; }
+.x2-meter .old { position: relative; font-family: var(--display); font-size: 18px; color: #ff8a80; opacity: .8; }
+.x2-meter .old::after { content: ""; position: absolute; left: -3px; right: -3px; top: 52%; height: 4px; border-radius: 2px; background: #ff2a2a; transform: scaleX(0) rotate(-8deg); transform-origin: left; animation: x2Line .3s calc(var(--d, 0s) + 1.25s) ease-out forwards; }
+.x2-meter i { width: 18px; height: 18px; color: #ffd23f; animation: x2Arrow .8s calc(var(--d, 0s) + 1.4s) ease-in-out infinite; }
+.x2-meter i svg { width: 100%; height: 100%; }
+.x2-meter .new { font-family: var(--display); font-size: 30px; line-height: 1; color: #ffd23f; text-shadow: 0 0 14px rgba(255,210,63,.7), 0 3px 0 #b3001b; animation: x2Pop .5s calc(var(--d, 0s) + 1.5s) cubic-bezier(.3,1.8,.5,1) both, x2Glow 1.2s calc(var(--d, 0s) + 2s) ease-in-out infinite alternate; }
+@keyframes x2Line { to { transform: scaleX(1) rotate(-8deg); } }
+@keyframes x2Arrow { 50% { transform: translateX(4px); } }
+@keyframes x2Glow { to { text-shadow: 0 0 22px rgba(255,210,63,1), 0 3px 0 #b3001b; } }
+.odai.drum .x2-skulls .skull:nth-of-type(1) { animation-delay: var(--gt), calc(var(--gt) + .6s); }
 /* gacha capsules */
 .gacha { display: flex; flex-direction: column; gap: 14px; width: 100%; }
 .gacha-item { display: grid; grid-template-columns: 64px minmax(0,1fr); gap: 12px; align-items: center; }
@@ -900,7 +920,10 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .wf-wolf .wolf { width: 104px; height: 104px; filter: drop-shadow(0 6px 0 rgba(0,0,0,.25)); animation: skullIn .55s cubic-bezier(.3,1.7,.5,1) both; }
 .wf-wolf.win .wolf { animation: skullIn .55s cubic-bezier(.3,1.7,.5,1) both, wolfHowl 1.6s .6s ease-in-out infinite; transform-origin: 50% 90%; }
 .wf-wolf.caught .wolf { animation: skullIn .55s cubic-bezier(.3,1.7,.5,1) both, jolt .5s .6s both; filter: drop-shadow(0 6px 0 rgba(0,0,0,.25)) saturate(.7); }
-.wf-wolf.caught .w-eye { fill: #fff; }
+.wf-wolf.caught .w-eye { fill: #e8ecf5; }
+.wf-wolf.caught .w-glow { display: none; }
+.wf-wolf.win .w-glow { animation: wGlow 1.2s ease-in-out infinite alternate; }
+@keyframes wGlow { from { opacity: .12; } to { opacity: .45; } }
 .wf-wolf > span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, currentColor 8%, transparent); font-weight: 900; font-size: 14px; }
 .wf-wolf > span i { width: 10px; height: 10px; border-radius: 50%; background: var(--mc); }
 .wf-stamp { position: absolute; top: 6px; right: -54px; font-style: normal; font-family: var(--display); font-size: 18px; padding: 2px 8px; border: 3px solid currentColor; border-radius: 8px; transform: rotate(14deg); animation: stamp2 .35s .7s cubic-bezier(.3,1.6,.5,1) both; white-space: nowrap; }

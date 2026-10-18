@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Ellipse, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
 
 const loop = (v: Animated.Value, duration: number, to = 1) =>
@@ -302,6 +302,46 @@ export function GachaMachine({ color = '#141210', lucky }: { color?: string; luc
       {/* パカッと割れた時の光 */}
       <Animated.View style={[fx.burst, { backgroundColor: lucky ? 'rgba(255,224,120,0.8)' : 'rgba(255,255,255,0.8)', opacity: crack.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 1, 0] }), transform: [{ scale: crack.interpolate({ inputRange: [0, 1], outputRange: [0.3, 2.4] }) }] }]} />
     </Animated.View>
+  );
+}
+
+/** 罰2倍のバッジ（ギザギザの爆発マーク「×2」）。ドンと出て、ゆっくり揺れる */
+export function X2Burst({ size = 74 }: { size?: number }) {
+  const pop = useRef(new Animated.Value(0)).current;
+  const wob = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.sequence([Animated.delay(750), Animated.spring(pop, { toValue: 1, friction: 4, tension: 140, useNativeDriver: true })]).start();
+    const a = Animated.loop(Animated.sequence([
+      Animated.timing(wob, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      Animated.timing(wob, { toValue: 0, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+    ]));
+    a.start();
+    return () => a.stop();
+  }, []);
+  const pts = (r1: number, r2: number) => Array.from({ length: 28 }, (_, k) => { const r = k % 2 ? r1 : r2, a = (k / 28) * Math.PI * 2 - Math.PI / 2; return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`; }).join(' ');
+  return (
+    <Animated.View style={{ transform: [{ scale: pop }, { rotate: pop.interpolate({ inputRange: [0, 1], outputRange: ['-120deg', '0deg'] }) }, { rotate: wob.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '12deg'] }) }] }}>
+      <Svg width={size} height={size} viewBox="0 0 100 100">
+        <Polygon points={pts(34, 48)} fill="#ff2a2a" stroke="#141210" strokeWidth={3} strokeLinejoin="round" />
+        <Polygon points={pts(26.5, 37.5)} fill="none" stroke="#ffd23f" strokeWidth={2} strokeLinejoin="round" />
+        <SvgText x="50" y="62" textAnchor="middle" fontFamily={F.display} fontSize="34" fill="#ffd23f" stroke="#141210" strokeWidth={1.5}>×2</SvgText>
+      </Svg>
+    </Animated.View>
+  );
+}
+
+/** 罰2倍のドクロ：1体目の後ろから2体目がスッと出てきて、×2のバッジがドン */
+export function TwinSkulls() {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.sequence([Animated.delay(450), Animated.spring(v, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true })]).start();
+  }, []);
+  return (
+    <View style={{ width: 170, height: 112 }}>
+      <View style={{ position: 'absolute', left: 0, top: 4, zIndex: 1 }}><Skull /></View>
+      <Animated.View style={{ position: 'absolute', left: 58, top: 4, opacity: v, transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [-58, 0] }) }] }}><Skull /></Animated.View>
+      <View style={{ position: 'absolute', right: -26, top: -18, zIndex: 2 }}><X2Burst /></View>
+    </View>
   );
 }
 

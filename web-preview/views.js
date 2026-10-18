@@ -111,6 +111,13 @@ const SKULL = `<svg class="skull" viewBox="0 0 100 100" aria-hidden="true">
   <path d="M40 76v14M50 76v14M60 76v14" stroke="#141210" stroke-width="3"/>
 </svg>`;
 
+// 罰2倍のバッジ（ギザギザの爆発マーク）
+const X2_BURST = (() => {
+  const pts = Array.from({ length: 28 }, (_, k) => { const r = k % 2 ? 34 : 48, a = (k / 28) * Math.PI * 2 - Math.PI / 2; return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`; }).join(" ");
+  return `<svg class="x2-burst" viewBox="0 0 100 100" aria-label="罰2倍"><polygon points="${pts}" fill="#ff2a2a" stroke="#141210" stroke-width="3" stroke-linejoin="round"/><polygon points="${pts}" fill="none" stroke="#ffd23f" stroke-width="2" stroke-linejoin="round" transform="translate(50 50) scale(.78) translate(-50 -50)"/><text x="50" y="62" text-anchor="middle" font-family="Dela Gothic One, sans-serif" font-size="34" fill="#ffd23f" stroke="#141210" stroke-width="1.5">×2</text></svg>`;
+})();
+// 罰2倍の「元の数 → 倍の数」のメーター
+const x2Meter = (html, n) => { const d = doubleText(html, n); return d ? `<div class="x2-meter"><span class="old">${esc(d.from)}</span><i>${ICON.next}</i><span class="new">${esc(d.to)}</span></div>` : ""; };
 // 罰ガチャのマシン（札が出る前に1.4秒ガラガラ回る）
 const GACHA_T = 1.0;
 const CROWN = `<svg class="crown" viewBox="0 0 24 16" aria-label="罰が一番多い"><path d="M2 14 1 4l6 4 5-7 5 7 6-4-1 10z" fill="#ffd23f" stroke="#141210" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="1.6" fill="#e8202a"/></svg>`;
@@ -477,11 +484,11 @@ function vCard() {
       ${drum ? gachaMachine(allLucky) : ""}
       <div class="head"><span>罰ガチャ</span></div>
       ${S.dual ? `<div class="mirror-list">${g.gacha.map((x) => `<p><b>${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : "の罰"}</b>${x.lucky ? x.html : doubledPlain(x.html, x.n)}</p>`).join("")}</div><hr class="dual-line">` : ""}
-      <div class="skull-wrap">${allLucky ? `${ANGEL}<b>ラッキー！セーフ</b>` : `${SKULL}<b>${g.gacha.some((x) => x.n > 1 && !x.lucky) ? "罰ゲーム2倍！" : "罰ゲーム確定"}</b>`}</div>
+      ${(() => { const dbl = !allLucky && g.gacha.some((x) => x.n > 1 && !x.lucky); return `<div class="skull-wrap ${dbl ? "x2" : ""}">${allLucky ? `${ANGEL}<b>ラッキー！セーフ</b>` : dbl ? `<div class="x2-skulls">${SKULL}${SKULL}${X2_BURST}</div><b>罰ゲーム2倍！</b>` : `${SKULL}<b>罰ゲーム確定</b>`}</div>`; })()}
       <div class="gacha">${g.gacha.map((x, k) => `
         <div class="gacha-item ${x.night ? "night " + x.night : ""}" style="--d:calc(var(--gt, 0s) + ${(k * 0.35).toFixed(2)}s);--mc:${colorOf(x.i)}">
           <div class="capsule"><i class="top"></i><i class="bot"></i><i class="res ${x.lucky ? "ok" : ""}">${x.lucky ? "天" : "罰"}</i></div>
-          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="x2-badge">×${x.n}</span>` : ""}</b><p>${x.lucky ? x.html : doubleHtml(x.html, x.n)}</p></div>
+          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="x2-badge">×${x.n}</span>` : ""}</b><p>${x.lucky ? x.html : doubleHtml(x.html, x.n)}</p>${!x.lucky && x.n > 1 ? x2Meter(x.html, x.n) : ""}</div>
         </div>`).join("")}</div>
     </div>`;
   }
@@ -894,16 +901,25 @@ function vVote() {
 // ---------- ワードウルフ（画面） ----------
 // ウルフの顔（cls: "caught" つかまった / "win" 逃げ切り）
 const WOLF = (cls = "") => `<svg class="wolf ${cls}" viewBox="0 0 100 100" aria-hidden="true">
-  <path d="M18 44 26 6l20 24zM82 44 74 6 54 30z" fill="#6b6f7a" stroke="#141210" stroke-width="3" stroke-linejoin="round"/>
-  <path d="M25 34 28 16l10 12zM75 34 72 16 62 28z" fill="#ff9aa8"/>
-  <path d="M50 22C30 22 15 36 15 54c0 12 8 21 19 27l16 13 16-13c11-6 19-15 19-27 0-18-15-32-35-32z" fill="#8a8f9c" stroke="#141210" stroke-width="3" stroke-linejoin="round"/>
-  <path d="M34 64q16-9 32 0l-6 16-10 9-10-9z" fill="#f7f3ea" stroke="#141210" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M27 42l14 5M73 42l-14 5" stroke="#141210" stroke-width="3.5" stroke-linecap="round"/>
-  <ellipse class="w-eye" cx="37" cy="52" rx="6.5" ry="5" fill="#ffd23f" stroke="#141210" stroke-width="2"/>
-  <ellipse class="w-eye" cx="63" cy="52" rx="6.5" ry="5" fill="#ffd23f" stroke="#141210" stroke-width="2"/>
-  <path d="M37 48v8M63 48v8" stroke="#141210" stroke-width="2.5" stroke-linecap="round"/>
-  <ellipse cx="50" cy="66" rx="6" ry="4" fill="#141210"/>
-  <path d="M43 77l3 6 2-6M57 77l-3 6-2-6" fill="#fff" stroke="#141210" stroke-width="1.5" stroke-linejoin="round"/>
+  <defs>
+    <radialGradient id="eg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff6b0"/><stop offset=".55" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff8a1a"/></radialGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b556e"/><stop offset="1" stop-color="#262c3b"/></linearGradient>
+  </defs>
+  <path d="M50 19 35 23 21 38 12 58l11 1-6 11 14 2 8 16 11 9 11-9 8-16 14-2-6-11 11-1-9-20-14-15zM19 47 25 3l23 26zM81 47 75 3 52 29z" fill="none" stroke="#9fb2e6" stroke-opacity=".35" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M19 47 25 3l23 26zM81 47 75 3 52 29z" fill="#262c3b" stroke="#0b0d12" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M25 37 27 14l12 14zM75 37 73 14 61 28z" fill="#5d6782"/>
+  <path d="M50 19 35 23 21 38 12 58l11 1-6 11 14 2 8 16 11 9 11-9 8-16 14-2-6-11 11-1-9-20-14-15z" fill="url(#fur)" stroke="#0b0d12" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M50 21 43 38 50 57 57 38z" fill="#6b7590" opacity=".9"/>
+  <path d="M23 58 33 56 38 64M77 58 67 56 62 64" fill="none" stroke="#7d87a3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M37 63 50 58 63 63 59 80 50 90 41 80z" fill="#d7dcea" stroke="#0b0d12" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M22 40 45 47M78 40 55 47" stroke="#0b0d12" stroke-width="5" stroke-linecap="round"/>
+  <ellipse class="w-glow" cx="35" cy="52" rx="12" ry="7" fill="#ffd23f" opacity=".22"/><ellipse class="w-glow" cx="65" cy="52" rx="12" ry="7" fill="#ffd23f" opacity=".22"/>
+  <path class="w-eye" d="M25 45 45 50.5 41 58 28 53.5z" fill="url(#eg)" stroke="#0b0d12" stroke-width="2" stroke-linejoin="round"/>
+  <path class="w-eye" d="M75 45 55 50.5 59 58 72 53.5z" fill="url(#eg)" stroke="#0b0d12" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M37 49v7.5M63 49v7.5" stroke="#0b0d12" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M43 61.5h14l-7 7.5z" fill="#0b0d12"/>
+  <path d="M41 75q9 5 18 0" fill="none" stroke="#0b0d12" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M42.5 76 45 85 47.5 77.5M57.5 76 55 85 52.5 77.5" fill="#fff" stroke="#0b0d12" stroke-width="1.4" stroke-linejoin="round"/>
 </svg>`;
 function vWfCard() {
   const g = S.game, wf = g.wf, n = S.members.length;
