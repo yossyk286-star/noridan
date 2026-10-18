@@ -849,9 +849,11 @@ function tiltSafe() {
 
 // ---------- 全力シェイク ----------
 // 1人ずつ10秒間スマホを振って、振った回数を数える。全員振ったら一番少ない人が罰（地獄は2倍）
-// 加速度が「強い→弱い」を行き来するたびに1回。センサーが無いスマホは画面の連打で数える
+// 縦・横・前後どの向きでもOK。強い加速度の向きが「前に数えた時と逆」になるたびに1回（振って切り返すたび）。
+// 激しく振ると加速度が下がりきらへんので、強さが落ちるのを待たんと向きで数える。センサーが無いスマホは画面の連打
 const SK_SEC = 10;
-const SK_HI = 15, SK_LO = 7; // m/s²（重力ぬき）。HIを超えたら1回、LOまで下がるまで次は数えへん
+const SK_HI = 10; // m/s²（重力ぬき）。これより強い揺れだけ数える
+const SK_GAP = 70; // ms。これより短い間隔は同じ1回
 const skSensor = { at: 0, on: false, perm: "unknown", g: null };
 function skListen() {
   if (skSensor.on || typeof window.DeviceMotionEvent === "undefined") return;
@@ -867,7 +869,7 @@ function skListen() {
       x = G.x - g[0]; y = G.y - g[1]; z = G.z - g[2];
     }
     skSensor.at = Date.now();
-    skTick(Math.hypot(x, y, z));
+    skTick(x, y, z);
   });
 }
 async function skAsk() {
@@ -887,7 +889,7 @@ function skBegin() {
   const sk = S.game.sk;
   sk.who = skWho(sk);
   S.game.doer = sk.who;
-  sk.phase = "hand"; sk.cur = 0; sk.armed = true; sk.mag = 0; sk.manual = false;
+  sk.phase = "hand"; sk.cur = 0; sk.dir = null; sk.mag = 0; sk.manual = false;
 }
 function skCount() {
   const sk = S.game.sk;
@@ -903,23 +905,27 @@ function skCount() {
 function skGo() {
   const sk = S.game.sk;
   sk.manual = !skLive();
-  sk.phase = "play"; sk.cur = 0; sk.armed = true; sk.last = 0;
+  sk.phase = "play"; sk.cur = 0; sk.dir = null; sk.last = 0;
   sk.endAt = Date.now() + SK_SEC * 1000; sk.sec = SK_SEC;
   play("coin");
   render(true);
   secClock(sk, () => S.game?.sk === sk, skDone);
 }
-function skTick(mag) {
+function skTick(x, y, z) {
   const sk = S.game?.sk;
   if (!sk || sk.phase !== "play" || sk.manual || S.screen !== "shake") return;
+  const mag = Math.hypot(x, y, z);
   sk.mag = mag;
-  if (sk.armed && mag > SK_HI && Date.now() - sk.last > 60) skHit();
-  else if (mag < SK_LO) sk.armed = true;
+  if (mag > SK_HI && Date.now() - sk.last > SK_GAP) {
+    const u = [x / mag, y / mag, z / mag], d = sk.dir;
+    // 最初の1回か、前に数えた向きと逆向き（切り返し）なら1回
+    if (!d || u[0] * d[0] + u[1] * d[1] + u[2] * d[2] < -0.3) { sk.dir = u; skHit(); }
+  }
   if (!sk.raf) sk.raf = requestAnimationFrame(() => { sk.raf = 0; skPaint(); });
 }
 function skHit() {
   const sk = S.game.sk;
-  sk.cur++; sk.armed = false; sk.last = Date.now();
+  sk.cur++; sk.last = Date.now();
   const el = document.getElementById("skCnt");
   if (el) { el.textContent = sk.cur; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
   const ph = document.getElementById("skPhone");

@@ -27,9 +27,10 @@ type Props = {
 type Phase = 'intro' | 'hand' | 'count' | 'play' | 'done' | 'rank' | 'batsu';
 
 const SEC = 10;
-/** m/s²（重力ぬき）。HIを超えたら1回、LOまで下がるまで次は数えへん */
-const HI = 15;
-const LO = 7;
+/** m/s²（重力ぬき）。これより強い揺れだけ数える */
+const HI = 10;
+/** ms。これより短い間隔は同じ1回 */
+const GAP = 70;
 
 /** 注意書き（毎回の番で出す） */
 function Safety({ fg }: { fg: string }) {
@@ -43,7 +44,8 @@ function Safety({ fg }: { fg: string }) {
 
 /**
  * 全力シェイク：1人ずつ10秒間スマホを振って、振った回数を数える。全員振ったら一番少ない人が罰（地獄は2倍）。
- * 加速度が「強い→弱い」を行き来するたびに1回。センサーが無いスマホは画面の連打で数える
+ * 縦・横・前後どの向きでもOK。強い加速度の向きが「前に数えた時と逆」になるたびに1回（振って切り返すたび）。
+ * 激しく振ると加速度が下がりきらへんので、強さが落ちるのを待たんと向きで数える。センサーが無いスマホは画面の連打
  */
 export default function ShakeScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
   useKeepAwake();
@@ -75,7 +77,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
   phaseRef.current = phase;
   const manualRef = useRef(false);
   const curRef = useRef(0);
-  const armed = useRef(true);
+  const dir = useRef<[number, number, number] | null>(null);
   const lastHit = useRef(0);
   const latestAt = useRef(0);
   const startAt = useRef(0);
@@ -108,7 +110,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
           const a = e.acceleration;
           if (!a) return;
           latestAt.current = Date.now();
-          sampleRef.current(Math.hypot(a.x, a.y, a.z));
+          sampleRef.current(a.x, a.y, a.z);
         });
         setSensor('ok');
       } catch {
@@ -123,19 +125,26 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
 
   const hit = () => {
     curRef.current++;
-    armed.current = false;
     lastHit.current = Date.now();
     setCur(curRef.current);
     pop.setValue(1.25);
     Animated.timing(pop, { toValue: 1, duration: 160, useNativeDriver: true }).start();
     tilt.setValue(curRef.current % 2 ? 1 : -1);
   };
-  const sampleRef = useRef<(m: number) => void>(() => {});
-  sampleRef.current = (mag: number) => {
+  const sampleRef = useRef<(x: number, y: number, z: number) => void>(() => {});
+  sampleRef.current = (x: number, y: number, z: number) => {
     if (phaseRef.current !== 'play' || manualRef.current) return;
+    const mag = Math.hypot(x, y, z);
     meter.setValue(Math.min(1, mag / 40));
-    if (armed.current && mag > HI && Date.now() - lastHit.current > 60) hit();
-    else if (mag < LO) armed.current = true;
+    if (mag > HI && Date.now() - lastHit.current > GAP) {
+      const u: [number, number, number] = [x / mag, y / mag, z / mag];
+      const d = dir.current;
+      // 最初の1回か、前に数えた向きと逆向き（切り返し）なら1回
+      if (!d || u[0] * d[0] + u[1] * d[1] + u[2] * d[2] < -0.3) {
+        dir.current = u;
+        hit();
+      }
+    }
   };
 
   const start = () => {
@@ -155,7 +164,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     manualRef.current = !live;
     setManual(!live);
     curRef.current = 0;
-    armed.current = true;
+    dir.current = null;
     lastHit.current = 0;
     setCur(0);
     startAt.current = Date.now();
