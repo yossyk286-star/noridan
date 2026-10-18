@@ -163,7 +163,7 @@ const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
 const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
-  S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null;
+  S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
   S.game = {
     mode, turn: 0, cur: 0, doer: 0,
@@ -545,11 +545,21 @@ function ngOut(i) {
   g.turn++;
   ng.phase = "out";
 }
+// 残り10秒：画面のフチが赤く脈打って、1秒ごとにカチッ
+let hurrySec = -1;
+function hurryFx(left) {
+  if (left > 10000 || left <= 0) { hurryOff(); return; }
+  document.body.classList.add("hurry10");
+  const sec = Math.ceil(left / 1000);
+  if (sec !== hurrySec) { hurrySec = sec; play("hurry"); if (navigator.vibrate) navigator.vibrate(8); }
+}
+function hurryOff() { hurrySec = -1; document.body.classList.remove("hurry10"); }
 const fmtTime = (ms) => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
 setInterval(() => {
   const g = S.game;
-  if (S.screen !== "ngword" || !g?.ng || g.ng.phase !== "play" || !g.ng.endAt) return;
+  if (S.screen !== "ngword" || !g?.ng || g.ng.phase !== "play" || !g.ng.endAt) { if (!modeTimer && document.body.classList.contains("hurry10")) hurryOff(); return; }
   const left = g.ng.endAt - Date.now();
+  hurryFx(left);
   const el = document.getElementById("ngTimer");
   if (left <= 0) { g.ng.left = 0; g.ng.endAt = 0; g.ng.phase = "over"; render(true); return; }
   if (el) { el.textContent = fmtTime(left); el.classList.toggle("hurry", left < 30000); }
@@ -837,12 +847,13 @@ function startTimer(sec, onEnd, fmt) {
   modeTimer = setInterval(() => {
     const left = endAt - Date.now();
     const el = document.getElementById("modeTimer");
+    hurryFx(left);
     if (left <= 0) { stopTimer(); play("alarm"); if (navigator.vibrate) navigator.vibrate([80, 40, 160]); onEnd(); return; }
     if (el) { el.textContent = fmt ? fmt(left) : Math.ceil(left / 1000); el.classList.toggle("hurry", left < (fmt ? 30000 : 10000)); }
   }, 200);
   return endAt;
 }
-function stopTimer() { if (modeTimer) { clearInterval(modeTimer); modeTimer = null; } }
+function stopTimer() { if (modeTimer) { clearInterval(modeTimer); modeTimer = null; } hurryOff(); }
 
 // ---------- 最初の人ルーレット（ジェスチャー・褒め殺し） ----------
 // 名前のタイルを光らせながら回して、だんだん遅くなって1人に止まる

@@ -250,6 +250,48 @@ body[data-level="jigoku"] .odai .txt mark { background: none; text-decoration: u
 .gacha-txt .mark.ok { background: #ffd23f; color: #141210; }
 .gacha-txt .mark.ng { background: #e8202a; color: #fff; }
 
+/* 罰ガチャのマシン：最初の1.4秒ガラガラ回して、そのあと結果（中の演出は全部 --gt だけ遅らせる） */
+.odai.drum { --gt: 1.4s; position: relative; }
+.g-machine { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--card-fg, #141210); pointer-events: none; animation: gmOut .3s 1.15s ease-in forwards; }
+.g-machine svg { width: min(44%, 170px); height: auto; overflow: visible; animation: gmIn .35s cubic-bezier(.3,1.6,.5,1) both; }
+.g-machine b { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: .1em; animation: pulse .5s ease-in-out infinite; }
+.gm-body { animation: gmShake .18s linear infinite; transform-origin: 60px 150px; }
+.gm-balls { animation: gmBalls .3s linear infinite; transform-origin: 60px 56px; }
+.gm-handle { animation: gmHandle .7s cubic-bezier(.5,0,.5,1) 2 both; transform-origin: 60px 116px; }
+.gm-out { opacity: 0; animation: gmDrop .45s .95s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes gmIn { from { transform: scale(.4); opacity: 0; } }
+@keyframes gmShake { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-2.5deg); } 75% { transform: rotate(2.5deg); } }
+@keyframes gmBalls { 0% { transform: rotate(0) translateY(0); } 33% { transform: rotate(10deg) translateY(-3px); } 66% { transform: rotate(-8deg) translateY(2px); } 100% { transform: rotate(0); } }
+@keyframes gmHandle { to { transform: rotate(360deg); } }
+@keyframes gmDrop { from { opacity: 1; transform: translateY(-14px); } to { opacity: 1; transform: translateY(12px); } }
+@keyframes gmOut { to { opacity: 0; transform: scale(1.3); visibility: hidden; } }
+.odai.drum > :not(.g-machine) { animation: gmShow .01s var(--gt) both; }
+@keyframes gmShow { from { visibility: hidden; } to { visibility: visible; } }
+.odai.drum .skull { animation-delay: var(--gt), calc(var(--gt) + .6s); }
+.odai.drum .angel { animation-delay: var(--gt), calc(var(--gt) + .6s); }
+.odai.drum .skull-wrap b { animation-delay: calc(var(--gt) + .35s); }
+.odai.drum .rule-pen, .odai.drum .hand-note { animation: reveal .4s calc(var(--gt) + .45s) ease-out both; }
+.odai.drum.batsu { animation: jolt .45s var(--gt) both; }
+/* 長押しで見る目隠し */
+.peek { position: relative; width: 100%; min-height: 120px; display: grid; place-items: center; border-radius: 18px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; perspective: 800px; }
+.peek-in { width: 100%; visibility: hidden; opacity: 0; transition: opacity .12s; }
+.peek-cover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 18px; background: repeating-linear-gradient(135deg, color-mix(in srgb, currentColor 10%, transparent) 0 10px, color-mix(in srgb, currentColor 4%, transparent) 10px 20px); border: 2.5px dashed color-mix(in srgb, currentColor 35%, transparent); transition: opacity .12s, transform .25s; }
+.peek-cover b { font-family: var(--display); font-weight: 400; font-size: 22px; }
+.peek-cover small { font-size: 12px; font-weight: 900; opacity: .6; }
+.peek-ic { width: 34px; height: 34px; opacity: .7; animation: pulse 1.4s ease-in-out infinite; }
+.peek-ic svg { width: 100%; height: 100%; }
+.peek.on .peek-in { visibility: visible; opacity: 1; animation: peekFlip .25s cubic-bezier(.3,1.4,.5,1) both; }
+.peek.on .peek-cover { opacity: 0; transform: rotateX(80deg); pointer-events: none; }
+@keyframes peekFlip { from { transform: rotateX(-70deg); } }
+.peek .ng-list { overflow: visible; }
+/* 人数が多い時は2列にして、長押ししたまま全部見えるように */
+.mode-card .peek.many .ng-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px; }
+.mode-card .peek.many .ng-list li { flex-direction: column; align-items: flex-start; gap: 0; padding: 6px 10px; border-left-width: 5px; }
+.mode-card .peek.many .ng-list .nm { font-size: 12px; max-width: 100%; }
+.mode-card .peek.many .ng-list b { font-size: clamp(15px, 4.6vw, 19px); white-space: normal; line-height: 1.25; }
+/* 残り10秒：画面のフチが赤く脈打つ */
+body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 40; box-shadow: inset 0 0 0 6px #ff2a2a, inset 0 0 60px rgba(255,42,42,.55); animation: hurryPulse 1s ease-in-out infinite; }
+@keyframes hurryPulse { 0%, 100% { opacity: .35; } 15% { opacity: 1; } }
 /* gacha capsules */
 .gacha { display: flex; flex-direction: column; gap: 14px; width: 100%; }
 .gacha-item { display: grid; grid-template-columns: 64px minmax(0,1fr); gap: 12px; align-items: center; }
@@ -381,6 +423,19 @@ body[data-level="jigoku"] .sg-cell .in { box-shadow: 0 0 0 1px rgba(255,42,42,.3
 .res-head { font-family: var(--display); font-weight: 400; font-size: clamp(44px, 14vw, 68px); line-height: 1; margin: 18px 0 0; color: var(--blood); }
 .res-sub { margin: 0; color: var(--muted); font-weight: 700; }
 .mvp { padding: 22px 18px; border-radius: 20px; background: var(--yuru); color: var(--ink); display: flex; flex-direction: column; gap: 4px; animation: flipIn .7s cubic-bezier(.2,1.3,.4,1) both; box-shadow: 0 10px 0 rgba(0,0,0,.35); }
+/* 結果発表：名前がスロットで回って、止まったら揺れる */
+.mvp[data-slot] b { font-variant-numeric: tabular-nums; }
+.mvp.landed { animation: mvpLand .7s cubic-bezier(.3,1.7,.5,1) both; }
+@keyframes mvpLand { 0% { transform: scale(1.18) rotate(-3deg); } 40% { transform: scale(.96) rotate(2deg); } 70% { transform: scale(1.03) rotate(-1deg); } 100% { transform: none; } }
+.result.landed .res-head { animation: jolt .5s both; }
+/* 名前が止まるまで、下の称号やランキング（答えがバレる所）は隠しとく */
+.result.wait > :not(.res-head):not(.res-sub):not(.mvp) { visibility: hidden; }
+.result.wait.landed > :not(.res-head):not(.res-sub):not(.mvp) { visibility: visible; animation: reveal .5s .2s ease-out both; }
+.result.wait .mvp span { visibility: hidden; }
+.result.wait.landed .mvp span { visibility: visible; animation: reveal .4s both; }
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.confetti i { position: absolute; top: -20px; border-radius: 2px; animation: confFall var(--t) var(--d) cubic-bezier(.25,.6,.4,1) forwards; }
+@keyframes confFall { to { transform: translate(var(--x), 110vh) rotate(var(--r)); } }
 .mvp small { font-size: 11px; letter-spacing: .24em; font-weight: 900; }
 .mvp b { font-family: var(--display); font-weight: 400; font-size: clamp(36px, 11vw, 48px); line-height: 1.1; overflow-wrap: anywhere; }
 .mvp span { font-weight: 700; }
@@ -755,6 +810,20 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .vbars li.top .nm { color: #ff3b3b; }
 .vbars .stamp { position: absolute; right: 2.6em; top: 50%; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid #ff3b3b; color: #ff3b3b; display: grid; place-items: center; font-family: var(--display); font-size: 15px; transform: translateY(-50%) rotate(-14deg); animation: stamp .25s calc(var(--d) + .8s) cubic-bezier(.3,1.6,.5,1) both; }
 @keyframes grow { from { width: 0; } }
+/* 票の数え上げ：数えてる間はバーの伸びと数字の出方を JS に任せる。罰のハンコ・赤字は数え終わってから */
+.vbars.count .bar i { animation: none; transition: width .25s cubic-bezier(.3,1.4,.5,1); }
+.vbars.count b { animation: none; }
+.vbars.count li.hit b { animation: votePop .3s cubic-bezier(.3,1.8,.5,1); }
+@keyframes votePop { 0% { transform: scale(1.8); color: var(--mc); } 100% { transform: scale(1); } }
+.vbars.count li.top .nm { color: inherit; transition: color .2s; }
+.vbars.count.done li.top .nm { color: #ff3b3b; }
+.vbars.count .stamp { animation: none; opacity: 0; }
+.vbars.count.done .stamp { animation: stamp .25s cubic-bezier(.3,1.6,.5,1) both; opacity: 1; }
+.vbars.count.done li.top { animation: jolt .45s both; }
+/* ワードウルフ：数え終わってから少数派の正体がめくれる */
+.wf-words.late p:first-child { animation: wfFlip .6s var(--late) cubic-bezier(.2,1.3,.4,1) both; }
+@keyframes wfFlip { 0% { transform: rotateY(-100deg) scale(.9); opacity: 0; } 40% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+.wf-words.late p:last-child { animation: reveal .4s calc(var(--late) + .3s) both; }
 /* 点数・票のバーは人数が多い時だけ札の中でスクロール */
 .mode-card .vbars { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 .mode-card .vbars li { flex: none; }
@@ -877,6 +946,15 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .av.more { background: var(--chip); color: var(--fg); box-shadow: 0 0 0 2px var(--line); font-size: 16px; letter-spacing: -1px; }
 .av.more .cnt { background: var(--fg); color: var(--bg); }
 .score { overflow: hidden; }
+/* 罰が一番多い人の王冠・罰が増えた時に跳ねる */
+.av { position: relative; }
+.av .crown { position: absolute; top: -13px; left: 50%; width: 22px; height: 15px; transform: translateX(-50%) rotate(-8deg); filter: drop-shadow(0 2px 0 rgba(0,0,0,.35)); animation: crownIn .5s cubic-bezier(.3,1.7,.5,1) both; z-index: 2; }
+@keyframes crownIn { from { transform: translateX(-50%) translateY(-10px) scale(0) rotate(-40deg); } }
+.av.bump { animation: avBump .6s cubic-bezier(.3,1.8,.5,1) both; }
+.av.bump .cnt { animation: cntPop .6s cubic-bezier(.3,1.8,.5,1) both; }
+@keyframes avBump { 0% { transform: scale(1); } 30% { transform: scale(1.35) translateY(-4px); } 100% { transform: scale(1); } }
+@keyframes cntPop { 0% { transform: scale(.4); background: #fff; } 40% { transform: scale(1.6); } 100% { transform: scale(1); } }
+.score { padding-top: 14px; }
 /* メニューの結果発表は目立たせる */
 .menu-item.hot { background: var(--yuru); color: var(--ink); }
 .menu-item:disabled { opacity: .45; }

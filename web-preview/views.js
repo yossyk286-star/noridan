@@ -35,10 +35,21 @@ const SFX = (() => {
     boom: () => { noise(1.1, 0.7, 700); tone(90, 0.8, "sine", 0.55, 35); },
     warn: () => { tone(660, 0.12, "sawtooth", 0.06); tone(440, 0.18, "sawtooth", 0.06, 0, 0.12); },
     lucky: () => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "sine", 0.14, 0, i * 0.07)); },
+    // ガラガラ…（だんだんゆっくり）→ ポン
+    rattle: (T) => { let t = 0, k = 0; while (t < T) { tone(k % 2 ? 1250 : 980, 0.03, "square", 0.05, 0, t); t += 0.07 + k * 0.006; k++; } },
+    gachaPop: () => { SFX.rattle(GACHA_T - 0.15); noise(0.25, 0.45, 900, GACHA_T); tone(140, 0.35, "sine", 0.4, 60, GACHA_T); tone(500, 0.09, "sine", 0.2, 1100, GACHA_T + 0.25); },
+    gachaLucky: () => { SFX.rattle(GACHA_T - 0.15); [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "sine", 0.14, 0, GACHA_T + i * 0.07)); },
+    // ドラムロール（T秒）→ ジャーン
+    drumroll: (T = 2.4) => { let t = 0, k = 0; while (t < T) { noise(0.05, 0.12 + 0.18 * (t / T), 1400, t); t += 0.055; k++; } [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.55 : 0.13, "triangle", 0.18, 0, T + i * 0.1)); noise(0.5, 0.35, 5000, T + 0.3); },
+    hurry: () => { tone(1800, 0.04, "square", 0.07); },
     fanfare: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.45 : 0.13, "triangle", 0.16, 0, i * 0.12)); },
   };
 })();
-const play = (k) => { if (S.sound) try { SFX[k](); } catch {} };
+const play = (k) => {
+  // 罰ガチャのマシンが回る時は、ガラガラ音のあとに結果の音
+  if (S.gIntro && (k === "pop" || k === "lucky" || k === "boom")) k = k === "lucky" ? "gachaLucky" : "gachaPop";
+  if (S.sound) try { SFX[k](); } catch {}
+};
 
 // ---------- icons ----------
 // 線のアイコン（1本のパスで描く）
@@ -99,6 +110,27 @@ const SKULL = `<svg class="skull" viewBox="0 0 100 100" aria-hidden="true">
   <path d="M40 76v14M50 76v14M60 76v14" stroke="#141210" stroke-width="3"/>
 </svg>`;
 
+// 罰ガチャのマシン（札が出る前に1.4秒ガラガラ回る）
+const GACHA_T = 1.4;
+const CROWN = `<svg class="crown" viewBox="0 0 24 16" aria-label="罰が一番多い"><path d="M2 14 1 4l6 4 5-7 5 7 6-4-1 10z" fill="#ffd23f" stroke="#141210" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="1.6" fill="#e8202a"/></svg>`;
+// 長押ししてる間だけ中身が見える目隠し（スマホを渡して1人だけ見る画面用）
+const peekBox = (inner, label = "長押しで見る", cls = "") => `<div class="peek ${cls}" data-peek>
+  <div class="peek-in">${inner}</div>
+  <div class="peek-cover"><span class="peek-ic">${ICON.eye}</span><b>${label}</b><small>指を離したら隠れる</small></div>
+</div>`;
+const gachaMachine = () => {
+  const balls = [[44, 40, "#ffd23f"], [70, 36, "#ff5aa5"], [56, 58, "#3ec7ff"], [36, 62, "#7be36b"], [80, 60, "#ff8a1a"], [60, 26, "#b48cff"], [48, 74, "#ff4d4d"], [74, 78, "#ffd23f"]];
+  return `<div class="g-machine" aria-hidden="true"><svg viewBox="0 0 120 160">
+    <g class="gm-body">
+      <circle cx="60" cy="56" r="46" fill="rgba(255,255,255,.18)" stroke="currentColor" stroke-width="4"/>
+      <g class="gm-balls">${balls.map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="10" fill="${c}" stroke="#141210" stroke-width="2"/>`).join("")}</g>
+      <path d="M24 98h72l6 52H18z" fill="#e8202a" stroke="#141210" stroke-width="4" stroke-linejoin="round"/>
+      <rect x="50" y="134" width="20" height="12" rx="3" fill="#141210"/>
+      <g class="gm-handle"><circle cx="60" cy="116" r="11" fill="#f7f3ea" stroke="#141210" stroke-width="4"/><rect x="57" y="104" width="6" height="24" rx="3" fill="#141210"/></g>
+    </g>
+    <circle class="gm-out" cx="60" cy="146" r="9" fill="#ffd23f" stroke="#141210" stroke-width="2"/>
+  </svg><b>ガラガラ…</b></div>`;
+};
 const ANGEL = `<svg class="angel" viewBox="0 0 120 100" aria-hidden="true">
   <ellipse class="halo" cx="60" cy="14" rx="22" ry="6" fill="none" stroke="#ffd23f" stroke-width="5"/>
   <path d="M38 52C20 36 4 40 6 56c2 12 18 18 32 10z" fill="#fff" stroke="#9ab0ff" stroke-width="2.5"/>
@@ -430,12 +462,15 @@ function vCard() {
   if (g.phase === "batsu") {
     const allLucky = g.gacha.every((x) => x.lucky);
     const mixed = !allLucky && g.gacha.some((x) => x.lucky);
-    return `<div class="odai ${allLucky ? "lucky" : "batsu"} ${anim}" id="card">
+    const drum = S.anim; // 画面が切り替わった時だけマシンを回す（メニュー開閉などの再描画では回さへん）
+    if (drum) S.gIntro = true;
+    return `<div class="odai ${allLucky ? "lucky" : "batsu"} ${drum ? "drum" : anim}" id="card">
+      ${drum ? gachaMachine() : ""}
       <div class="head"><span>罰ガチャ</span></div>
       ${S.dual ? `<div class="mirror-list">${g.gacha.map((x) => `<p><b>${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : "の罰"}</b>${x.html}</p>`).join("")}</div><hr class="dual-line">` : ""}
       <div class="skull-wrap">${allLucky ? `${ANGEL}<b>ラッキー！セーフ</b>` : `${SKULL}<b>罰ゲーム確定</b>`}</div>
       <div class="gacha">${g.gacha.map((x, k) => `
-        <div class="gacha-item ${x.night ? "night " + x.night : ""}" style="--d:${(k * 0.35).toFixed(2)}s;--mc:${colorOf(x.i)}">
+        <div class="gacha-item ${x.night ? "night " + x.night : ""}" style="--d:calc(var(--gt, 0s) + ${(k * 0.35).toFixed(2)}s);--mc:${colorOf(x.i)}">
           <div class="capsule"><i class="top"></i><i class="bot"></i><i class="res ${x.lucky ? "ok" : ""}">${x.lucky ? "天" : "罰"}</i></div>
           <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="badge">×${x.n}</span>` : ""}</b><p>${x.html}</p></div>
         </div>`).join("")}</div>
@@ -489,12 +524,20 @@ function vBar() {
     shown = shown.slice(0, fit - 1);
     if (g.doer >= 0 && !shown.includes(g.doer)) shown[shown.length - 1] = g.doer; // 今の番の人は必ず見せる
   }
+  // 罰が一番多い人に王冠（同点なら全員）。入りきらん時も王冠の人は顔を出す
+  const maxPen = Math.max(...g.pen);
+  const kings = maxPen > 0 ? g.pen.map((v, i) => (v === maxPen ? i : -1)).filter((i) => i >= 0) : [];
+  if (n > fit) kings.forEach((kI) => { if (!shown.includes(kI) && shown.length >= 2) { const slot = shown.length - (shown[shown.length - 1] === g.doer ? 2 : 1); if (slot >= 0 && shown[slot] !== g.doer) shown[slot] = kI; } });
+  // 罰が増えた人はポンと跳ねる
+  const prev = S.prevPen && S.prevPen.length === n ? S.prevPen : g.pen;
+  const bump = (i) => g.pen[i] > prev[i];
+  S.prevPen = [...g.pen];
   const hidden = n - shown.length;
   const rv = (i) => g.rev[i] && (g.mode === "odai" || g.mode === "sugoroku");
   return `<div class="bar">
     <div class="score" aria-label="罰スコア">${shown.map((i) => `
-      <span class="av ${i === g.doer ? "is-turn" : ""}" style="--mc:${colorOf(i)}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
-        ${ini(i)}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
+      <span class="av ${i === g.doer ? "is-turn" : ""} ${bump(i) ? "bump" : ""}" style="--mc:${colorOf(i)}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
+        ${kings.includes(i) ? CROWN : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
     <button class="icon-btn bar-btn" data-act="flip" aria-pressed="${S.flip}" aria-label="上下反転">${ICON.flip}</button>
     <button class="icon-btn bar-btn" data-act="dual" aria-pressed="${S.dual}" aria-label="向かい合わせ表示">${ICON.split}</button>
@@ -699,8 +742,8 @@ function vNgCard() {
     case "look": return `<div class="odai mode-card mid" id="card">
       <div class="head"><span class="who" style="--mc:${colorOf(ng.viewer)}"><i></i><b>${mName(ng.viewer)}</b><small>以外のNGワード</small></span></div>
       <div class="mid-body">
-      ${ngWordsFor(ng.viewer)}
-      <p class="how-note">自分のワードはここに出えへん。覚えたら隠してな</p>
+      ${peekBox(ngWordsFor(ng.viewer), "長押しで見る", n > 5 ? "many" : "")}
+      <p class="how-note">自分のワードはここに出えへん。覚えたら指を離してな</p>
       </div>
     </div>`;
     case "play": case "who": return `<div class="odai mode-card center" id="card">
@@ -767,6 +810,15 @@ function vNg() {
   </div>`;
 }
 
+// 票のバー。画面が切り替わった時は 0 から1票ずつ数え上げる（postFx が動かす）
+function vbars(rows, max, isTop, stamp) {
+  const count = S.anim && rows.some((r) => r.v > 0);
+  return `<ul class="vbars ${count ? "count" : ""}" data-max="${max}">${rows.map((r, k) => `<li class="${isTop(r.i) ? "top" : ""}" data-v="${r.v}" style="--mc:${colorOf(r.i)};--d:${(0.15 + (rows.length - k) * 0.12).toFixed(2)}s"><span class="nm">${mName(r.i)}</span><span class="bar"><i style="--w:${count ? 0 : max ? (r.v / max) * 100 : 0}%"></i></span><b>${count ? 0 : r.v}</b>${stamp && isTop(r.i) ? `<span class="stamp">罰</span>` : ""}</li>`).join("")}</ul>`;
+}
+// 数え上げにかかる時間（秒）
+const voteStep = (total) => Math.max(0.12, Math.min(0.42, 3.2 / Math.max(1, total)));
+const voteFxTime = (counts) => { const t = (counts || []).reduce((a, b) => a + b, 0); return t ? 0.3 + t * voteStep(t) : 0; };
+
 // ---------- ぶっちゃけ投票（画面） ----------
 function vVoteCard() {
   const g = S.game, vt = g.vt, n = S.members.length;
@@ -802,7 +854,7 @@ function vVoteCard() {
         ${qHead}
         <p class="vote-q">${esc(vt.q)}</p>
         ${rule}
-        <ul class="vbars">${rows.map((r, k) => `<li class="${vt.top.includes(r.i) ? "top" : ""}" style="--mc:${colorOf(r.i)};--d:${(0.15 + (rows.length - k) * 0.12).toFixed(2)}s"><span class="nm">${mName(r.i)}</span><span class="bar"><i style="--w:${max ? (r.v / max) * 100 : 0}%"></i></span><b>${r.v}</b>${vt.top.includes(r.i) ? `<span class="stamp">罰</span>` : ""}</li>`).join("")}</ul>
+        ${vbars(rows, max, (i) => vt.top.includes(i), true)}
       </div>`;
     }
     case "batsu": return vCard();
@@ -834,7 +886,7 @@ function vVote() {
 function vWfCard() {
   const g = S.game, wf = g.wf, n = S.members.length;
   const nc = wf.night === "shinya" ? "deep" : wf.night ? "yoru" : "";
-  const words = (showMaj = true) => `<div class="wf-words">
+  const words = (showMaj = true) => `<div class="wf-words ${wf.phase === "reveal" && S.anim ? "late" : ""}" style="--late:${(voteFxTime(wf.counts) + 0.2).toFixed(2)}s">
       <p><small>少数派</small><b>${esc(wf.min)}</b><span style="--mc:${colorOf(wf.wolf)}"><i></i>${mName(wf.wolf)}</span></p>
       <p><small>多数派</small><b>${showMaj ? esc(wf.maj) : "？？？"}</b><span>ほか${n - 1}人</span></p>
     </div>`;
@@ -846,7 +898,7 @@ function vWfCard() {
     </div>`;
     case "look": return `<div class="odai ${nc} mode-card center" id="card">
       <p class="prog">${mName(wf.viewer)}のお題</p>
-      <p class="ng-reveal wf-word"><b>${esc(wfWord(wf.viewer))}</b></p>
+      ${peekBox(`<p class="ng-reveal wf-word"><b>${esc(wfWord(wf.viewer))}</b></p>`)}
       <p class="hand-note">自分が多数派か少数派かは分からへん。<br>お題そのものは言うたらアカン</p>
     </div>`;
     case "talk": case "who": return `<div class="odai mode-card center" id="card">
@@ -874,7 +926,7 @@ function vWfCard() {
       const res = wf.caught ? `少数派を当てた！${mName(wf.wolf)}に逆転チャンス` : wf.top.length > 1 ? "同票で決まらず。少数派の逃げ切り！" : `${mName(wf.top[0])}は多数派。少数派の逃げ切り！`;
       return `<div class="odai mode-card" id="card">
         <div class="head"><span class="who"><b>第${wf.round}回戦</b></span><span class="meta"><i class="tag">結果</i></span></div>
-        <ul class="vbars">${rows.map((r, k) => `<li class="${r.i === wf.wolf ? "top" : ""}" style="--mc:${colorOf(r.i)};--d:${(0.15 + (rows.length - k) * 0.1).toFixed(2)}s"><span class="nm">${mName(r.i)}</span><span class="bar"><i style="--w:${max ? (r.v / max) * 100 : 0}%"></i></span><b>${r.v}</b></li>`).join("")}</ul>
+        ${vbars(rows, max, (i) => i === wf.wolf, false)}
         ${words(!wf.caught)}
         <p class="vote-rule ${wf.caught ? "good" : "bad"}">${res}</p>
       </div>`;
@@ -894,7 +946,8 @@ function vWfCard() {
         <p class="vote-rule bad">${wolfLose ? `${mName(wf.wolf)}に罰` : `多数派の${n - 1}人全員に罰`}</p>
       </div>`;
     }
-    case "group": { const r = wf.res; return `<div class="odai ${r.lucky ? "lucky" : "batsu"} mode-card center ${S.anim ? "shake" : ""}" id="card">
+    case "group": { const r = wf.res; if (S.anim) S.gIntro = true; return `<div class="odai ${r.lucky ? "lucky" : "batsu"} mode-card center ${S.anim ? "drum" : ""}" id="card">
+      ${S.anim ? gachaMachine() : ""}
       <p class="prog">多数派全員の罰</p>
       <div class="skull-wrap sm">${r.lucky ? `${ANGEL}<b>天使！全員セーフ</b>` : `${SKULL}<b>罰ゲーム</b>`}</div>
       <p class="rule-pen">${r.html}</p>
@@ -1086,7 +1139,7 @@ function vItCard() {
     </div>`;
     case "look": return `<div class="odai ${nc} mode-card center" id="card">
       <p class="prog">${mName(it.viewer)}の数字</p>
-      <p class="it-num">${it.nums[it.viewer]}</p>
+      ${peekBox(`<p class="it-num">${it.nums[it.viewer]}</p>`)}
       <p class="it-topic">お題：${esc(it.topic.t)}</p>
       ${itScale(it.topic)}
     </div>`;
@@ -1368,10 +1421,11 @@ function vResult() {
   const top = rows[0];
   const tie = rows.filter((r) => r.n === top.n);
   const who = top.n === 0 ? "該当者なし" : tie.map((r) => r.m.name).join("・");
-  return `<div class="result">
+  const slot = S.anim && top.n > 0 && S.members.length > 1;
+  return `<div class="result ${slot ? "wait" : ""}">
   <h1 class="res-head">本日の戦犯</h1>
   <p class="res-sub">${esc(modeLine(g))}</p>
-  <div class="mvp"><small>MVP（悪い意味で）</small><b>${esc(who)}</b><span>${top.n === 0 ? "全員セーフ。平和すぎる" : `罰 ${top.n}回`}</span></div>
+  <div class="mvp" ${slot ? "data-slot" : ""}><small>MVP（悪い意味で）</small><b data-final="${esc(who)}">${slot ? "？？？" : esc(who)}</b><span>${top.n === 0 ? "全員セーフ。平和すぎる" : `罰 ${top.n}回`}</span></div>
   ${(() => { const ts = titles(); return ts.length ? `<h2 class="res-h2">称号</h2><ul class="titles">${ts.map((t, k) => `<li style="--d:${(0.3 + k * 0.12).toFixed(2)}s"><small>${esc(t.title)}</small><b>${esc(titleNames(t))}</b><span>${esc(t.desc)}</span></li>`).join("")}</ul>` : ""; })()}
   ${g.mode === "gesture" && g.gs ? `<h2 class="res-h2">ジェスチャーの点数</h2><ul class="ng-list res">${S.members.map((m, j) => ({ m, j })).sort((a, b) => g.gs.score[b.j] - g.gs.score[a.j]).map(({ m, j }) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${g.gs.score[j]}点</b></li>`).join("")}</ul>` : ""}
   ${g.mode === "memory" && g.mm ? `<h2 class="res-h2">神経衰弱の点数</h2><ul class="ng-list res">${S.members.map((m, j) => ({ m, j })).sort((a, b) => g.mm.score[b.j] - g.mm.score[a.j]).map(({ m, j }) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${g.mm.score[j]}点</b></li>`).join("")}</ul>` : ""}
@@ -1404,55 +1458,92 @@ function resultImage() {
   const x = cv.getContext("2d");
   const disp = '"Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif';
   const body = '"Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif';
+  const fit = (text, font, size, maxW, min = 28) => { let fs = size; x.font = `${font.replace("@", fs)}`; while (x.measureText(text).width > maxW && fs > min) { fs -= 4; x.font = font.replace("@", fs); } return fs; };
+  // 背景：黒地に赤い光、黄色の斜めストライプ、下に水玉
   x.fillStyle = "#141210"; x.fillRect(0, 0, W, H);
-  // 斜めのストライプ
-  x.save(); x.globalAlpha = 0.06; x.fillStyle = "#ffd23f";
+  const glow = x.createRadialGradient(W / 2, 520, 40, W / 2, 520, 900);
+  glow.addColorStop(0, "rgba(232,32,42,.42)"); glow.addColorStop(1, "rgba(232,32,42,0)");
+  x.fillStyle = glow; x.fillRect(0, 0, W, H);
+  x.save(); x.globalAlpha = 0.05; x.fillStyle = "#ffd23f";
   for (let k = -H; k < W + H; k += 120) { x.beginPath(); x.moveTo(k, 0); x.lineTo(k + 60, 0); x.lineTo(k + 60 - H, H); x.lineTo(k - H, H); x.fill(); }
   x.restore();
-  x.fillStyle = "#ffd23f"; x.font = `110px ${disp}`; x.fillText("ノリダン", 90, 200);
-  x.fillStyle = "#8d857a"; x.font = `900 40px ${body}`;
-  x.fillText(modeLine(g), 90, 270);
-  x.fillStyle = "#ff2a2a"; x.font = `150px ${disp}`; x.fillText("本日の戦犯", 90, 470);
+  x.save(); x.fillStyle = "rgba(247,243,234,.05)";
+  for (let yy = 1500; yy < H; yy += 34) for (let xx = (yy / 34) % 2 ? 17 : 0; xx < W; xx += 34) { x.beginPath(); x.arc(xx, yy, 5 * ((yy - 1500) / 420), 0, Math.PI * 2); x.fill(); }
+  x.restore();
+  // 上：ロゴ・日付・モード（ストーリーの上の帯に隠れても困らん情報）
+  const d = new Date();
+  x.fillStyle = "#ffd23f"; x.font = `72px ${disp}`; x.fillText("ノリダン", 90, 170);
+  x.fillStyle = "#8d857a"; x.font = `900 34px ${body}`;
+  const ds = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+  x.fillText(ds, W - 90 - x.measureText(ds).width, 160);
+  x.fillText(modeLine(g), 90, 230);
+  // タイトル
+  x.save(); x.translate(90, 410); x.rotate(-0.04);
+  x.font = `150px ${disp}`; x.lineWidth = 14; x.strokeStyle = "#ffd23f"; x.lineJoin = "round"; x.strokeText("本日の戦犯", 0, 0);
+  x.fillStyle = "#e8202a"; x.fillText("本日の戦犯", 0, 0);
+  x.restore();
   const rows = S.members.map((m, i) => ({ m, i, n: g.pen[i] })).sort((a, b) => b.n - a.n);
-  const top = rows[0], who = top.n === 0 ? "該当者なし" : rows.filter((r) => r.n === top.n).map((r) => r.m.name).join("・");
-  // MVPカード
-  x.fillStyle = "rgba(0,0,0,.4)"; roundRect(x, 90, 560, W - 180, 380, 40); x.fill();
-  x.fillStyle = "#ffd23f"; roundRect(x, 90, 540, W - 180, 380, 40); x.fill();
-  x.fillStyle = "#141210"; x.font = `900 40px ${body}`; x.fillText("MVP（悪い意味で）", 150, 630);
-  let size = 130; x.font = `${size}px ${disp}`;
-  while (x.measureText(who).width > W - 300 && size > 60) { size -= 6; x.font = `${size}px ${disp}`; }
-  x.fillText(who, 150, 790);
-  x.font = `900 48px ${body}`; x.fillText(top.n === 0 ? "全員セーフ。平和すぎる" : `罰 ${top.n}回`, 150, 870);
-  // ランキング（称号がある時は詰める）
+  const top = rows[0], tie = rows.filter((r) => r.n === top.n);
+  const who = top.n === 0 ? "該当者なし" : tie.map((r) => r.m.name).join("・");
+  // MVPのステッカー（少し傾ける）
+  x.save(); x.translate(W / 2, 700); x.rotate(-0.025);
+  const cw = W - 180, ch = 380;
+  x.fillStyle = "rgba(0,0,0,.5)"; roundRect(x, -cw / 2 + 10, -ch / 2 + 22, cw, ch, 44); x.fill();
+  x.fillStyle = "#ffd23f"; roundRect(x, -cw / 2, -ch / 2, cw, ch, 44); x.fill();
+  x.lineWidth = 6; x.strokeStyle = "#141210"; x.stroke();
+  x.fillStyle = "#141210"; x.font = `900 38px ${body}`; x.fillText("MVP（悪い意味で）", -cw / 2 + 60, -ch / 2 + 84);
+  fit(who, `@px ${disp}`, 130, cw - 330, 56); x.fillText(who, -cw / 2 + 60, 40);
+  x.font = `900 46px ${body}`; x.fillText(top.n === 0 ? "全員セーフ。平和すぎる" : `罰 ${top.n}回`, -cw / 2 + 60, 120);
+  const why = top.n > 0 && tie.length === 1 ? whyText(top.i) : "";
+  if (why) { x.fillStyle = "rgba(20,18,16,.6)"; fit(why, `900 @px ${body}`, 30, cw - 120, 20); x.fillText(why, -cw / 2 + 60, 168); }
+  // ドクロ（MVPの右上にはみ出す）
+  x.save(); x.translate(cw / 2 - 150, -ch / 2 - 30); x.rotate(0.18); x.scale(2.3, 2.3);
+  x.fillStyle = "#f7f3ea"; x.strokeStyle = "#141210"; x.lineWidth = 3;
+  const skull = new Path2D("M50 6C25 6 10 23 10 45c0 14 8 23 17 27v11c0 4 3 7 7 7h32c4 0 7-3 7-7V72c9-4 17-13 17-27C90 23 75 6 50 6z");
+  x.fill(skull); x.stroke(skull);
+  x.fillStyle = "#e8202a"; [[33, 47], [67, 47]].forEach(([ex, ey]) => { x.beginPath(); x.ellipse(ex, ey, 11, 12, 0, 0, Math.PI * 2); x.fill(); });
+  x.fillStyle = "#141210"; x.fill(new Path2D("M50 58l-6 10h12z"));
+  x.beginPath(); [40, 50, 60].forEach((tx) => { x.moveTo(tx, 76); x.lineTo(tx, 90); }); x.stroke();
+  x.restore();
+  x.restore();
+  // ランキング：罰の数をバーで
   const ts = titles().slice(0, 4);
-  const step = ts.length ? 76 : 100;
-  let y = 1040;
-  rows.slice(0, ts.length ? 6 : 8).forEach((r, k) => {
-    x.fillStyle = "#8d857a"; x.font = `900 46px ${body}`; x.fillText(String(k + 1), 110, y);
-    x.fillStyle = colorOf(r.i); x.beginPath(); x.arc(205, y - 16, 22, 0, Math.PI * 2); x.fill();
-    x.fillStyle = "#f7f3ea"; x.font = `900 54px ${body}`; x.fillText(r.m.name, 260, y);
-    x.font = `60px ${disp}`; const s = String(r.n); x.fillText(s, W - 110 - x.measureText(s).width, y);
-    x.fillStyle = "rgba(247,243,234,.15)"; x.fillRect(110, y + 26, W - 220, 3);
-    y += step;
+  const maxRows = ts.length > 2 ? 5 : ts.length ? 6 : 8;
+  const maxN = Math.max(1, top.n), rowH = 66;
+  let y = 1000;
+  x.fillStyle = "#8d857a"; x.font = `900 32px ${body}`; x.fillText("罰ランキング", 90, y - 20);
+  rows.slice(0, maxRows).forEach((r, k) => {
+    const cy = y + k * rowH + 30;
+    x.fillStyle = k === 0 && r.n > 0 ? "#e8202a" : "rgba(247,243,234,.12)"; x.beginPath(); x.arc(118, cy - 12, 26, 0, Math.PI * 2); x.fill();
+    x.fillStyle = "#f7f3ea"; x.font = `36px ${disp}`; const no = String(k + 1); x.fillText(no, 118 - x.measureText(no).width / 2, cy);
+    x.fillStyle = colorOf(r.i); x.beginPath(); x.arc(186, cy - 12, 14, 0, Math.PI * 2); x.fill();
+    x.fillStyle = "#f7f3ea"; fit(r.m.name, `900 @px ${body}`, 44, 300, 24); x.fillText(r.m.name, 216, cy);
+    const bx = 540, bw = W - 200 - bx;
+    x.fillStyle = "rgba(247,243,234,.1)"; roundRect(x, bx, cy - 30, bw, 28, 14); x.fill();
+    if (r.n) { x.fillStyle = colorOf(r.i); roundRect(x, bx, cy - 30, Math.max(28, (bw * r.n) / maxN), 28, 14); x.fill(); }
+    x.fillStyle = "#f7f3ea"; x.font = `52px ${disp}`; const sN = String(r.n); x.fillText(sN, W - 90 - x.measureText(sN).width, cy + 4);
   });
-  // 称号
+  if (rows.length > maxRows) { x.fillStyle = "#8d857a"; x.font = `900 30px ${body}`; x.fillText(`ほか${rows.length - maxRows}人`, 216, y + maxRows * rowH + 24); }
+  y += Math.min(rows.length, maxRows) * rowH + (rows.length > maxRows ? 56 : 30);
+  // 称号のバッジ
   if (ts.length) {
-    y += 40;
-    x.fillStyle = "#ffd23f"; x.font = `56px ${disp}`; x.fillText("称号", 90, y);
     y += 30;
+    x.fillStyle = "#ffd23f"; x.font = `48px ${disp}`; x.fillText("称号", 90, y);
+    y += 26;
+    const w = (W - 200) / 2;
     ts.forEach((t, k) => {
-      const cx = 90 + (k % 2) * ((W - 200) / 2 + 20), cy = y + Math.floor(k / 2) * 150;
-      const w = (W - 200) / 2;
-      x.fillStyle = "rgba(247,243,234,.08)"; roundRect(x, cx, cy, w, 130, 24); x.fill();
-      x.fillStyle = "#ffd23f"; x.font = `900 32px ${body}`; x.fillText(t.title, cx + 28, cy + 50);
-      let fs = 48; x.font = `900 ${fs}px ${body}`;
+      const cx = 90 + (k % 2) * (w + 20), cy = y + Math.floor(k / 2) * 142;
+      x.fillStyle = "rgba(247,243,234,.08)"; roundRect(x, cx, cy, w, 124, 24); x.fill();
+      x.strokeStyle = "rgba(255,210,63,.45)"; x.lineWidth = 3; x.stroke();
+      x.fillStyle = "#ffd23f"; fit(t.title, `900 @px ${body}`, 32, w - 56, 20); x.fillText(t.title, cx + 28, cy + 48);
       const nmz = titleNames(t);
-      while (x.measureText(nmz).width > w - 56 && fs > 26) { fs -= 4; x.font = `900 ${fs}px ${body}`; }
-      x.fillStyle = "#f7f3ea"; x.fillText(nmz, cx + 28, cy + 108);
+      x.fillStyle = "#f7f3ea"; fit(nmz, `900 @px ${body}`, 46, w - 56, 24); x.fillText(nmz, cx + 28, cy + 102);
     });
   }
-  x.fillStyle = "#8d857a"; x.font = `900 36px ${body}`;
-  x.fillText("ノリで断れない飲み会ゲーム", 90, H - 60);
+  // 下：アプリ名（ストーリーの下の帯の上に収まる位置）
+  x.fillStyle = "rgba(247,243,234,.18)"; x.fillRect(90, H - 210, W - 180, 3);
+  x.fillStyle = "#f7f3ea"; x.font = `52px ${disp}`; x.fillText("ノリダン", 90, H - 128);
+  x.fillStyle = "#8d857a"; x.font = `900 32px ${body}`; x.fillText("ノリで断れない飲み会ゲーム", 360, H - 140);
   return new Promise((res) => cv.toBlob(res, "image/png"));
 }
 function roundRect(x, l, t, w, h, r) {
@@ -1502,6 +1593,7 @@ function render(anim) {
   document.body.classList.toggle("night-home", sc === "home" && !!(S.night || S.nightAsk));
   document.body.classList.toggle("deep", (neon && (vtNight ? vtNight === "shinya" : c.kind?.includes("深夜"))) || (sc === "home" && (S.nightAsk ? S.nightAsk === "shinya" : S.night === "shinya")));
   S.anim = !!anim;
+  S.gIntro = false;
   // 画面が変わった時だけスライドして入ってくる
   const key = sc === "home" ? (S.nightAsk ? "night" : "home" + S.step) : sc;
   const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, memory: 2, ito: 2, gesture: 2, homeru: 2, ngword: 2, vote: 2, wolf: 2, pittari: 2, result: 3 };
@@ -1512,16 +1604,59 @@ function render(anim) {
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
   overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   if (onStage) { fixHeight(); fitCard(); }
-  if (anim) { window.scrollTo(0, 0); cue(); speakNow(); }
+  if (anim) { window.scrollTo(0, 0); cue(); if (S.gIntro) { clearTimeout(S.speakT); S.speakT = setTimeout(speakNow, GACHA_T * 1000); } else speakNow(); postFx(); }
   if (!onStage && sc !== "result") stopSpeak();
   syncWake();
   const f = document.getElementById("addForm");
   if (f) f.addEventListener("submit", onAdd);
 }
+// 描画のあとに動かす演出（票の数え上げ・結果発表のドラムロール）
+function postFx() {
+  (S.fxTs || []).forEach(clearTimeout); S.fxTs = [];
+  const later = (fn, ms) => S.fxTs.push(setTimeout(fn, ms));
+  // 票の数え上げ：1票ずつランダムな順に、ポン、ポン
+  const ul = app.querySelector(".vbars.count");
+  if (ul) {
+    const lis = [...ul.children], max = +ul.dataset.max || 1;
+    const seq = [];
+    lis.forEach((li, k) => { for (let j = 0; j < +li.dataset.v; j++) seq.push(k); });
+    for (let a = seq.length - 1; a > 0; a--) { const b = Math.floor(Math.random() * (a + 1)); [seq[a], seq[b]] = [seq[b], seq[a]]; }
+    const step = voteStep(seq.length) * 1000, cnt = lis.map(() => 0);
+    seq.forEach((k, j) => later(() => {
+      cnt[k]++;
+      const li = lis[k];
+      li.querySelector("b").textContent = cnt[k];
+      li.querySelector(".bar i").style.setProperty("--w", `${(cnt[k] / max) * 100}%`);
+      li.classList.remove("hit"); void li.offsetWidth; li.classList.add("hit");
+      play("tick");
+    }, 300 + j * step));
+    later(() => { ul.classList.add("done"); play("warn"); if (navigator.vibrate) navigator.vibrate([30, 30, 60]); }, 300 + seq.length * step + 150);
+  }
+  // 結果発表：戦犯の名前がスロットみたいに回って、止まったら揺れて紙吹雪
+  const slot = app.querySelector(".mvp[data-slot]");
+  if (slot) {
+    const b = slot.querySelector("b"), final = b.dataset.final, names = S.members.map((m) => m.name);
+    const T = 2.4;
+    play("drumroll");
+    let t = 0, k = 0;
+    while (t < T * 1000) { const nm = names[k % names.length]; later(() => { b.textContent = nm; }, t); t += 60 + (t / (T * 1000)) ** 2 * 260; k++; }
+    later(() => { b.textContent = final; slot.classList.add("landed"); app.querySelector(".result")?.classList.add("landed"); confetti(); if (navigator.vibrate) navigator.vibrate([60, 40, 120]); }, T * 1000);
+  }
+}
+function confetti() {
+  const box = document.createElement("div");
+  box.className = "confetti";
+  box.setAttribute("aria-hidden", "true");
+  const cols = ["#ffd23f", "#ff5aa5", "#3ec7ff", "#7be36b", "#ff8a1a", "#e8202a", "#b48cff"];
+  box.innerHTML = Array.from({ length: 70 }, (_, k) => `<i style="left:${(Math.random() * 100).toFixed(1)}%;background:${cols[k % cols.length]};--x:${((Math.random() * 2 - 1) * 120).toFixed(0)}px;--r:${(Math.random() * 720 - 360).toFixed(0)}deg;--t:${(1.6 + Math.random() * 1.4).toFixed(2)}s;--d:${(Math.random() * 0.35).toFixed(2)}s;width:${(6 + Math.random() * 6).toFixed(0)}px;height:${(10 + Math.random() * 8).toFixed(0)}px"></i>`).join("");
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 3600);
+}
+
 // 画面が変わった時の効果音と演出
 function cue() {
   const sc = S.screen;
-  if (sc === "result") { play("fanfare"); return; }
+  if (sc === "result") { if (!app.querySelector(".mvp[data-slot]")) play("fanfare"); return; }
   if (sc === "ngword") { const p = S.game.ng.phase; play(p === "out" ? (S.game.ng.res.lucky ? "lucky" : "boom") : p === "over" ? "alarm" : p === "confirm" ? "warn" : "flip"); if (p === "out" && !S.game.ng.res.lucky) boomFlash(); return; }
   if (sc === "gesture") { const p = S.game.gs.phase; play(p === "low" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "over" ? "fanfare" : p === "act" ? "coin" : "flip"); return; }
   if (sc === "homeru") { const p = S.game.hm.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "go" ? "coin" : "flip"); return; }
@@ -1948,6 +2083,19 @@ function onClick(e) {
   }
 }
 app.addEventListener("click", onClick);
+// 長押しで見る：押してる間だけ .on
+app.addEventListener("pointerdown", (e) => {
+  const pk = e.target.closest("[data-peek]");
+  if (!pk) return;
+  e.preventDefault();
+  pk.classList.add("on", "seen");
+  try { pk.setPointerCapture(e.pointerId); } catch {}
+  play("flip");
+  if (navigator.vibrate) navigator.vibrate(12);
+});
+const peekOff = () => document.querySelectorAll("[data-peek].on").forEach((el) => el.classList.remove("on"));
+["pointerup", "pointercancel", "blur"].forEach((ev) => window.addEventListener(ev, peekOff));
+app.addEventListener("contextmenu", (e) => { if (e.target.closest("[data-peek]")) e.preventDefault(); });
 
 // ---------- 画面の高さ ----------
 // ホーム画面に追加して全画面で開くと、iPhoneが高さを時計の分だけ短く数えることがある。
