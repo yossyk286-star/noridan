@@ -849,7 +849,7 @@ function tiltSafe() {
 
 // ---------- 全力シェイク ----------
 // 1人ずつ10秒間スマホを振って、振った回数を数える。全員振ったら一番少ない人が罰（地獄は2倍）
-// 縦・横・前後どの向きでもOK。強い加速度の向きが「前に数えた時と逆」になるたびに1回（振って切り返すたび）。
+// 縦・横・前後どの向きでもOK。強い加速度の向きが切り返すのを見て、1往復（振り下ろして戻す）で1回。
 // 激しく振ると加速度が下がりきらへんので、強さが落ちるのを待たんと向きで数える。センサーが無いスマホは画面の連打
 const SK_SEC = 10;
 const SK_HI = 10; // m/s²（重力ぬき）。これより強い揺れだけ数える
@@ -905,7 +905,7 @@ function skCount() {
 function skGo() {
   const sk = S.game.sk;
   sk.manual = !skLive();
-  sk.phase = "play"; sk.cur = 0; sk.dir = null; sk.last = 0;
+  sk.phase = "play"; sk.cur = 0; sk.dir = null; sk.flip = 0; sk.last = 0;
   sk.endAt = Date.now() + SK_SEC * 1000; sk.sec = SK_SEC;
   play("coin");
   render(true);
@@ -919,7 +919,12 @@ function skTick(x, y, z) {
   if (mag > SK_HI && Date.now() - sk.last > SK_GAP) {
     const u = [x / mag, y / mag, z / mag], d = sk.dir;
     // 最初の1回か、前に数えた向きと逆向き（切り返し）なら1回
-    if (!d || u[0] * d[0] + u[1] * d[1] + u[2] * d[2] < -0.3) { sk.dir = u; skHit(); }
+    if (!d) sk.dir = u;
+    else if (u[0] * d[0] + u[1] * d[1] + u[2] * d[2] < -0.3) {
+      // 切り返しは1往復で2回来るので、1回おきに数える
+      sk.dir = u; sk.flip = (sk.flip || 0) + 1; sk.last = Date.now();
+      if (sk.flip % 2 === 1) skHit();
+    }
   }
   if (!sk.raf) sk.raf = requestAnimationFrame(() => { sk.raf = 0; skPaint(); });
 }

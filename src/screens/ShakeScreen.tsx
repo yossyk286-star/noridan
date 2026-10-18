@@ -44,7 +44,7 @@ function Safety({ fg }: { fg: string }) {
 
 /**
  * 全力シェイク：1人ずつ10秒間スマホを振って、振った回数を数える。全員振ったら一番少ない人が罰（地獄は2倍）。
- * 縦・横・前後どの向きでもOK。強い加速度の向きが「前に数えた時と逆」になるたびに1回（振って切り返すたび）。
+ * 縦・横・前後どの向きでもOK。強い加速度の向きが切り返すのを見て、1往復（振り下ろして戻す）で1回。
  * 激しく振ると加速度が下がりきらへんので、強さが落ちるのを待たんと向きで数える。センサーが無いスマホは画面の連打
  */
 export default function ShakeScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
@@ -78,6 +78,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
   const manualRef = useRef(false);
   const curRef = useRef(0);
   const dir = useRef<[number, number, number] | null>(null);
+  const flip = useRef(0);
   const lastHit = useRef(0);
   const latestAt = useRef(0);
   const startAt = useRef(0);
@@ -139,10 +140,13 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     if (mag > HI && Date.now() - lastHit.current > GAP) {
       const u: [number, number, number] = [x / mag, y / mag, z / mag];
       const d = dir.current;
-      // 最初の1回か、前に数えた向きと逆向き（切り返し）なら1回
-      if (!d || u[0] * d[0] + u[1] * d[1] + u[2] * d[2] < -0.3) {
+      if (!d) dir.current = u;
+      else if (u[0] * d[0] + u[1] * d[1] + u[2] * d[2] < -0.3) {
+        // 切り返しは1往復で2回来るので、1回おきに数える
         dir.current = u;
-        hit();
+        flip.current++;
+        lastHit.current = Date.now();
+        if (flip.current % 2 === 1) hit();
       }
     }
   };
@@ -165,6 +169,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     setManual(!live);
     curRef.current = 0;
     dir.current = null;
+    flip.current = 0;
     lastHit.current = 0;
     setCur(0);
     startAt.current = Date.now();
