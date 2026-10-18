@@ -158,10 +158,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : g.mode === "shake" ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : g.mode === "shake" || g.mode === "stop" ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
@@ -182,6 +182,7 @@ function newGame(mode, again = false) {
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "intro", round: 0 }; if (again) startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
   if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: store.get("nd_wf_min", 3), count: store.get("nd_wf_n", 0), peace: store.get("nd_wf_peace", true), wolves: [] }; render(true); return; }
+  if (mode === "stop") { S.game.doer = -1; S.game.sp = { phase: "intro", dir: store.get("nd_spdir", "down") === "up" ? "up" : "down", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), exact: Array(n).fill(0), losers: [] }; render(true); return; }
   if (mode === "shake") { S.game.doer = -1; S.game.sk = { phase: "intro", round: 0, k: 0, cnt: Array(n).fill(null), best: Array(n).fill(null), tapped: Array(n).fill(false), losers: [] }; render(true); return; }
   if (mode === "tilt") { S.game.doer = -1; S.game.tl = { phase: "intro", k: 0, max: Array(n).fill(null), tries: Array(n).fill(0), outs: Array(n).fill(0) }; render(true); return; }
   if (mode === "pittari") { S.game.doer = -1; S.game.pt = { phase: "intro", round: 0 }; if (again) ptRound(); render(true); return; }
@@ -478,6 +479,7 @@ function titles() {
   const h = top(st.hit, 2); if (h) add("押し付けられ体質", h, `押し付けられ ${st.hit[h[0]]}回`);
   if (g.mode === "pittari") { const e = top(st.exact, 1); if (e) add("ピッタリ職人", e, `ピッタリ ${st.exact[e[0]]}回`); }
   if (g.mode === "tilt" && g.tl) { const tl = g.tl, ok = S.members.map((_, i) => i).filter((i) => tl.tries[i] && tl.max[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => tl.max[i])); add("鋼の手", ok.filter((i) => tl.max[i] === m), `最大でも ${m.toFixed(1)}°`); } }
+  if (g.mode === "stop" && g.sp) { const t = top(g.sp.exact, 1); if (t) add("ピタ止め職人", t, `ピッタリ ${g.sp.exact[t[0]]}回`); }
   if (g.mode === "shake" && g.sk) { const b = g.sk.best.map((v) => v ?? 0); const t = top(b, 1); if (t && S.members.length > 1) add("シェイク王", t, `10秒で ${b[t[0]]}回`); }
   if (g.mode === "wolf") { const w = top(st.wolf, 1); if (w) add("名演技", w, `ウルフで逃げ切り ${st.wolf[w[0]]}回`); }
   if (g.mode === "vote" && st.votes) { const v = top(st.votes, 2); if (v) add("みんなの的", v, `合計 ${st.votes[v[0]]}票`); }
@@ -961,6 +963,106 @@ function skRound() {
   const sk = S.game.sk;
   sk.round++; sk.k = 0; sk.cnt = Array(S.members.length).fill(null); sk.losers = [];
   skBegin();
+}
+
+// ---------- ピタッとストップ ----------
+// 数字が減っていく（or 増えていく）のを、0（or 目標の秒数）ちょうどで止める。行き過ぎたらオーバーでアウト。
+// ゆるめ＝一定の速さ／普通＝途中で速さが変わる（×0.5〜×2）／地獄＝それに加えて数字が消えたり邪魔が入ったり
+// 全員1回ずつ止めたら答え合わせ：オーバーした人が罰。誰もオーバーしてへんかったら一番遠い人が罰。ピッタリが出たら罰2倍
+const SP_RATES = [0.5, 1.5, 2, 0.5, 1.5, 2, 1];
+const SP_OVER = 1.5; // これだけ行き過ぎたら勝手に止まる
+const spLen = (sp) => sp.target; // 動く秒数（表示上）
+function spRound() {
+  const sp = S.game.sp;
+  sp.round++; sp.k = 0; sp.res = Array(S.members.length).fill(null); sp.losers = []; sp.exactAny = false;
+  sp.target = 6 + rnd(7); // 6〜12秒
+  spBegin();
+}
+const spWho = (sp) => (sp.k + sp.round - 1) % S.members.length;
+function spBegin() {
+  const sp = S.game.sp;
+  sp.who = spWho(sp); S.game.doer = sp.who;
+  sp.phase = "hand";
+}
+function spCount() {
+  const sp = S.game.sp;
+  sp.phase = "count"; sp.n = 3;
+  const step = () => {
+    if (S.game?.sp !== sp || sp.phase !== "count") return;
+    sp.n--;
+    if (sp.n <= 0) { spGo(); return; }
+    play("tick"); render(); setTimeout(step, 700);
+  };
+  play("tick"); setTimeout(step, 700);
+}
+// 表示上の経過（0→target）。dir=down なら target-経過 を見せる
+function spGo() {
+  const sp = S.game.sp, now = performance.now();
+  sp.phase = "play"; sp.el = 0; sp.t0 = now; sp.prev = now;
+  sp.rate = 1; sp.nextChange = now + 900 + Math.random() * 900;
+  sp.hideUntil = 0; sp.nextHide = now + 1400 + Math.random() * 1500;
+  sp.jamUntil = 0; sp.jamVal = 0; sp.nextJam = now + 1100 + Math.random() * 1600;
+  sp.rateShow = 0;
+  play("coin");
+  render(true);
+  cancelAnimationFrame(sp.raf);
+  const loop = (t) => {
+    if (S.game?.sp !== sp || sp.phase !== "play") return;
+    const dt = (t - sp.prev) / 1000; sp.prev = t;
+    sp.el += dt * sp.rate;
+    // 普通・地獄：速さが変わる
+    if (S.level !== "yurume" && t > sp.nextChange) {
+      let r; do { r = SP_RATES[rnd(SP_RATES.length)]; } while (r === sp.rate);
+      sp.rate = r; sp.nextChange = t + 700 + Math.random() * 1300; sp.rateShow = t + 900;
+      if (S.level === "futsu") play("tick");
+    }
+    if (S.level === "jigoku") {
+      // 数字が消える
+      if (t > sp.nextHide && sp.hideUntil < t) { sp.hideUntil = t + 600 + Math.random() * 900; sp.nextHide = sp.hideUntil + 900 + Math.random() * 1500; }
+      // 邪魔：ウソの数字がチラッと出る・画面がブレる
+      if (t > sp.nextJam && sp.jamUntil < t) { sp.jamUntil = t + 220 + Math.random() * 200; sp.jamVal = Math.random() * sp.target; sp.jamKind = rnd(2); sp.nextJam = sp.jamUntil + 700 + Math.random() * 1400; if (sp.jamKind === 1) play("tick"); }
+    }
+    if (sp.el - spLen(sp) > SP_OVER) { spStop(true); return; }
+    spPaint(t);
+    sp.raf = requestAnimationFrame(loop);
+  };
+  sp.raf = requestAnimationFrame(loop);
+}
+const spFmt = (v) => { const r = Math.round(v * 100) / 100; return (r < 0 ? "-" : "") + Math.abs(r).toFixed(2); }; // -0.00 にならんように
+function spShown(sp, el) { return sp.dir === "down" ? sp.target - el : el; }
+function spPaint(t) {
+  const sp = S.game.sp, num = document.getElementById("spNum"), box = document.getElementById("spBox");
+  if (!num || !box) return;
+  const hide = t < sp.hideUntil, jam = t < sp.jamUntil;
+  num.textContent = hide ? "??.??" : jam && sp.jamKind === 0 ? spFmt(spShown(sp, sp.jamVal)) : spFmt(spShown(sp, sp.el));
+  box.classList.toggle("hide", hide);
+  box.classList.toggle("jam", jam);
+  box.classList.toggle("over", !hide && sp.el > spLen(sp));
+  const badge = document.getElementById("spRate");
+  if (badge) { const on = S.level === "futsu" && t < sp.rateShow; badge.classList.toggle("on", on); if (on) badge.textContent = sp.rate > 1 ? `×${sp.rate} 加速！` : `×${sp.rate} 減速…`; }
+}
+function spStop(auto = false) {
+  const g = S.game, sp = g.sp;
+  if (sp.phase !== "play") return;
+  cancelAnimationFrame(sp.raf);
+  sp.el += (performance.now() - sp.prev) / 1000 * sp.rate;
+  const diff = Math.round((spLen(sp) - sp.el) * 100) / 100; // ＋なら手前、−ならオーバー
+  const over = diff < 0, exact = diff === 0;
+  sp.res[sp.who] = { v: spShown(sp, sp.el), diff, over, exact };
+  if (exact) { sp.exactAny = true; sp.exact[sp.who]++; }
+  if (!over && (sp.best[sp.who] == null || diff < sp.best[sp.who])) sp.best[sp.who] = diff;
+  g.turn++;
+  if (over) { play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
+  else play(exact ? "fanfare" : "pop");
+  sp.phase = sp.k + 1 >= S.members.length ? "rank" : "done";
+  if (sp.phase === "rank") {
+    g.doer = -1;
+    const r = sp.res, idx = S.members.map((_, i) => i);
+    const overs = idx.filter((i) => r[i].over);
+    if (overs.length) sp.losers = overs;
+    else { const far = Math.max(...idx.map((i) => r[i].diff)); sp.losers = far > 0 ? idx.filter((i) => r[i].diff === far) : []; }
+  }
+  render(true);
 }
 
 // ---------- ピッタリ予想 ----------

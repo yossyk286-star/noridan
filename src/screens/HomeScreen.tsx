@@ -270,6 +270,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       <ModeCard icon="target" title="ピッタリ予想" desc={members.length < 3 ? '3人から遊べる' : HELP.pittari.desc} disabled={members.length < 3} onPress={() => onStart('pittari')} />
       <ModeCard icon="tilt" title="傾けたらアウト" desc={HELP.tilt.desc} onPress={() => onStart('tilt')} />
       <ModeCard icon="shake" title="全力シェイク" desc={HELP.shake.desc} onPress={() => onStart('shake')} />
+      <ModeCard icon="stop" title="ピタッとストップ" desc={HELP.stop.desc} onPress={() => onStart('stop')} />
 
       {night && (
         <View style={{ gap: 10 }}>
@@ -310,7 +311,7 @@ function StepHead({ num, title, sub }: { num: string; title: string; sub?: strin
   );
 }
 
-function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote' | 'wolf' | 'target' | 'tilt' | 'shake'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
+function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote' | 'wolf' | 'target' | 'tilt' | 'shake' | 'stop'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Tap onPress={onPress} disabled={disabled} style={({ pressed }) => [s.mode, { opacity: disabled ? 0.45 : 1, transform: [{ translateY: pressed ? 4 : 0 }] }]}>
       <View style={s.modeIc}>

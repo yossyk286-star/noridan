@@ -11,13 +11,14 @@ export type Stats = {
   votes?: number[]; // ぶっちゃけ投票で集めた票
   exact?: number[]; // ピッタリ予想でピッタリ当てた回数
   wolf?: number[]; // ワードウルフでウルフとして逃げ切った回数
+  stopExact?: number[]; // ピタッとストップでピッタリ止めた回数
   shakeBest?: (number | null)[]; // 全力シェイクの自己ベスト
   steady?: (number | null)[]; // 傾けたらアウトの最大角度（測れた人だけ）
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
-export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake';
-export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾', vote: '投票1位', ng: 'NGワード', mfail: '答えられへん', skull: 'ドクロ', mlow: '最下位', ito: '並び間違い', glow: 'ジェスチャーで当てられへん', gquota: 'ジェスチャーのノルマ未達', hmlaugh: '笑った', hmfail: '褒め負け', wolf: 'ワードウルフ負け', pit: '予想が一番遠い', tilt: '傾けた', shake: '振った回数が最下位' };
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop';
+export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾', vote: '投票1位', ng: 'NGワード', mfail: '答えられへん', skull: 'ドクロ', mlow: '最下位', ito: '並び間違い', glow: 'ジェスチャーで当てられへん', gquota: 'ジェスチャーのノルマ未達', hmlaugh: '笑った', hmfail: '褒め負け', wolf: 'ワードウルフ負け', pit: '予想が一番遠い', tilt: '傾けた', shake: '振った回数が最下位', stop: '止め負け' };
 export function whyText(st: Stats | undefined, i: number) {
   const w = st?.why?.[i];
   if (!w) return '';
@@ -69,6 +70,8 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
       add('鋼の手', ok.filter((i) => sd[i] === m), `最大でも ${m.toFixed(1)}°`);
     }
   }
+  const se = st.stopExact ? top(st.stopExact, 1) : null;
+  if (se) add('ピタ止め職人', se, `ピッタリ ${st.stopExact![se[0]]}回`);
   if (st.shakeBest && pen.length > 1) {
     const sb = st.shakeBest.map((v) => v ?? 0);
     const t = top(sb, 1);

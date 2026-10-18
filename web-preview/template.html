@@ -347,6 +347,32 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .tl-lim { margin: 4px 0 0; font-family: var(--display); font-size: 44px; line-height: 1; }
 .tl-lim small { display: block; font-family: inherit; font-size: 13px; opacity: .65; margin-top: 4px; }
 .tl-count { margin: 0; font-family: var(--display); font-size: clamp(96px, 34vw, 150px); line-height: 1; animation: pulse .8s ease-in-out infinite; }
+/* ピタッとストップ */
+.sp-goal { margin: 6px 0 0; font-weight: 800; font-size: 15px; line-height: 1.6; }
+.sp-goal b { font-family: var(--display); font-weight: 400; font-size: 34px; margin-right: 4px; }
+.sp-play { justify-content: space-evenly !important; }
+.sp-box { position: relative; display: grid; place-items: center; width: 100%; padding: 18px 0; border-radius: 18px; background: color-mix(in srgb, currentColor 6%, transparent); }
+.sp-num { margin: 0; font-family: var(--display); font-size: clamp(72px, 25vw, 118px); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.sp-box.over .sp-num { color: #ff3b3b; }
+.sp-box.hide .sp-num { opacity: .35; filter: blur(2px); }
+.sp-box.jam { animation: tlShake .1s linear infinite; }
+.sp-box.jam .sp-num { color: #b69cff; text-shadow: 3px 0 #ff5d8f, -3px 0 #4dd4ff; }
+.sp-rate { position: absolute; top: -12px; right: 8px; padding: 4px 10px; border-radius: 999px; background: #ff5d8f; color: #fff; font-weight: 900; font-size: 14px; opacity: 0; transform: scale(.6); transition: opacity .12s, transform .18s cubic-bezier(.2,1.6,.4,1); }
+.sp-rate.on { opacity: 1; transform: scale(1); }
+.sp-res { font-size: clamp(60px, 20vw, 90px); }
+.sp-res.over { color: #ff3b3b; }
+.sp-res.exact { color: #1f9d55; }
+.sp-verdict { font-size: clamp(26px, 8vw, 36px) !important; }
+.sk-board.sp-board li { grid-template-columns: 18px minmax(0, 4.6em) minmax(3.4em, 1fr) auto; gap: 6px; }
+.sp-v { font-family: var(--display); font-variant-numeric: tabular-nums; opacity: .7; text-align: right; font-size: 14px; white-space: nowrap; }
+.sk-board.sp-board b { font-family: inherit; font-weight: 800; font-size: 13px; min-width: 0; white-space: nowrap; }
+.sk-board.sp-board li.exact b { color: #1f9d55; }
+.big.sp-stop { min-height: 84px; font-size: 26px; background: #ff3b3b; color: #fff; border-color: #ff3b3b; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.sp-dir { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sp-dir button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px; border-radius: 14px; border: 2px solid color-mix(in srgb, currentColor 25%, transparent); background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.sp-dir button b { font-size: 18px; }
+.sp-dir button small { font-size: 11px; opacity: .65; }
+.sp-dir button[aria-pressed="true"] { border-color: var(--acc, #ffd23f); background: color-mix(in srgb, var(--acc, #ffd23f) 22%, transparent); }
 /* 全力シェイク */
 .sk-safe { display: flex; flex-direction: column; gap: 4px; margin: 4px 0; padding: 10px 12px; border-radius: 12px; background: rgba(255, 176, 46, .16); border: 2px solid #ffb02e; text-align: left; font-size: 13px; line-height: 1.55; }
 .sk-safe b { color: #e8780a; font-size: 14px; }
