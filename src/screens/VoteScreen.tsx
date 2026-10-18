@@ -121,7 +121,7 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
     <View style={s.head}>
       <Text style={[s.no, { color: fg }]}>第{round.no}問</Text>
       <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-        {!!round.night && <Text style={[s.kind, { color: fg }]}>{round.night === 'shinya' ? 'エロがり' : '夜'}の質問</Text>}
+        {!!round.night && <Text style={[s.kind, { color: fg }]}>{round.night === 'shinya' ? '深夜' : '夜'}の質問</Text>}
         <Text style={[s.tag, { color: fg, borderColor: alpha('#888888', 0.5) }]}>投票</Text>
       </View>
     </View>
@@ -133,7 +133,7 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
     case 'intro':
       card = (
         <IntroCard pal={pal} mode="vote" tag={`${n}人`}>
-          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? 'エロがり' : '夜'}モードの質問も出る` : undefined} />
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードの質問も出る` : undefined} />
         </IntroCard>
       );
       controls = <BigButton pal={pal} label="1問目へ" onPress={() => setPhase('q')} />;

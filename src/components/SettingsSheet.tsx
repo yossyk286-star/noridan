@@ -47,14 +47,14 @@ export default function SettingsSheet({ visible, sound, dual, voice, night, onSo
                           accessibilityState={{ selected: on }}
                           style={[s.lv, { borderColor: col, opacity: on ? 1 : 0.55 }, on && { backgroundColor: col }]}
                         >
-                          <Text style={[s.lvText, on && { color: C.ink }]}>{v === 'yoru' ? '夜' : 'エロがり'}</Text>
+                          <Text style={[s.lvText, on && { color: C.ink }]}>{v === 'yoru' ? '夜' : '深夜'}</Text>
                           <Text style={[s.lvSub, on && { color: C.ink }]}>{v === 'yoru' ? 'たまに下ネタ' : '全部下ネタ'}</Text>
                         </Tap>
                       );
                     })}
                   </View>
                 )}
-                <Text style={s.note}>夜はしゃべるだけ、エロがりは軽いタッチあり（脱ぐは無し）。下ネタNGの人には振られへん。夜お題は「無理」で罰なしパス。</Text>
+                <Text style={s.note}>夜はしゃべるだけ、深夜は軽いタッチあり（脱ぐは無し）。下ネタNGの人には振られへん。夜お題は「無理」で罰なしパス。</Text>
                 <Tap style={s.ghost} onPress={() => { onNight(false); onClose(); }}>
                   <Text style={s.ghostText}>夜モードをやめる</Text>
                 </Tap>

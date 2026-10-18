@@ -179,7 +179,7 @@ function vHome() {
 }
 function logoBlock() {
   const night = S.night === "shinya" ? "is-night is-deep" : S.night ? "is-night" : "";
-  const sub = S.night === "shinya" ? "エロがりモード 発動中" : S.night ? "夜モード 発動中" : "ノリで断れない飲み会ゲーム";
+  const sub = S.night === "shinya" ? "深夜モード 発動中" : S.night ? "夜モード 発動中" : "ノリで断れない飲み会ゲーム";
   return `<div><h1 class="logo ${night}" id="logo"><button class="logo-btn" data-act="logo" aria-label="ノリダン">ノリダン</button></h1><p class="catch">${sub}</p>${whisper()}</div>`;
 }
 // 隠しモードのヒント（ささやき）。夜モード前は「ロゴに秘密がある」、夜モード中は「まだ奥がある」
@@ -274,7 +274,7 @@ function vHome2() {
     <div class="night-lv three">
       <button data-act="nightPick" data-v="off">通常<small>夜モードをやめる</small></button>
       <button data-act="nightPick" data-v="yoru" aria-pressed="${S.night === "yoru"}">夜<small>たまに下ネタ</small></button>
-      <button data-act="nightPick" data-v="shinya" aria-pressed="${S.night === "shinya"}">エロがり<small>${S.night === "shinya" ? "全部下ネタ" : "？？？"}</small></button>
+      <button data-act="nightPick" data-v="shinya" aria-pressed="${S.night === "shinya"}">深夜<small>${S.night === "shinya" ? "全部下ネタ" : "？？？"}</small></button>
     </div>
   </section>` : ""}
   <p class="note">お酒は20歳になってから。飲めへん人はソフドリでOK、無理は絶対させんこと。</p>`;
@@ -297,7 +297,7 @@ function vNightAsk() {
   <div class="night-ask">
     <p class="h2">隠しコマンド発動</p>
     <h1 class="night-title">夜モード</h1>
-    <p class="night-lead">恋愛・下ネタ寄りのお題が混ざるモード。夜はしゃべるだけ、エロがりはハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</p>
+    <p class="night-lead">恋愛・下ネタ寄りのお題が混ざるモード。夜はしゃべるだけ、深夜はハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</p>
     <ul class="night-rules">
       <li>全員20歳以上で、全員がOKしてること</li>
       <li>夜お題は「無理」を押したら罰なしでパスできる</li>
@@ -320,9 +320,9 @@ function vSheet() {
         <p class="h2">夜モード</p>
         <div class="night-lv">
           <button data-act="nightLv" data-v="yoru" aria-pressed="${S.night === "yoru"}">夜<small>たまに下ネタ</small></button>
-          <button data-act="nightLv" data-v="shinya" aria-pressed="${S.night === "shinya"}">エロがり<small>全部下ネタ</small></button>
+          <button data-act="nightLv" data-v="shinya" aria-pressed="${S.night === "shinya"}">深夜<small>全部下ネタ</small></button>
         </div>
-        <p class="note">夜はしゃべるだけ、エロがりは軽いタッチあり（脱ぐは無し）。下ネタNGの人には振られへん。夜お題は「無理」で罰なしパス。</p>
+        <p class="note">夜はしゃべるだけ、深夜は軽いタッチあり（脱ぐは無し）。下ネタNGの人には振られへん。夜お題は「無理」で罰なしパス。</p>
         <button class="ghost" data-act="nightOff">夜モードをやめる</button>
       </div>` : ""}
       <button class="ghost" data-act="coachReset">遊び方をもう一回見る<small class="ghost-sub">最初の説明と、各画面のひとこと説明がまた出る</small></button>
@@ -472,7 +472,7 @@ const earlyTurns = () => (S.game?.cards ?? 0) < 3;
 
 function cardClass(c) {
   if (c.bomb) return "bombc";
-  if (c.kind?.includes("エロがり")) return "deep";
+  if (c.kind?.includes("深夜")) return "deep";
   if (c.yoru) return "yoru";
   if (c.alert) return "event";
   return "";
@@ -492,7 +492,7 @@ function vCard() {
       <div class="gacha">${g.gacha.map((x, k) => `
         <div class="gacha-item ${x.night ? "night " + x.night : ""}" style="--d:calc(var(--gt, 0s) + ${(k * 0.35).toFixed(2)}s);--mc:${colorOf(x.i)}">
           <div class="capsule"><i class="top"></i><i class="bot"></i><i class="res ${x.lucky ? "ok" : ""}">${x.lucky ? "天" : "罰"}</i></div>
-          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "のエロがりの罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="x2-badge">×${x.n}</span>` : ""}</b><p>${x.lucky ? x.html : doubleHtml(x.html, x.n)}</p>${!x.lucky && x.n > 1 ? x2Meter(x.html, x.n) : ""}</div>
+          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="x2-badge">×${x.n}</span>` : ""}</b><p>${x.lucky ? x.html : doubleHtml(x.html, x.n)}</p>${!x.lucky && x.n > 1 ? x2Meter(x.html, x.n) : ""}</div>
         </div>`).join("")}</div>
     </div>`;
   }
@@ -686,7 +686,7 @@ function vCoach() {
 function vRules() {
   const md = S.game?.mode || "odai";
   const items = [...(HELP[md] || HELP.odai).rules];
-  if (S.night && md !== "vote") items.push(["夜モード", "夜・エロがりのお題や罰も混ざる。下ネタNGの人には振られへん。夜お題は「無理！」で罰なしパス"]);
+  if (S.night && md !== "vote") items.push(["夜モード", "夜・深夜のお題や罰も混ざる。下ネタNGの人には振られへん。夜お題は「無理！」で罰なしパス"]);
   return `
   <div class="sheet-back" data-act="rulesClose">
     <div class="sheet rules-sheet" role="dialog" aria-label="ルール早見表" data-stop>
@@ -845,7 +845,7 @@ const voteFxTime = (counts) => { const t = (counts || []).reduce((a, b) => a + b
 function vVoteCard() {
   const g = S.game, vt = g.vt, n = S.members.length;
   const nc = vt.night === "shinya" ? "deep" : vt.night ? "yoru" : "";
-  const qHead = `<div class="head"><span class="who"><b>第${vt.round}問</b></span><span class="meta">${vt.night ? `<span class="kind">${vt.night === "shinya" ? "エロがり" : "夜"}の質問</span>` : ""}<i class="tag">投票</i></span></div>`;
+  const qHead = `<div class="head"><span class="who"><b>第${vt.round}問</b></span><span class="meta">${vt.night ? `<span class="kind">${vt.night === "shinya" ? "深夜" : "夜"}の質問</span>` : ""}<i class="tag">投票</i></span></div>`;
   switch (vt.phase) {
     case "q": return `<div class="odai ${nc} mode-card ${S.anim ? "in" : ""}" id="card">
       ${qHead}
@@ -1268,7 +1268,7 @@ function vMmSheet() {
   const g = S.game, mm = g.mm;
   if (mm.phase === "match") {
     const c = mm.card;
-    return `<div class="deck"><div class="odai ${c.kind.includes("エロがり") ? "deep" : c.yoru ? "yoru" : ""} ${S.anim ? "in" : ""}" id="card">
+    return `<div class="deck"><div class="odai ${c.kind.includes("深夜") ? "deep" : c.yoru ? "yoru" : ""} ${S.anim ? "in" : ""}" id="card">
       <div class="head">${vWho()}<span class="meta"><i class="tag">揃った！</i></span></div>
       <p class="txt" style="font-size:${fitSize(c.html, true)}"><span>${c.html}</span></p>
     </div></div>
@@ -1303,7 +1303,7 @@ function vItCard() {
       ${itScale(it.topic)}
     </div>`;
     case "talk": case "who": return `<div class="odai ${nc} mode-card mid" id="card">
-      <div class="head"><span class="who"><b>第${it.round}問</b></span><span class="meta">${it.night ? `<span class="kind">${it.night === "shinya" ? "エロがり" : "夜"}のお題</span>` : ""}<i class="tag">お題</i></span></div>
+      <div class="head"><span class="who"><b>第${it.round}問</b></span><span class="meta">${it.night ? `<span class="kind">${it.night === "shinya" ? "深夜" : "夜"}のお題</span>` : ""}<i class="tag">お題</i></span></div>
       <div class="mid-body">
         <p class="it-big">${esc(it.topic.t)}</p>
         ${itScale(it.topic)}
@@ -1370,7 +1370,7 @@ function vIntroStage(mode, { tag = "", extra = "", btn, act, disabled = false })
     <button class="big" data-act="${act}" ${disabled ? "disabled" : ""}>${btn}</button>
   </div>`;
 }
-const nightNote = (noNg) => (S.night ? `<small>${S.night === "shinya" ? "エロがり" : "夜"}モードのお題も出る${noNg && S.members.some((m) => m.ng) ? "（下ネタNGの人がおるので今回は混ぜへん）" : ""}</small>` : "");
+const nightNote = (noNg) => (S.night ? `<small>${S.night === "shinya" ? "深夜" : "夜"}モードのお題も出る${noNg && S.members.some((m) => m.ng) ? "（下ネタNGの人がおるので今回は混ぜへん）" : ""}</small>` : "");
 const lvBox = (text = "", noNg = true) => `<p class="ng-lv">地獄度は「${LV[S.level]}」${text ? `：${text}` : ""}${nightNote(noNg)}</p>`;
 
 // ---------- 最初の人ルーレット（画面） ----------
@@ -1778,7 +1778,7 @@ function render(anim) {
   // 画面の外側（下のホームバーの所など）も同じ色にして、黒い帯が出んようにする
   document.documentElement.style.backgroundColor = getComputedStyle(document.body).getPropertyValue("--bg").trim() || "";
   document.body.classList.toggle("night-home", sc === "home" && !!(S.night || S.nightAsk));
-  document.body.classList.toggle("deep", (neon && (vtNight ? vtNight === "shinya" : c.kind?.includes("エロがり"))) || (sc === "home" && (S.nightAsk ? S.nightAsk === "shinya" : S.night === "shinya")));
+  document.body.classList.toggle("deep", (neon && (vtNight ? vtNight === "shinya" : c.kind?.includes("深夜"))) || (sc === "home" && (S.nightAsk ? S.nightAsk === "shinya" : S.night === "shinya")));
   S.anim = !!anim;
   S.gIntro = false;
   // 画面が変わった時だけスライドして入ってくる

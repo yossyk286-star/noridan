@@ -141,7 +141,7 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
                 )}
               </Wiggle>
             </Tap>
-            <Text style={[s.catch, night && { color: logoColor, textShadowColor: logoColor, textShadowRadius: 8 }]}>{night === 'shinya' ? 'エロがりモード 発動中' : night ? '夜モード 発動中' : 'ノリで断れない飲み会ゲーム'}</Text>
+            <Text style={[s.catch, night && { color: logoColor, textShadowColor: logoColor, textShadowRadius: 8 }]}>{night === 'shinya' ? '深夜モード 発動中' : night ? '夜モード 発動中' : 'ノリで断れない飲み会ゲーム'}</Text>
             <Whisper night={night} />
           </View>
           <Gear onPress={onSettings} />
@@ -285,7 +285,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
                   accessibilityState={{ selected: on }}
                   style={[s.nightLv, { borderColor: col }, on && { backgroundColor: col }]}
                 >
-                  <Text style={[s.nightLvText, on && { color: C.ink }]}>{v === 'off' ? '通常' : v === 'yoru' ? '夜' : 'エロがり'}</Text>
+                  <Text style={[s.nightLvText, on && { color: C.ink }]}>{v === 'off' ? '通常' : v === 'yoru' ? '夜' : '深夜'}</Text>
                   <Text style={[s.nightLvSub, on && { color: C.ink }]}>{v === 'off' ? '夜モードをやめる' : v === 'yoru' ? 'たまに下ネタ' : night === 'shinya' ? '全部下ネタ' : '？？？'}</Text>
                 </Tap>
               );
@@ -352,7 +352,7 @@ function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () 
     <ScrollView contentContainerStyle={s.wrap}>
       <Text style={[s.h2, { color: C.night, marginTop: 24 }]}>隠しコマンド発動</Text>
       <Neon color={C.night} style={s.nightTitle}>夜モード</Neon>
-      <Text style={s.nightLead}>恋愛・下ネタ寄りのお題が混ざるモード。夜はしゃべるだけ、エロがりはハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</Text>
+      <Text style={s.nightLead}>恋愛・下ネタ寄りのお題が混ざるモード。夜はしゃべるだけ、深夜はハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</Text>
       <View style={{ gap: 8 }}>
         {['全員20歳以上で、全員がOKしてること', '夜お題は「無理」を押したら罰なしでパスできる', 'メンバーごとに「下ネタNG」にできる。NGの人には振られへん'].map((r) => (
           <Text key={r} style={s.nightRule}>・{r}</Text>

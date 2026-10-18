@@ -19,7 +19,7 @@ const EVENTS = events as GameEvent[];
 
 /** 各要素が出る確率 */
 /**
- * エロがりモードを出すか。App Store審査で引っかかったら false にしてビルド
+ * 深夜モードを出すか。App Store審査で引っかかったら false にしてビルド
  * （Web版はそのままtrueでOK）
  */
 export const ALLOW_SHINYA = true;
@@ -183,7 +183,7 @@ export class Decks {
         // 深夜×地獄は全部下ネタ（深夜お題だけ）。それ以外の深夜は6割が深夜お題、4割が夜お題
         const deep = shinya && (level === 'jigoku' || Math.random() < 0.6);
         const tpl = deep ? this.str('shinya', odai.shinya, n) : this.str('yoru', odai.yoru, n);
-        if (tpl && canYoru(tpl, members, p)) return makeCard(deep ? 'エロがりお題' : '夜お題', tpl, members, p, { noNg: true, yoru: true });
+        if (tpl && canYoru(tpl, members, p)) return makeCard(deep ? '深夜お題' : '夜お題', tpl, members, p, { noNg: true, yoru: true });
       }
     }
     if (Math.random() < CHANCE.minna) {

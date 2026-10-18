@@ -130,7 +130,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
     case 'intro':
       card = (
         <IntroCard pal={pal} mode="gesture" tag={`${n}人`}>
-          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${LV_DESC[level]}`} note={night && !members.some((m) => m.ng) ? `${night === 'shinya' ? 'エロがり' : '夜'}モードのお題も出る` : undefined} />
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${LV_DESC[level]}`} note={night && !members.some((m) => m.ng) ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る` : undefined} />
           <Text style={[s.small, { color: fg, fontWeight: '900' }]}>1人の持ち時間</Text>
           <View style={{ flexDirection: 'row', gap: 6 }}>
             {SECS.map((v) => (
