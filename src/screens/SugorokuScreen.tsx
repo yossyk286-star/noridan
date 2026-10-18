@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
@@ -53,6 +53,7 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
   const [rolled, setRolled] = useState(false);
   const [done, setDone] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const { height: winH } = useWindowDimensions();
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
   const [intro, setIntro] = useState(!skipIntro);
@@ -290,8 +291,8 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
               { transform: [{ translateY: sheetY.interpolate({ inputRange: [0, 1], outputRange: [0, flipped ? -600 : 600] }) }, ...(flipped ? [{ rotate: '180deg' }] : [])] },
             ]}
           >
-            <ScrollView contentContainerStyle={{ gap: 12 }}>
-              <DeckStack pal={pal} minHeight={230}>
+            <ScrollView contentContainerStyle={{ gap: 12, flexGrow: 1 }}>
+              <DeckStack pal={pal} minHeight={Math.max(230, Math.round(winH * 0.38))}>
                 {st.phase === 'batsu' ? (
                   <GachaCard pal={pal} members={members} items={st.gacha} />
                 ) : (
@@ -340,7 +341,7 @@ const s = StyleSheet.create({
   dockText: { fontSize: 18, fontWeight: '900' },
   sheetBack: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
   sheet: {
-    position: 'absolute', left: 0, right: 0, maxHeight: '88%', padding: 16, paddingBottom: 26, borderWidth: 4, maxWidth: 560, alignSelf: 'center', width: '100%',
+    position: 'absolute', left: 0, right: 0, maxHeight: '88%', minHeight: '76%', padding: 16, paddingBottom: 26, borderWidth: 4, maxWidth: 560, alignSelf: 'center', width: '100%',
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 20, shadowOffset: { width: 0, height: -8 }, elevation: 12,
   },
   sheetBottom: { bottom: 0, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderBottomWidth: 0 },
