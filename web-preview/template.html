@@ -939,6 +939,28 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .wf-res.cit .wf-win { color: #1f9d55; }
 .wf-res.wolf .wf-win { color: #ff3b3b; }
 .wf-res .hand-note { margin-top: -6px; }
+/* ワードウルフ：ウルフが複数・全員市民 */
+.wf-row { display: flex; justify-content: center; align-items: flex-end; }
+.wf-row.n2 .wolf, .wf-row.n3 .wolf { width: 80px !important; height: 80px !important; margin: 0 -6px; }
+.wf-row.n3 .wolf:nth-child(2) { width: 92px !important; height: 92px !important; z-index: 1; }
+.wf-wolf.ghost .wolf { opacity: .22; filter: grayscale(1); animation: skullIn .55s cubic-bezier(.3,1.7,.5,1) both; }
+.wf-res.cit .wf-wolf.ghost .wf-stamp { color: #1f9d55; }
+.wf-words.one { grid-template-columns: 1fr; }
+.wf-words .wn { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 8px; }
+.wf-words .wn > span { display: inline-flex; align-items: center; gap: 4px; }
+.wf-words .wn i { width: 9px; height: 9px; border-radius: 50%; background: var(--mc); }
+.wf-wolf > span i { background: var(--mc); }
+.pen-tile.none { grid-column: 1 / -1; border-style: dashed; }
+.vbars li.none .nm { opacity: .75; font-size: 13px; }
+.ng-min.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.ng-min button small { display: block; font-size: 10px; opacity: .7; }
+.ng-min button:disabled { opacity: .3; }
+.wf-sets { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.wf-set { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wf-set > span { font-size: 12px; font-weight: 900; opacity: .7; white-space: nowrap; }
+.wf-set .seg { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.wf-set .seg button { padding: 6px 10px; border-radius: 999px; font-size: 13px; font-weight: 900; border: 1.5px solid color-mix(in srgb, currentColor 25%, transparent); white-space: nowrap; }
+.wf-set .seg button[aria-pressed="true"] { background: var(--card-fg, #141210); color: var(--card-bg, #fff8ec); border-color: transparent; }
 /* ワードウルフ：数え終わってからウルフの正体がめくれる */
 .wf-words.late p:first-child { animation: wfFlip .6s var(--late) cubic-bezier(.2,1.3,.4,1) both; }
 @keyframes wfFlip { 0% { transform: rotateY(-100deg) scale(.9); opacity: 0; } 40% { opacity: 1; } 100% { transform: none; opacity: 1; } }

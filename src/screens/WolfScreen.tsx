@@ -30,14 +30,20 @@ type Props = {
   onFinish: (pen: number[], turns: number, stats: Stats) => void;
 };
 type Phase = 'intro' | 'hand' | 'look' | 'talk' | 'who' | 'vhand' | 'vote' | 'done' | 'reveal' | 'guess' | 'result' | 'group' | 'batsu';
-type Round = { no: number; maj: string; min: string; night: 'yoru' | 'shinya' | false; wolf: number; order: number[]; votes: (number | null)[] };
+type Round = { no: number; maj: string; min: string; night: 'yoru' | 'shinya' | false; wolves: number[]; allCit: boolean; order: number[]; votes: (number | null)[] };
 
 const MINUTES = [2, 3, 5];
+const NONE = -1; // 投票の「ウルフはおらん」
+/** おまかせのウルフの人数：3〜6人は1人、7〜9人は2人、10人以上は3人（ウルフは半分未満） */
+const autoCount = (n: number) => (n >= 10 ? 3 : n >= 7 ? 2 : 1);
+const maxCount = (n: number) => Math.max(1, Math.min(3, Math.floor((n - 1) / 2)));
+const shuffled = (a: number[]) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const fmt = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 
 /**
- * ワードウルフ：全員にお題。1人（ウルフ）だけちょっと違うお題で、自分がどっちかは分からへん。
- * 話して投票、ウルフが一番票を集めたらウルフの負け（市民のお題を当てたら逆転）。外したら・同票なら市民全員の負け
+ * ワードウルフ：全員にお題。ウルフだけちょっと違うお題で、自分がどっちかは分からへん。話して投票（「ウルフはおらん」も選べる）。
+ * ・ウルフがおる回：一番票が多いのがウルフの誰かなら市民の勝ち（市民のお題を当てたら逆転）。市民・同票・「おらん」が一番ならウルフの勝ち
+ * ・全員市民の回（4人以上、たまに）：「おらん」に入れんかった人（誰かを疑った人）の負け
  */
 export default function WolfScreen({ members, level, night, onQuit, onSettings, onFinish }: Props) {
   useKeepAwake();
@@ -45,14 +51,22 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
   const decks = useRef(new Decks()).current;
   decks.night = night;
   decks.level = level;
+  const cfg = useRef({ count: 0, peace: true }); // ウルフの人数（0=おまかせ）・全員市民の回あり
+  const wolfCount = () => Math.min(maxCount(n), cfg.current.count || autoCount(n));
+  const peaceOk = () => cfg.current.peace && n >= 4;
   const newRound = (no: number): Round => {
     const w = decks.wolf(level, night, members);
     const s0 = (no - 1) % n;
-    return { ...w, no, wolf: Math.floor(Math.random() * n), order: members.map((_, k) => (s0 + k) % n), votes: Array(n).fill(null) };
+    const allCit = peaceOk() && Math.random() < 1 / 6; // 全員市民の回は6回に1回くらい
+    const wolves = allCit ? [] : shuffled(members.map((_, i) => i)).slice(0, wolfCount()).sort((a, b) => a - b);
+    return { ...w, no, wolves, allCit, order: members.map((_, k) => (s0 + k) % n), votes: Array(n).fill(null) };
   };
   const [round, setRound] = useState<Round>(() => newRound(1));
   const [phase, setPhase] = useState<Phase>('intro');
   const [minutes, setMinutes] = useState(3);
+  const [count, setCount] = useState(0);
+  const [peace, setPeace] = useState(true);
+  cfg.current = { count, peace };
   const [dealt, setDealt] = useState(0); // 何人目に配ってるか
   const [dealing, setDealing] = useState(true);
   const [viewer, setViewer] = useState(0);
@@ -79,17 +93,30 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
 
   useEffect(() => {
     load('nd_wf_min', 3).then((m) => MINUTES.includes(m) && setMinutes(m));
+    load('nd_wf_n', 0).then((v) => setCount(v));
+    load('nd_wf_peace', true).then((v) => setPeace(!!v));
   }, []);
 
-  const word = (i: number) => (i === round.wolf ? round.min : round.maj);
+  const isWolf = (i: number) => round.wolves.includes(i);
+  const word = (i: number) => (isWolf(i) ? round.min : round.maj);
   const counts = Array(n).fill(0) as number[];
-  round.votes.forEach((t) => t != null && counts[t]++);
-  const max = Math.max(...counts);
+  let none = 0;
+  round.votes.forEach((t) => {
+    if (t === NONE) none++;
+    else if (t != null) counts[t]++;
+  });
+  const showNone = peaceOk() || none > 0;
+  const max = Math.max(...counts, none);
   const top = counts.map((v, i) => (v === max ? i : -1)).filter((i) => i >= 0);
-  const caught = top.length === 1 && top[0] === round.wolf;
-  const losers = caught && !guessed ? [round.wolf] : members.map((_, i) => i).filter((i) => i !== round.wolf);
+  if (none === max) top.push(NONE);
+  const caught = !round.allCit && top.length === 1 && isWolf(top[0]);
+  // 負けた人：全員市民 → 誰かを疑った人。バレて逆転できず → ウルフ。逃げ切り・逆転 → 市民全員
+  const losers = round.allCit
+    ? members.map((_, i) => i).filter((i) => round.votes[i] !== NONE)
+    : caught && !guessed ? [...round.wolves] : members.map((_, i) => i).filter((i) => !isWolf(i));
+  const wolfNames = round.wolves.map((i) => members[i].name).join('・');
   const voter = round.order[k];
-  const tally = useVoteCount(counts, phase === 'reveal');
+  const tally = useVoteCount(showNone ? [...counts, none] : counts, phase === 'reveal');
 
   const startRound = (no: number) => {
     const r = newRound(no);
@@ -139,7 +166,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
     setPhase('reveal');
   };
   const doGacha = () => {
-    if (!caught) stats.wolf![round.wolf]++;
+    if (!round.allCit && !caught) round.wolves.forEach((w) => stats.wolf![w]++);
     if (losers.length === 1) {
       const items = losers.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
       setGacha(items);
@@ -176,24 +203,46 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
 
   const pal = round.night && phase !== 'batsu' && phase !== 'group' && phase !== 'intro' ? neonPal(round.night === 'shinya' ? C.deep : C.night) : STAGE[level];
   const fg = pal.cardFg;
-  const frame = phase === 'hand' || phase === 'look' ? colorOf(viewer) : phase === 'vhand' || phase === 'vote' ? colorOf(voter) : phase === 'guess' ? colorOf(round.wolf) : C.muted;
-  const words = (showMaj: boolean) => (
+  const frame = phase === 'hand' || phase === 'look' ? colorOf(viewer) : phase === 'vhand' || phase === 'vote' ? colorOf(voter) : phase === 'guess' && round.wolves.length ? colorOf(round.wolves[0]) : C.muted;
+  const kTxt = `${wolfCount()}人${peaceOk() ? '（全員市民の回もある）' : ''}`;
+  const wolfRow = (mood?: 'caught' | 'win') => (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+      {round.wolves.map((w, j) => (
+        <View key={w} style={{ marginHorizontal: round.wolves.length > 1 ? -6 : 0, zIndex: j === 1 ? 1 : 0 }}>
+          <WolfFace size={round.wolves.length === 1 ? 104 : round.wolves.length === 3 && j === 1 ? 92 : 80} mood={mood} />
+        </View>
+      ))}
+    </View>
+  );
+  const words = (showMaj: boolean) => round.allCit ? (
+    <View style={s.words}>
+      <View style={[s.wordBox, { backgroundColor: alpha('#888888', 0.12) }]}>
+        <Text style={[s.wordLab, { color: fg }]}>全員市民</Text>
+        <Text style={[s.wordText, { color: fg }]}>{round.maj}</Text>
+        <Text style={[s.wordLab, { color: fg }]}>ウルフはおらんかった</Text>
+      </View>
+    </View>
+  ) : (
     <View style={s.words}>
       <View style={[s.wordBox, { backgroundColor: alpha('#888888', 0.12), borderWidth: 2, borderColor: 'rgba(255,59,59,0.45)' }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <WolfFace size={22} />
-          <Text style={[s.wordLab, { color: '#ff3b3b', opacity: 1 }]}>ウルフ</Text>
+          <Text style={[s.wordLab, { color: '#ff3b3b', opacity: 1 }]}>ウルフ{round.wolves.length > 1 ? `${round.wolves.length}人` : ''}</Text>
         </View>
         <Text style={[s.wordText, { color: fg }]}>{round.min}</Text>
-        <View style={s.wordWho}>
-          <View style={[s.dot, { backgroundColor: colorOf(round.wolf) }]} />
-          <Text style={[s.wordLab, { color: fg }]} numberOfLines={1}>{members[round.wolf].name}</Text>
+        <View style={[s.wordWho, { flexWrap: 'wrap', justifyContent: 'center' }]}>
+          {round.wolves.map((w) => (
+            <View key={w} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={[s.dot, { backgroundColor: colorOf(w) }]} />
+              <Text style={[s.wordLab, { color: fg }]} numberOfLines={1}>{members[w].name}</Text>
+            </View>
+          ))}
         </View>
       </View>
       <View style={[s.wordBox, { backgroundColor: alpha('#888888', 0.12) }]}>
         <Text style={[s.wordLab, { color: fg }]}>市民</Text>
         <Text style={[s.wordText, { color: fg }]}>{showMaj ? round.maj : '？？？'}</Text>
-        <Text style={[s.wordLab, { color: fg }]}>ほか{n - 1}人</Text>
+        <Text style={[s.wordLab, { color: fg }]}>ほか{n - round.wolves.length}人</Text>
       </View>
     </View>
   );
@@ -205,17 +254,9 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       card = (
         <IntroCard pal={pal} mode="wolf" tag={`${n}人`}>
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
-          <Text style={[s.small, { color: fg, fontWeight: '900' }]}>話し合いの時間</Text>
-          <View style={s.mins}>
-            {MINUTES.map((m) => {
-              const on = minutes === m;
-              return (
-                <Tap key={m} onPress={() => { setMinutes(m); save('nd_wf_min', m); }} style={[s.min, { borderColor: alpha('#141210', 0.25) }, on && { backgroundColor: fg, borderColor: fg }]}>
-                  <Text style={[s.minText, { color: on ? pal.cardBg : fg }]}>{m}分</Text>
-                </Tap>
-              );
-            })}
-          </View>
+          <SetRow label="話し合い" fg={fg} bg={pal.cardBg} opts={MINUTES.map((m) => ({ label: `${m}分`, on: minutes === m, press: () => { setMinutes(m); save('nd_wf_min', m); } }))} />
+          <SetRow label="ウルフ" fg={fg} bg={pal.cardBg} opts={[{ label: `おまかせ(${Math.min(autoCount(n), maxCount(n))})`, on: !count, press: () => { setCount(0); save('nd_wf_n', 0); } }, ...[1, 2, 3].filter((c) => c <= maxCount(n)).map((c) => ({ label: `${c}人`, on: count === c, press: () => { setCount(c); save('nd_wf_n', c); } }))]} />
+          {n >= 4 && <SetRow label="全員市民の回" fg={fg} bg={pal.cardBg} opts={[{ label: 'たまに', on: peace, press: () => { setPeace(true); save('nd_wf_peace', true); } }, { label: 'なし', on: !peace, press: () => { setPeace(false); save('nd_wf_peace', false); } }]} />}
         </IntroCard>
       );
       controls = <BigButton pal={pal} label="お題を配る" onPress={() => startRound(1)} />;
@@ -258,7 +299,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
         <ModeCard pal={pal} center>
           <Text style={[s.timer, { color: !timeUp && clock.left < 30 ? '#ff3b3b' : fg }]}>{fmt(timeUp ? 0 : clock.left)}</Text>
           <Lead fg={fg}>{timeUp ? '時間切れ！\n投票へ' : 'お題の話をして\nウルフを探せ！'}</Lead>
-          <Note fg={fg}>{`${n}人のうち1人だけ、ちょっと違うお題。\n自分がウルフかもしれへん`}</Note>
+          <Note fg={fg}>{`${n}人のうちウルフは${kTxt}。\n自分がウルフかもしれへん`}</Note>
         </ModeCard>
       );
       controls = (
@@ -295,6 +336,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
           <Text style={[s.qSmall, { color: fg }]}>ウルフやと思うのは？</Text>
           <View style={{ flex: 1 }} />
           <NameTiles members={members} list={members.map((_, i) => i).filter((i) => i !== voter)} fg={fg} cols={2} onPress={vote} />
+          {peaceOk() && <Outline label="ウルフはおらん" fg={fg} onPress={() => vote(NONE)} style={{ flex: 0, borderStyle: 'dashed' }} />}
         </ModeCard>
       );
       controls = <Text style={[s.hint, { color: pal.muted }]}>押したらすぐ次の人へ。誰に入れたかは出えへん</Text>;
@@ -309,39 +351,45 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       controls = <BigButton pal={pal} label="結果発表" onPress={reveal} />;
       break;
     case 'reveal': {
-      const rows = members.map((_, i) => ({ i, v: counts[i] })).sort((a, b) => b.v - a.v);
-      const res = caught ? `ウルフを見つけた！でも${members[round.wolf].name}に逆転チャンス` : top.length > 1 ? '同票で決まらず。ウルフの逃げ切り！' : `${members[top[0]].name}は市民。ウルフの逃げ切り！`;
+      const rows = members.map((_, i) => ({ i, v: counts[i] }));
+      if (showNone) rows.push({ i: NONE, v: none });
+      rows.sort((a, b) => b.v - a.v);
+      const res = round.allCit ? (losers.length ? '実は全員市民！疑った人の負け' : '実は全員市民！全員見抜いた')
+        : caught ? `ウルフを見つけた！でも${wolfNames}に逆転チャンス`
+        : top.length > 1 ? '同票で決まらず。ウルフの逃げ切り！'
+        : top[0] === NONE ? '「おらん」が一番。ウルフの逃げ切り！'
+        : `${members[top[0]].name}は市民。ウルフの逃げ切り！`;
       card = (
         <ModeCard pal={pal}>
           <Text style={[s.no, { color: fg }]}>第{round.no}回戦</Text>
           <View style={{ flex: 1 }} />
           <View style={{ gap: 8 }}>
             {rows.map((r, j) => (
-              <Bar key={r.i} name={members[r.i].name} color={colorOf(r.i)} v={tally.shown[r.i] ?? 0} max={max} red={tally.done && r.i === round.wolf} fg={fg} />
+              <Bar key={r.i} name={r.i === NONE ? 'ウルフはおらん' : members[r.i].name} color={r.i === NONE ? '#8d857a' : colorOf(r.i)} v={tally.shown[r.i === NONE ? n : r.i] ?? 0} max={max} red={tally.done && isWolf(r.i)} fg={fg} />
             ))}
           </View>
           {tally.done ? <FlipIn>{words(!caught)}</FlipIn> : <View style={{ height: 96 }} />}
-          {tally.done && <Text style={[s.rule, caught ? s.ruleGood : s.ruleBad]}>{res}</Text>}
+          {tally.done && <Text style={[s.rule, caught || (round.allCit && !losers.length) ? s.ruleGood : s.ruleBad]}>{res}</Text>}
         </ModeCard>
       );
-      controls = caught ? <BigButton pal={pal} label="逆転チャンスへ" onPress={() => setPhase('guess')} /> : <BigButton pal={pal} danger label="罰を決める" onPress={() => setPhase('result')} />;
+      controls = caught ? <BigButton pal={pal} label="逆転チャンスへ" onPress={() => setPhase('guess')} /> : <BigButton pal={pal} danger={losers.length > 0} label={round.allCit ? '結果を見る' : '罰を決める'} onPress={() => setPhase('result')} />;
       break;
     }
     case 'guess':
       card = (
         <ModeCard pal={pal} center>
           <Prog fg={fg}>逆転チャンス</Prog>
-          <WolfFace size={104} />
-          <WolfTag name={members[round.wolf].name} color={colorOf(round.wolf)} fg={fg} label="ウルフ：" />
+          {wolfRow()}
+          <WolfTag name={wolfNames} color={colorOf(round.wolves[0] ?? 0)} fg={fg} label="ウルフ：" />
           <Lead fg={fg}>{'市民のお題を\n当てろ！'}</Lead>
-          <Note fg={fg}>{`${members[round.wolf].name}が声に出して答える。\n合ってるかは市民のみんなが判定`}</Note>
+          <Note fg={fg}>{`${round.wolves.length > 1 ? `${wolfNames}で相談して、1回だけ答える。` : `${wolfNames}が声に出して答える。`}\n合ってるかは市民のみんなが判定`}</Note>
         </ModeCard>
       );
       controls = (
         <View style={s.verdict}>
           <Tap style={[s.vd, { backgroundColor: '#e8202a' }]} onPress={() => { setGuessed(false); setPhase('result'); }}>
             <Text style={[s.vdText, { color: '#fff' }]}>外れ</Text>
-            <Text style={[s.vdSub, { color: '#fff' }]}>{members[round.wolf].name}に罰</Text>
+            <Text style={[s.vdSub, { color: '#fff' }]}>ウルフに罰</Text>
           </Tap>
           <Tap style={[s.vd, { backgroundColor: pal.fg }]} onPress={() => { setGuessed(true); setPhase('result'); }}>
             <Text style={[s.vdText, { color: pal.bg }]}>当たり！</Text>
@@ -351,21 +399,40 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       );
       break;
     case 'result': {
-      const wolfLose = losers.length === 1 && losers[0] === round.wolf;
-      const how = wolfLose ? 'ウルフをつかまえた' : caught ? 'ウルフが市民のお題を当てた' : top.length > 1 ? '同票でウルフを決められへんかった' : 'ウルフを見抜けへんかった';
+      if (round.allCit) {
+        const ok = !losers.length;
+        card = (
+          <ModeCard pal={pal} center>
+            <Prog fg={fg}>{`第${round.no}回戦`}</Prog>
+            <View>
+              <View style={{ opacity: 0.25 }}><WolfFace size={104} /></View>
+              <Stamp text="不在！" color={ok ? '#1f9d55' : '#ff3b3b'} />
+            </View>
+            <WolfTag name="" color="#8d857a" fg={fg} label="ウルフはおらんかった" />
+            <Text style={[s.win, { color: ok ? '#1f9d55' : '#ff3b3b' }]} numberOfLines={1} adjustsFontSizeToFit>{ok ? '全員見抜いた！' : '全員市民やった！'}</Text>
+            <Note fg={fg}>{ok ? '全員が「ウルフはおらん」に入れた。全員セーフ' : '誰かを疑った人の負け'}</Note>
+            {words(true)}
+            <Text style={[s.rule, ok ? s.ruleGood : s.ruleBad, { alignSelf: 'center' }]}>{ok ? '今回は罰なし' : `${losers.map((i) => members[i].name).join('・')}に罰`}</Text>
+          </ModeCard>
+        );
+        controls = ok ? <BigButton pal={pal} label="次の回戦" onPress={() => startRound(round.no + 1)} /> : <BigButton pal={pal} danger label="罰ガチャ" onPress={doGacha} />;
+        break;
+      }
+      const wolfLose = caught && !guessed;
+      const how = wolfLose ? 'ウルフをつかまえた' : caught ? 'ウルフが市民のお題を当てた' : top.length > 1 ? '同票でウルフを決められへんかった' : top[0] === NONE ? '「ウルフはおらん」にだまされた' : 'ウルフを見抜けへんかった';
       const winColor = wolfLose ? '#1f9d55' : '#ff3b3b';
       card = (
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round.no}回戦`}</Prog>
           <View>
-            <WolfFace size={104} mood={wolfLose ? 'caught' : 'win'} />
+            {wolfRow(wolfLose ? 'caught' : 'win')}
             <Stamp text={wolfLose ? '御用！' : caught ? '逆転！' : '逃げ切り！'} color={winColor} />
           </View>
-          <WolfTag name={members[round.wolf].name} color={colorOf(round.wolf)} fg={fg} label="ウルフは" />
+          <WolfTag name={wolfNames} color={colorOf(round.wolves[0] ?? 0)} fg={fg} label="ウルフは" />
           <Text style={[s.win, { color: winColor }]} numberOfLines={1} adjustsFontSizeToFit>{wolfLose ? '市民の勝ち！' : caught ? 'ウルフの逆転勝ち！' : 'ウルフの勝ち！'}</Text>
           <Note fg={fg}>{how}</Note>
           {words(true)}
-          <Text style={[s.rule, s.ruleBad, { alignSelf: 'center' }]}>{wolfLose ? `ウルフの${members[round.wolf].name}に罰` : `市民の${n - 1}人全員に罰`}</Text>
+          <Text style={[s.rule, s.ruleBad, { alignSelf: 'center' }]}>{wolfLose ? `ウルフの${wolfNames}に罰` : `市民の${losers.length}人全員に罰`}</Text>
         </ModeCard>
       );
       controls = <BigButton pal={pal} danger label="罰ガチャ" onPress={doGacha} />;
@@ -509,6 +576,22 @@ function Tear({ size, x, delay }: { size: number; x: number; delay: number }) {
   );
 }
 
+/** 設定の1行：左に見出し、右に小さいボタン */
+function SetRow({ label, fg, bg, opts }: { label: string; fg: string; bg: string; opts: { label: string; on: boolean; press: () => void }[] }) {
+  return (
+    <View style={s.setRow}>
+      <Text style={[s.setLabel, { color: fg }]}>{label}</Text>
+      <View style={s.seg}>
+        {opts.map((o) => (
+          <Tap key={o.label} onPress={o.press} style={[s.segBtn, { borderColor: alpha('#888888', 0.4) }, o.on && { backgroundColor: fg, borderColor: fg }]}>
+            <Text style={[s.segText, { color: o.on ? bg : fg }]}>{o.label}</Text>
+          </Tap>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 /** 「ウルフは〇〇」の札 */
 function WolfTag({ name, color, fg, label }: { name: string; color: string; fg: string; label: string }) {
   return (
@@ -588,6 +671,11 @@ const s = StyleSheet.create({
   wordText: { fontFamily: F.display, fontSize: 22, lineHeight: 30, textAlign: 'center' },
   wordWho: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%' },
   dot: { width: 9, height: 9, borderRadius: 5 },
+  setRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  setLabel: { fontSize: 12, fontWeight: '900', opacity: 0.7 },
+  seg: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 4, flexShrink: 1 },
+  segBtn: { borderWidth: 1.5, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 10 },
+  segText: { fontSize: 13, fontWeight: '900' },
   wolfTag: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingHorizontal: 12, borderRadius: 999, maxWidth: '90%' },
   wolfTagText: { fontWeight: '900', fontSize: 14 },
   stamp: { position: 'absolute', top: 4, right: -64, borderWidth: 3, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },

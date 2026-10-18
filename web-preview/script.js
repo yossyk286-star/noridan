@@ -181,7 +181,7 @@ function newGame(mode, again = false) {
   if (mode === "ngword") { S.game.doer = -1; S.game.ng = { phase: "setup", minutes: store.get("nd_ng_min", 10), words: [], viewer: 0, dealing: false, out: null, res: null, left: 0, endAt: 0, topic: null }; render(true); return; }
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "intro", round: 0 }; if (again) startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
-  if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: store.get("nd_wf_min", 3) }; render(true); return; }
+  if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: store.get("nd_wf_min", 3), count: store.get("nd_wf_n", 0), peace: store.get("nd_wf_peace", true), wolves: [] }; render(true); return; }
   if (mode === "pittari") { S.game.doer = -1; S.game.pt = { phase: "intro", round: 0 }; if (again) ptRound(); render(true); return; }
   if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
   if (mode === "gesture") { S.game.doer = 0; S.game.gs = { phase: "intro", sec: store.get("nd_gs_sec", 60), score: Array(n).fill(0), actor: 0, acted: 0, word: null, got: 0, endAt: 0 }; render(true); return; }
@@ -625,9 +625,16 @@ function deckPop(key, list) {
 }
 
 // ---------- ワードウルフ ----------
-// 全員にお題。1人（ウルフ）だけちょっと違うお題で、自分がどっちかは分からへん。話して投票、
-// ウルフが一番票を集めたらウルフの負け（ただし市民のお題を当てたら逆転）。外したら・同票なら市民全員の負け
+// 全員にお題。ウルフだけちょっと違うお題で、自分がどっちかは分からへん。話して投票（「ウルフはおらん」も選べる）。
+// ・ウルフがおる回：一番票が多いのがウルフの誰かなら市民の勝ち（ただしウルフが市民のお題を当てたら逆転）。
+//   市民・同票・「おらん」が一番なら、ウルフの勝ちで市民全員の負け
+// ・全員市民の回（4人以上、たまに）：「おらん」に入れんかった人（誰かを疑った人）の負け
 const WF_MIN = [2, 3, 5];
+const WF_NONE = -1; // 投票の「ウルフはおらん」
+const wfAuto = (n) => (n >= 10 ? 3 : n >= 7 ? 2 : 1);
+const wfMax = (n) => Math.max(1, Math.min(3, Math.floor((n - 1) / 2))); // ウルフは半分未満
+const wfCount = (wf, n) => Math.min(wfMax(n), wf.count || wfAuto(n));
+const wfPeaceOk = (wf, n) => wf.peace && n >= 4;
 function wfRound() {
   const g = S.game, wf = g.wf, n = S.members.length;
   wf.round++;
@@ -638,7 +645,9 @@ function wfRound() {
   const sw = Math.random() < 0.5;
   wf.maj = sw ? pair[1] : pair[0];
   wf.min = sw ? pair[0] : pair[1];
-  wf.wolf = rnd(n);
+  // 全員市民の回は6回に1回くらい
+  wf.allCit = wfPeaceOk(wf, n) && Math.random() < 1 / 6;
+  wf.wolves = wf.allCit ? [] : shuffle(S.members.map((_, i) => i)).slice(0, wfCount(wf, n)).sort((x, y) => x - y);
   const s0 = (wf.round - 1) % n;
   wf.order = S.members.map((_, k) => (s0 + k) % n);
   wf.viewer = wf.order[0]; wf.dealt = 0; wf.dealing = true;
@@ -647,7 +656,8 @@ function wfRound() {
   wf.phase = "hand";
   g.phase = "play"; g.gacha = []; g.doer = -1;
 }
-const wfWord = (i) => (i === S.game.wf.wolf ? S.game.wf.min : S.game.wf.maj);
+const isWolf = (i) => S.game.wf.wolves.includes(i);
+const wfWord = (i) => (isWolf(i) ? S.game.wf.min : S.game.wf.maj);
 function wfTalk() {
   const wf = S.game.wf;
   wf.phase = "talk"; wf.dealing = false;
@@ -658,20 +668,24 @@ function wfReveal() {
   const g = S.game, wf = g.wf, n = S.members.length;
   stopTimer(); wf.endAt = 0;
   const c = Array(n).fill(0);
-  wf.votes.forEach((t) => { if (t != null) c[t]++; });
-  wf.counts = c;
-  const max = Math.max(...c);
+  let none = 0;
+  wf.votes.forEach((t) => { if (t === WF_NONE) none++; else if (t != null) c[t]++; });
+  wf.counts = c; wf.none = none;
+  const max = Math.max(...c, none);
   wf.top = c.map((v, i) => (v === max ? i : -1)).filter((i) => i >= 0);
-  wf.caught = wf.top.length === 1 && wf.top[0] === wf.wolf;
+  if (none === max) wf.top.push(WF_NONE);
+  wf.caught = !wf.allCit && wf.top.length === 1 && isWolf(wf.top[0]);
   g.turn++;
   wf.phase = "reveal";
 }
-// 負けた人：バレて逆転できず → ウルフだけ。逃げ切り・逆転 → 市民全員
+// 負けた人：全員市民 → 誰かを疑った人。バレて逆転できず → ウルフ。逃げ切り・逆転 → 市民全員
 function wfLosers() {
   const wf = S.game.wf;
-  if (wf.caught && !wf.guessed) return [wf.wolf];
-  return S.members.map((_, i) => i).filter((i) => i !== wf.wolf);
+  if (wf.allCit) return S.members.map((_, i) => i).filter((i) => wf.votes[i] !== WF_NONE);
+  if (wf.caught && !wf.guessed) return [...wf.wolves];
+  return S.members.map((_, i) => i).filter((i) => !isWolf(i));
 }
+const wolfNames = () => S.game.wf.wolves.map((i) => esc(S.members[i].name)).join("・");
 
 // 市民全員の罰：全員で同じ罰を1つ（人によって中身が変わるもの・「次の自分の番まで」系は外す）
 function wfGroupBatsu() {
