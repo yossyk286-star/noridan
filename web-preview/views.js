@@ -284,7 +284,7 @@ function vNightAsk() {
   if (S.nightAsk === "shinya") return `
   <div class="night-ask deep">
     <p class="h2">さらに奥へ…</p>
-    <h1 class="night-title is-deep">深夜<small>（エロがりモード）</small></h1>
+    <h1 class="night-title is-deep">深夜モード<small>（エロがりモード）</small></h1>
     <p class="night-lead">お題が<b>全部</b>下ネタになる。ハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</p>
     <ul class="night-rules">
       <li>全員20歳以上で、全員がOKしてること</li>
