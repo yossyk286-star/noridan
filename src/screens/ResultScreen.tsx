@@ -23,7 +23,10 @@ type Props = {
   night?: Night;
   mode: Mode;
   level: Level;
+  /** 遊び方の選択に戻る */
   onHome: () => void;
+  /** メンバー登録に戻る */
+  onMembers?: () => void;
   onAgain: () => void;
   /** NGワードの時：最後のみんなのワード */
   words?: string[];
@@ -33,7 +36,7 @@ type Props = {
 
 const MODE_LABEL: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票', wolf: 'ワードウルフ', pittari: 'ピッタリ予想' };
 
-export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onAgain, words, scores }: Props) {
+export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onMembers, onAgain, words, scores }: Props) {
   const rows = members.map((m, i) => ({ m, i, n: pen[i] ?? 0 })).sort((a, b) => b.n - a.n);
   const top = rows[0]?.n ?? 0;
   const who = top === 0 ? '該当者なし' : rows.filter((r) => r.n === top).map((r) => r.m.name).join('・');
@@ -100,6 +103,9 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
   return (
     <View style={{ flex: 1 }}>
     <ScrollView contentContainerStyle={s.wrap}>
+      <Tap onPress={onHome} accessibilityLabel="遊び方の選択に戻る" style={s.back}>
+        <Icon name="back" color={C.paper} size={20} />
+      </Tap>
       <View style={s.shot}>
       {/* 放射光の上に、リボンの見出し・表彰台・MVP */}
       <View style={s.hero}>
@@ -197,13 +203,19 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       {!!msg && <Text style={s.sub}>{msg}</Text>}
 
       <View style={s.row}>
-        <Tap style={s.ghost} onPress={onHome}>
-          <Text style={s.ghostText}>メンバー変更</Text>
+        <Tap style={[s.ghost, { flexDirection: 'row', justifyContent: 'center', gap: 6 }]} onPress={onHome}>
+          <Icon name="back" color={C.paper} size={18} />
+          <Text style={s.ghostText}>遊び方を選ぶ</Text>
         </Tap>
         <Tap style={s.again} onPress={onAgain}>
           <Text style={s.againText}>もう一回</Text>
         </Tap>
       </View>
+      {onMembers && (
+        <Tap onPress={onMembers} style={{ alignSelf: 'center', padding: 6 }}>
+          <Text style={s.link}>メンバーを変える</Text>
+        </Tap>
+      )}
     </ScrollView>
     {/* シェア用のストーリー画像（360×640 で組んで 1080×1920 で撮る） */}
     <View pointerEvents="none" style={s.offscreen}>
@@ -411,6 +423,8 @@ function resultTip(night: Night) {
 
 const s = StyleSheet.create({
   why: { color: C.muted, fontSize: 11, fontWeight: '700' },
+  back: { position: 'absolute', top: 14, left: 16, zIndex: 5, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(247,243,234,0.1)' },
+  link: { color: C.muted, fontSize: 13, fontWeight: '900', textDecorationLine: 'underline' },
   tipRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   tip: { flex: 1, color: C.muted, fontSize: 13, fontWeight: '700' },
   wrap: { padding: 16, paddingBottom: 40, gap: 18, maxWidth: 560, width: '100%', alignSelf: 'center' },

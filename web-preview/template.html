@@ -465,6 +465,14 @@ body[data-level="jigoku"] .sg-cell .in { box-shadow: 0 0 0 1px rgba(255,42,42,.3
 .res-head { font-family: var(--display); font-weight: 400; font-size: clamp(44px, 14vw, 68px); line-height: 1; margin: 18px 0 0; color: var(--blood); }
 .res-sub { margin: 0; color: var(--muted); font-weight: 700; }
 .mvp { padding: 22px 18px; border-radius: 20px; background: var(--yuru); color: var(--ink); display: flex; flex-direction: column; gap: 4px; animation: flipIn .7s cubic-bezier(.2,1.3,.4,1) both; box-shadow: 0 10px 0 rgba(0,0,0,.35); }
+/* 結果発表：左上の戻るボタンと、下の「遊び方を選ぶ」「メンバーを変える」 */
+.res-back { position: absolute; top: 14px; left: 0; z-index: 5; width: 40px; height: 40px; border-radius: 50%; background: rgba(247,243,234,.1); }
+.res-back svg { width: 20px; height: 20px; }
+.result { position: relative; }
+.result .row2 .ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.result .row2 .ghost svg { width: 18px; height: 18px; }
+.res-link { align-self: center; padding: 6px 12px; font-size: 13px; font-weight: 900; color: var(--muted); text-decoration: underline; text-underline-offset: 4px; }
+.result.wait:not(.landed) .res-back { visibility: visible; }
 /* 結果発表：放射光の上に、リボンの見出し・表彰台・MVP */
 .res-hero { position: relative; isolation: isolate; margin: 0 -16px; padding: 18px 16px 6px; display: flex; flex-direction: column; align-items: center; gap: 12px; overflow: hidden; text-align: center; }
 .rays { position: absolute; inset: -40% -40% auto; height: 180%; z-index: -1; background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(232,32,42,.22) 0 9deg, transparent 9deg 18deg); -webkit-mask: radial-gradient(circle at 50% 50%, #000 0, transparent 62%); mask: radial-gradient(circle at 50% 50%, #000 0, transparent 62%); animation: raySpin 30s linear infinite; }

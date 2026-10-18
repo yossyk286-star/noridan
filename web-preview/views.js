@@ -1527,6 +1527,7 @@ function vResult() {
        <div class="mvp" ${slot ? "data-slot" : ""}><small>MVP（悪い意味で）</small><b data-final="${esc(who)}">${slot ? "？？？" : esc(who)}</b><span>罰 ${top.n}回${tie.length === 1 && whyText(top.i) ? `（${esc(whyText(top.i))}）` : ""}</span></div>`;
   const MEDAL = (k) => `<i class="medal" style="--m:${["#ffd23f", "#ff5aa5", "#3ec7ff", "#7be36b", "#ff8a1a", "#b48cff"][k % 6]}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h4l1 5-3 2zM17 2h-4l-1 5 3 2z" fill="currentColor" opacity=".55"/><circle cx="12" cy="15" r="7" fill="var(--m)" stroke="#141210" stroke-width="1.6"/><path d="m12 11 1.2 2.5 2.7.3-2 1.9.6 2.7-2.5-1.4-2.5 1.4.6-2.7-2-1.9 2.7-.3z" fill="#fff"/></svg></i>`;
   return `<div class="result ${slot ? "wait" : ""}">
+  <button class="icon-btn res-back" data-act="home" aria-label="遊び方の選択に戻る">${ICON.back}</button>
   <section class="res-hero">
     <div class="rays" aria-hidden="true"></div>
     <p class="res-sub">${esc(modeLine(g))}</p>
@@ -1542,7 +1543,8 @@ function vResult() {
   <p class="tip">${MOON}<span>${esc(resultTip())}</span></p>
   <button class="share-btn" data-act="share">${ICON.share}<span>画像で保存・シェア</span></button>
   ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}
-  <div class="row2"><button class="ghost" data-act="home">メンバー変更</button><button class="big" data-act="again">もう一回</button></div>
+  <div class="row2"><button class="ghost" data-act="home">${ICON.back}<span>遊び方を選ぶ</span></button><button class="big" data-act="again">もう一回</button></div>
+  <button class="res-link" data-act="members">メンバーを変える</button>
   </div>`;
 }
 
@@ -1888,6 +1890,7 @@ function onClick(e) {
     case "del": S.members.splice(i, 1); saveMembers(); render(); break;
     case "lv": S.level = b.dataset.v; store.set("nd_level", S.level); render(); break;
     case "step1": S.step = 1; render(); break;
+    case "members": stopTimer(); S.screen = "home"; S.step = 1; render(); window.scrollTo(0, 0); break;
     case "step2": S.step = 2; render(); window.scrollTo(0, 0); break;
     case "start": rememberGroup(); newGame(b.dataset.m); break;
     case "home": stopTimer(); S.menu = false; S.ask = null; S.screen = "home"; S.step = 2; render(); break;

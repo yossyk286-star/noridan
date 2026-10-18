@@ -202,6 +202,7 @@ export default function App() {
               scores={screen.scores}
               level={level}
               onHome={home}
+              onMembers={() => { stopSpeak(); setScreen({ name: 'home', step: 1 }); }}
               onAgain={() => start(screen.mode, true)}
             />
           )}

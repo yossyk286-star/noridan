@@ -465,6 +465,14 @@ body[data-level="jigoku"] .sg-cell .in { box-shadow: 0 0 0 1px rgba(255,42,42,.3
 .res-head { font-family: var(--display); font-weight: 400; font-size: clamp(44px, 14vw, 68px); line-height: 1; margin: 18px 0 0; color: var(--blood); }
 .res-sub { margin: 0; color: var(--muted); font-weight: 700; }
 .mvp { padding: 22px 18px; border-radius: 20px; background: var(--yuru); color: var(--ink); display: flex; flex-direction: column; gap: 4px; animation: flipIn .7s cubic-bezier(.2,1.3,.4,1) both; box-shadow: 0 10px 0 rgba(0,0,0,.35); }
+/* 結果発表：左上の戻るボタンと、下の「遊び方を選ぶ」「メンバーを変える」 */
+.res-back { position: absolute; top: 14px; left: 0; z-index: 5; width: 40px; height: 40px; border-radius: 50%; background: rgba(247,243,234,.1); }
+.res-back svg { width: 20px; height: 20px; }
+.result { position: relative; }
+.result .row2 .ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.result .row2 .ghost svg { width: 18px; height: 18px; }
+.res-link { align-self: center; padding: 6px 12px; font-size: 13px; font-weight: 900; color: var(--muted); text-decoration: underline; text-underline-offset: 4px; }
+.result.wait:not(.landed) .res-back { visibility: visible; }
 /* 結果発表：放射光の上に、リボンの見出し・表彰台・MVP */
 .res-hero { position: relative; isolation: isolate; margin: 0 -16px; padding: 18px 16px 6px; display: flex; flex-direction: column; align-items: center; gap: 12px; overflow: hidden; text-align: center; }
 .rays { position: absolute; inset: -40% -40% auto; height: 180%; z-index: -1; background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(232,32,42,.22) 0 9deg, transparent 9deg 18deg); -webkit-mask: radial-gradient(circle at 50% 50%, #000 0, transparent 62%); mask: radial-gradient(circle at 50% 50%, #000 0, transparent 62%); animation: raySpin 30s linear infinite; }
@@ -3625,6 +3633,7 @@ function vResult() {
        <div class="mvp" ${slot ? "data-slot" : ""}><small>MVP（悪い意味で）</small><b data-final="${esc(who)}">${slot ? "？？？" : esc(who)}</b><span>罰 ${top.n}回${tie.length === 1 && whyText(top.i) ? `（${esc(whyText(top.i))}）` : ""}</span></div>`;
   const MEDAL = (k) => `<i class="medal" style="--m:${["#ffd23f", "#ff5aa5", "#3ec7ff", "#7be36b", "#ff8a1a", "#b48cff"][k % 6]}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h4l1 5-3 2zM17 2h-4l-1 5 3 2z" fill="currentColor" opacity=".55"/><circle cx="12" cy="15" r="7" fill="var(--m)" stroke="#141210" stroke-width="1.6"/><path d="m12 11 1.2 2.5 2.7.3-2 1.9.6 2.7-2.5-1.4-2.5 1.4.6-2.7-2-1.9 2.7-.3z" fill="#fff"/></svg></i>`;
   return `<div class="result ${slot ? "wait" : ""}">
+  <button class="icon-btn res-back" data-act="home" aria-label="遊び方の選択に戻る">${ICON.back}</button>
   <section class="res-hero">
     <div class="rays" aria-hidden="true"></div>
     <p class="res-sub">${esc(modeLine(g))}</p>
@@ -3640,7 +3649,8 @@ function vResult() {
   <p class="tip">${MOON}<span>${esc(resultTip())}</span></p>
   <button class="share-btn" data-act="share">${ICON.share}<span>画像で保存・シェア</span></button>
   ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}
-  <div class="row2"><button class="ghost" data-act="home">メンバー変更</button><button class="big" data-act="again">もう一回</button></div>
+  <div class="row2"><button class="ghost" data-act="home">${ICON.back}<span>遊び方を選ぶ</span></button><button class="big" data-act="again">もう一回</button></div>
+  <button class="res-link" data-act="members">メンバーを変える</button>
   </div>`;
 }
 
@@ -3986,6 +3996,7 @@ function onClick(e) {
     case "del": S.members.splice(i, 1); saveMembers(); render(); break;
     case "lv": S.level = b.dataset.v; store.set("nd_level", S.level); render(); break;
     case "step1": S.step = 1; render(); break;
+    case "members": stopTimer(); S.screen = "home"; S.step = 1; render(); window.scrollTo(0, 0); break;
     case "step2": S.step = 2; render(); window.scrollTo(0, 0); break;
     case "start": rememberGroup(); newGame(b.dataset.m); break;
     case "home": stopTimer(); S.menu = false; S.ask = null; S.screen = "home"; S.step = 2; render(); break;
