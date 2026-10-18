@@ -146,7 +146,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
     case 'intro':
       card = (
         <IntroCard pal={pal} mode="ito" tag="協力">
-          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? 'エロがり' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
         </IntroCard>
       );
       controls = <BigButton pal={pal} label="数字を配る" onPress={newRound} />;
@@ -183,7 +183,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
     case 'who':
       card = (
         <ModeCard pal={pal}>
-          <Text style={[s.title, { color: fg }]}>第{round}問{nightQ ? `（${nightQ === 'shinya' ? '深夜' : '夜'}のお題）` : ''}</Text>
+          <Text style={[s.title, { color: fg }]}>第{round}問{nightQ ? `（${nightQ === 'shinya' ? 'エロがり' : '夜'}のお題）` : ''}</Text>
           <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
             <Text style={[s.big, { color: fg }]}>{topic.t}</Text>
             {scale}

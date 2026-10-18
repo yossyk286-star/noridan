@@ -132,7 +132,7 @@ function drawOdai(p) {
       // 深夜×地獄は全部下ネタ（深夜お題だけ）。それ以外の深夜は6割が深夜お題、4割が夜お題
       const deep = S.night === "shinya" && (S.level === "jigoku" || Math.random() < 0.6);
       const tpl = deep ? draw("shinya", DATA.odai.shinya) : draw("yoru", DATA.odai.yoru);
-      if (tpl && canYoru(tpl, p)) return makeCard(deep ? "深夜お題" : "夜お題", tpl, p, { noNg: true }, { yoru: true });
+      if (tpl && canYoru(tpl, p)) return makeCard(deep ? "エロがりお題" : "夜お題", tpl, p, { noNg: true }, { yoru: true });
     }
   }
   if (Math.random() < CHANCE.minna) { const t = draw("minna", DATA.odai.minna); if (t) return makeCard("全員参加", t, p, {}, { solo: false }); }
@@ -939,7 +939,7 @@ function mmFlip(k) {
   const [a, b] = mm.open.map((x) => mm.cards[x]);
   if (a.id === b.id) {
     // 揃った！お題の全文を出す（{P}はめくった人）
-    mm.card = makeCard(a.deep ? "深夜お題" : a.yoru ? "夜お題" : `アホお題・${LV[S.level]}`, a.tpl, g.doer, { noNg: a.yoru }, { yoru: a.yoru });
+    mm.card = makeCard(a.deep ? "エロがりお題" : a.yoru ? "夜お題" : `アホお題・${LV[S.level]}`, a.tpl, g.doer, { noNg: a.yoru }, { yoru: a.yoru });
     mm.phase = "match";
   } else mm.phase = "miss";
 }

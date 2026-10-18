@@ -326,7 +326,7 @@ function useFlipIn(dep: unknown, alert?: boolean) {
 
 function lookOf(pal: Pal, card: Card) {
   if (card.bomb) return CARD_LOOK.bomb;
-  if (card.kind.includes('深夜')) return CARD_LOOK.deep;
+  if (card.kind.includes('エロがり')) return CARD_LOOK.deep;
   if (card.yoru) return CARD_LOOK.yoru;
   if (card.alert) return CARD_LOOK.event;
   return { bg: pal.cardBg, fg: pal.cardFg, edge: pal.cardEdge };
@@ -478,7 +478,7 @@ function GachaRow({ name, color, item, delay, fg, mark }: { name: string; color:
             </View>
           )}
           <Text style={[styles.gachaWho, { color: fg }]}>
-            {name}{item.lucky ? 'はセーフ' : item.night === 'shinya' ? 'の深夜の罰' : item.night ? 'の夜の罰' : 'の罰'}
+            {name}{item.lucky ? 'はセーフ' : item.night === 'shinya' ? 'のエロがりの罰' : item.night ? 'の夜の罰' : 'の罰'}
           </Text>
           {item.n > 1 && !item.lucky && (
             <View style={styles.x2Badge}><Text style={styles.x2BadgeText}>×{item.n}</Text></View>
@@ -820,7 +820,7 @@ export function Coach({ flow }: { flow: TurnFlow }) {
 /** ルール早見表（⋯メニューから） */
 export function RulesSheet({ visible, night, onClose, custom }: { visible: boolean; night?: boolean; onClose: () => void; /** モードごとのルール（NGワード・投票） */ custom?: [string, string][] }) {
   const items: [string, string][] = [...(custom ?? HELP.odai.rules)];
-  if (night) items.push(['夜モード', '夜・深夜のお題や罰も混ざる。下ネタNGの人には振られへん。夜お題は「無理！」で罰なしパス']);
+  if (night) items.push(['夜モード', '夜・エロがりのお題や罰も混ざる。下ネタNGの人には振られへん。夜お題は「無理！」で罰なしパス']);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.sheetBack} onPress={onClose}>

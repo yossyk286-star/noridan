@@ -133,7 +133,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
     case 'setup':
       card = (
         <IntroCard pal={pal} mode="ngword" tag={`${n}人`}>
-          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${NG_LV[level]}`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのワードも出る` : undefined} />
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${NG_LV[level]}`} note={night ? `${night === 'shinya' ? 'エロがり' : '夜'}モードのワードも出る` : undefined} />
           <Text style={[s.small, { color: fg, fontWeight: '900' }]}>制限時間</Text>
           <View style={s.mins}>
             {MINUTES.map((m) => {

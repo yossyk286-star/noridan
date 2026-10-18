@@ -232,7 +232,7 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
   };
   // 夜お題の間だけ照明が落ちてネオン看板に
   const neon = !!st.card.yoru && st.phase !== 'batsu';
-  const pal = neon ? neonPal(st.card.kind.includes('深夜') ? C.deep : C.night) : basePal;
+  const pal = neon ? neonPal(st.card.kind.includes('エロがり') ? C.deep : C.night) : basePal;
   useEffect(() => onBg?.(neon ? NEON_BG : null), [neon]);
   const art = st.phase === 'bombSet' || st.phase === 'bombPeek' ? 'bomb' : st.phase === 'offer' ? 'coin' : undefined;
   const label = rolling ? 'コロコロ…' : hopping ? `${die}マス進む！` : skip[cur] ? '1回休み（タップで確認）' : 'タップで振る';
@@ -244,7 +244,7 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
           <ScoreBar pal={basePal} members={members} pen={Array(members.length).fill(0)} rev={Array(members.length).fill(false)} doer={-1} onMenu={() => setMenu(true)} />
           <View style={{ flex: 1 }}>
             <IntroCard pal={basePal} mode="sugoroku" tag={`${GOAL}マス`}>
-              <LevelBox pal={basePal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る` : undefined} />
+              <LevelBox pal={basePal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? 'エロがり' : '夜'}モードのお題も出る` : undefined} />
             </IntroCard>
           </View>
           <BigButton pal={basePal} label={`${members[0].name}からスタート`} onPress={() => setIntro(false)} />

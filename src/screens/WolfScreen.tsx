@@ -253,7 +253,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
     case 'intro':
       card = (
         <IntroCard pal={pal} mode="wolf" tag={`${n}人`}>
-          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? 'エロがり' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
           <SetRow label="話し合い" fg={fg} bg={pal.cardBg} opts={MINUTES.map((m) => ({ label: `${m}分`, on: minutes === m, press: () => { setMinutes(m); save('nd_wf_min', m); } }))} />
           <SetRow label="ウルフ" fg={fg} bg={pal.cardBg} opts={[{ label: `おまかせ(${Math.min(autoCount(n), maxCount(n))})`, on: !count, press: () => { setCount(0); save('nd_wf_n', 0); } }, ...[1, 2, 3].filter((c) => c <= maxCount(n)).map((c) => ({ label: `${c}人`, on: count === c, press: () => { setCount(c); save('nd_wf_n', c); } }))]} />
           {n >= 4 && <SetRow label="全員市民の回" fg={fg} bg={pal.cardBg} opts={[{ label: 'たまに', on: peace, press: () => { setPeace(true); save('nd_wf_peace', true); } }, { label: 'なし', on: !peace, press: () => { setPeace(false); save('nd_wf_peace', false); } }]} />}

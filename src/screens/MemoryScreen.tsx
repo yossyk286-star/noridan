@@ -122,7 +122,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
     }
     const [a, b] = op.map((x) => cs[x]);
     if (a.id === b.id) {
-      setCard(makeCard(a.deep ? '深夜お題' : a.yoru ? '夜お題' : `アホお題・${LEVEL_LABEL[level]}`, a.tpl!, members, cur, { noNg: a.yoru, yoru: a.yoru }));
+      setCard(makeCard(a.deep ? 'エロがりお題' : a.yoru ? '夜お題' : `アホお題・${LEVEL_LABEL[level]}`, a.tpl!, members, cur, { noNg: a.yoru, yoru: a.yoru }));
       setPhase('match');
       play('coin');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -185,7 +185,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
   if (phase === 'intro') {
     body = (
       <IntroCard pal={pal} mode="memory" tag={`${PAIRS}ペア`}>
-        <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
+        <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? 'エロがり' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
       </IntroCard>
     );
     controls = <BigButton pal={pal} label={`${members[0].name}からスタート`} onPress={() => setPhase('pick')} />;
