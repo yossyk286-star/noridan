@@ -9,6 +9,19 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
+// 保存データが壊れてても起動できるように：配列で、名前は文字列10文字まで、12人まで、同じ名前は1人だけ
+const cleanMembers = (v) => {
+  if (!Array.isArray(v)) return null;
+  const seen = new Set(), out = [];
+  for (const m of v) {
+    const name = String(m?.name ?? "").trim().slice(0, 10);
+    if (!name || seen.has(name)) continue;
+    seen.add(name); out.push(m.ng ? { name, ng: true } : { name });
+    if (out.length >= 12) break;
+  }
+  return out.length ? out : null;
+};
+const loadGroups = () => (Array.isArray(store.get("nd_groups", [])) ? store.get("nd_groups", []) : []).map(cleanMembers).filter(Boolean).slice(0, 3);
 const EXAMPLE = [
   { name: "よし" },
   { name: "たく" },
@@ -17,10 +30,10 @@ const EXAMPLE = [
 
 const S = {
   screen: "home", hist: [], ask: null,
-  members: (store.get("nd_members", EXAMPLE) || EXAMPLE).map((m) => ({ name: m.name, ...(m.ng ? { ng: true } : {}) })),
-  isExample: store.get("nd_members", null) === null,
-  level: store.get("nd_level", "futsu"),
-  night: (() => { const v = store.get("nd_night", false); return v === true ? "yoru" : v; })(), // false | "yoru" | "shinya"
+  members: cleanMembers(store.get("nd_members", null)) || EXAMPLE.map((m) => ({ ...m })),
+  isExample: cleanMembers(store.get("nd_members", null)) === null,
+  level: ((v) => (v in LV ? v : "futsu"))(store.get("nd_level", "futsu")),
+  night: (() => { const v = store.get("nd_night", false); return v === true ? "yoru" : v === "yoru" || v === "shinya" ? v : false; })(), // false | "yoru" | "shinya"
   nightAsk: false,  // false | "yoru" | "shinya"（確認画面）
   whisper: Math.random() < 0.35,
   seen: store.get("nd_seen", {}) || {}, // 初登場のひとこと説明を見たかどうか
@@ -40,7 +53,7 @@ const S = {
 // ---------- helpers ----------
 const rnd = (n) => Math.floor(Math.random() * n);
 const pick = (a) => a[rnd(a.length)];
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const colorOf = (i) => COLORS[i % COLORS.length];
 const nm = (i) => `<mark style="--mc:${colorOf(i)}">${esc(S.members[i]?.name ?? "誰か")}</mark>`;
@@ -743,17 +756,18 @@ function tiltBegin() {
   S.game.doer = tl.who;
   tl.phase = "hand"; tl.angle = 0; tl.peak = 0; tl.outAt = 0; tl.manual = false;
 }
-function tiltCount() {
-  const tl = S.game.tl;
-  tl.phase = "count"; tl.n = 3;
+// 3・2・1のカウントダウン（傾けたらアウト・全力シェイク・ピタッとストップ共通）。st.n を減らして描き直し、0で go
+function count3(st, go, ms) {
+  st.phase = "count"; st.n = 3;
   const step = () => {
-    if (S.game?.tl !== tl || tl.phase !== "count") return;
-    tl.n--;
-    if (tl.n <= 0) { tiltGo(); return; }
-    play("tick"); render(); setTimeout(step, 800);
+    if (!Object.values(S.game || {}).includes(st) || st.phase !== "count") return;
+    st.n--;
+    if (st.n <= 0) { go(); return; }
+    play("tick"); render(); setTimeout(step, ms);
   };
-  play("tick"); setTimeout(step, 800);
+  play("tick"); setTimeout(step, ms);
 }
+function tiltCount() { count3(S.game.tl, tiltGo, 800); }
 function tiltGo() {
   const tl = S.game.tl;
   tl.manual = !tiltLive();
@@ -893,17 +907,7 @@ function skBegin() {
   S.game.doer = sk.who;
   sk.phase = "hand"; sk.cur = 0; sk.dir = null; sk.mag = 0; sk.manual = false;
 }
-function skCount() {
-  const sk = S.game.sk;
-  sk.phase = "count"; sk.n = 3;
-  const step = () => {
-    if (S.game?.sk !== sk || sk.phase !== "count") return;
-    sk.n--;
-    if (sk.n <= 0) { skGo(); return; }
-    play("tick"); render(); setTimeout(step, 800);
-  };
-  play("tick"); setTimeout(step, 800);
-}
+function skCount() { count3(S.game.sk, skGo, 800); }
 function skGo() {
   const sk = S.game.sk;
   sk.manual = !skLive();
@@ -986,17 +990,7 @@ function spBegin() {
   sp.rate = S.level === "yurume" ? 1 : SP_RATES[rnd(SP_RATES.length)];
   sp.phase = "hand";
 }
-function spCount() {
-  const sp = S.game.sp;
-  sp.phase = "count"; sp.n = 3;
-  const step = () => {
-    if (S.game?.sp !== sp || sp.phase !== "count") return;
-    sp.n--;
-    if (sp.n <= 0) { spGo(); return; }
-    play("tick"); render(); setTimeout(step, 700);
-  };
-  play("tick"); setTimeout(step, 700);
-}
+function spCount() { count3(S.game.sp, spGo, 700); }
 // 表示上の経過（0→target）。dir=down なら target-経過 を見せる
 function spGo() {
   const sp = S.game.sp, now = performance.now();

@@ -3,7 +3,7 @@ import type React from 'react';
 import { Animated, ScrollView, StyleSheet, Text, Vibration, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
-import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
+import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { Icon } from '../components/Icon';
 import { HELP } from '../lib/help';
@@ -219,7 +219,8 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     setPhase('batsu');
     play(items.every((it) => it.lucky) ? 'gachaLucky' : 'gacha');
   };
-  const accept = () => {
+  /** 罰ガチャの結果を罰に足した新しい罰の数 */
+  const applyGacha = () => {
     const np = pen.slice();
     gacha.forEach((x) => {
       if (x.lucky) stats.lucky[x.i]++;
@@ -228,17 +229,22 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
         stats.why[x.i].shake = (stats.why[x.i].shake ?? 0) + x.n;
       }
     });
-    setPen(np);
+    return np;
+  };
+  const accept = () => {
+    setPen(applyGacha());
     setRound((r) => r + 1);
     setK(0);
     setCnt(Array(n).fill(null));
     setLosers([]);
     setPhase('hand');
   };
-  const finish = () => {
+  /** 罰ガチャを受け入れて、そのまま結果発表 */
+  const endNow = () => finish(applyGacha());
+  const finish = (p: number[] = pen) => {
     clear();
     stats.shakeBest = best.slice();
-    onFinish(pen, turns, stats);
+    onFinish(p, turns, stats);
   };
 
   const pal = STAGE[level];
@@ -385,7 +391,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
           <GachaCard pal={pal} members={members} items={gacha} />
         </DeckStack>
       );
-      controls = <BigButton pal={pal} label={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'} → 次の回戦`} onPress={accept} />;
+      controls = <RoundEnd pal={pal} next={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'}→もう1回戦`} endLabel={gacha.every((x) => x.lucky) ? '結果発表へ' : '受け入れて結果発表へ'} onNext={accept} onEnd={endNow} />;
       break;
   }
 
@@ -403,7 +409,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
         meta={`全力シェイク・${LEVEL_LABEL[level]}・${round}回戦`}
         rulesSub="このモードの遊び方"
         onRules={() => setRules(true)}
-        onEnd={finish}
+        onEnd={() => finish()}
         onSettings={onSettings}
         onQuit={() => { clear(); onQuit(); }}
         onClose={() => setMenu(false)}

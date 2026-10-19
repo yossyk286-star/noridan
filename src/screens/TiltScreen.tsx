@@ -4,7 +4,7 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
-import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
+import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
@@ -199,7 +199,8 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     setPhase('batsu');
     play(items[0].lucky ? 'gachaLucky' : 'gacha');
   };
-  const accept = () => {
+  /** 罰ガチャの結果を罰に足した新しい罰の数 */
+  const applyGacha = () => {
     const np = pen.slice();
     gacha.forEach((x) => {
       if (x.lucky) stats.lucky[x.i]++;
@@ -208,15 +209,20 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
         stats.why[x.i].tilt = (stats.why[x.i].tilt ?? 0) + 1;
       }
     });
-    setPen(np);
+    return np;
+  };
+  const accept = () => {
+    setPen(applyGacha());
     begin(k + 1);
   };
-  const finish = () => {
+  /** 罰ガチャを受け入れて、そのまま結果発表 */
+  const endNow = () => finish(applyGacha());
+  const finish = (p: number[] = pen) => {
     clear();
     // 鋼の手：一番揺れへんかった人（センサーで測れた人だけ）
     const ok = members.map((_, i) => i).filter((i) => maxOf[i] != null);
     if (ok.length > 1) stats.steady = members.map((_, i) => (maxOf[i] == null ? null : maxOf[i]));
-    onFinish(pen, tries, stats);
+    onFinish(p, tries, stats);
   };
 
   // 限界に近づくほどフチが赤く太く。0.8を超えたら札がブルブル
@@ -240,6 +246,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   const fg = pal.cardFg;
   const frame = phase === 'intro' ? C.muted : mix(colorOf(who), '#ff2a2a', heat);
   const nextName = members[(k + 1) % n].name;
+  const last = k % n === n - 1; // その回戦の最後の人
 
   let card: React.ReactNode = null;
   let controls: React.ReactNode = null;
@@ -256,7 +263,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     case 'hand':
       card = (
         <ModeCard pal={pal} center>
-          <Prog fg={fg}>{`${k + 1}人目`}</Prog>
+          <Prog fg={fg}>{`第${Math.floor(k / n) + 1}回戦・${(k % n) + 1}/${n}人目`}</Prog>
           <HandWho members={members} i={who} sub="の番" fg={fg} />
           <Note fg={fg}>{'画面を上にして、手のひらに平らに乗せて。\n周りは触らんかったら、しゃべって邪魔してOK'}</Note>
           <Text style={[s.lim, { color: fg }]}>{lim}°</Text>
@@ -351,7 +358,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
           <Note fg={fg}>{`${SEC}秒キープ成功。${members[who].name}は罰なし`}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label={`次は${nextName}`} onPress={() => begin(k + 1)} />;
+      controls = last ? <RoundEnd pal={pal} next="もう1回戦" onNext={() => begin(k + 1)} onEnd={() => finish()} /> : <BigButton pal={pal} label={`次は${nextName}`} onPress={() => begin(k + 1)} />;
       break;
     case 'batsu':
       card = (
@@ -359,7 +366,11 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
           <GachaCard pal={pal} members={members} items={gacha} />
         </DeckStack>
       );
-      controls = <BigButton pal={pal} label={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'} → 次は${nextName}`} onPress={accept} />;
+      controls = last ? (
+        <RoundEnd pal={pal} next={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'}→もう1回戦`} endLabel={gacha.every((x) => x.lucky) ? '結果発表へ' : '受け入れて結果発表へ'} onNext={accept} onEnd={endNow} />
+      ) : (
+        <BigButton pal={pal} label={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'} → 次は${nextName}`} onPress={accept} />
+      );
       break;
   }
 
@@ -379,7 +390,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
         meta={`傾けたらアウト・${LEVEL_LABEL[level]}・${tries}回挑戦`}
         rulesSub="このモードの遊び方"
         onRules={() => setRules(true)}
-        onEnd={finish}
+        onEnd={() => finish()}
         onSettings={onSettings}
         onQuit={() => { clear(); onQuit(); }}
         onClose={() => setMenu(false)}

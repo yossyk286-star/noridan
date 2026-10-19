@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { Animated, ScrollView, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
+import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { Tap } from '../components/Tap';
 import { HELP } from '../lib/help';
@@ -200,7 +200,8 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
     setPhase('batsu');
     play(items.every((it) => it.lucky) ? 'gachaLucky' : 'gacha');
   };
-  const accept = () => {
+  /** 罰ガチャの結果を罰に足した新しい罰の数 */
+  const applyGacha = () => {
     const np = pen.slice();
     gacha.forEach((x) => {
       if (x.lucky) stats.lucky[x.i]++;
@@ -209,13 +210,18 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         stats.why[x.i].stop = (stats.why[x.i].stop ?? 0) + x.n;
       }
     });
-    setPen(np);
+    return np;
+  };
+  const accept = () => {
+    setPen(applyGacha());
     newRound(round + 1);
   };
-  const finish = () => {
+  /** 罰ガチャを受け入れて、そのまま結果発表 */
+  const endNow = () => finish(applyGacha());
+  const finish = (p: number[] = pen) => {
     clear();
     stats.stopExact = exact.slice();
-    onFinish(pen, turns, stats);
+    onFinish(p, turns, stats);
   };
   const pickDir = (d: Dir) => {
     setDir(d);
@@ -312,10 +318,14 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`${members[who].name}、準備して…`}</Prog>
           <Text style={[s.count, { color: fg }]}>{count}</Text>
-          <Note fg={fg}>{`${goal}で止める${rate !== 1 ? `・速さは×${rate}` : ''}`}</Note>
+          <Note fg={fg}>{`${goal}で止める${rate !== 1 ? `・速さは×${rate}` : ''}\n下のボタンに指を置いて待って`}</Note>
         </ModeCard>
       );
-      controls = <Text style={[s.hint, { color: pal.muted }]}>ボタンに指を置いて待って</Text>;
+      controls = (
+        <View style={[s.stopBtn, { opacity: 0.45 }]} accessibilityLabel="まだ押されへん">
+          <Text style={s.stopText}>ストップ！</Text>
+        </View>
+      );
       break;
     case 'play':
       card = (
@@ -376,7 +386,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
       controls = losers.length ? (
         <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={doGacha} />
       ) : (
-        <BigButton pal={pal} label="次の回戦" onPress={() => newRound(round + 1)} />
+        <RoundEnd pal={pal} next="もう1回戦" onNext={() => newRound(round + 1)} onEnd={() => finish()} />
       );
       break;
     case 'batsu':
@@ -385,7 +395,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
           <GachaCard pal={pal} members={members} items={gacha} />
         </DeckStack>
       );
-      controls = <BigButton pal={pal} label={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'} → 次の回戦`} onPress={accept} />;
+      controls = <RoundEnd pal={pal} next={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'}→もう1回戦`} endLabel={gacha.every((x) => x.lucky) ? '結果発表へ' : '受け入れて結果発表へ'} onNext={accept} onEnd={endNow} />;
       break;
   }
 
@@ -403,7 +413,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         meta={`ピタッとストップ・${LEVEL_LABEL[level]}・${round}回戦`}
         rulesSub="このモードの遊び方"
         onRules={() => setRules(true)}
-        onEnd={finish}
+        onEnd={() => finish()}
         onSettings={onSettings}
         onQuit={() => { clear(); onQuit(); }}
         onClose={() => setMenu(false)}

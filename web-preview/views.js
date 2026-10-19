@@ -196,7 +196,7 @@ function whisper() {
 }
 function vHome1() {
   const ms = S.members, ok = ms.length >= 2;
-  const groups = (store.get("nd_groups", []) || []).filter((g) => g.map((m) => m.name).join() !== ms.map((m) => m.name).join());
+  const groups = loadGroups().filter((g) => g.map((m) => m.name).join() !== ms.map((m) => m.name).join());
   return `
   <div class="home-top">${logoBlock()}<button class="icon-btn" data-act="sheet" aria-label="設定">${ICON.gear}</button></div>
   <div class="step-dots"><i class="on"></i><i></i><span>メンバー</span></div>
@@ -213,6 +213,7 @@ function vHome1() {
     <input id="inName" maxlength="10" placeholder="名前を入れて＋（続けて入れられる）" autocomplete="off" enterkeyhint="done">
     <button class="add-btn" type="submit" aria-label="追加">${ICON.plus}</button>
   </form>
+  ${S.addMsg ? `<p class="add-msg" role="alert">${esc(S.addMsg)}</p>` : ""}
   <section class="members" aria-label="メンバー">
     ${S.isExample ? `<p class="note">↓は例。自分らの名前に入れ替えてな</p>` : ""}
     ${ms.map((m, i) => `
@@ -702,7 +703,7 @@ function vRules() {
   </div>`;
 }
 // 結果発表の罰の内訳
-const WHY = { out: "アウト", rule: "違反", double: "倍プッシュ失敗", push: "押し付けられ", bomb: "爆弾", vote: "投票1位", ng: "NGワード", mfail: "答えられへん", skull: "ドクロ", mlow: "最下位", ito: "並び間違い", glow: "ジェスチャーで当てられへん", gquota: "ジェスチャーのノルマ未達", hmlaugh: "笑った", hmfail: "褒め負け", wolf: "ワードウルフ負け", pit: "予想が一番遠い", tilt: "傾けた", shake: "振った回数が最下位", stop: "止め負け" };
+const WHY = DATA.why; // 罰の理由（src/data/why.json。アプリ版と共通）
 function whyText(i) {
   const w = S.game.st?.why?.[i];
   if (!w) return "";
@@ -1081,6 +1082,12 @@ function vWolf() {
   </div>`;
 }
 
+// 1回戦が終わった時：もう1回戦か、ここで結果発表か（罰ガチャのあとは「受け入れて」）
+function roundEnd(nextAct, batsu = false) {
+  const g = S.game, lucky = batsu && g.gacha.every((x) => x.lucky);
+  return `<div class="row2 round-end"><button class="ghost" data-act="end">${ICON.flag}<span>${batsu && !lucky ? "受け入れて" : ""}結果発表へ</span></button><button class="big" data-act="${nextAct}">${batsu ? (lucky ? "ラッキー！" : "受け入れた") + "→" : ""}もう1回戦</button></div>`;
+}
+
 // ---------- ピタッとストップ（画面） ----------
 const spRateBox = (sp) => `<p class="sp-rate-box ${sp.rate > 1 ? "fast" : "slow"}"><small>今回の速さ</small><b>×${sp.rate}</b><span>${sp.rate > 1 ? "速い！" : "遅い…"}止めるまでずっとこの速さ</span></p>`;
 const spGoal = (sp) => sp.dir === "down" ? "0.00" : `${sp.target}.00`;
@@ -1110,7 +1117,7 @@ function vStopCard() {
     case "count": return `<div class="odai mode-card center" id="card">
       <p class="prog">${mName(sp.who)}、準備して…</p>
       <p class="tl-count">${sp.n}</p>
-      <p class="hand-note"><b>${spGoal(sp)}</b>で止める${sp.rate !== 1 ? `・速さは<b>×${sp.rate}</b>` : ""}</p>
+      <p class="hand-note"><b>${spGoal(sp)}</b>で止める${sp.rate !== 1 ? `・速さは<b>×${sp.rate}</b>` : ""}<br>下のボタンに指を置いて待って</p>
     </div>`;
     case "play": return `<div class="odai mode-card center sp-play" id="card">
       <p class="prog">${mName(sp.who)}・<b>${spGoal(sp)}</b>で止めろ</p>
@@ -1141,12 +1148,12 @@ function vStopControls() {
   const g = S.game, sp = g.sp;
   switch (sp.phase) {
     case "hand": return `<button class="big" data-act="spReady">スタート</button>`;
-    case "count": return `<p class="hint">ボタンに指を置いて待って</p>`;
+    case "count": return `<button class="big sp-stop wait" disabled aria-label="まだ押されへん">ストップ！</button>`;
     case "play": return `<button class="big sp-stop" data-tap="stop">ストップ！</button>`;
     case "check": return `<button class="big" data-act="spReveal">結果を見る</button>`;
     case "done": return `<button class="big" data-act="spNext">次は${mName(spWho({ k: sp.k + 1, round: sp.round }))}</button>`;
-    case "rank": return sp.losers.length ? `<button class="big has-pen" data-act="spGacha">${sp.losers.map(mName).join("・")}に罰ガチャ</button>` : `<button class="big" data-act="spAgain">次の回戦</button>`;
-    case "batsu": return `<button class="big" data-act="spAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次の回戦</button>`;
+    case "rank": return sp.losers.length ? `<button class="big has-pen" data-act="spGacha">${sp.losers.map(mName).join("・")}に罰ガチャ</button>` : roundEnd("spAgain");
+    case "batsu": return roundEnd("spAccept", true);
   }
   return "";
 }
@@ -1224,7 +1231,7 @@ function vShakeControls() {
     case "play": return `<p class="hint">${sk.manual ? "画面を連打！" : "振れ振れ振れ！（手は離さへん）"}</p>`;
     case "done": return `<button class="big" data-act="skNext">次は${mName(skWho({ k: sk.k + 1, round: sk.round }))}</button>`;
     case "rank": return `<button class="big has-pen" data-act="skGacha">${sk.losers.map(mName).join("・")}に罰ガチャ</button>`;
-    case "batsu": return `<button class="big" data-act="skAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次の回戦</button>`;
+    case "batsu": return roundEnd("skAccept", true);
   }
   return "";
 }
@@ -1246,7 +1253,7 @@ function vTiltCard() {
   const g = S.game, tl = g.tl, lim = tiltLimit();
   switch (tl.phase) {
     case "hand": return `<div class="odai mode-card center" id="card">
-      <p class="prog">${tl.k + 1}人目</p>
+      <p class="prog">第${Math.floor(tl.k / S.members.length) + 1}回戦・${tl.k % S.members.length + 1}/${S.members.length}人目</p>
       ${bigWho(tl.who, "の番")}
       <p class="hand-note">画面を上にして、手のひらに平らに乗せて。<br>周りは触らんかったら、しゃべって邪魔してOK</p>
       <p class="tl-lim">${lim}°<small>超えたらアウト</small></p>
@@ -1283,15 +1290,15 @@ function vTiltCard() {
   return "";
 }
 function vTiltControls() {
-  const g = S.game, tl = g.tl, n = S.members.length;
+  const g = S.game, tl = g.tl, n = S.members.length, last = tl.k % n === n - 1; // その回戦の最後の人
   const nextName = mName((tl.k + 1) % n);
   switch (tl.phase) {
     case "hand": return `<button class="big" data-act="tiltReady">準備OK → カウントダウン</button>`;
     case "count": return `<p class="hint">スマホを動かさんといて</p>`;
     case "play": return tl.manual ? `<button class="big has-pen" data-act="tiltManualOut">傾いた！アウト</button>` : `<p class="hint">${lim0()}</p>`;
     case "out": return `<button class="big has-pen" data-act="tiltGacha">${mName(tl.who)}に罰ガチャ</button>`;
-    case "safe": return `<button class="big" data-act="tiltNext">次は${nextName}</button>`;
-    case "batsu": return `<button class="big" data-act="tiltAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次は${nextName}</button>`;
+    case "safe": return last ? roundEnd("tiltNext") : `<button class="big" data-act="tiltNext">次は${nextName}</button>`;
+    case "batsu": return last ? roundEnd("tiltAccept", true) : `<button class="big" data-act="tiltAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次は${nextName}</button>`;
   }
   return "";
   function lim0() { return `${tiltLimit()}°を超えたら即アウト`; }
@@ -1927,6 +1934,8 @@ document.documentElement.lang = "ja"; // 日本語の改行ルール（小さい
 const app = document.getElementById("app");
 const overlay = document.getElementById("overlay");
 let lastSoundKey = "";
+// 画面ごとの描き方（新しい遊び方はここと MODE_NAME に足す）
+const VIEWS = { home: () => vHome(), odai: () => vOdai(), sugoroku: () => vSugo(), memory: () => vMemory(), ito: () => vIto(), gesture: () => vGesture(), homeru: () => vHomeru(), ngword: () => vNg(), vote: () => vVote(), wolf: () => vWolf(), pittari: () => vPittari(), tilt: () => vTilt(), shake: () => vShake(), stop: () => vStop() };
 function render(anim) {
   const sc = S.screen;
   const onStage = isStage(sc);
@@ -1947,11 +1956,11 @@ function render(anim) {
   S.gIntro = false;
   // 画面が変わった時だけスライドして入ってくる
   const key = sc === "home" ? (S.nightAsk ? "night" : "home" + S.step) : sc;
-  const ORDER = { home1: 0, night: 1, home2: 1, odai: 2, sugoroku: 2, memory: 2, ito: 2, gesture: 2, homeru: 2, ngword: 2, vote: 2, wolf: 2, pittari: 2, tilt: 2, shake: 2, stop: 2, result: 3 };
+  const ORDER = { home1: 0, night: 1, home2: 1, result: 3, ...Object.fromEntries(Object.keys(MODE_NAME).map((m) => [m, 2])) };
   const moved = S.navKey && S.navKey !== key;
   const dir = moved && ORDER[key] < ORDER[S.navKey] ? "back" : "fwd";
   S.navKey = key;
-  app.innerHTML = sc === "home" ? vHome() : sc === "odai" ? vOdai() : sc === "sugoroku" ? vSugo() : sc === "memory" ? vMemory() : sc === "ito" ? vIto() : sc === "gesture" ? vGesture() : sc === "homeru" ? vHomeru() : sc === "ngword" ? vNg() : sc === "vote" ? vVote() : sc === "wolf" ? vWolf() : sc === "pittari" ? vPittari() : sc === "tilt" ? vTilt() : sc === "shake" ? vShake() : sc === "stop" ? vStop() : vResult();
+  app.innerHTML = (VIEWS[sc] || vResult)();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
   overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   if (onStage) { fixHeight(); fitCard(); }
@@ -2087,10 +2096,14 @@ function paintDie() { const d = document.getElementById("die"); if (d) d.innerHT
 function saveMembers() { S.isExample = false; store.set("nd_members", S.members); }
 function onAdd(e) {
   e.preventDefault();
-  const name = document.getElementById("inName").value.trim();
+  const input = document.getElementById("inName");
+  const name = input.value.trim().slice(0, 10);
   if (!name) return;
   if (S.isExample) S.members = [];
-  if (S.members.length >= 12) return;
+  // 同じ名前・13人目は入れへん（投票や順位で誰か分からんようになるので）。理由はひとこと出す
+  const err = S.members.length >= 12 ? "12人までやで" : S.members.some((m) => m.name === name) ? `「${name}」はもうおるで。ちょっと変えて入れて` : "";
+  S.addMsg = err;
+  if (err) { render(); const el = document.getElementById("inName"); el.value = name; el.focus(); el.select(); return; }
   S.members.push({ name });
   saveMembers(); play("tick"); render();
   document.getElementById("inName").focus();
@@ -2099,7 +2112,7 @@ function onAdd(e) {
 function rememberGroup() {
   if (S.isExample) return;
   const key = S.members.map((m) => m.name).join();
-  const gs = (store.get("nd_groups", []) || []).filter((g) => g.map((m) => m.name).join() !== key);
+  const gs = loadGroups().filter((g) => g.map((m) => m.name).join() !== key);
   gs.unshift(S.members.map((m) => ({ ...m })));
   store.set("nd_groups", gs.slice(0, 3));
 }
@@ -2138,7 +2151,7 @@ function onClick(e) {
   rememberStep(act);
   switch (act) {
     // home
-    case "del": S.members.splice(i, 1); saveMembers(); render(); break;
+    case "del": S.members.splice(i, 1); S.addMsg = ""; saveMembers(); render(); break;
     case "lv": S.level = b.dataset.v; store.set("nd_level", S.level); render(); break;
     case "step1": S.step = 1; render(); break;
     case "members": stopTimer(); S.screen = "home"; S.step = 1; render(); window.scrollTo(0, 0); break;
@@ -2160,7 +2173,7 @@ function onClick(e) {
     case "share": shareResult(); break;
     case "clearAll": S.members = []; saveMembers(); render(); document.getElementById("inName")?.focus(); break;
     case "loadGroup": {
-      const gs = (store.get("nd_groups", []) || []).filter((x) => x.map((m) => m.name).join() !== S.members.map((m) => m.name).join());
+      const gs = loadGroups().filter((x) => x.map((m) => m.name).join() !== S.members.map((m) => m.name).join());
       if (gs[i]) { S.members = gs[i].map((m) => ({ name: m.name, ...(m.ng ? { ng: true } : {}) })); saveMembers(); render(); }
       break;
     }
@@ -2493,6 +2506,10 @@ function onClick(e) {
 }
 app.addEventListener("click", onClick);
 // 全力シェイクの連打モード：click だと遅いので押した瞬間に数える
+// ピタッとストップ：パソコンはスペース（かEnter）でも止められる
+document.addEventListener("keydown", (e) => {
+  if ((e.code === "Space" || e.key === "Enter") && S.game?.sp?.phase === "play" && S.screen === "stop" && !e.target.closest?.("input,textarea")) { e.preventDefault(); spStop(); }
+});
 // ピタッとストップ：押した瞬間に止める（click を待つと遅れる）
 app.addEventListener("pointerdown", (e) => { if (e.target.closest('[data-tap="stop"]') && S.game?.sp?.phase === "play") { e.preventDefault(); spStop(); } });
 app.addEventListener("pointerdown", (e) => { if (e.target.closest('[data-tap="sk"]') && S.game?.sk?.phase === "play" && S.game.sk.manual) { e.preventDefault(); skHit(); } });

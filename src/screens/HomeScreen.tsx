@@ -103,15 +103,19 @@ function Gear({ onPress }: { onPress: () => void }) {
 function StepMembers({ members, isExample, night, groups, tease, onMembers, onSettings, onLogo, onNext }: Props & { tease: number; onLogo: () => void; onNext: () => void }) {
   const [name, setName] = useState('');
   const input = useRef<TextInput>(null);
+  const [addMsg, setAddMsg] = useState('');
   const ok = members.length >= 2;
   const others = (groups ?? []).filter((g) => g.map((m) => m.name).join() !== members.map((m) => m.name).join());
 
   /** 名前を入れてEnterでどんどん追加 */
   const add = () => {
-    const n = name.trim();
+    const n = name.trim().slice(0, 10);
     if (!n) return;
     const base = isExample ? [] : members;
-    if (base.length >= MAX) return;
+    // 同じ名前・13人目は入れへん（投票や順位で誰か分からんようになるので）。理由はひとこと出す
+    const err = base.length >= MAX ? `${MAX}人までやで` : base.some((m) => m.name === n) ? `「${n}」はもうおるで。ちょっと変えて入れて` : '';
+    setAddMsg(err);
+    if (err) return;
     onMembers([...base, { name: n }]);
     setName('');
     setTimeout(() => input.current?.focus(), 0);
@@ -162,7 +166,7 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
             ref={input}
             style={[s.input, { flex: 1 }]}
             value={name}
-            onChangeText={setName}
+            onChangeText={(t) => { setName(t); if (addMsg) setAddMsg(""); }}
             maxLength={10}
             placeholder="名前を入れて＋（続けて入れられる）"
             placeholderTextColor={C.muted}
@@ -174,6 +178,7 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
             <Icon name="plus" color={C.ink} size={24} />
           </Tap>
         </View>
+        {!!addMsg && <Text style={s.addMsg} accessibilityRole="alert">{addMsg}</Text>}
 
         {isExample && <Text style={s.note}>↓は例。自分らの名前に入れ替えてな</Text>}
 
@@ -408,6 +413,7 @@ const s = StyleSheet.create({
     color: C.paper, fontSize: 16, padding: 13, borderRadius: 12,
     borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', backgroundColor: 'rgba(247,243,234,0.06)',
   },
+  addMsg: { color: '#ff6b6b', fontSize: 13, fontWeight: '800', marginTop: -4 },
   addBtn: { backgroundColor: C.paper, borderRadius: 12, paddingHorizontal: 18, justifyContent: 'center' },
   plus: { width: 54, borderRadius: 14, backgroundColor: C.yuru, alignItems: 'center', justifyContent: 'center' },
   memHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

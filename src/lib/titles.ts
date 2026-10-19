@@ -1,3 +1,4 @@
+import whyJson from '../data/why.json';
 /** 称号用の記録（1ゲーム分） */
 export type Stats = {
   lucky: number[]; // 天使でセーフになった回数
@@ -18,7 +19,8 @@ export type Stats = {
   why: Partial<Record<Why, number>>[];
 };
 export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop';
-export const WHY_LABEL: Record<Why, string> = { out: 'アウト', rule: '違反', double: '倍プッシュ失敗', push: '押し付けられ', bomb: '爆弾', vote: '投票1位', ng: 'NGワード', mfail: '答えられへん', skull: 'ドクロ', mlow: '最下位', ito: '並び間違い', glow: 'ジェスチャーで当てられへん', gquota: 'ジェスチャーのノルマ未達', hmlaugh: '笑った', hmfail: '褒め負け', wolf: 'ワードウルフ負け', pit: '予想が一番遠い', tilt: '傾けた', shake: '振った回数が最下位', stop: '止め負け' };
+/** 罰の理由の名前（src/data/why.json。Web版と共通） */
+export const WHY_LABEL = whyJson as Record<Why, string>;
 export function whyText(st: Stats | undefined, i: number) {
   const w = st?.why?.[i];
   if (!w) return '';

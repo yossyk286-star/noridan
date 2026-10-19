@@ -895,6 +895,20 @@ export function SwipeCard({ enabled, flipped, onSwipe, children }: { enabled: bo
   );
 }
 
+/** 1回戦が終わった時：「結果発表へ」か「もう1回戦」 */
+export function RoundEnd({ pal, next, onNext, onEnd, endLabel = '結果発表へ' }: { pal: Pal; next: string; onNext: () => void; onEnd: () => void; endLabel?: string }) {
+  return (
+    <View style={styles.roundEnd}>
+      <Tap onPress={onEnd} style={({ pressed }) => [styles.roundEndGhost, { borderColor: alpha(pal.fg.length === 7 ? pal.fg : '#f7f3ea', 0.3), opacity: pressed ? 0.7 : 1 }]}>
+        <Text style={[styles.roundEndGhostText, { color: pal.fg }]} numberOfLines={1} adjustsFontSizeToFit>{endLabel}</Text>
+      </Tap>
+      <View style={{ flex: 1.4 }}>
+        <BigButton pal={pal} label={next} onPress={onNext} />
+      </View>
+    </View>
+  );
+}
+
 export function BigButton({
   pal, label, onPress, disabled, danger,
 }: { pal: Pal; label: string; onPress: () => void; disabled?: boolean; danger?: boolean }) {
@@ -928,6 +942,9 @@ const styles = StyleSheet.create({
   x2Badge: { backgroundColor: '#ff2a2a', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 1, marginLeft: 6 },
   x2BadgeText: { color: '#fff', fontFamily: F.display, fontSize: 14 },
   frame: { borderWidth: 3, zIndex: 10 },
+  roundEnd: { flexDirection: 'row', gap: 10, alignItems: 'stretch' },
+  roundEndGhost: { flex: 1, borderWidth: 2, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  roundEndGhostText: { fontSize: 15, fontWeight: '900' },
   bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   score: { gap: 10, paddingVertical: 10, paddingLeft: 8, paddingRight: 10, alignItems: 'center' },
   av: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#141210' },

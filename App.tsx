@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { Animated, Easing, StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -19,7 +19,7 @@ import PittariScreen from './src/screens/PittariScreen';
 import TiltScreen from './src/screens/TiltScreen';
 import ShakeScreen from './src/screens/ShakeScreen';
 import StopScreen from './src/screens/StopScreen';
-import { load, save } from './src/lib/storage';
+import { cleanMembers, load, save } from './src/lib/storage';
 import { setSoundEnabled } from './src/lib/sound';
 import { PrefsContext } from './src/lib/prefs';
 import { speak, stopSpeak } from './src/lib/speech';
@@ -28,6 +28,17 @@ import SettingsSheet from './src/components/SettingsSheet';
 import Tutorial from './src/components/Tutorial';
 import { C, NEON_BG, STAGE } from './src/theme';
 import type { Level, Member, Mode, Night } from './src/types';
+
+/**
+ * 遊び方ごとの画面。新しい遊び方はここに1行足すだけ（ホームのカードと説明は別）。
+ * 画面ごとに使うpropsが少しずつ違う（onBgはお題・すごろくだけ、skipIntroは対応してる画面だけ）ので any で受ける
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const STAGES: Record<Mode, ComponentType<any>> = {
+  odai: OdaiScreen, sugoroku: SugorokuScreen, memory: MemoryScreen, ito: ItoScreen, gesture: GestureScreen, homeru: HomeruScreen,
+  ngword: NgWordScreen, vote: VoteScreen, wolf: WolfScreen, pittari: PittariScreen, tilt: TiltScreen, shake: ShakeScreen, stop: StopScreen,
+};
+const isStage = (name: string): name is Mode => name in STAGES;
 
 const EXAMPLE: Member[] = [
   { name: 'よし' },
@@ -54,19 +65,21 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const m = await load<Member[] | null>('nd_members', null);
+      const m = cleanMembers(await load<unknown>('nd_members', null));
       if (m) {
-        setMembers(m.map((x) => ({ name: x.name, ...(x.ng ? { ng: true } : {}) })));
+        setMembers(m);
         setIsExample(false);
       }
-      setLevel(await load<Level>('nd_level', 'futsu'));
-      const nv = await load<Night | true>('nd_night', false);
-      setNight(nv === true ? 'yoru' : nv);
+      const lv = await load<unknown>('nd_level', 'futsu');
+      setLevel(lv === 'yurume' || lv === 'jigoku' ? lv : 'futsu');
+      const nv = await load<unknown>('nd_night', false);
+      setNight(nv === true ? 'yoru' : nv === 'yoru' || nv === 'shinya' ? nv : false);
       const sv = await load<boolean>('nd_sound', true);
       setSound(sv);
       setSoundEnabled(sv);
       if (!(await load<boolean>('nd_tut', false))) setTut(true); // 初回だけ遊び方
-      setGroups(await load<Member[][]>('nd_groups', []));
+      const gs = await load<unknown>('nd_groups', []);
+      setGroups((Array.isArray(gs) ? gs : []).map(cleanMembers).filter((g): g is Member[] => !!g).slice(0, 3));
       setDual(await load<boolean>('nd_dual', false));
       setVoice(await load<boolean>('nd_voice', false));
     })();
@@ -123,19 +136,19 @@ export default function App() {
   };
 
   // 画面が変わったらスッとスライドして入ってくる（進む時は右から、戻る時は左から）
-  const ORDER: Record<string, number> = { home: 0, odai: 2, sugoroku: 2, memory: 2, ito: 2, gesture: 2, homeru: 2, ngword: 2, vote: 2, wolf: 2, pittari: 2, tilt: 2, shake: 2, stop: 2, result: 3 };
+  const ORDER = (name: string) => (name === 'home' ? 0 : name === 'result' ? 3 : 2);
   const slide = useRef(new Animated.Value(1)).current;
   const dir = useRef(1);
   const prev = useRef(screen.name);
   useEffect(() => {
-    if (prev.current === screen.name && screen.name !== 'odai' && screen.name !== 'sugoroku' && screen.name !== 'memory' && screen.name !== 'ito' && screen.name !== 'gesture' && screen.name !== 'homeru' && screen.name !== 'ngword' && screen.name !== 'vote' && screen.name !== 'wolf' && screen.name !== 'pittari' && screen.name !== 'tilt' && screen.name !== 'shake' && screen.name !== 'stop') return;
-    dir.current = ORDER[screen.name] < ORDER[prev.current] ? -1 : 1;
+    if (prev.current === screen.name && !isStage(screen.name)) return;
+    dir.current = ORDER(screen.name) < ORDER(prev.current) ? -1 : 1;
     prev.current = screen.name;
     slide.setValue(0);
     Animated.timing(slide, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [screen]);
 
-  const onStage = screen.name === 'odai' || screen.name === 'sugoroku' || screen.name === 'memory' || screen.name === 'ito' || screen.name === 'gesture' || screen.name === 'homeru' || screen.name === 'ngword' || screen.name === 'vote' || screen.name === 'wolf' || screen.name === 'pittari' || screen.name === 'tilt' || screen.name === 'shake' || screen.name === 'stop';
+  const onStage = isStage(screen.name);
   const neonHome = screen.name === 'home' && !!night;
   const bg = onStage ? stageBg ?? STAGE[level].bg : neonHome ? NEON_BG : C.ink;
   useEffect(() => {
@@ -163,45 +176,10 @@ export default function App() {
               groups={groups}
             />
           )}
-          {screen.name === 'odai' && (
-            <OdaiScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('odai')} skipIntro={screen.again} />
-          )}
-          {screen.name === 'sugoroku' && (
-            <SugorokuScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish('sugoroku')} skipIntro={screen.again} />
-          )}
-          {screen.name === 'memory' && (
-            <MemoryScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('memory')} />
-          )}
-          {screen.name === 'ito' && (
-            <ItoScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('ito')} />
-          )}
-          {screen.name === 'gesture' && (
-            <GestureScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('gesture')} />
-          )}
-          {screen.name === 'homeru' && (
-            <HomeruScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('homeru')} />
-          )}
-          {screen.name === 'ngword' && (
-            <NgWordScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('ngword')} />
-          )}
-          {screen.name === 'vote' && (
-            <VoteScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('vote')} skipIntro={screen.again} />
-          )}
-          {screen.name === 'wolf' && (
-            <WolfScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('wolf')} />
-          )}
-          {screen.name === 'pittari' && (
-            <PittariScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('pittari')} skipIntro={screen.again} />
-          )}
-          {screen.name === 'tilt' && (
-            <TiltScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('tilt')} skipIntro={screen.again} />
-          )}
-          {screen.name === 'shake' && (
-            <ShakeScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('shake')} skipIntro={screen.again} />
-          )}
-          {screen.name === 'stop' && (
-            <StopScreen key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onFinish={finish('stop')} skipIntro={screen.again} />
-          )}
+          {screen.name !== 'home' && screen.name !== 'result' && (() => {
+            const Stage = STAGES[screen.name];
+            return <Stage key={screen.key} members={members} level={level} night={night} onQuit={home} onSettings={() => setSheet(true)} onBg={setStageBg} onFinish={finish(screen.name)} skipIntro={screen.again} />;
+          })()}
           {screen.name === 'result' && (
             <ResultScreen
               members={members}
