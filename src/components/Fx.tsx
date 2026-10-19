@@ -241,7 +241,8 @@ export function GachaMachine({ color = '#141210', lucky }: { color?: string; luc
     sh.start();
     Animated.timing(handle, { toValue: 1, duration: 500, easing: Easing.inOut(Easing.quad), useNativeDriver: true }).start();
     Animated.sequence([Animated.delay(500), Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true })]).start();
-    Animated.sequence([Animated.delay(420), Animated.spring(cap, { toValue: 1, friction: 6, tension: 120, useNativeDriver: true })]).start();
+    // カプセルはマシンの下の取り出し口から出てきて、ポトッと落ちてから真ん中へ
+    Animated.sequence([Animated.delay(380), Animated.timing(cap, { toValue: 1, duration: 380, easing: Easing.linear, useNativeDriver: true })]).start();
     Animated.sequence([Animated.delay(760), Animated.timing(crack, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true })]).start();
     Animated.sequence([Animated.delay(930), Animated.timing(out, { toValue: 1, duration: 180, useNativeDriver: true })]).start();
     return () => sh.stop();
@@ -277,7 +278,7 @@ export function GachaMachine({ color = '#141210', lucky }: { color?: string; luc
         </Animated.View>
       </Animated.View>
       {/* 出てきたカプセル */}
-      <Animated.View style={{ width: 84, height: 84, opacity: cap.interpolate({ inputRange: [0, 0.05, 1], outputRange: [0, 1, 1] }), transform: [{ translateY: cap.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }, { scale: cap.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1.25] }) }, { rotate: cap.interpolate({ inputRange: [0, 1], outputRange: ['-90deg', '0deg'] }) }] }}>
+      <Animated.View style={{ width: 84, height: 84, opacity: cap.interpolate({ inputRange: [0, 0.02, 1], outputRange: [0, 1, 1] }), transform: [{ translateY: cap.interpolate({ inputRange: [0, 0.3, 0.85, 1], outputRange: [90, 112, -6, 0] }) }, { scale: cap.interpolate({ inputRange: [0, 0.3, 0.85, 1], outputRange: [0.26, 0.36, 1.32, 1.25] }) }, { rotate: cap.interpolate({ inputRange: [0, 0.3, 1], outputRange: ['-90deg', '-60deg', '0deg'] }) }] }}>
         <Animated.View style={[fx.capFace, { opacity: crack, transform: [{ scale: crack.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.4, 1.35, 1.1] }) }] }]}>
           <Svg width={72} height={72} viewBox="0 0 100 100">
             {lucky ? (

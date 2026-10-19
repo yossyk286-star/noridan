@@ -253,13 +253,13 @@ body[data-level="jigoku"] .odai .txt mark { background: none; text-decoration: u
 
 /* 罰ガチャのマシン：約1秒。ガタガタ→カプセルが出て真ん中へ→パカッと割れて結果（中の演出は全部 --gt だけ遅らせる） */
 .odai.drum { --gt: 1s; position: relative; }
-.g-machine { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; color: var(--card-fg, #141210); pointer-events: none; animation: gmOut .2s .95s ease-in forwards; }
+.g-machine { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; container-type: size; --gmw: min(58cqw, 220px); --gm-out: calc(var(--gmw) * .5); color: var(--card-fg, #141210); pointer-events: none; animation: gmOut .2s .95s ease-in forwards; }
 .g-machine > * { grid-area: 1 / 1; }
 .g-machine svg { width: min(58%, 220px); height: auto; overflow: visible; animation: gmIn .25s cubic-bezier(.3,1.6,.5,1) both, gmFade .2s .5s ease-in forwards; }
 .gm-body { animation: gmShake .14s linear 4; transform-origin: 60px 150px; }
 .gm-balls { animation: gmBalls .22s linear 3; transform-origin: 60px 56px; }
 .gm-handle { animation: gmHandle .5s cubic-bezier(.5,0,.5,1) both; transform-origin: 60px 116px; }
-.gm-cap { position: relative; width: 84px; height: 84px; opacity: 0; animation: gmCap .32s .42s cubic-bezier(.3,1.5,.5,1) both; }
+.gm-cap { position: relative; width: 84px; height: 84px; opacity: 0; animation: gmCap .38s .38s linear both; }
 .gm-cap i { position: absolute; left: 0; right: 0; height: 50%; border: 4px solid #141210; box-sizing: border-box; }
 .gm-cap .t { top: 0; border-radius: 42px 42px 0 0; border-bottom-width: 2px; background: #e8202a; box-shadow: inset -8px 8px 0 rgba(255,255,255,.3); animation: capT .22s .76s ease-out forwards; }
 .gm-cap .b { bottom: 0; border-radius: 0 0 42px 42px; border-top-width: 2px; background: #f7f3ea; animation: capB .22s .76s ease-out forwards; }
@@ -273,7 +273,8 @@ body[data-level="jigoku"] .odai .txt mark { background: none; text-decoration: u
 @keyframes gmShake { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
 @keyframes gmBalls { 0% { transform: rotate(0) translateY(0); } 33% { transform: rotate(12deg) translateY(-3px); } 66% { transform: rotate(-10deg) translateY(2px); } 100% { transform: rotate(0); } }
 @keyframes gmHandle { to { transform: rotate(360deg); } }
-@keyframes gmCap { 0% { opacity: 1; transform: translateY(70px) scale(.3) rotate(-90deg); } 100% { opacity: 1; transform: translateY(0) scale(1.25) rotate(0); } }
+/* カプセルはマシンの下の取り出し口から出てきて、ポトッと落ちてから真ん中へ */
+@keyframes gmCap { 0% { opacity: 1; transform: translateY(var(--gm-out, 90px)) scale(.26) rotate(-90deg); animation-timing-function: ease-out; } 30% { opacity: 1; transform: translateY(calc(var(--gm-out, 90px) + 22px)) scale(.36) rotate(-60deg); animation-timing-function: cubic-bezier(.3,1.5,.5,1); } 100% { opacity: 1; transform: translateY(0) scale(1.25) rotate(0); } }
 @keyframes capT { to { transform: translate(-34px, -46px) rotate(-50deg); opacity: 0; } }
 @keyframes capB { to { transform: translate(30px, 46px) rotate(40deg); opacity: 0; } }
 @keyframes capIc { 60% { opacity: 1; transform: scale(1.35); } 100% { opacity: 1; transform: scale(1.1); } }
