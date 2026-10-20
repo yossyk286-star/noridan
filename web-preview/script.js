@@ -1096,20 +1096,29 @@ function rtTap(t) {
 // ---------- 爆弾パス ----------
 // お題に合うものを言えたら次の人へ渡す。いつ爆発するか分からん。爆発した時に持ってた人が罰
 const BP_SEC = { yurume: [15, 30], futsu: [10, 24], jigoku: [6, 16] };
+// お題はパスするたびに変わる。パスが進むほど かんたん → ふつう → むずい（地獄は最初から1段上）
+const BP_STEP = { yurume: 5, futsu: 4, jigoku: 3 };
+const BP_TIER = ["easy", "normal", "hard"], BP_TIER_LABEL = { easy: "かんたん", normal: "ふつう", hard: "むずい" };
+function bpTier(bp) { return BP_TIER[Math.min(2, Math.floor(bp.passes / (BP_STEP[S.level] || 4)) + (S.level === "jigoku" ? 1 : 0))]; }
+function bpTopic(bp) { bp.tier = bpTier(bp); bp.topic = draw("bpass_" + bp.tier, DATA.bpass[bp.tier]); }
 function bpRound() {
   const g = S.game, bp = g.bp;
-  bp.round++; bp.topic = draw("bpass", DATA.bpass.topics); bp.holder = (bp.round - 1) % S.members.length; bp.passes = 0; bp.loser = null;
+  bp.round++; bp.holder = (bp.round - 1) % S.members.length; bp.passes = 0; bp.loser = null;
+  bpTopic(bp);
   g.doer = bp.holder; bp.phase = "ready";
 }
 function bpGo() {
   const g = S.game, bp = g.bp, [a, b] = BP_SEC[S.level] || BP_SEC.futsu;
   bp.phase = "play"; bp.startAt = Date.now(); bp.endAt = bp.startAt + (a + Math.random() * (b - a)) * 1000;
   play("coin"); render(true);
+  // 爆発は裏で決めた時間ぴったりに（チクタクの間隔に関係なく）
+  clearTimeout(bp.boomT);
+  bp.boomT = setTimeout(() => { if (S.game?.bp === bp && bp.phase === "play") bpBoom(); }, bp.endAt - bp.startAt);
   // チクタク：経過時間でだんだん速くなる（残り時間はバレへん）
   const tick = () => {
     if (S.game?.bp !== bp || bp.phase !== "play") return;
     const now = Date.now();
-    if (now >= bp.endAt) { bpBoom(); return; }
+    if (now >= bp.endAt) return;
     play("tick");
     const el = (now - bp.startAt) / 1000;
     bp.t = setTimeout(tick, Math.max(140, 650 - el * (S.level === "jigoku" ? 45 : 28)));
@@ -1120,11 +1129,12 @@ function bpPass() {
   const g = S.game, bp = g.bp;
   if (bp.phase !== "play") return;
   bp.holder = (bp.holder + 1) % S.members.length; bp.passes++; g.turn++; g.doer = bp.holder;
+  bpTopic(bp); // 次の人は新しいお題
   play("pop"); render();
 }
 function bpBoom() {
   const g = S.game, bp = g.bp;
-  clearTimeout(bp.t); bp.phase = "boom"; bp.loser = bp.holder; g.doer = bp.holder;
+  clearTimeout(bp.t); clearTimeout(bp.boomT); bp.phase = "boom"; bp.loser = bp.holder; g.doer = bp.holder;
   play("boom"); if (navigator.vibrate) navigator.vibrate([200, 80, 300]);
   render(true);
 }
@@ -1168,15 +1178,16 @@ const rfWho = (rf) => (rf.k + rf.round - 1) % S.members.length;
 function rfBegin() { const rf = S.game.rf; rf.who = rfWho(rf); S.game.doer = rf.who; rf.phase = "hand"; }
 function rfGo() {
   const rf = S.game.rf, now = Date.now();
-  rf.phase = "wait"; rf.color = "wait"; rf.goAt = now + 1600 + Math.random() * 3400; rf.timers = [];
   // フェイク（緑になる前に出る）
   const fakes = S.level === "yurume" ? [] : S.level === "futsu" ? (Math.random() < 0.6 ? ["yellow"] : []) : shuffle(["yellow", "red", "mada"]).slice(0, 1 + rnd(2));
+  // 緑になるまで3〜7秒＋フェイク1つにつき1秒。フェイクは1.8秒以上ためてから出して、0.8秒見せる
+  rf.phase = "wait"; rf.color = "wait"; rf.goAt = now + 3000 + fakes.length * 1000 + Math.random() * 4000; rf.timers = [];
   fakes.forEach((kind, i) => {
-    const at = 700 + ((rf.goAt - now - 900) * (i + 1)) / (fakes.length + 1);
-    rf.timers.push(setTimeout(() => { if (rf.phase !== "wait") return; rf.color = kind; rfPaint(); rf.timers.push(setTimeout(() => { if (rf.phase === "wait" && rf.color === kind) { rf.color = "wait"; rfPaint(); } }, 450)); }, at));
+    const at = 1800 + i * 1000 + ((rf.goAt - now - 3000 - fakes.length * 1000) * (i + 1)) / (fakes.length + 1);
+    rf.timers.push(setTimeout(() => { if (S.game?.rf !== rf || rf.phase !== "wait") return; rf.color = kind; rfPaint(); rf.timers.push(setTimeout(() => { if (rf.phase === "wait" && rf.color === kind) { rf.color = "wait"; rfPaint(); } }, 800)); }, at));
   });
-  rf.timers.push(setTimeout(() => { if (rf.phase !== "wait") return; rf.color = "go"; rf.goShown = performance.now(); rfPaint(); play("pop"); }, rf.goAt - now));
-  rf.timers.push(setTimeout(() => { if (rf.phase === "wait" && rf.color === "go") rfTap(true); }, rf.goAt - now + RF_LATE));
+  rf.timers.push(setTimeout(() => { if (S.game?.rf !== rf || rf.phase !== "wait") return; rf.color = "go"; rf.goShown = performance.now(); rfPaint(); play("pop"); }, rf.goAt - now));
+  rf.timers.push(setTimeout(() => { if (S.game?.rf === rf && rf.phase === "wait" && rf.color === "go") rfTap(true); }, rf.goAt - now + RF_LATE));
   render(true);
 }
 function rfPaint() {
@@ -1208,28 +1219,34 @@ function rfTap(late = false) {
 // ---------- 声デカ選手権 ----------
 // 1人ずつ5秒間、スマホに向かって叫ぶ。声が一番小さかった人が罰（地獄は罰2倍）。マイクが使えへん時はみんなで判定
 const VC_SEC = 5;
-const vcMic = { stream: null, an: null, ctx: null, buf: null, perm: "unknown" };
+const vcMic = { stream: null, an: null, src: null, ctx: null, buf: null, perm: "unknown" };
+// iPhone は「タップの中で起こした AudioContext」やないと音が来えへん（suspended のまま0になる）ので、
+// 効果音と同じ AudioContext をタップの瞬間に起こして使う。マイクを開いた後に止まることがあるのでもう一回起こす
 async function vcAsk() {
   if (vcMic.an) return true;
+  const ctx = SFX.ctx(); // ← await より前（タップの中）で起こす
   try {
-    if (!navigator.mediaDevices?.getUserMedia) throw new Error("no mic");
+    if (!navigator.mediaDevices?.getUserMedia || !ctx) throw new Error("no mic");
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state !== "running") { try { await ctx.resume(); } catch {} }
     const an = ctx.createAnalyser(); an.fftSize = 1024;
-    ctx.createMediaStreamSource(stream).connect(an);
-    Object.assign(vcMic, { stream, ctx, an, buf: new Float32Array(an.fftSize), perm: "granted" });
+    const src = ctx.createMediaStreamSource(stream);
+    src.connect(an);
+    // Safari は出口（スピーカー）につながってへんと音を流さへんことがあるので、音量0でつないでおく
+    const mute = ctx.createGain(); mute.gain.value = 0; an.connect(mute).connect(ctx.destination);
+    Object.assign(vcMic, { stream, ctx, an, src, buf: new Uint8Array(an.fftSize), perm: "granted" });
     return true;
   } catch { vcMic.perm = "denied"; return false; }
 }
 function vcRelease() {
-  try { vcMic.stream?.getTracks().forEach((t) => t.stop()); vcMic.ctx?.close(); } catch {}
-  Object.assign(vcMic, { stream: null, an: null, ctx: null, buf: null });
+  try { vcMic.stream?.getTracks().forEach((t) => t.stop()); vcMic.src?.disconnect(); } catch {}
+  Object.assign(vcMic, { stream: null, an: null, src: null, buf: null }); // AudioContext は効果音と共用なので閉じへん
 }
 // 今の声の大きさ 0〜100（dBFS -60〜0 をならす）
 function vcLevel() {
   if (!vcMic.an) return 0;
-  vcMic.an.getFloatTimeDomainData(vcMic.buf);
-  let sum = 0; for (const v of vcMic.buf) sum += v * v;
+  vcMic.an.getByteTimeDomainData(vcMic.buf); // Float版より古いiPhoneでも動く
+  let sum = 0; for (const b of vcMic.buf) { const v = (b - 128) / 128; sum += v * v; }
   const db = 20 * Math.log10(Math.sqrt(sum / vcMic.buf.length) || 1e-6);
   return Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
 }
@@ -1240,6 +1257,11 @@ function vcRound() {
 }
 const vcWho = (vc) => (vc.k + vc.round - 1) % S.members.length;
 function vcBegin() { const vc = S.game.vc; vc.who = vcWho(vc); S.game.doer = vc.who; vc.phase = "hand"; }
+// 「叫ぶ！」を押したら3・2・1で息を吸う時間をとってからスタート
+function vcCount() {
+  if (vcMic.ctx?.state !== "running") vcMic.ctx?.resume(); // タップの中で起こしなおす
+  count3(S.game.vc, vcGo, 800);
+}
 function vcGo() {
   const vc = S.game.vc;
   vc.phase = "play"; vc.peak = 0; vc.cur = 0; vc.endAt = Date.now() + VC_SEC * 1000; vc.sec = VC_SEC;

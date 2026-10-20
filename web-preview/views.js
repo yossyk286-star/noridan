@@ -27,6 +27,7 @@ const SFX = (() => {
   }
   return {
     unlock: () => ac(),
+    ctx: () => ac(), // 声デカのマイクもこの（タップで起こした）AudioContext を使う
     flip: () => { noise(0.09, 0.22, 3500); tone(420, 0.07, "triangle", 0.06, 700, 0.02); },
     tick: () => tone(1500, 0.025, "square", 0.04),
     coin: () => { tone(1320, 0.07, "square", 0.06); tone(1760, 0.16, "square", 0.06, 0, 0.08); },
@@ -1223,10 +1224,10 @@ function vBpass() {
   if (bp.phase === "batsu") return stageWrap(vCard(), roundEnd("bpAccept", true));
   let card, controls;
   if (bp.phase === "ready") {
-    card = `<div class="odai mode-card center board-card bp-card" id="card"><p class="prog">第${bp.round}回戦</p><p class="bp-topic-l">お題</p><p class="bp-topic">${esc(bp.topic)}</p><p class="hand-note">1つ言えたら「パス」を押して次の人（${mName((bp.holder + 1) % S.members.length)}の方）へ手渡し。<br>いつ爆発するかは分からへん</p>${bigWho(bp.holder, "から")}</div>`;
+    card = `<div class="odai mode-card center board-card bp-card" id="card"><p class="prog">第${bp.round}回戦</p><p class="bp-topic-l"><span>お題</span><span class="bp-tier ${bp.tier}">${BP_TIER_LABEL[bp.tier] || ""}</span></p><p class="bp-topic">${esc(bp.topic)}</p><p class="hand-note">1つ言えたら「パス」を押して次の人（${mName((bp.holder + 1) % S.members.length)}の方）へ手渡し。<br>お題は毎回変わって、だんだん難しくなる。いつ爆発するかは分からへん</p>${bigWho(bp.holder, "から")}</div>`;
     controls = `<button class="big" data-act="bpGo">スタート</button>`;
   } else if (bp.phase === "play") {
-    card = `<div class="odai mode-card center board-card bp-card bp-play" id="card"><p class="bp-topic-l">お題</p><p class="bp-topic">${esc(bp.topic)}</p><div class="bp-bomb" aria-hidden="true">💣</div>${bigWho(bp.holder, "が持ってる")}<p class="hand-note">${bp.passes}回パス</p></div>`;
+    card = `<div class="odai mode-card center board-card bp-card bp-play" id="card"><p class="bp-topic-l"><span>お題</span><span class="bp-tier ${bp.tier}">${BP_TIER_LABEL[bp.tier] || ""}</span></p><p class="bp-topic">${esc(bp.topic)}</p><div class="bp-bomb" aria-hidden="true">💣</div>${bigWho(bp.holder, "が持ってる")}<p class="hand-note">${bp.passes}回パス</p></div>`;
     controls = `<button class="big bp-pass" data-act="bpPass">言えた！パス → ${mName((bp.holder + 1) % S.members.length)}</button>`;
   } else {
     card = `<div class="odai batsu mode-card center ${S.anim ? "shake" : ""}" id="card"><p class="tl-big q-ng bp-boom-t">ドカーン！</p>${bigWho(bp.loser, "が持ってた")}<p class="hand-note">${bp.passes}回パスで爆発</p></div>`;
@@ -1292,6 +1293,9 @@ function vVoice() {
   } else if (vc.phase === "hand") {
     card = `<div class="odai mode-card center" id="card"><p class="prog">第${vc.round}回戦・${vc.k + 1}/${n}人目</p>${bigWho(vc.who, "の番")}<p class="hand-note">スマホに向かって${VC_SEC}秒間、全力で叫ぶ。<br>なんでもOK（「ノリダーン！」とか）</p></div>`;
     controls = `<button class="big" data-act="vcGo">叫ぶ！スタート</button>`;
+  } else if (vc.phase === "count") {
+    card = `<div class="odai mode-card center" id="card"><p class="prog">${mName(vc.who)}、息を吸って…</p><p class="tl-count">${vc.n}</p><p class="hand-note">0になったら${VC_SEC}秒間叫ぶ</p></div>`;
+    controls = `<p class="hint">スマホを口の前に</p>`;
   } else if (vc.phase === "play") {
     card = `<div class="odai mode-card center tl-play" id="card"><div class="tl-clock" id="tlClock"><p class="tl-sec"><b id="tlSec">${VC_SEC}</b><span id="tlFrac">.0</span><small>秒</small></p><div class="tl-pips">${Array.from({ length: VC_SEC }, (_, i) => `<i class="tl-pip${i < VC_SEC - 1 ? " on" : " now"}"></i>`).join("")}</div></div><div class="tl-mid"><div class="vc-meter" id="vcMeter"><i></i></div><p class="sk-cnt"><b id="vcPeak">0</b><small>最大</small></p><p class="hand-note">${mName(vc.who)}、叫べ！</p></div></div>`;
     controls = `<p class="hint">大きさだけ測ってる（録音はしてへん）</p>`;
@@ -2532,7 +2536,7 @@ function onClick(e) {
     case "rfAccept": applyAdds(); g.gacha = []; g.phase = "play"; rfRound(); render(true); break;
     // 声デカ選手権
     case "vcStart": vcAsk().then((ok) => { g.vc.noMic = !ok; vcRound(); render(true); }); break;
-    case "vcGo": vcGo(); break;
+    case "vcGo": vcCount(); render(true); break;
     case "vcNext": g.vc.k++; vcBegin(); render(true); break;
     case "vcPick": g.vc.res = S.members.map((_, j) => (j === i ? 0 : 1)); g.vc.k = S.members.length - 1; g.turn++; vcRank(); render(true); break;
     case "vcGacha": startGacha(g.vc.losers, S.level === "jigoku" ? 2 : 1, "voice", g.vc); render(true); break;

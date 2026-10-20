@@ -14,7 +14,7 @@ import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { Level, Member, Night } from '../types';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
-type Phase = 'intro' | 'hand' | 'play' | 'done' | 'rank' | 'pick' | 'batsu';
+type Phase = 'intro' | 'hand' | 'count' | 'play' | 'done' | 'rank' | 'pick' | 'batsu';
 const SEC = 5;
 /** dBFS（-60〜0）を 0〜100 に */
 const score = (db: number) => Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
@@ -71,7 +71,13 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
     setLosers([]);
     setPhase(ok ? 'hand' : 'pick');
   };
+  const [count, setCount] = useState(3);
+  // 「叫ぶ！」を押したら3・2・1で息を吸う時間をとってからスタート（その間にマイクを開いておく）
   const go = async () => {
+    setPhase('count');
+    phaseRef.current = 'count';
+    setCount(3);
+    play('tick');
     try {
       await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
       await recorder.prepareToRecordAsync();
@@ -81,6 +87,14 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
       setPhase('pick');
       return;
     }
+    for (const c of [2, 1]) {
+      await new Promise((r) => setTimeout(r, 800));
+      if (phaseRef.current !== 'count') return;
+      setCount(c);
+      play('tick');
+    }
+    await new Promise((r) => setTimeout(r, 800));
+    if (phaseRef.current !== 'count') return;
     peakRef.current = 0;
     setPeak(0);
     setCur(0);
@@ -202,6 +216,16 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
       );
       controls = <BigButton pal={pal} label="叫ぶ！スタート" onPress={go} />;
       break;
+    case 'count':
+      card = (
+        <ModeCard pal={pal} center>
+          <Prog fg={fg}>{`${members[who].name}、息を吸って…`}</Prog>
+          <Text style={[s.count, { color: fg }]}>{count}</Text>
+          <Note fg={fg}>{`0になったら${SEC}秒間叫ぶ`}</Note>
+        </ModeCard>
+      );
+      controls = <Text style={[s.hint, { color: pal.muted }]}>スマホを口の前に</Text>;
+      break;
     case 'play':
       card = (
         <ModeCard pal={pal} center>
@@ -263,6 +287,7 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
 
 const s = StyleSheet.create({
   hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  count: { fontFamily: F.display, fontSize: 130, lineHeight: 140 },
   lead: { fontFamily: F.display, fontSize: 22, lineHeight: 30, textAlign: 'center', marginVertical: 8 },
   pickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', alignSelf: 'stretch' },
   pickBtn: { width: '31%', paddingVertical: 12, borderRadius: 12, borderWidth: 2, alignItems: 'center' },

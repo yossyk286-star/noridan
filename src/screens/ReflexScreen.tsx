@@ -17,7 +17,7 @@ type Color = 'wait' | 'go' | 'yellow' | 'red' | 'mada';
 type Res = { fly: boolean; ms: number | null };
 /** これより遅かったら「遅すぎ」で打ち切り */
 const LATE = 1500;
-const BG: Record<Color, string> = { wait: '#3a3530', go: '#1fc95b', yellow: '#ffd23f', red: '#e8202a', mada: '#2f8f4f' };
+const BG: Record<Color, string> = { wait: '#3a3530', go: '#1fc95b', yellow: '#ffd23f', red: '#e8202a', mada: '#3d7bff' }; // 「まだ！」は緑と間違えへん青
 const LABEL: Record<Color, string> = { wait: '待って…', go: '今！', yellow: 'まだやで', red: 'まだやで', mada: 'まだ！' };
 const LV_TEXT: Record<Level, string> = { yurume: 'フェイクなし', futsu: 'たまに黄色のフェイク', jigoku: '黄色・赤・「まだ！」のフェイク' };
 
@@ -62,15 +62,16 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
     paint('wait');
     setPhase('wait');
     phaseRef.current = 'wait';
-    const wait = 1600 + Math.random() * 3400;
     const pool: Color[] = ['yellow', 'red', 'mada'];
     const fakes: Color[] = level === 'yurume' ? [] : level === 'futsu' ? (Math.random() < 0.6 ? ['yellow'] : []) : pool.sort(() => Math.random() - 0.5).slice(0, 1 + Math.floor(Math.random() * 2));
+    // 緑になるまで3〜7秒＋フェイク1つにつき1秒。フェイクは1.8秒以上ためてから出して、0.8秒見せる
+    const wait = 3000 + fakes.length * 1000 + Math.random() * 4000;
     fakes.forEach((f, i) => {
-      const at = 700 + ((wait - 900) * (i + 1)) / (fakes.length + 1);
+      const at = 1800 + i * 1000 + ((wait - 3000 - fakes.length * 1000) * (i + 1)) / (fakes.length + 1);
       timers.current.push(setTimeout(() => {
         if (phaseRef.current !== 'wait') return;
         paint(f);
-        timers.current.push(setTimeout(() => { if (phaseRef.current === 'wait' && colorRef.current === f) paint('wait'); }, 450));
+        timers.current.push(setTimeout(() => { if (phaseRef.current === 'wait' && colorRef.current === f) paint('wait'); }, 800));
       }, at));
     });
     timers.current.push(setTimeout(() => { if (phaseRef.current !== 'wait') return; goShown.current = performance.now(); paint('go'); play('pop'); }, wait));

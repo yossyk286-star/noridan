@@ -377,7 +377,11 @@ body.stage .odai.board-card { overflow-y: auto; justify-content: flex-start !imp
 .rt-tile.bomb { background: #ff3b3b; border-color: #ff3b3b; animation: skPop .3s ease-out; }
 .rt-tile:disabled { cursor: default; }
 /* 爆弾パス */
-.bp-topic-l { margin: 0; font-size: 12px; font-weight: 800; opacity: .6; }
+.bp-topic-l { margin: 0; font-size: 12px; font-weight: 800; }
+.bp-topic-l > span:first-child { opacity: .6; }
+.bp-tier { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; color: #fff; background: #1f9d55; opacity: 1; }
+.bp-tier.normal { background: #e8780a; }
+.bp-tier.hard { background: #e8202a; }
 .bp-topic { margin: 0; font-family: var(--display); font-size: clamp(30px, 10vw, 44px); line-height: 1.2; }
 .bp-bomb { font-size: 72px; line-height: 1; animation: bpTick .5s ease-in-out infinite alternate; }
 @keyframes bpTick { from { transform: rotate(-8deg) scale(1); } to { transform: rotate(8deg) scale(1.08); } }
@@ -410,7 +414,7 @@ body.stage .odai.board-card { overflow-y: auto; justify-content: flex-start !imp
 .rf-box.go { background: #1fc95b; color: #fff; }
 .rf-box.yellow { background: #ffd23f; color: #141210; }
 .rf-box.red { background: #e8202a; color: #fff; }
-.rf-box.mada { background: #2f8f4f; color: #fff; }
+.rf-box.mada { background: #3d7bff; color: #fff; } /* 「まだ！」は緑と間違えへん青 */
 .rf-g { color: #1fc95b; }
 .sp-res small { font-size: .35em; margin-left: 4px; opacity: .6; }
 /* 声デカ選手権 */
