@@ -1184,7 +1184,7 @@ function rfRound() {
 }
 // 緑の時間とフェイク（色・出る時間）を決める。フェイクは1.5秒以上ためてから0.8秒、緑の0.4秒前までに消える
 function rfPlan(level) {
-  const go = 2000 + Math.random() * 7000;
+  const go = 5000 + Math.random() * 10000; // 5〜15秒
   const want = level === "yurume" ? 0 : level === "futsu" ? (Math.random() < 0.55 ? 1 : 0) : [0, 1, 1, 2, 2, 3][rnd(6)];
   const fakes = [];
   for (let t = 0; t < 40 && fakes.length < want; t++) {
@@ -1200,7 +1200,7 @@ function rfGo() {
   const rf = S.game.rf, now = Date.now();
   // フェイク（緑になる前に出る）
   const W = rf.style === "multi" ? "mwait" : "wait";
-  // 緑になるのは毎回バラバラ（2〜9秒のどこか）。フェイクも数・時間・色がバラバラで、緑の直前とは限らへん
+  // 緑になるのは毎回バラバラ（5〜15秒のどこか）。フェイクも数・時間・色がバラバラで、緑の直前とは限らへん
   const plan = rfPlan(S.level);
   rf.phase = W; rf.color = "wait"; rf.goAt = now + plan.go; rf.timers = [];
   plan.fakes.forEach(({ kind, at }) => {

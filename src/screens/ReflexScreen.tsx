@@ -88,8 +88,8 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
     const W: Phase = styleRef.current === 'multi' ? 'mwait' : 'wait';
     setPhase(W);
     phaseRef.current = W;
-    // 緑になるのは毎回バラバラ（2〜9秒のどこか）。フェイクも数・時間・色がバラバラで、緑の直前とは限らへん
-    const wait = 2000 + Math.random() * 7000;
+    // 緑になるのは毎回バラバラ（5〜15秒のどこか）。フェイクも数・時間・色がバラバラで、緑の直前とは限らへん
+    const wait = 5000 + Math.random() * 10000; // 5〜15秒
     const want = level === 'yurume' ? 0 : level === 'futsu' ? (Math.random() < 0.55 ? 1 : 0) : [0, 1, 1, 2, 2, 3][Math.floor(Math.random() * 6)];
     const plan: { at: number; f: Color }[] = [];
     for (let t = 0; t < 40 && plan.length < want; t++) {
