@@ -34,7 +34,7 @@ type Props = {
   scores?: number[];
 };
 
-const MODE_LABEL: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票', wolf: 'ワードウルフ', pittari: 'ピッタリ予想', tilt: '傾けたらアウト', shake: '全力シェイク', stop: 'ピタッとストップ' };
+const MODE_LABEL: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票', wolf: 'ワードウルフ', pittari: 'ピッタリ予想', tilt: '傾けたらアウト', shake: '全力シェイク', stop: 'ピタッとストップ', rtap: 'ロシアンタップ', bpass: '爆弾パス', hilo: 'ハイ&ロー', reflex: '反射神経バトル', voice: '声デカ選手権' };
 
 export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onMembers, onAgain, words, scores }: Props) {
   const rows = members.map((m, i) => ({ m, i, n: pen[i] ?? 0 })).sort((a, b) => b.n - a.n);
@@ -43,7 +43,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
   const ts = titles(pen, stats);
   const [tip] = useState(() => resultTip(night ?? false));
   const { voice } = usePrefs();
-  const line = mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' || mode === 'ito' || mode === 'pittari' ? '問' : mode === 'wolf' ? '回戦' : mode === 'tilt' ? '回挑戦' : mode === 'shake' || mode === 'stop' ? '回戦' : mode === 'memory' ? 'ペア' : mode === 'gesture' ? '問正解' : mode === 'homeru' ? '回' : 'ターン'}`;
+  const line = mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' || mode === 'ito' || mode === 'pittari' ? '問' : mode === 'wolf' ? '回戦' : mode === 'tilt' ? '回挑戦' : ['shake', 'stop', 'rtap', 'bpass', 'hilo', 'reflex', 'voice'].includes(mode) ? '回戦' : mode === 'memory' ? 'ペア' : mode === 'gesture' ? '問正解' : mode === 'homeru' ? '回' : 'ターン'}`;
   // 戦犯の名前がスロットみたいに回って、止まったら揺れて紙吹雪（それまで下の称号やランキングは隠す）
   const slot = top > 0 && members.length > 1;
   const SLOT_MS = 2400;

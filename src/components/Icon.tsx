@@ -1,10 +1,15 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /** 線のアイコン（お試し版と同じ形）。色は color、太さは中で統一 */
-export type IconName = 'gear' | 'flip' | 'split' | 'wolf' | 'target' | 'undo' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale' | 'tilt' | 'shake' | 'stop';
+export type IconName = 'gear' | 'flip' | 'split' | 'wolf' | 'target' | 'undo' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice';
 
 const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
   wolf: 'M12 8a3 3 0 1 1-6 0a3 3 0 1 1 6 0zM3.5 19a5.5 5.5 0 0 1 11 0M20 9a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0zM15.5 14.2A4.5 4.5 0 0 1 21 18.5M17.5 3.5v1',
+  rtap: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM16.5 13.5a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM18.6 13.2l1.4-1.4',
+  bpass: 'M10 21a6.5 6.5 0 1 0 0-13a6.5 6.5 0 1 0 0 13zM14.6 9.4l2-2M17 5.5l1.5-1.5M19.5 7.5l1.5.5M16.5 3l.5 1.5',
+  hilo: 'M5 4h9a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM20 7l-2-3l-2 3M20 17l-2 3l-2-3M18 4v16',
+  reflex: 'M13 2L4 14h7l-1 8l9-12h-7z',
+  voice: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7',
   stop: 'M12 21.5a8 8 0 1 0 0-16a8 8 0 1 0 0 16zM12 9.5v4l2.6 1.6M9.5 2.5h5M12 2.5v3M18.6 6.4l1.6-1.6',
   shake: 'M10 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM4.6 8.6c-1 2.2-1 4.6 0 6.8M19.4 8.6c1 2.2 1 4.6 0 6.8M2.2 6.8c-1.5 3.3-1.5 7.1 0 10.4M21.8 6.8c1.5 3.3 1.5 7.1 0 10.4',
   tilt: 'M9.08 2.03L18.79 4.45L14.92 19.97L5.21 17.55ZM3 21.5h18M13.8 11a1.6 1.6 0 1 1-3.2 0a1.6 1.6 0 1 1 3.2 0z',

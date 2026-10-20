@@ -367,7 +367,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
         </DeckStack>
       );
       controls = last ? (
-        <RoundEnd pal={pal} next={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'}→もう1回戦`} endLabel={gacha.every((x) => x.lucky) ? '結果発表へ' : '受け入れて結果発表へ'} onNext={accept} onEnd={endNow} />
+        <RoundEnd pal={pal} next={gacha.every((x) => x.lucky) ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={accept} onEnd={endNow} />
       ) : (
         <BigButton pal={pal} label={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'} → 次は${nextName}`} onPress={accept} />
       );

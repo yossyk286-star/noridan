@@ -83,6 +83,11 @@ const ICON = {
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v7h16v-7M12 3v12M7 8l5-5 5 5"/></svg>`,
   users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.5-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.5 3.5 5.4"/></svg>`,
   wolf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/><path d="M17.5 3.5v1"/></svg>`,
+  rtap: ico("M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM16.5 13.5a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM18.6 13.2l1.4-1.4"),
+  bpass: ico("M10 21a6.5 6.5 0 1 0 0-13a6.5 6.5 0 1 0 0 13zM14.6 9.4l2-2M17 5.5l1.5-1.5M19.5 7.5l1.5.5M16.5 3l.5 1.5"),
+  hilo: ico("M5 4h9a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM20 7l-2-3l-2 3M20 17l-2 3l-2-3M18 4v16"),
+  reflex: ico("M13 2L4 14h7l-1 8l9-12h-7z"),
+  voice: ico("M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"),
   stop: ico("M12 21.5a8 8 0 1 0 0-16a8 8 0 1 0 0 16zM12 9.5v4l2.6 1.6M9.5 2.5h5M12 2.5v3M18.6 6.4l1.6-1.6"),
   shake: ico("M10 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM4.6 8.6c-1 2.2-1 4.6 0 6.8M19.4 8.6c1 2.2 1 4.6 0 6.8M2.2 6.8c-1.5 3.3-1.5 7.1 0 10.4M21.8 6.8c1.5 3.3 1.5 7.1 0 10.4"),
   tilt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5" transform="rotate(14 12 12)"/><path d="M3 20h18"/><circle cx="12.4" cy="11" r="1.6"/></svg>`,
@@ -271,6 +276,11 @@ function vHome2() {
       <button class="mode" data-act="start" data-m="tilt"><i class="mode-ic">${ICON.tilt}</i><b>傾けたらアウト</b><span>${HELP.tilt.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="shake"><i class="mode-ic">${ICON.shake}</i><b>全力シェイク</b><span>${HELP.shake.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="stop"><i class="mode-ic">${ICON.stop}</i><b>ピタッとストップ</b><span>${HELP.stop.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="rtap"><i class="mode-ic">${ICON.rtap}</i><b>ロシアンタップ</b><span>${HELP.rtap.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="bpass"><i class="mode-ic">${ICON.bpass}</i><b>爆弾パス</b><span>${HELP.bpass.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="hilo"><i class="mode-ic">${ICON.hilo}</i><b>ハイ&amp;ロー</b><span>${HELP.hilo.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="reflex"><i class="mode-ic">${ICON.reflex}</i><b>反射神経バトル</b><span>${HELP.reflex.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="voice"><i class="mode-ic">${ICON.voice}</i><b>声デカ選手権</b><span>${HELP.voice.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="pittari" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.target}</i><b>ピッタリ予想</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.pittari.desc}</span><em class="go">開始</em></button>
     </div>
   </section>
@@ -341,8 +351,8 @@ const TUT = [
   {
     step: "1 / 3",
     title: "名前を入れて、<br>遊び方を選ぶ",
-    text: "遊ぶ人の名前を入れて、遊び方を選ぶだけ。遊び方は<b>13個</b>。どれも始める前に<b>説明が出る</b>から大丈夫。",
-    art: () => `<div class="tut-modes">${["アホお題", "すごろく", "神経衰弱", "価値観ナンバー", "ジェスチャー", "褒め殺し", "NGワード", "ぶっちゃけ投票", "ワードウルフ", "ピッタリ予想", "傾けたらアウト", "全力シェイク", "ピタッとストップ"].map((m) => `<span>${m}</span>`).join("")}</div>`,
+    text: "遊ぶ人の名前を入れて、遊び方を選ぶだけ。遊び方は<b>18個</b>。どれも始める前に<b>説明が出る</b>から大丈夫。",
+    art: () => `<div class="tut-modes">${["アホお題", "すごろく", "神経衰弱", "価値観ナンバー", "ジェスチャー", "褒め殺し", "NGワード", "ぶっちゃけ投票", "ワードウルフ", "ピッタリ予想", "傾けたらアウト", "全力シェイク", "ピタッとストップ", "ロシアンタップ", "爆弾パス", "ハイ&ロー", "反射神経バトル", "声デカ選手権"].map((m) => `<span>${m}</span>`).join("")}</div>`,
   },
   {
     step: "2 / 3",
@@ -1085,7 +1095,7 @@ function vWolf() {
 // 1回戦が終わった時：もう1回戦か、ここで結果発表か（罰ガチャのあとは「受け入れて」）
 function roundEnd(nextAct, batsu = false) {
   const g = S.game, lucky = batsu && g.gacha.every((x) => x.lucky);
-  return `<div class="row2 round-end"><button class="ghost" data-act="end">${ICON.flag}<span>${batsu && !lucky ? "受け入れて" : ""}結果発表へ</span></button><button class="big" data-act="${nextAct}">${batsu ? (lucky ? "ラッキー！" : "受け入れた") + "→" : ""}もう1回戦</button></div>`;
+  return `<div class="row2 round-end"><button class="ghost" data-act="end">${ICON.flag}<span>結果発表へ</span></button><button class="big" data-act="${nextAct}">${batsu ? `<small>${lucky ? "ラッキー！" : "受け入れて"}</small>` : ""}もう1回戦</button></div>`;
 }
 
 // ---------- ピタッとストップ（画面） ----------
@@ -1110,7 +1120,7 @@ function vStopCard() {
     case "hand": return `<div class="odai mode-card center board-card sp-hand" id="card">
       <p class="prog">第${sp.round}回戦・${sp.k + 1}/${n}人目</p>
       ${bigWho(sp.who, "の番")}
-      <p class="sp-goal">${sp.dir === "down" ? `${sp.target}.00 から減っていく` : "0.00 から増えていく"}<br><b>${spGoal(sp)}</b>ちょうどで止めろ</p>
+      <p class="sp-goal">${sp.dir === "down" ? `${sp.target}.00 から減っていく` : sp.dir === "blind" ? `${SP_PEEK[S.level] ? `数字が見えるのは最初の${SP_PEEK[S.level]}秒だけ` : "数字は最初から見えへん"}。頭の中で数えて` : "0.00 から増えていく"}<br><b>${spGoal(sp)}</b>ちょうどで止めろ</p>
       ${sp.rate !== 1 ? spRateBox(sp) : ""}
       <p class="hand-note">${S.level === "jigoku" ? "数字が消えたり邪魔が入ったりする。" : ""}行き過ぎたらオーバーでアウト</p>
     </div>`;
@@ -1121,7 +1131,7 @@ function vStopCard() {
     </div>`;
     case "play": return `<div class="odai mode-card center sp-play" id="card">
       <p class="prog">${mName(sp.who)}・<b>${spGoal(sp)}</b>で止めろ</p>
-      <div class="sp-box" id="spBox"><p class="sp-num" id="spNum">${spFmt(spShown(sp, 0))}</p><span class="sp-rate" id="spRate"></span></div>
+      <div class="sp-box ${sp.dir === "blind" && !SP_PEEK[S.level] ? "hide" : ""}" id="spBox"><p class="sp-num" id="spNum">${sp.dir === "blind" && !SP_PEEK[S.level] ? "??.??" : spFmt(spShown(sp, 0))}</p><span class="sp-rate" id="spRate"></span></div>
       <p class="hand-note">${sp.dir === "down" ? "0を過ぎたらオーバー" : `${sp.target}秒を過ぎたらオーバー`}</p>
     </div>`;
     case "check": { const r = sp.res[sp.who]; return `<div class="odai mode-card center" id="card">
@@ -1164,6 +1174,7 @@ function vStop() {
     return vIntroStage("stop", { extra: `${lvBox(lv, false)}<div class="sp-dir" role="group" aria-label="モード">
         <button data-act="spDir" data-v="down" aria-pressed="${sp.dir === "down"}"><b>減る</b><small>0.00で止める</small></button>
         <button data-act="spDir" data-v="up" aria-pressed="${sp.dir === "up"}"><b>増える</b><small>目標の秒数で止める</small></button>
+        <button data-act="spDir" data-v="blind" aria-pressed="${sp.dir === "blind"}"><b>体内時計</b><small>数字が見えへん</small></button>
       </div>`, btn: "スタート", act: "spStart" });
   }
   return `<div id="stage" class="${S.flip ? "flipped" : ""}">
@@ -1171,6 +1182,124 @@ function vStop() {
     <div class="deck">${vStopCard()}</div>
     ${vStopControls()}
   </div>`;
+}
+
+// ---------- 新しい5つ（ロシアンタップ・爆弾パス・ハイ&ロー・反射神経バトル・声デカ選手権） ----------
+// 罰ガチャまでの共通の流れ：losers に罰ガチャ → 受け入れたら「もう1回戦／結果発表へ」
+function startGacha(losers, n, reason, st) {
+  const g = S.game;
+  g.add = new Map(losers.map((t) => [t, n])); g.addReason = reason;
+  g.gacha = losers.map((t) => ({ i: t, n, ...drawBatsu(t, n) }));
+  g.doer = -1; g.phase = "batsu"; st.phase = "batsu";
+}
+const stageWrap = (card, controls) => `<div id="stage" class="${S.flip ? "flipped" : ""}">${vBar()}<div class="deck">${card}</div>${controls}</div>`;
+// 順位表（反射神経・声デカ）：rows = [{i, v(表示), bad, sub}]
+function rankList(rows, hi = -1) {
+  return `<ol class="sk-board sp-board">${rows.map((r, k) => `<li class="${r.bad ? "lose" : ""} ${r.i === hi ? "me" : ""} ${r.wait ? "wait" : ""}" style="--mc:${colorOf(r.i)}"><span class="sk-rk">${r.wait ? "-" : r.rk ?? k + 1}</span><span class="sk-nm">${esc(S.members[r.i].name)}</span><span class="sp-v">${r.sub || ""}</span><b>${r.v}</b></li>`).join("")}</ol>`;
+}
+
+// ロシアンタップ
+function vRtap() {
+  const g = S.game, rt = g.rt;
+  if (rt.phase === "intro") return vIntroStage("rtap", { extra: lvBox(`パネル${RT_TILES[S.level]}枚の中に爆弾が1つ`, false), btn: "スタート", act: "rtStart" });
+  if (rt.phase === "batsu") return stageWrap(vCard(), roundEnd("rtAccept", true));
+  const boom = rt.phase === "boom", cols = rt.tiles <= 9 ? 3 : 4;
+  const card = `<div class="odai mode-card center ${boom ? "batsu" : ""}" id="card">
+    <p class="prog">第${rt.round}回戦・残り${rt.tiles - rt.open.length}枚</p>
+    <p class="rt-who">${boom ? `${mName(rt.loser)}がドカン！` : `${mName(rt.who)}の番。1枚めくって`}</p>
+    <div class="rt-grid" style="grid-template-columns:repeat(${cols},1fr)">${Array.from({ length: rt.tiles }, (_, t) => {
+      const open = rt.open.includes(t), bomb = t === rt.bomb && (open || boom);
+      return `<button class="rt-tile ${open ? "open" : ""} ${bomb ? "bomb" : ""}" data-act="rtTap" data-i="${t}" ${open || boom ? "disabled" : ""} aria-label="${open ? "めくった" : "パネル"}">${bomb ? "💣" : open ? "🍺" : "?"}</button>`;
+    }).join("")}</div>
+  </div>`;
+  const controls = boom ? `<button class="big has-pen" data-act="rtGacha">${mName(rt.loser)}に罰ガチャ</button>` : `<p class="hint">1枚だけ爆弾。めくった人が罰</p>`;
+  return stageWrap(card, controls);
+}
+
+// 爆弾パス
+function vBpass() {
+  const g = S.game, bp = g.bp;
+  if (bp.phase === "intro") return vIntroStage("bpass", { extra: `${lvBox(`爆発まで${BP_SEC[S.level][0]}〜${BP_SEC[S.level][1]}秒のどこか`, false)}<div class="sk-safe" role="note"><b>⚠ スマホは手渡しで</b><span>投げたらアカン。落とさんように両手で渡す</span></div>`, btn: "スタート", act: "bpStart" });
+  if (bp.phase === "batsu") return stageWrap(vCard(), roundEnd("bpAccept", true));
+  let card, controls;
+  if (bp.phase === "ready") {
+    card = `<div class="odai mode-card center board-card bp-card" id="card"><p class="prog">第${bp.round}回戦</p><p class="bp-topic-l">お題</p><p class="bp-topic">${esc(bp.topic)}</p><p class="hand-note">1つ言えたら「パス」を押して次の人（${mName((bp.holder + 1) % S.members.length)}の方）へ手渡し。<br>いつ爆発するかは分からへん</p>${bigWho(bp.holder, "から")}</div>`;
+    controls = `<button class="big" data-act="bpGo">スタート</button>`;
+  } else if (bp.phase === "play") {
+    card = `<div class="odai mode-card center board-card bp-card bp-play" id="card"><p class="bp-topic-l">お題</p><p class="bp-topic">${esc(bp.topic)}</p><div class="bp-bomb" aria-hidden="true">💣</div>${bigWho(bp.holder, "が持ってる")}<p class="hand-note">${bp.passes}回パス</p></div>`;
+    controls = `<button class="big bp-pass" data-act="bpPass">言えた！パス → ${mName((bp.holder + 1) % S.members.length)}</button>`;
+  } else {
+    card = `<div class="odai batsu mode-card center ${S.anim ? "shake" : ""}" id="card"><p class="tl-big q-ng bp-boom-t">ドカーン！</p>${bigWho(bp.loser, "が持ってた")}<p class="hand-note">${bp.passes}回パスで爆発</p></div>`;
+    controls = `<button class="big has-pen" data-act="bpGacha">${mName(bp.loser)}に罰ガチャ</button>`;
+  }
+  return stageWrap(card, controls);
+}
+
+// ハイ&ロー
+const HL_SUITS = ["♠", "♥", "♦", "♣"];
+const hlCard = (v, s, cls = "") => `<div class="hl-card ${s === 1 || s === 2 ? "red" : ""} ${cls}"><span>${hlFace(v)}</span><i>${HL_SUITS[s]}</i></div>`;
+function vHilo() {
+  const g = S.game, hl = g.hl;
+  if (hl.phase === "intro") return vIntroStage("hilo", { extra: lvBox(S.level === "jigoku" ? "同じ数字もアウト。3連続のあとに外したら罰2倍" : S.level === "futsu" ? "5連続のあとに外したら罰2倍" : "同じ数字はセーフ", false), btn: "スタート", act: "hlStart" });
+  if (hl.phase === "batsu") return stageWrap(vCard(), roundEnd("hlAccept", true));
+  let card, controls;
+  if (hl.phase === "guess") {
+    card = `<div class="odai mode-card center board-card hl-cardwrap" id="card"><p class="prog">第${hl.round}回戦・${hl.streak}連続中</p>${bigWho(hl.who, "の番")}<div class="hl-row">${hlCard(hl.cur, hl.suit)}<div class="hl-card back">?</div></div><p class="hand-note">次のカードは<b>${hlFace(hl.cur)}</b>より大きい？小さい？${S.level === "jigoku" ? "（同じ数字はアウト）" : "（同じ数字はセーフ）"}</p></div>`;
+    controls = `<div class="row2"><button class="big hl-btn" data-act="hlGuess" data-v="down">▼ ロー</button><button class="big hl-btn" data-act="hlGuess" data-v="up">▲ ハイ</button></div>`;
+  } else {
+    card = `<div class="odai mode-card center ${hl.ok ? "" : "batsu"}" id="card"><p class="prog">${mName(hl.who)}は「${hl.up ? "ハイ" : "ロー"}」</p><div class="hl-row">${hlCard(hl.cur, hl.suit, "dim")}${hlCard(hl.next, hl.nsuit, "flip")}</div><p class="tl-big sp-verdict ${hl.ok ? "q-ok" : "q-ng"}">${hl.ok ? (hl.same ? "同じでセーフ" : "当たり！") : hl.same ? "同じでアウト" : "ハズレ！"}</p><p class="hand-note">${hl.ok ? `${hl.streak}連続` : `${hl.streak}連続で止まった${hl.x > 1 ? "（罰2倍）" : ""}`}</p></div>`;
+    controls = hl.ok ? `<button class="big" data-act="hlNext">次は${mName((hl.who + 1) % S.members.length)}</button>` : `<button class="big has-pen" data-act="hlGacha">${mName(hl.loser)}に罰ガチャ</button>`;
+  }
+  return stageWrap(card, controls);
+}
+
+// 反射神経バトル
+function rfRows(rf) {
+  const idx = S.members.map((_, i) => i), lose = rf.phase === "rank" || rf.phase === "batsu" ? rf.losers : [];
+  const done = idx.filter((i) => rf.res[i]).sort((a, b) => (rf.res[a].fly ? 1e9 : rf.res[a].ms) - (rf.res[b].fly ? 1e9 : rf.res[b].ms));
+  return [...done.map((i) => ({ i, v: rf.res[i].fly ? "フライング" : rf.res[i].ms >= RF_LATE ? "遅すぎ" : `${rf.res[i].ms}ms`, bad: lose.includes(i), rk: rf.res[i].fly ? "×" : undefined })), ...idx.filter((i) => !rf.res[i]).map((i) => ({ i, v: "?", wait: true }))];
+}
+function vReflex() {
+  const g = S.game, rf = g.rf, n = S.members.length;
+  if (rf.phase === "intro") return vIntroStage("reflex", { extra: lvBox(S.level === "yurume" ? "フェイクなし" : S.level === "futsu" ? "たまに黄色のフェイク" : "黄色・赤・「まだ！」のフェイク", false), btn: "スタート", act: "rfStart" });
+  if (rf.phase === "batsu") return stageWrap(vCard(), roundEnd("rfAccept", true));
+  let card, controls;
+  if (rf.phase === "hand") {
+    card = `<div class="odai mode-card center" id="card"><p class="prog">第${rf.round}回戦・${rf.k + 1}/${n}人目</p>${bigWho(rf.who, "の番")}<p class="hand-note">画面が<b class="rf-g">緑</b>になった瞬間にタップ。<br>緑になる前に押したらフライングで罰</p></div>`;
+    controls = `<button class="big" data-act="rfGo">準備OK</button>`;
+  } else if (rf.phase === "wait") {
+    card = `<div class="odai mode-card center rf-play" id="card" data-tap="rf"><div class="rf-box ${rf.color}" id="rfBox"><b>待って…</b></div><p class="hand-note">${mName(rf.who)}・緑になったらタップ</p></div>`;
+    controls = `<p class="hint">画面のどこを押してもOK</p>`;
+  } else {
+    const r = rf.res[rf.who];
+    card = `<div class="odai mode-card center board-card ${n >= 7 ? "dense" : ""} ${rf.phase === "rank" || r.fly ? "batsu" : ""}" id="card"><p class="prog">${rf.phase === "rank" ? `第${rf.round}回戦の結果` : `${mName(rf.who)}の記録`}</p>${rf.phase === "done" ? `<p class="sp-num sp-res ${r.fly ? "over rf-fly" : ""}">${r.fly ? "フライング" : r.ms >= RF_LATE ? "遅すぎ" : r.ms + "<small>ms</small>"}</p>` : ""}${rankList(rfRows(rf), rf.phase === "done" ? rf.who : -1)}${rf.phase === "rank" ? `<p class="ng-lead">${rf.losers.map(mName).join("・")}が${rf.losers.some((i) => rf.res[i].fly) ? "フライング" : "一番遅い"}</p>` : ""}</div>`;
+    controls = rf.phase === "rank" ? `<button class="big has-pen" data-act="rfGacha">${rf.losers.map(mName).join("・")}に罰ガチャ</button>` : `<button class="big" data-act="rfNext">次は${mName(rfWho({ k: rf.k + 1, round: rf.round }))}</button>`;
+  }
+  return stageWrap(card, controls);
+}
+
+// 声デカ選手権
+function vVoice() {
+  const g = S.game, vc = g.vc, n = S.members.length;
+  if (vc.phase === "intro") return vIntroStage("voice", { extra: `${lvBox(S.level === "jigoku" ? "一番小さい人の罰が2倍" : "一番小さい人が罰", false)}<p class="how-note">次にマイクの許可を聞かれるので「許可」を押してな。録音はせえへん（大きさを測るだけ）</p>`, btn: "スタート", act: "vcStart" });
+  if (vc.phase === "batsu") return stageWrap(vCard(), roundEnd("vcAccept", true));
+  const rows = () => { const idx = S.members.map((_, i) => i), lose = vc.phase === "rank" ? vc.losers : []; return [...idx.filter((i) => vc.res[i] != null).sort((a, b) => vc.res[b] - vc.res[a]).map((i) => ({ i, v: vc.res[i], bad: lose.includes(i) })), ...idx.filter((i) => vc.res[i] == null).map((i) => ({ i, v: "?", wait: true }))]; };
+  let card, controls;
+  if (vc.noMic && vc.phase !== "pick") vc.phase = vc.phase === "hand" || vc.phase === "play" || vc.phase === "done" ? "pick" : vc.phase;
+  if (vc.phase === "pick") {
+    card = `<div class="odai mode-card center" id="card"><p class="prog">第${vc.round}回戦（マイクが使えへんのでみんなで判定）</p><p class="ng-lead">1人ずつ5秒叫んで、<br>一番小さかった人をタップ</p><div class="vc-pick">${S.members.map((m, i) => `<button class="vc-name" data-act="vcPick" data-i="${i}" style="--mc:${colorOf(i)}">${esc(m.name)}</button>`).join("")}</div></div>`;
+    controls = `<p class="hint">マイクの許可を「許可しない」にしてたら、設定から許可すると測れる</p>`;
+  } else if (vc.phase === "hand") {
+    card = `<div class="odai mode-card center" id="card"><p class="prog">第${vc.round}回戦・${vc.k + 1}/${n}人目</p>${bigWho(vc.who, "の番")}<p class="hand-note">スマホに向かって${VC_SEC}秒間、全力で叫ぶ。<br>なんでもOK（「ノリダーン！」とか）</p></div>`;
+    controls = `<button class="big" data-act="vcGo">叫ぶ！スタート</button>`;
+  } else if (vc.phase === "play") {
+    card = `<div class="odai mode-card center tl-play" id="card"><div class="tl-clock" id="tlClock"><p class="tl-sec"><b id="tlSec">${VC_SEC}</b><span id="tlFrac">.0</span><small>秒</small></p><div class="tl-pips">${Array.from({ length: VC_SEC }, (_, i) => `<i class="tl-pip${i < VC_SEC - 1 ? " on" : " now"}"></i>`).join("")}</div></div><div class="tl-mid"><div class="vc-meter" id="vcMeter"><i></i></div><p class="sk-cnt"><b id="vcPeak">0</b><small>最大</small></p><p class="hand-note">${mName(vc.who)}、叫べ！</p></div></div>`;
+    controls = `<p class="hint">大きさだけ測ってる（録音はしてへん）</p>`;
+  } else {
+    card = `<div class="odai mode-card center board-card ${n >= 7 ? "dense" : ""} ${vc.phase === "rank" ? "batsu" : ""}" id="card"><p class="prog">${vc.phase === "rank" ? `第${vc.round}回戦の結果` : `${mName(vc.who)}の記録`}</p>${vc.phase === "done" ? `<p class="sk-cnt sk-cnt-l"><b>${vc.res[vc.who]}</b><small>点</small></p>` : ""}${rankList(rows(), vc.phase === "done" ? vc.who : -1)}${vc.phase === "rank" ? `<p class="ng-lead">${vc.losers.map(mName).join("・")}が一番小さい${S.level === "jigoku" ? "（罰2倍）" : ""}</p>` : ""}</div>`;
+    controls = vc.phase === "rank" ? `<button class="big has-pen" data-act="vcGacha">${vc.losers.map(mName).join("・")}に罰ガチャ</button>` : `<button class="big" data-act="vcNext">次は${mName(vcWho({ k: vc.k + 1, round: vc.round }))}</button>`;
+  }
+  return stageWrap(card, controls);
 }
 
 // ---------- 全力シェイク（画面） ----------
@@ -1935,13 +2064,14 @@ const app = document.getElementById("app");
 const overlay = document.getElementById("overlay");
 let lastSoundKey = "";
 // 画面ごとの描き方（新しい遊び方はここと MODE_NAME に足す）
-const VIEWS = { home: () => vHome(), odai: () => vOdai(), sugoroku: () => vSugo(), memory: () => vMemory(), ito: () => vIto(), gesture: () => vGesture(), homeru: () => vHomeru(), ngword: () => vNg(), vote: () => vVote(), wolf: () => vWolf(), pittari: () => vPittari(), tilt: () => vTilt(), shake: () => vShake(), stop: () => vStop() };
+const VIEWS = { home: () => vHome(), odai: () => vOdai(), sugoroku: () => vSugo(), memory: () => vMemory(), ito: () => vIto(), gesture: () => vGesture(), homeru: () => vHomeru(), ngword: () => vNg(), vote: () => vVote(), wolf: () => vWolf(), pittari: () => vPittari(), tilt: () => vTilt(), shake: () => vShake(), stop: () => vStop(), rtap: () => vRtap(), bpass: () => vBpass(), hilo: () => vHilo(), reflex: () => vReflex(), voice: () => vVoice() };
 function render(anim) {
   const sc = S.screen;
   const onStage = isStage(sc);
   document.body.dataset.level = S.level;
   document.body.classList.toggle("stage", onStage);
   if (S.game?.mode !== "tilt" && tiltHeatNow > 0) tiltHeat(0);
+  if (vcMic.stream && S.screen !== "voice") vcRelease(); // 声デカを出たらマイクを止める
   if (onStage) document.body.style.setProperty("--pc", S.game.doer >= 0 ? colorOf(S.game.doer) : modeFrame());
   // 夜お題の間だけ照明が落ちてネオン看板に。ホームも夜モード中はネオン
   const c = onStage ? S.game.card : null;
@@ -2022,6 +2152,7 @@ function cue() {
   if (sc === "homeru") { const p = S.game.hm.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "go" ? "coin" : "flip"); return; }
   if (sc === "ito") { const p = S.game.it.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? (S.game.it.bad.length ? "warn" : "fanfare") : "flip"); return; }
   if (sc === "memory") { const p = S.game.mm.phase; play(p === "skull" ? "boom" : p === "fail" || p === "low" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "match" ? "coin" : p === "miss" ? "warn" : p === "over" ? "fanfare" : "flip"); if (p === "skull") boomFlash(); return; }
+  if (["rtap", "bpass", "hilo", "reflex", "voice"].includes(sc)) { if (S.game.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
   if (sc === "stop") { if (S.game.sp.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
   if (sc === "shake") { if (S.game.sk.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
   if (sc === "tilt") { if (S.game.tl.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
@@ -2074,6 +2205,7 @@ function modeFrame() {
   if (g.wf && ["vhand", "vote"].includes(g.wf.phase)) return colorOf(g.wf.order[g.wf.k]);
   if (g.wf && g.wf.phase === "guess" && g.wf.wolves.length) return colorOf(g.wf.wolves[0]);
   if (g.pt && ["hand", "input"].includes(g.pt.phase)) return colorOf(g.pt.order[g.pt.k]);
+  if ((g.rf && g.rf.phase === "rank") || (g.vc && g.vc.phase === "rank") || (g.rt && g.rt.phase === "boom") || (g.bp && g.bp.phase === "boom") || (g.hl && g.hl.phase === "reveal" && !g.hl.ok)) return "#ff2a2a";
   if (g.sp && g.sp.phase === "rank" && g.sp.losers.length) return "#ff2a2a";
   if (g.sp && g.sp.phase === "done" && g.sp.res[g.sp.who]?.over) return "#ff2a2a";
   if (g.sp && g.sp.who != null && g.sp.phase !== "intro") return colorOf(g.sp.who);
@@ -2375,8 +2507,39 @@ function onClick(e) {
     case "tiltNext": g.tl.k++; tiltBegin(); render(true); break;
     case "tiltAccept": applyAdds(); g.gacha = []; g.phase = "play"; g.tl.k++; tiltBegin(); render(true); break;
 
+    // ロシアンタップ
+    case "rtStart": rtRound(); render(true); break;
+    case "rtTap": rtTap(i); break;
+    case "rtGacha": startGacha([g.rt.loser], 1, "rtap", g.rt); render(true); break;
+    case "rtAccept": applyAdds(); g.gacha = []; g.phase = "play"; rtRound(); render(true); break;
+    // 爆弾パス
+    case "bpStart": bpRound(); render(true); break;
+    case "bpGo": bpGo(); break;
+    case "bpPass": bpPass(); break;
+    case "bpGacha": startGacha([g.bp.loser], 1, "bpass", g.bp); render(true); break;
+    case "bpAccept": applyAdds(); g.gacha = []; g.phase = "play"; bpRound(); render(true); break;
+    // ハイ&ロー
+    case "hlStart": hlRound(); render(true); break;
+    case "hlGuess": hlGuess(b.dataset.v === "up"); break;
+    case "hlNext": hlNext(); render(true); break;
+    case "hlGacha": startGacha([g.hl.loser], g.hl.x || 1, "hilo", g.hl); render(true); break;
+    case "hlAccept": applyAdds(); g.gacha = []; g.phase = "play"; hlRound(); render(true); break;
+    // 反射神経バトル
+    case "rfStart": rfRound(); render(true); break;
+    case "rfGo": rfGo(); break;
+    case "rfNext": g.rf.k++; rfBegin(); render(true); break;
+    case "rfGacha": startGacha(g.rf.losers, 1, "reflex", g.rf); render(true); break;
+    case "rfAccept": applyAdds(); g.gacha = []; g.phase = "play"; rfRound(); render(true); break;
+    // 声デカ選手権
+    case "vcStart": vcAsk().then((ok) => { g.vc.noMic = !ok; vcRound(); render(true); }); break;
+    case "vcGo": vcGo(); break;
+    case "vcNext": g.vc.k++; vcBegin(); render(true); break;
+    case "vcPick": g.vc.res = S.members.map((_, j) => (j === i ? 0 : 1)); g.vc.k = S.members.length - 1; g.turn++; vcRank(); render(true); break;
+    case "vcGacha": startGacha(g.vc.losers, S.level === "jigoku" ? 2 : 1, "voice", g.vc); render(true); break;
+    case "vcAccept": applyAdds(); g.gacha = []; g.phase = "play"; vcRound(); render(true); break;
+
     // ピタッとストップ
-    case "spDir": g.sp.dir = b.dataset.v === "up" ? "up" : "down"; store.set("nd_spdir", g.sp.dir); render(); break;
+    case "spDir": g.sp.dir = ["up", "blind"].includes(b.dataset.v) ? b.dataset.v : "down"; store.set("nd_spdir", g.sp.dir); render(); break;
     case "spStart": spRound(); render(true); break;
     case "spReady": spCount(); render(true); break;
     case "spNext": g.sp.k++; spBegin(); render(true); break;
@@ -2510,6 +2673,8 @@ app.addEventListener("click", onClick);
 document.addEventListener("keydown", (e) => {
   if ((e.code === "Space" || e.key === "Enter") && S.game?.sp?.phase === "play" && S.screen === "stop" && !e.target.closest?.("input,textarea")) { e.preventDefault(); spStop(); }
 });
+// 反射神経バトル：押した瞬間に判定
+app.addEventListener("pointerdown", (e) => { if (e.target.closest('[data-tap="rf"]') && S.game?.rf?.phase === "wait") { e.preventDefault(); rfTap(); } });
 // ピタッとストップ：押した瞬間に止める（click を待つと遅れる）
 app.addEventListener("pointerdown", (e) => { if (e.target.closest('[data-tap="stop"]') && S.game?.sp?.phase === "play") { e.preventDefault(); spStop(); } });
 app.addEventListener("pointerdown", (e) => { if (e.target.closest('[data-tap="sk"]') && S.game?.sk?.phase === "play" && S.game.sk.manual) { e.preventDefault(); skHit(); } });

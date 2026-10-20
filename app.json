@@ -10,11 +10,15 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.yoshi.noridan",
       "infoPlist": {
-        "NSMotionUsageDescription": "「傾けたらアウト」でスマホの傾きを測るのに使います"
+        "NSMotionUsageDescription": "「傾けたらアウト」でスマホの傾きを測るのに使います",
+        "NSMicrophoneUsageDescription": "「声デカ選手権」で声の大きさを測るのに使います（録音はしません）"
       }
     },
     "android": {
-      "package": "com.yoshi.noridan"
+      "package": "com.yoshi.noridan",
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -23,6 +27,14 @@
       "shortName": "ノリダン",
       "themeColor": "#111111",
       "backgroundColor": "#111111"
-    }
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "「声デカ選手権」で声の大きさを測るのに使います（録音はしません）"
+        }
+      ]
+    ]
   }
 }

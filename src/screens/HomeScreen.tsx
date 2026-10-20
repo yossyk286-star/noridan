@@ -276,6 +276,11 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       <ModeCard icon="tilt" title="傾けたらアウト" desc={HELP.tilt.desc} onPress={() => onStart('tilt')} />
       <ModeCard icon="shake" title="全力シェイク" desc={HELP.shake.desc} onPress={() => onStart('shake')} />
       <ModeCard icon="stop" title="ピタッとストップ" desc={HELP.stop.desc} onPress={() => onStart('stop')} />
+      <ModeCard icon="rtap" title="ロシアンタップ" desc={HELP.rtap.desc} onPress={() => onStart('rtap')} />
+      <ModeCard icon="bpass" title="爆弾パス" desc={HELP.bpass.desc} onPress={() => onStart('bpass')} />
+      <ModeCard icon="hilo" title="ハイ&ロー" desc={HELP.hilo.desc} onPress={() => onStart('hilo')} />
+      <ModeCard icon="reflex" title="反射神経バトル" desc={HELP.reflex.desc} onPress={() => onStart('reflex')} />
+      <ModeCard icon="voice" title="声デカ選手権" desc={HELP.voice.desc} onPress={() => onStart('voice')} />
 
       {night && (
         <View style={{ gap: 10 }}>
@@ -316,7 +321,7 @@ function StepHead({ num, title, sub }: { num: string; title: string; sub?: strin
   );
 }
 
-function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote' | 'wolf' | 'target' | 'tilt' | 'shake' | 'stop'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
+function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote' | 'wolf' | 'target' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Tap onPress={onPress} disabled={disabled} style={({ pressed }) => [s.mode, { opacity: disabled ? 0.45 : 1, transform: [{ translateY: pressed ? 4 : 0 }] }]}>
       <View style={s.modeIc}>

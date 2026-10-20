@@ -171,10 +171,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : g.mode === "shake" || g.mode === "stop" ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
@@ -195,7 +195,12 @@ function newGame(mode, again = false) {
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "intro", round: 0 }; if (again) startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
   if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: store.get("nd_wf_min", 3), count: store.get("nd_wf_n", 0), peace: store.get("nd_wf_peace", true), wolves: [] }; render(true); return; }
-  if (mode === "stop") { S.game.doer = -1; S.game.sp = { phase: "intro", dir: store.get("nd_spdir", "down") === "up" ? "up" : "down", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), exact: Array(n).fill(0), losers: [] }; render(true); return; }
+  if (mode === "rtap") { S.game.doer = -1; S.game.rt = { phase: "intro", round: 0 }; if (again) rtRound(); render(true); return; }
+  if (mode === "bpass") { S.game.doer = -1; S.game.bp = { phase: "intro", round: 0 }; if (again) bpRound(); render(true); return; }
+  if (mode === "hilo") { S.game.doer = -1; S.game.hl = { phase: "intro", round: 0, best: 0, hits: Array(n).fill(0) }; if (again) hlRound(); render(true); return; }
+  if (mode === "reflex") { S.game.doer = -1; S.game.rf = { phase: "intro", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [], timers: [] }; render(true); return; }
+  if (mode === "voice") { S.game.doer = -1; S.game.vc = { phase: "intro", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [] }; render(true); return; }
+  if (mode === "stop") { S.game.doer = -1; S.game.sp = { phase: "intro", dir: ((v) => (["up", "blind"].includes(v) ? v : "down"))(store.get("nd_spdir", "down")), round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), exact: Array(n).fill(0), losers: [] }; render(true); return; }
   if (mode === "shake") { S.game.doer = -1; S.game.sk = { phase: "intro", round: 0, k: 0, cnt: Array(n).fill(null), best: Array(n).fill(null), tapped: Array(n).fill(false), losers: [] }; render(true); return; }
   if (mode === "tilt") { S.game.doer = -1; S.game.tl = { phase: "intro", k: 0, max: Array(n).fill(null), tries: Array(n).fill(0), outs: Array(n).fill(0) }; render(true); return; }
   if (mode === "pittari") { S.game.doer = -1; S.game.pt = { phase: "intro", round: 0 }; if (again) ptRound(); render(true); return; }
@@ -492,6 +497,9 @@ function titles() {
   const h = top(st.hit, 2); if (h) add("押し付けられ体質", h, `押し付けられ ${st.hit[h[0]]}回`);
   if (g.mode === "pittari") { const e = top(st.exact, 1); if (e) add("ピッタリ職人", e, `ピッタリ ${st.exact[e[0]]}回`); }
   if (g.mode === "tilt" && g.tl) { const tl = g.tl, ok = S.members.map((_, i) => i).filter((i) => tl.tries[i] && tl.max[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => tl.max[i])); add("鋼の手", ok.filter((i) => tl.max[i] === m), `最大でも ${m.toFixed(1)}°`); } }
+  if (g.mode === "reflex" && g.rf) { const ok = S.members.map((_, i) => i).filter((i) => g.rf.best[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => g.rf.best[i])); add("反射神経王", ok.filter((i) => g.rf.best[i] === m), `最速 ${m}ミリ秒`); } }
+  if (g.mode === "voice" && g.vc) { const b = g.vc.best.map((v) => v ?? 0); const t = top(b, 1); if (t) add("声量おばけ", t, `最大 ${b[t[0]]}`); }
+  if (g.mode === "hilo" && g.hl) { const t = top(g.hl.hits, 2); if (t) add("読みの達人", t, `当てた ${g.hl.hits[t[0]]}回`); }
   if (g.mode === "stop" && g.sp) { const t = top(g.sp.exact, 1); if (t) add("ピタ止め職人", t, `ピッタリ ${g.sp.exact[t[0]]}回`); }
   if (g.mode === "shake" && g.sk) { const b = g.sk.best.map((v) => v ?? 0); const t = top(b, 1); if (t && S.members.length > 1) add("シェイク王", t, `10秒で ${b[t[0]]}回`); }
   if (g.mode === "wolf") { const w = top(st.wolf, 1); if (w) add("名演技", w, `ウルフで逃げ切り ${st.wolf[w[0]]}回`); }
@@ -986,8 +994,8 @@ const spWho = (sp) => (sp.k + sp.round - 1) % S.members.length;
 function spBegin() {
   const sp = S.game.sp;
   sp.who = spWho(sp); S.game.doer = sp.who;
-  // 普通・地獄はこの番の倍率を先に決めて見せる。止めるまでずっとこの倍率
-  sp.rate = S.level === "yurume" ? 1 : SP_RATES[rnd(SP_RATES.length)];
+  // 普通・地獄はこの番の倍率を先に決めて見せる。止めるまでずっとこの倍率（体内時計はふつうの速さ）
+  sp.rate = S.level === "yurume" || sp.dir === "blind" ? 1 : SP_RATES[rnd(SP_RATES.length)];
   sp.phase = "hand";
 }
 function spCount() { count3(S.game.sp, spGo, 700); }
@@ -1004,7 +1012,7 @@ function spGo() {
     if (S.game?.sp !== sp || sp.phase !== "play") return;
     const dt = (t - sp.prev) / 1000; sp.prev = t;
     sp.el += dt * sp.rate;
-    if (S.level === "jigoku") {
+    if (S.level === "jigoku" && sp.dir !== "blind") {
       // 数字が消える
       if (t > sp.nextHide && sp.hideUntil < t) { sp.hideUntil = t + 600 + Math.random() * 900; sp.nextHide = sp.hideUntil + 900 + Math.random() * 1500; }
       // 邪魔：ウソの数字がチラッと出る・画面がブレる
@@ -1018,10 +1026,12 @@ function spGo() {
 }
 const spFmt = (v) => { const r = Math.round(v * 100) / 100; return (r < 0 ? "-" : "") + Math.abs(r).toFixed(2); }; // -0.00 にならんように
 function spShown(sp, el) { return sp.dir === "down" ? sp.target - el : el; }
+// 体内時計：最初だけ数字が見えて、あとは頭の中で数える（ゆるめ3秒・普通1秒・地獄0秒）
+const SP_PEEK = { yurume: 3, futsu: 1, jigoku: 0 };
 function spPaint(t) {
   const sp = S.game.sp, num = document.getElementById("spNum"), box = document.getElementById("spBox");
   if (!num || !box) return;
-  const hide = t < sp.hideUntil, jam = t < sp.jamUntil;
+  const hide = t < sp.hideUntil || (sp.dir === "blind" && sp.el >= (SP_PEEK[S.level] ?? 1)), jam = t < sp.jamUntil;
   num.textContent = hide ? "??.??" : jam && sp.jamKind === 0 ? spFmt(spShown(sp, sp.jamVal)) : spFmt(spShown(sp, sp.el));
   box.classList.toggle("hide", hide);
   box.classList.toggle("jam", jam);
@@ -1060,6 +1070,210 @@ function spReveal() {
   else play(r.exact ? "fanfare" : "coin");
   sp.phase = sp.after;
   if (sp.phase === "rank") S.game.doer = -1;
+}
+
+// ---------- ロシアンタップ ----------
+// パネルを順番に1枚ずつめくる。1枚だけ爆弾で、めくった人が罰（地獄度でパネルの数が減る）
+const RT_TILES = { yurume: 20, futsu: 12, jigoku: 8 };
+function rtRound() {
+  const g = S.game, rt = g.rt;
+  rt.round++; rt.tiles = RT_TILES[S.level] || 12; rt.bomb = rnd(rt.tiles); rt.open = []; rt.loser = null;
+  rt.who = (rt.round - 1) % S.members.length; g.doer = rt.who; rt.phase = "play";
+}
+function rtTap(t) {
+  const g = S.game, rt = g.rt;
+  if (rt.phase !== "play" || rt.open.includes(t)) return;
+  rt.open.push(t); g.turn++;
+  if (t === rt.bomb) {
+    rt.loser = rt.who; rt.phase = "boom";
+    play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 220]);
+  } else {
+    play("pop"); rt.who = (rt.who + 1) % S.members.length; g.doer = rt.who;
+  }
+  render(true);
+}
+
+// ---------- 爆弾パス ----------
+// お題に合うものを言えたら次の人へ渡す。いつ爆発するか分からん。爆発した時に持ってた人が罰
+const BP_SEC = { yurume: [15, 30], futsu: [10, 24], jigoku: [6, 16] };
+function bpRound() {
+  const g = S.game, bp = g.bp;
+  bp.round++; bp.topic = draw("bpass", DATA.bpass.topics); bp.holder = (bp.round - 1) % S.members.length; bp.passes = 0; bp.loser = null;
+  g.doer = bp.holder; bp.phase = "ready";
+}
+function bpGo() {
+  const g = S.game, bp = g.bp, [a, b] = BP_SEC[S.level] || BP_SEC.futsu;
+  bp.phase = "play"; bp.startAt = Date.now(); bp.endAt = bp.startAt + (a + Math.random() * (b - a)) * 1000;
+  play("coin"); render(true);
+  // チクタク：経過時間でだんだん速くなる（残り時間はバレへん）
+  const tick = () => {
+    if (S.game?.bp !== bp || bp.phase !== "play") return;
+    const now = Date.now();
+    if (now >= bp.endAt) { bpBoom(); return; }
+    play("tick");
+    const el = (now - bp.startAt) / 1000;
+    bp.t = setTimeout(tick, Math.max(140, 650 - el * (S.level === "jigoku" ? 45 : 28)));
+  };
+  bp.t = setTimeout(tick, 400);
+}
+function bpPass() {
+  const g = S.game, bp = g.bp;
+  if (bp.phase !== "play") return;
+  bp.holder = (bp.holder + 1) % S.members.length; bp.passes++; g.turn++; g.doer = bp.holder;
+  play("pop"); render();
+}
+function bpBoom() {
+  const g = S.game, bp = g.bp;
+  clearTimeout(bp.t); bp.phase = "boom"; bp.loser = bp.holder; g.doer = bp.holder;
+  play("boom"); if (navigator.vibrate) navigator.vibrate([200, 80, 300]);
+  render(true);
+}
+
+// ---------- ハイ&ロー ----------
+// 次のカードが今より大きいか小さいかを当てる。当たったら次の人。外したら罰（続いた回数が多いと罰2倍）
+const HL_X2 = { yurume: 99, futsu: 5, jigoku: 3 }; // これだけ続いたあとに外したら罰2倍
+const hlFace = (v) => ({ 1: "A", 11: "J", 12: "Q", 13: "K" }[v] || String(v));
+function hlRound() {
+  const g = S.game, hl = g.hl;
+  hl.round++; hl.cur = 1 + rnd(13); hl.suit = rnd(4); hl.streak = 0; hl.loser = null;
+  hl.who = (hl.round - 1) % S.members.length; g.doer = hl.who; hl.phase = "guess";
+}
+function hlGuess(up) {
+  const g = S.game, hl = g.hl;
+  if (hl.phase !== "guess") return;
+  hl.next = 1 + rnd(13); hl.nsuit = rnd(4); hl.up = up; g.turn++;
+  const same = hl.next === hl.cur;
+  hl.same = same;
+  hl.ok = same ? S.level !== "jigoku" : up ? hl.next > hl.cur : hl.next < hl.cur;
+  if (hl.ok) { hl.streak++; hl.hits[hl.who]++; if (hl.streak > hl.best) hl.best = hl.streak; play("coin"); }
+  else { hl.loser = hl.who; hl.x = hl.streak >= (HL_X2[S.level] || 5) ? 2 : 1; play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
+  hl.phase = "reveal";
+  render(true);
+}
+function hlNext() {
+  const g = S.game, hl = g.hl;
+  hl.cur = hl.next; hl.suit = hl.nsuit; hl.who = (hl.who + 1) % S.members.length; g.doer = hl.who; hl.phase = "guess";
+}
+
+// ---------- 反射神経バトル ----------
+// 1人ずつ。画面が緑になった瞬間にタップ。フライングした人は罰、おらんかったら一番遅い人が罰。
+// 普通は黄色のフェイク、地獄は赤や「まだ！」のフェイクも出る
+const RF_LATE = 1500; // これより遅かったら「遅すぎ」で打ち切り
+function rfRound() {
+  const rf = S.game.rf;
+  rf.round++; rf.k = 0; rf.res = Array(S.members.length).fill(null); rf.losers = [];
+  rfBegin();
+}
+const rfWho = (rf) => (rf.k + rf.round - 1) % S.members.length;
+function rfBegin() { const rf = S.game.rf; rf.who = rfWho(rf); S.game.doer = rf.who; rf.phase = "hand"; }
+function rfGo() {
+  const rf = S.game.rf, now = Date.now();
+  rf.phase = "wait"; rf.color = "wait"; rf.goAt = now + 1600 + Math.random() * 3400; rf.timers = [];
+  // フェイク（緑になる前に出る）
+  const fakes = S.level === "yurume" ? [] : S.level === "futsu" ? (Math.random() < 0.6 ? ["yellow"] : []) : shuffle(["yellow", "red", "mada"]).slice(0, 1 + rnd(2));
+  fakes.forEach((kind, i) => {
+    const at = 700 + ((rf.goAt - now - 900) * (i + 1)) / (fakes.length + 1);
+    rf.timers.push(setTimeout(() => { if (rf.phase !== "wait") return; rf.color = kind; rfPaint(); rf.timers.push(setTimeout(() => { if (rf.phase === "wait" && rf.color === kind) { rf.color = "wait"; rfPaint(); } }, 450)); }, at));
+  });
+  rf.timers.push(setTimeout(() => { if (rf.phase !== "wait") return; rf.color = "go"; rf.goShown = performance.now(); rfPaint(); play("pop"); }, rf.goAt - now));
+  rf.timers.push(setTimeout(() => { if (rf.phase === "wait" && rf.color === "go") rfTap(true); }, rf.goAt - now + RF_LATE));
+  render(true);
+}
+function rfPaint() {
+  const box = document.getElementById("rfBox"); if (!box) return;
+  const rf = S.game.rf;
+  box.className = "rf-box " + rf.color;
+  box.querySelector("b").textContent = rf.color === "go" ? "今！" : rf.color === "mada" ? "まだ！" : rf.color === "wait" ? "待って…" : "まだやで";
+}
+function rfTap(late = false) {
+  const g = S.game, rf = g.rf;
+  if (rf.phase !== "wait") return;
+  rf.timers.forEach(clearTimeout);
+  const fly = rf.color !== "go";
+  const ms = fly ? null : late ? RF_LATE : Math.round(performance.now() - rf.goShown);
+  rf.res[rf.who] = { fly, ms };
+  if (!fly && (rf.best[rf.who] == null || ms < rf.best[rf.who])) rf.best[rf.who] = ms;
+  g.turn++;
+  play(fly ? "boom" : "coin");
+  rf.phase = rf.k + 1 >= S.members.length ? "rank" : "done";
+  if (rf.phase === "rank") {
+    g.doer = -1;
+    const idx = S.members.map((_, i) => i), flyers = idx.filter((i) => rf.res[i].fly);
+    if (flyers.length) rf.losers = flyers;
+    else { const worst = Math.max(...idx.map((i) => rf.res[i].ms)); rf.losers = idx.filter((i) => rf.res[i].ms === worst); }
+  }
+  render(true);
+}
+
+// ---------- 声デカ選手権 ----------
+// 1人ずつ5秒間、スマホに向かって叫ぶ。声が一番小さかった人が罰（地獄は罰2倍）。マイクが使えへん時はみんなで判定
+const VC_SEC = 5;
+const vcMic = { stream: null, an: null, ctx: null, buf: null, perm: "unknown" };
+async function vcAsk() {
+  if (vcMic.an) return true;
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error("no mic");
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const an = ctx.createAnalyser(); an.fftSize = 1024;
+    ctx.createMediaStreamSource(stream).connect(an);
+    Object.assign(vcMic, { stream, ctx, an, buf: new Float32Array(an.fftSize), perm: "granted" });
+    return true;
+  } catch { vcMic.perm = "denied"; return false; }
+}
+function vcRelease() {
+  try { vcMic.stream?.getTracks().forEach((t) => t.stop()); vcMic.ctx?.close(); } catch {}
+  Object.assign(vcMic, { stream: null, an: null, ctx: null, buf: null });
+}
+// 今の声の大きさ 0〜100（dBFS -60〜0 をならす）
+function vcLevel() {
+  if (!vcMic.an) return 0;
+  vcMic.an.getFloatTimeDomainData(vcMic.buf);
+  let sum = 0; for (const v of vcMic.buf) sum += v * v;
+  const db = 20 * Math.log10(Math.sqrt(sum / vcMic.buf.length) || 1e-6);
+  return Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
+}
+function vcRound() {
+  const vc = S.game.vc;
+  vc.round++; vc.k = 0; vc.res = Array(S.members.length).fill(null); vc.losers = [];
+  vcBegin();
+}
+const vcWho = (vc) => (vc.k + vc.round - 1) % S.members.length;
+function vcBegin() { const vc = S.game.vc; vc.who = vcWho(vc); S.game.doer = vc.who; vc.phase = "hand"; }
+function vcGo() {
+  const vc = S.game.vc;
+  vc.phase = "play"; vc.peak = 0; vc.cur = 0; vc.endAt = Date.now() + VC_SEC * 1000; vc.sec = VC_SEC;
+  if (vcMic.ctx?.state === "suspended") vcMic.ctx.resume();
+  play("coin"); render(true);
+  secClock(vc, () => S.game?.vc === vc, vcDone);
+  const loop = () => {
+    if (S.game?.vc !== vc || vc.phase !== "play") return;
+    const lv = vcLevel();
+    vc.cur = vc.cur * 0.6 + lv * 0.4; // ちょっとならす
+    if (vc.cur > vc.peak) vc.peak = vc.cur;
+    const m = document.getElementById("vcMeter"); if (m) m.style.setProperty("--m", (vc.cur / 100).toFixed(3));
+    const p = document.getElementById("vcPeak"); if (p) p.textContent = Math.round(vc.peak);
+    vc.raf = requestAnimationFrame(loop);
+  };
+  vc.raf = requestAnimationFrame(loop);
+}
+function vcDone() {
+  const g = S.game, vc = g.vc;
+  cancelAnimationFrame(vc.raf); stopTimer();
+  const score = Math.round(vc.peak);
+  vc.res[vc.who] = score;
+  if (score > (vc.best[vc.who] ?? -1)) vc.best[vc.who] = score;
+  g.turn++;
+  play("fanfare");
+  vc.phase = vc.k + 1 >= S.members.length ? "rank" : "done";
+  if (vc.phase === "rank") vcRank();
+  render(true);
+}
+function vcRank() {
+  const g = S.game, vc = g.vc, idx = S.members.map((_, i) => i);
+  g.doer = -1; vc.phase = "rank";
+  const min = Math.min(...idx.map((i) => vc.res[i]));
+  vc.losers = idx.filter((i) => vc.res[i] === min);
 }
 
 // ---------- ピッタリ予想 ----------

@@ -12,13 +12,16 @@ export type Stats = {
   votes?: number[]; // ぶっちゃけ投票で集めた票
   exact?: number[]; // ピッタリ予想でピッタリ当てた回数
   wolf?: number[]; // ワードウルフでウルフとして逃げ切った回数
+  reflexBest?: (number | null)[]; // 反射神経の最速（ミリ秒）
+  voiceBest?: (number | null)[]; // 声デカの最大
+  hiloHits?: number[]; // ハイ&ローで当てた回数
   stopExact?: number[]; // ピタッとストップでピッタリ止めた回数
   shakeBest?: (number | null)[]; // 全力シェイクの自己ベスト
   steady?: (number | null)[]; // 傾けたらアウトの最大角度（測れた人だけ）
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
-export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop';
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice';
 /** 罰の理由の名前（src/data/why.json。Web版と共通） */
 export const WHY_LABEL = whyJson as Record<Why, string>;
 export function whyText(st: Stats | undefined, i: number) {
@@ -72,6 +75,21 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
       add('鋼の手', ok.filter((i) => sd[i] === m), `最大でも ${m.toFixed(1)}°`);
     }
   }
+  if (st.reflexBest) {
+    const rb = st.reflexBest;
+    const ok = rb.map((_, i) => i).filter((i) => rb[i] != null);
+    if (ok.length > 1) {
+      const m = Math.min(...ok.map((i) => rb[i] as number));
+      add('反射神経王', ok.filter((i) => rb[i] === m), `最速 ${m}ミリ秒`);
+    }
+  }
+  if (st.voiceBest) {
+    const vb = st.voiceBest.map((v) => v ?? 0);
+    const t = top(vb, 1);
+    if (t) add('声量おばけ', t, `最大 ${vb[t[0]]}`);
+  }
+  const hh = st.hiloHits ? top(st.hiloHits, 2) : null;
+  if (hh) add('読みの達人', hh, `当てた ${st.hiloHits![hh[0]]}回`);
   const se = st.stopExact ? top(st.stopExact, 1) : null;
   if (se) add('ピタ止め職人', se, `ピッタリ ${st.stopExact![se[0]]}回`);
   if (st.shakeBest && pen.length > 1) {

@@ -24,7 +24,9 @@ type Props = {
   skipIntro?: boolean;
 };
 type Phase = 'intro' | 'hand' | 'count' | 'play' | 'check' | 'done' | 'rank' | 'batsu';
-type Dir = 'down' | 'up';
+type Dir = 'down' | 'up' | 'blind';
+/** 体内時計：最初だけ数字が見えて、あとは頭の中で数える秒数 */
+const PEEK: Record<Level, number> = { yurume: 3, futsu: 1, jigoku: 0 };
 type Res = { v: number; diff: number; over: boolean; exact: boolean };
 
 const RATES = [0.5, 1.5, 2];
@@ -75,7 +77,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   // この番の倍率（普通・地獄）。番の最初に見せて、止めるまでずっとこれ
   const [rate, setRate] = useState(1);
   const toHand = () => {
-    setRate(level === 'yurume' ? 1 : RATES[rnd(RATES.length)]);
+    setRate(level === 'yurume' || dir === 'blind' ? 1 : RATES[rnd(RATES.length)]);
     setPhase('hand');
   };
   const shake = useRef(new Animated.Value(0)).current;
@@ -87,7 +89,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   };
 
   useEffect(() => {
-    load<Dir>('nd_spdir', 'down').then((v) => { if (v === 'up' || v === 'down') setDir(v); }).catch(() => {});
+    load<Dir>('nd_spdir', 'down').then((v) => { if (v === 'up' || v === 'down' || v === 'blind') setDir(v); }).catch(() => {});
     if (skipIntro) newRound(1);
     return clear;
   }, []);
@@ -124,7 +126,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
       const dt = (t - R.prev) / 1000;
       R.prev = t;
       R.el += dt * R.rate;
-      if (level === 'jigoku') {
+      if (level === 'jigoku' && dir !== 'blind') {
         if (t > R.nextHide && R.hideUntil < t) {
           R.hideUntil = t + 600 + Math.random() * 900;
           R.nextHide = R.hideUntil + 900 + Math.random() * 1500;
@@ -142,7 +144,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         }
       }
       if (R.el - target > OVER) return stop();
-      const hide = t < R.hideUntil;
+      const hide = t < R.hideUntil || (dir === 'blind' && R.el >= PEEK[level]);
       const jam = t < R.jamUntil;
       setView({
         text: hide ? '??.??' : fmt(shown(jam ? R.jamVal : R.el)),
@@ -277,12 +279,12 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         <IntroCard pal={pal} mode="stop" tag={`${n}人`}>
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${LV_TEXT[level]}`} />
           <View style={s.dirRow}>
-            {(['down', 'up'] as Dir[]).map((d) => {
+            {(['down', 'up', 'blind'] as Dir[]).map((d) => {
               const on = dir === d;
               return (
                 <Tap key={d} onPress={() => pickDir(d)} style={[s.dirBtn, { borderColor: on ? pal.cardEdge : alpha('#888888', 0.4), backgroundColor: on ? alpha(pal.cardEdge, 0.2) : 'transparent' }]}>
-                  <Text style={[s.dirT, { color: fg }]}>{d === 'down' ? '減る' : '増える'}</Text>
-                  <Text style={[s.dirS, { color: fg }]}>{d === 'down' ? '0.00で止める' : '目標の秒数で止める'}</Text>
+                  <Text style={[s.dirT, { color: fg }]}>{d === 'down' ? '減る' : d === 'up' ? '増える' : '体内時計'}</Text>
+                  <Text style={[s.dirS, { color: fg }]}>{d === 'down' ? '0.00で止める' : d === 'up' ? '目標の秒数で止める' : '数字が見えへん'}</Text>
                 </Tap>
               );
             })}
@@ -296,7 +298,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round}回戦・${k + 1}/${n}人目`}</Prog>
           <HandWho members={members} i={who} sub="の番" fg={fg} />
-          <Text style={[s.goalLead, { color: fg }]}>{dir === 'down' ? `${target}.00 から減っていく` : '0.00 から増えていく'}</Text>
+          <Text style={[s.goalLead, { color: fg }]}>{dir === 'down' ? `${target}.00 から減っていく` : dir === 'blind' ? `${PEEK[level] ? `数字が見えるのは最初の${PEEK[level]}秒だけ` : '数字は最初から見えへん'}。頭の中で数えて` : '0.00 から増えていく'}</Text>
           <Text style={[s.goal, { color: fg }]}>
             {goal}
             <Text style={s.goalSub}> ちょうどで止めろ</Text>
@@ -395,7 +397,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
           <GachaCard pal={pal} members={members} items={gacha} />
         </DeckStack>
       );
-      controls = <RoundEnd pal={pal} next={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'}→もう1回戦`} endLabel={gacha.every((x) => x.lucky) ? '結果発表へ' : '受け入れて結果発表へ'} onNext={accept} onEnd={endNow} />;
+      controls = <RoundEnd pal={pal} next={gacha.every((x) => x.lucky) ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={accept} onEnd={endNow} />;
       break;
   }
 
@@ -448,7 +450,7 @@ const s = StyleSheet.create({
   rateSmall: { color: '#fff', fontSize: 11, fontWeight: '800' },
   rateBig: { color: '#fff', fontFamily: F.display, fontSize: 44, lineHeight: 50 },
   dirRow: { flexDirection: 'row', gap: 8 },
-  dirBtn: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 12, paddingHorizontal: 8, borderRadius: 14, borderWidth: 2 },
-  dirT: { fontSize: 18, fontWeight: '900' },
+  dirBtn: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 12, paddingHorizontal: 4, borderRadius: 14, borderWidth: 2 },
+  dirT: { fontSize: 16, fontWeight: '900' },
   dirS: { fontSize: 11, opacity: 0.65 },
 });

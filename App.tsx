@@ -19,6 +19,11 @@ import PittariScreen from './src/screens/PittariScreen';
 import TiltScreen from './src/screens/TiltScreen';
 import ShakeScreen from './src/screens/ShakeScreen';
 import StopScreen from './src/screens/StopScreen';
+import RtapScreen from './src/screens/RtapScreen';
+import BpassScreen from './src/screens/BpassScreen';
+import HiloScreen from './src/screens/HiloScreen';
+import ReflexScreen from './src/screens/ReflexScreen';
+import VoiceScreen from './src/screens/VoiceScreen';
 import { cleanMembers, load, save } from './src/lib/storage';
 import { setSoundEnabled } from './src/lib/sound';
 import { PrefsContext } from './src/lib/prefs';
@@ -37,6 +42,7 @@ import type { Level, Member, Mode, Night } from './src/types';
 const STAGES: Record<Mode, ComponentType<any>> = {
   odai: OdaiScreen, sugoroku: SugorokuScreen, memory: MemoryScreen, ito: ItoScreen, gesture: GestureScreen, homeru: HomeruScreen,
   ngword: NgWordScreen, vote: VoteScreen, wolf: WolfScreen, pittari: PittariScreen, tilt: TiltScreen, shake: ShakeScreen, stop: StopScreen,
+  rtap: RtapScreen, bpass: BpassScreen, hilo: HiloScreen, reflex: ReflexScreen, voice: VoiceScreen,
 };
 const isStage = (name: string): name is Mode => name in STAGES;
 

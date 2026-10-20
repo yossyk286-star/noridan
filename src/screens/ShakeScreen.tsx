@@ -391,7 +391,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
           <GachaCard pal={pal} members={members} items={gacha} />
         </DeckStack>
       );
-      controls = <RoundEnd pal={pal} next={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'}→もう1回戦`} endLabel={gacha.every((x) => x.lucky) ? '結果発表へ' : '受け入れて結果発表へ'} onNext={accept} onEnd={endNow} />;
+      controls = <RoundEnd pal={pal} next={gacha.every((x) => x.lucky) ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={accept} onEnd={endNow} />;
       break;
   }
 
