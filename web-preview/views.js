@@ -1262,7 +1262,7 @@ function rfRows(rf) {
 }
 function vReflex() {
   const g = S.game, rf = g.rf, n = S.members.length;
-  if (rf.phase === "intro") return vIntroStage("reflex", { extra: `${lvBox(S.level === "yurume" ? "フェイクなし" : S.level === "futsu" ? "たまに黄色のフェイク" : "黄色・赤・「まだ！」のフェイク", false)}<div class="sp-dir" role="group" aria-label="やり方">
+  if (rf.phase === "intro") return vIntroStage("reflex", { extra: `${lvBox(S.level === "yurume" ? "フェイクなし" : S.level === "futsu" ? "たまにフェイクが出る" : "フェイクが何回も出る", false)}<div class="sp-dir" role="group" aria-label="やり方">
         <button data-act="rfStyle" data-v="solo" aria-pressed="${rf.style !== "multi"}"><b>1人ずつ</b><small>順番にじっくり</small></button>
         <button data-act="rfStyle" data-v="multi" aria-pressed="${rf.style === "multi"}"><b>みんな同時</b><small>${n > 4 ? `4人までの${rfHeats().length}組に分けて` : "画面を分けて一斉に"}</small></button>
       </div>`, btn: "スタート", act: "rfStart" });

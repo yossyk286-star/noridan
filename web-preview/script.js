@@ -1167,7 +1167,7 @@ function hlNext() {
 
 // ---------- 反射神経バトル ----------
 // 1人ずつ。画面が緑になった瞬間にタップ。フライングした人は罰、おらんかったら一番遅い人が罰。
-// 普通は黄色のフェイク、地獄は赤や「まだ！」のフェイクも出る
+// 普通はたまにフェイク、地獄はフェイクが何回も（地獄でも出えへん回がある）。緑になる時間も毎回バラバラ
 const RF_LATE = 1500; // これより遅かったら「遅すぎ」で打ち切り
 // みんな同時：4人までの組に分けて、組ごとに画面を区切って同時に押す（5人以上は 5→3+2、9→3+3+3 みたいに均等に）
 function rfHeats() {
@@ -1182,17 +1182,28 @@ function rfRound() {
   if (rf.style === "multi") { rf.heats = rfHeats(); rf.h = 0; rf.phase = "mhand"; S.game.doer = -1; return; }
   rfBegin();
 }
+// 緑の時間とフェイク（色・出る時間）を決める。フェイクは1.5秒以上ためてから0.8秒、緑の0.4秒前までに消える
+function rfPlan(level) {
+  const go = 2000 + Math.random() * 7000;
+  const want = level === "yurume" ? 0 : level === "futsu" ? (Math.random() < 0.55 ? 1 : 0) : [0, 1, 1, 2, 2, 3][rnd(6)];
+  const fakes = [];
+  for (let t = 0; t < 40 && fakes.length < want; t++) {
+    const at = 1500 + Math.random() * (go - 1500 - 1200);
+    if (at < 1500 || fakes.some((f) => Math.abs(f.at - at) < 1100)) continue;
+    fakes.push({ at, kind: level === "futsu" ? "yellow" : ["yellow", "red", "mada"][rnd(3)] });
+  }
+  return { go, fakes: fakes.sort((a, b) => a.at - b.at) };
+}
 const rfWho = (rf) => (rf.k + rf.round - 1) % S.members.length;
 function rfBegin() { const rf = S.game.rf; rf.who = rfWho(rf); S.game.doer = rf.who; rf.phase = "hand"; }
 function rfGo() {
   const rf = S.game.rf, now = Date.now();
   // フェイク（緑になる前に出る）
-  const fakes = S.level === "yurume" ? [] : S.level === "futsu" ? (Math.random() < 0.6 ? ["yellow"] : []) : shuffle(["yellow", "red", "mada"]).slice(0, 1 + rnd(2));
-  // 緑になるまで3〜7秒＋フェイク1つにつき1秒。フェイクは1.8秒以上ためてから出して、0.8秒見せる
   const W = rf.style === "multi" ? "mwait" : "wait";
-  rf.phase = W; rf.color = "wait"; rf.goAt = now + 3000 + fakes.length * 1000 + Math.random() * 4000; rf.timers = [];
-  fakes.forEach((kind, i) => {
-    const at = 1800 + i * 1000 + ((rf.goAt - now - 3000 - fakes.length * 1000) * (i + 1)) / (fakes.length + 1);
+  // 緑になるのは毎回バラバラ（2〜9秒のどこか）。フェイクも数・時間・色がバラバラで、緑の直前とは限らへん
+  const plan = rfPlan(S.level);
+  rf.phase = W; rf.color = "wait"; rf.goAt = now + plan.go; rf.timers = [];
+  plan.fakes.forEach(({ kind, at }) => {
     rf.timers.push(setTimeout(() => { if (S.game?.rf !== rf || rf.phase !== W) return; rf.color = kind; rfPaint(); rf.timers.push(setTimeout(() => { if (rf.phase === W && rf.color === kind) { rf.color = "wait"; rfPaint(); } }, 800)); }, at));
   });
   rf.timers.push(setTimeout(() => { if (S.game?.rf !== rf || rf.phase !== W) return; rf.color = "go"; rf.goShown = performance.now(); rfPaint(); play("pop"); }, rf.goAt - now));

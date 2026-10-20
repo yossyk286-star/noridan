@@ -33,12 +33,12 @@ type Res = { fly: boolean; ms: number | null };
 const LATE = 1500;
 const BG: Record<Color, string> = { wait: '#3a3530', go: '#1fc95b', yellow: '#ffd23f', red: '#e8202a', mada: '#3d7bff' }; // 「まだ！」は緑と間違えへん青
 const LABEL: Record<Color, string> = { wait: '待って…', go: '今！', yellow: 'まだやで', red: 'まだやで', mada: 'まだ！' };
-const LV_TEXT: Record<Level, string> = { yurume: 'フェイクなし', futsu: 'たまに黄色のフェイク', jigoku: '黄色・赤・「まだ！」のフェイク' };
+const LV_TEXT: Record<Level, string> = { yurume: 'フェイクなし', futsu: 'たまにフェイクが出る', jigoku: 'フェイクが何回も出る' };
 
 /**
  * 反射神経バトル：画面が緑になった瞬間にタップ。フライングした人は罰、おらんかったら一番遅い人が罰。
  * 「1人ずつ」か「みんな同時」（4人までの組ごとに画面を区切って一斉に）を選べる。
- * 普通は黄色のフェイク、地獄は赤や「まだ！」のフェイクも出る
+ * 普通はたまにフェイク、地獄はフェイクが何回も。緑になる時間も毎回バラバラ
  */
 export default function ReflexScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
   useKeepAwake();
@@ -88,12 +88,17 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
     const W: Phase = styleRef.current === 'multi' ? 'mwait' : 'wait';
     setPhase(W);
     phaseRef.current = W;
-    const pool: Color[] = ['yellow', 'red', 'mada'];
-    const fakes: Color[] = level === 'yurume' ? [] : level === 'futsu' ? (Math.random() < 0.6 ? ['yellow'] : []) : pool.sort(() => Math.random() - 0.5).slice(0, 1 + Math.floor(Math.random() * 2));
-    // 緑になるまで3〜7秒＋フェイク1つにつき1秒。フェイクは1.8秒以上ためてから出して、0.8秒見せる
-    const wait = 3000 + fakes.length * 1000 + Math.random() * 4000;
-    fakes.forEach((f, i) => {
-      const at = 1800 + i * 1000 + ((wait - 3000 - fakes.length * 1000) * (i + 1)) / (fakes.length + 1);
+    // 緑になるのは毎回バラバラ（2〜9秒のどこか）。フェイクも数・時間・色がバラバラで、緑の直前とは限らへん
+    const wait = 2000 + Math.random() * 7000;
+    const want = level === 'yurume' ? 0 : level === 'futsu' ? (Math.random() < 0.55 ? 1 : 0) : [0, 1, 1, 2, 2, 3][Math.floor(Math.random() * 6)];
+    const plan: { at: number; f: Color }[] = [];
+    for (let t = 0; t < 40 && plan.length < want; t++) {
+      const at = 1500 + Math.random() * (wait - 1500 - 1200);
+      if (at < 1500 || plan.some((x) => Math.abs(x.at - at) < 1100)) continue;
+      const pool: Color[] = ['yellow', 'red', 'mada'];
+      plan.push({ at, f: level === 'futsu' ? 'yellow' : pool[Math.floor(Math.random() * 3)] });
+    }
+    plan.forEach(({ at, f }) => {
       timers.current.push(setTimeout(() => {
         if (phaseRef.current !== W) return;
         paint(f);
