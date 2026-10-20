@@ -1262,19 +1262,50 @@ function rfRows(rf) {
 }
 function vReflex() {
   const g = S.game, rf = g.rf, n = S.members.length;
-  if (rf.phase === "intro") return vIntroStage("reflex", { extra: lvBox(S.level === "yurume" ? "フェイクなし" : S.level === "futsu" ? "たまに黄色のフェイク" : "黄色・赤・「まだ！」のフェイク", false), btn: "スタート", act: "rfStart" });
+  if (rf.phase === "intro") return vIntroStage("reflex", { extra: `${lvBox(S.level === "yurume" ? "フェイクなし" : S.level === "futsu" ? "たまに黄色のフェイク" : "黄色・赤・「まだ！」のフェイク", false)}<div class="sp-dir" role="group" aria-label="やり方">
+        <button data-act="rfStyle" data-v="solo" aria-pressed="${rf.style !== "multi"}"><b>1人ずつ</b><small>順番にじっくり</small></button>
+        <button data-act="rfStyle" data-v="multi" aria-pressed="${rf.style === "multi"}"><b>みんな同時</b><small>${n > 4 ? `4人までの${rfHeats().length}組に分けて` : "画面を分けて一斉に"}</small></button>
+      </div>`, btn: "スタート", act: "rfStart" });
+  if (rf.phase === "mhand" || rf.phase === "mwait" || rf.phase === "mdone") return vReflexMulti();
   if (rf.phase === "batsu") return stageWrap(vCard(), roundEnd("rfAccept", true));
   let card, controls;
   if (rf.phase === "hand") {
     card = `<div class="odai mode-card center" id="card"><p class="prog">第${rf.round}回戦・${rf.k + 1}/${n}人目</p>${bigWho(rf.who, "の番")}<p class="hand-note">画面が<b class="rf-g">緑</b>になった瞬間にタップ。<br>緑になる前に押したらフライングで罰</p></div>`;
     controls = `<button class="big" data-act="rfGo">準備OK</button>`;
   } else if (rf.phase === "wait") {
-    card = `<div class="odai mode-card center rf-play" id="card" data-tap="rf"><div class="rf-box ${rf.color}" id="rfBox"><b>待って…</b></div><p class="hand-note">${mName(rf.who)}・緑になったらタップ</p></div>`;
+    card = `<div class="odai mode-card center rf-play" id="card" data-tap="rf"><div class="rf-box ${rf.color}" id="rfBox"><b class="rf-label">${rfLabel(rf.color)}</b></div><p class="hand-note">${mName(rf.who)}・緑になったらタップ</p></div>`;
     controls = `<p class="hint">画面のどこを押してもOK</p>`;
   } else {
     const r = rf.res[rf.who];
     card = `<div class="odai mode-card center board-card ${n >= 7 ? "dense" : ""} ${rf.phase === "rank" || r.fly ? "batsu" : ""}" id="card"><p class="prog">${rf.phase === "rank" ? `第${rf.round}回戦の結果` : `${mName(rf.who)}の記録`}</p>${rf.phase === "done" ? `<p class="sp-num sp-res ${r.fly ? "over rf-fly" : ""}">${r.fly ? "フライング" : r.ms >= RF_LATE ? "遅すぎ" : r.ms + "<small>ms</small>"}</p>` : ""}${rankList(rfRows(rf), rf.phase === "done" ? rf.who : -1)}${rf.phase === "rank" ? `<p class="ng-lead">${rf.losers.map(mName).join("・")}が${rf.losers.some((i) => rf.res[i].fly) ? "フライング" : "一番遅い"}</p>` : ""}</div>`;
     controls = rf.phase === "rank" ? `<button class="big has-pen" data-act="rfGacha">${rf.losers.map(mName).join("・")}に罰ガチャ</button>` : `<button class="big" data-act="rfNext">次は${mName(rfWho({ k: rf.k + 1, round: rf.round }))}</button>`;
+  }
+  return stageWrap(card, controls);
+}
+
+// 反射神経バトル（みんな同時）：組ごとに画面を区切る。向かいの人が読めるように上の段は逆さま
+function rfZones(heat, live) {
+  const rf = S.game.rf, m = heat.length, cols = m <= 2 ? 1 : 2, rows = Math.ceil(m / cols);
+  return `<div class="rf-zones" style="grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr)">${heat.map((i, k) => {
+    const r = rf.res[i], top = k < cols && rows > 1;
+    return `<div class="rf-zone ${top ? "top" : ""} ${r ? (r.fly ? "fly" : "hit") : ""}" ${live ? `data-zone="${i}"` : ""} style="--mc:${colorOf(i)}"><span><b>${esc(S.members[i].name)}</b><i class="rf-zv">${r ? (r.fly ? "フライング" : r.ms >= RF_LATE ? "遅すぎ" : `${r.ms}ms`) : ""}</i></span></div>`;
+  }).join("")}</div>`;
+}
+function vReflexMulti() {
+  const g = S.game, rf = g.rf, heat = rf.heats[rf.h], many = rf.heats.length > 1;
+  const head = `第${rf.round}回戦${many ? `・${rf.h + 1}組目（全${rf.heats.length}組）` : ""}`;
+  let card, controls;
+  if (rf.phase === "mhand") {
+    card = `<div class="odai mode-card center board-card" id="card"><p class="prog">${head}</p><p class="ng-lead">${heat.map(mName).join("・")}</p>${rfZones(heat, false)}<p class="hand-note">スマホを真ん中に置いて、<b>自分のエリアの上に指1本</b>で構えて（まだ触らんといて）。<br>緑になる前に触ったらフライング</p></div>`;
+    controls = `<button class="big" data-act="rfGo">準備OK</button>`;
+  } else if (rf.phase === "mwait") {
+    card = `<div class="odai mode-card center rf-play rf-multi" id="card"><div class="rf-box ${rf.color} multi" id="rfBox">${rfZones(heat, true)}<b class="rf-label">${rfLabel(rf.color)}</b></div></div>`;
+    controls = `<p class="hint">緑になったら自分のエリアをタップ（隙間は数えへん）</p>`;
+  } else {
+    const rows = heat.map((i) => ({ i, r: rf.res[i] })).sort((a, b) => (a.r.fly ? 1e9 : a.r.ms) - (b.r.fly ? 1e9 : b.r.ms)).map(({ i, r }) => ({ i, v: r.fly ? "フライング" : r.ms >= RF_LATE ? "遅すぎ" : `${r.ms}ms`, rk: r.fly ? "×" : undefined }));
+    const next = rf.heats[rf.h + 1];
+    card = `<div class="odai mode-card center board-card" id="card"><p class="prog">${head}の記録</p>${rankList(rows)}<p class="hand-note">次の組：${next.map(mName).join("・")}</p></div>`;
+    controls = `<button class="big" data-act="rfMNext">次の組へ</button>`;
   }
   return stageWrap(card, controls);
 }
@@ -2529,7 +2560,9 @@ function onClick(e) {
     case "hlGacha": startGacha([g.hl.loser], g.hl.x || 1, "hilo", g.hl); render(true); break;
     case "hlAccept": applyAdds(); g.gacha = []; g.phase = "play"; hlRound(); render(true); break;
     // 反射神経バトル
+    case "rfStyle": g.rf.style = b.dataset.v === "multi" ? "multi" : "solo"; store.set("nd_rfstyle", g.rf.style); render(); break;
     case "rfStart": rfRound(); render(true); break;
+    case "rfMNext": g.rf.h++; g.rf.phase = "mhand"; render(true); break;
     case "rfGo": rfGo(); break;
     case "rfNext": g.rf.k++; rfBegin(); render(true); break;
     case "rfGacha": startGacha(g.rf.losers, 1, "reflex", g.rf); render(true); break;
@@ -2678,6 +2711,8 @@ document.addEventListener("keydown", (e) => {
   if ((e.code === "Space" || e.key === "Enter") && S.game?.sp?.phase === "play" && S.screen === "stop" && !e.target.closest?.("input,textarea")) { e.preventDefault(); spStop(); }
 });
 // 反射神経バトル：押した瞬間に判定
+// 反射神経（みんな同時）：指ごとに自分のエリアで数える。押した瞬間の時刻（e.timeStamp）で測る
+app.addEventListener("pointerdown", (e) => { const z = e.target.closest("[data-zone]"); if (z && S.game?.rf?.phase === "mwait") { e.preventDefault(); rfZoneTap(+z.dataset.zone, e.timeStamp); } });
 app.addEventListener("pointerdown", (e) => { if (e.target.closest('[data-tap="rf"]') && S.game?.rf?.phase === "wait") { e.preventDefault(); rfTap(); } });
 // ピタッとストップ：押した瞬間に止める（click を待つと遅れる）
 app.addEventListener("pointerdown", (e) => { if (e.target.closest('[data-tap="stop"]') && S.game?.sp?.phase === "play") { e.preventDefault(); spStop(); } });

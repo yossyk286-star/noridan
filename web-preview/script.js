@@ -198,7 +198,7 @@ function newGame(mode, again = false) {
   if (mode === "rtap") { S.game.doer = -1; S.game.rt = { phase: "intro", round: 0 }; if (again) rtRound(); render(true); return; }
   if (mode === "bpass") { S.game.doer = -1; S.game.bp = { phase: "intro", round: 0 }; if (again) bpRound(); render(true); return; }
   if (mode === "hilo") { S.game.doer = -1; S.game.hl = { phase: "intro", round: 0, best: 0, hits: Array(n).fill(0) }; if (again) hlRound(); render(true); return; }
-  if (mode === "reflex") { S.game.doer = -1; S.game.rf = { phase: "intro", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [], timers: [] }; render(true); return; }
+  if (mode === "reflex") { S.game.doer = -1; S.game.rf = { phase: "intro", style: store.get("nd_rfstyle", "solo") === "multi" ? "multi" : "solo", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [], timers: [] }; render(true); return; }
   if (mode === "voice") { S.game.doer = -1; S.game.vc = { phase: "intro", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [] }; render(true); return; }
   if (mode === "stop") { S.game.doer = -1; S.game.sp = { phase: "intro", dir: ((v) => (["up", "blind"].includes(v) ? v : "down"))(store.get("nd_spdir", "down")), round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), exact: Array(n).fill(0), losers: [] }; render(true); return; }
   if (mode === "shake") { S.game.doer = -1; S.game.sk = { phase: "intro", round: 0, k: 0, cnt: Array(n).fill(null), best: Array(n).fill(null), tapped: Array(n).fill(false), losers: [] }; render(true); return; }
@@ -1169,9 +1169,17 @@ function hlNext() {
 // 1人ずつ。画面が緑になった瞬間にタップ。フライングした人は罰、おらんかったら一番遅い人が罰。
 // 普通は黄色のフェイク、地獄は赤や「まだ！」のフェイクも出る
 const RF_LATE = 1500; // これより遅かったら「遅すぎ」で打ち切り
+// みんな同時：4人までの組に分けて、組ごとに画面を区切って同時に押す（5人以上は 5→3+2、9→3+3+3 みたいに均等に）
+function rfHeats() {
+  const n = S.members.length, k = Math.ceil(n / 4), out = [];
+  let i = 0;
+  for (let h = 0; h < k; h++) { const size = Math.floor(n / k) + (h < n % k ? 1 : 0); out.push(Array.from({ length: size }, () => i++)); }
+  return out;
+}
 function rfRound() {
   const rf = S.game.rf;
   rf.round++; rf.k = 0; rf.res = Array(S.members.length).fill(null); rf.losers = [];
+  if (rf.style === "multi") { rf.heats = rfHeats(); rf.h = 0; rf.phase = "mhand"; S.game.doer = -1; return; }
   rfBegin();
 }
 const rfWho = (rf) => (rf.k + rf.round - 1) % S.members.length;
@@ -1181,20 +1189,22 @@ function rfGo() {
   // フェイク（緑になる前に出る）
   const fakes = S.level === "yurume" ? [] : S.level === "futsu" ? (Math.random() < 0.6 ? ["yellow"] : []) : shuffle(["yellow", "red", "mada"]).slice(0, 1 + rnd(2));
   // 緑になるまで3〜7秒＋フェイク1つにつき1秒。フェイクは1.8秒以上ためてから出して、0.8秒見せる
-  rf.phase = "wait"; rf.color = "wait"; rf.goAt = now + 3000 + fakes.length * 1000 + Math.random() * 4000; rf.timers = [];
+  const W = rf.style === "multi" ? "mwait" : "wait";
+  rf.phase = W; rf.color = "wait"; rf.goAt = now + 3000 + fakes.length * 1000 + Math.random() * 4000; rf.timers = [];
   fakes.forEach((kind, i) => {
     const at = 1800 + i * 1000 + ((rf.goAt - now - 3000 - fakes.length * 1000) * (i + 1)) / (fakes.length + 1);
-    rf.timers.push(setTimeout(() => { if (S.game?.rf !== rf || rf.phase !== "wait") return; rf.color = kind; rfPaint(); rf.timers.push(setTimeout(() => { if (rf.phase === "wait" && rf.color === kind) { rf.color = "wait"; rfPaint(); } }, 800)); }, at));
+    rf.timers.push(setTimeout(() => { if (S.game?.rf !== rf || rf.phase !== W) return; rf.color = kind; rfPaint(); rf.timers.push(setTimeout(() => { if (rf.phase === W && rf.color === kind) { rf.color = "wait"; rfPaint(); } }, 800)); }, at));
   });
-  rf.timers.push(setTimeout(() => { if (S.game?.rf !== rf || rf.phase !== "wait") return; rf.color = "go"; rf.goShown = performance.now(); rfPaint(); play("pop"); }, rf.goAt - now));
-  rf.timers.push(setTimeout(() => { if (S.game?.rf === rf && rf.phase === "wait" && rf.color === "go") rfTap(true); }, rf.goAt - now + RF_LATE));
+  rf.timers.push(setTimeout(() => { if (S.game?.rf !== rf || rf.phase !== W) return; rf.color = "go"; rf.goShown = performance.now(); rfPaint(); play("pop"); }, rf.goAt - now));
+  rf.timers.push(setTimeout(() => { if (S.game?.rf === rf && rf.phase === W && rf.color === "go") { if (W === "mwait") rfHeatEnd(); else rfTap(true); } }, rf.goAt - now + RF_LATE));
   render(true);
 }
+const rfLabel = (c) => (c === "go" ? "今！" : c === "mada" ? "まだ！" : c === "wait" ? "待って…" : "まだやで");
 function rfPaint() {
   const box = document.getElementById("rfBox"); if (!box) return;
   const rf = S.game.rf;
-  box.className = "rf-box " + rf.color;
-  box.querySelector("b").textContent = rf.color === "go" ? "今！" : rf.color === "mada" ? "まだ！" : rf.color === "wait" ? "待って…" : "まだやで";
+  box.className = "rf-box " + rf.color + (rf.style === "multi" ? " multi" : "");
+  box.querySelector(".rf-label").textContent = rfLabel(rf.color);
 }
 function rfTap(late = false) {
   const g = S.game, rf = g.rf;
@@ -1209,6 +1219,39 @@ function rfTap(late = false) {
   rf.phase = rf.k + 1 >= S.members.length ? "rank" : "done";
   if (rf.phase === "rank") {
     g.doer = -1;
+    const idx = S.members.map((_, i) => i), flyers = idx.filter((i) => rf.res[i].fly);
+    if (flyers.length) rf.losers = flyers;
+    else { const worst = Math.max(...idx.map((i) => rf.res[i].ms)); rf.losers = idx.filter((i) => rf.res[i].ms === worst); }
+  }
+  render(true);
+}
+
+// みんな同時：自分のエリアを押した瞬間。緑になる前ならその人だけフライング
+function rfZoneTap(i, ts) {
+  const g = S.game, rf = g.rf;
+  if (rf.phase !== "mwait" || rf.res[i] || !rf.heats[rf.h].includes(i)) return;
+  const fly = rf.color !== "go";
+  const ms = fly ? null : Math.max(0, Math.round((ts ?? performance.now()) - rf.goShown));
+  rf.res[i] = { fly, ms: fly ? null : Math.min(ms, RF_LATE) };
+  play(fly ? "boom" : "coin");
+  const z = document.querySelector(`[data-zone="${i}"]`);
+  if (z) { z.classList.add(fly ? "fly" : "hit"); z.querySelector(".rf-zv").textContent = fly ? "フライング" : `${rf.res[i].ms}ms`; }
+  if (rf.heats[rf.h].every((j) => rf.res[j])) rfHeatEnd();
+}
+// 組が終わった（全員押した or 緑から1.5秒）：押してへん人は「遅すぎ」
+function rfHeatEnd() {
+  const g = S.game, rf = g.rf;
+  if (rf.phase !== "mwait") return;
+  rf.timers.forEach(clearTimeout);
+  for (const j of rf.heats[rf.h]) {
+    if (!rf.res[j]) rf.res[j] = { fly: false, ms: RF_LATE };
+    const r = rf.res[j];
+    if (!r.fly && r.ms < RF_LATE && (rf.best[j] == null || r.ms < rf.best[j])) rf.best[j] = r.ms;
+  }
+  g.turn++;
+  if (rf.h + 1 < rf.heats.length) { rf.phase = "mdone"; }
+  else {
+    rf.phase = "rank"; g.doer = -1;
     const idx = S.members.map((_, i) => i), flyers = idx.filter((i) => rf.res[i].fly);
     if (flyers.length) rf.losers = flyers;
     else { const worst = Math.max(...idx.map((i) => rf.res[i].ms)); rf.losers = idx.filter((i) => rf.res[i].ms === worst); }
