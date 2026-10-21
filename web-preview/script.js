@@ -183,10 +183,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢", hug: "ハグタイム当て" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
@@ -210,6 +210,7 @@ function newGame(mode, again = false) {
   if (mode === "rtap") { S.game.doer = -1; S.game.rt = { phase: "intro", round: 0 }; if (again) rtRound(); render(true); return; }
   if (mode === "bpass") { S.game.doer = -1; S.game.bp = { phase: "intro", round: 0 }; if (again) bpRound(); render(true); return; }
   if (mode === "blind") { S.game.doer = -1; S.game.bl = { phase: "intro", k: 0, hits: Array(n).fill(0), fool: Array(n).fill(0) }; if (again) blRound(); render(true); return; }
+  if (mode === "hug") { S.game.doer = -1; S.game.hg = { phase: "intro", k: 0, mate: null, best: Array(n).fill(null) }; if (again) hgRound(); render(true); return; }
   if (mode === "tickle") { S.game.doer = -1; S.game.tk = { phase: "intro", k: 0, got: Array(n).fill(0), safe: Array(n).fill(0), last: null }; if (again) tkRound(); render(true); return; }
   if (mode === "pocky") { S.game.doer = -1; S.game.pk = { phase: "intro", k: 0, mate: null, full: Array(n).fill(0) }; if (again) pkRound(); render(true); return; }
   if (mode === "hilo") { S.game.doer = -1; S.game.hl = { phase: "intro", round: 0, best: 0, hits: Array(n).fill(0) }; if (again) hlRound(); render(true); return; }
@@ -518,6 +519,7 @@ function titles() {
   if (g.mode === "reflex" && g.rf) { const ok = S.members.map((_, i) => i).filter((i) => g.rf.best[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => g.rf.best[i])); add("反射神経王", ok.filter((i) => g.rf.best[i] === m), `最速 ${m}ミリ秒`); } }
   if (g.mode === "voice" && g.vc) { const b = g.vc.best.map((v) => v ?? 0); const t = top(b, 1); if (t) add("声量おばけ", t, `最大 ${b[t[0]]}`); }
   if (g.mode === "blind" && g.bl) { const t = top(g.bl.hits, 1); if (t) add("触覚の達人", t, `当てた ${g.bl.hits[t[0]]}回`); const f = top(g.bl.fool, 1); if (f) add("気配を消す人", f, `バレへんかった ${g.bl.fool[f[0]]}回`); }
+  if (g.mode === "hug" && g.hg) { const ok = S.members.map((_, i) => i).filter((i) => g.hg.best[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => g.hg.best[i])); add("ハグ職人", ok.filter((i) => g.hg.best[i] === m), `ズレ ${m.toFixed(2)}秒`); } }
   if (g.mode === "tickle" && g.tk) { const t = top(g.tk.safe, 1); if (t) add("鉄壁の我慢", t, `耐えた ${g.tk.safe[t[0]]}回`); }
   if (g.mode === "pocky" && g.pk) { const t = top(g.pk.full, 1); if (t) add("ポッキー完走", t, `最後まで ${g.pk.full[t[0]]}回`); }
   if (g.mode === "hilo" && g.hl) { const t = top(g.hl.hits, 2); if (t) add("読みの達人", t, `当てた ${g.hl.hits[t[0]]}回`); }
@@ -1223,6 +1225,37 @@ function blGuess(i) {
   if (bl.ok) bl.hits[bl.who]++; else bl.fool[bl.toucher]++;
   bl.loser = bl.ok ? bl.toucher : bl.who;
   hold("正解は…", 1800, () => { bl.phase = "reveal"; play(bl.ok ? "pinpon" : "buzzer"); });
+  render();
+}
+// ハグタイム当て：2人でハグして、目をつぶったまま「ちょうど○秒」で離れる。周りの人が離れた瞬間を押す。ズレが大きかったら2人とも罰
+const HG_SEC = { yurume: 5, futsu: 10, jigoku: 15 };
+const HG_TOL = { yurume: 1.5, futsu: 1, jigoku: 0.5 };
+const hgSec = () => HG_SEC[S.level] || 10;
+const hgTol = () => HG_TOL[S.level] || 1;
+function hgRound() {
+  const g = S.game, hg = g.hg, pool = nightPool();
+  hg.who = pool[hg.k % pool.length];
+  const prev = hg.mate;
+  const c = sexPrefer(hg.who, pool.filter((i) => i !== hg.who));
+  const c2 = c.filter((i) => i !== prev);
+  hg.mate = pick(c2.length ? c2 : c);
+  g.doer = hg.who; hg.phase = "ready"; hg.t = null;
+}
+function hgGo() {
+  const hg = S.game.hg;
+  hg.phase = "hug"; hg.start = performance.now(); play("coin");
+  // 目標の3倍たっても離れへんかったら自動で止める
+  clearTimeout(hg.cap); hg.cap = setTimeout(() => { if (S.game?.hg === hg && hg.phase === "hug") hgStop(); }, hgSec() * 3000);
+}
+function hgStop() {
+  const g = S.game, hg = g.hg;
+  if (hg.phase !== "hug") return;
+  clearTimeout(hg.cap);
+  hg.t = (performance.now() - hg.start) / 1000; g.turn++;
+  hg.diff = Math.abs(hg.t - hgSec()); hg.ok = hg.diff <= hgTol();
+  [hg.who, hg.mate].forEach((i) => { hg.best[i] = hg.best[i] == null ? hg.diff : Math.min(hg.best[i], hg.diff); });
+  hg.phase = "judge";
+  hold("結果は…", 1600, () => { hg.phase = "res"; play(hg.ok ? "pinpon" : "buzzer"); });
   render();
 }
 // こしょばし我慢：くすぐられる人（基本女性・3回に1回は逆転で男性）を、くすぐる人（異性）が10秒くすぐる。笑ったら罰、耐えたらセーフ
