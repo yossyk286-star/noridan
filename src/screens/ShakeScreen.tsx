@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, Vibration, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Vibration } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
@@ -14,6 +15,7 @@ import { play } from '../lib/sound';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { GachaItem, Level, Member, Night } from '../types';
+import { batsuCue } from '../lib/fx';
 
 type Props = {
   members: Member[];
@@ -161,8 +163,8 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
   const countdown = () => {
     setPhase('count');
     setCount(3);
-    play('tick');
-    [1, 2].forEach((j) => timers.current.push(setTimeout(() => { setCount(3 - j); play('tick'); }, j * 800)));
+    play('heart');
+    [1, 2].forEach((j) => timers.current.push(setTimeout(() => { setCount(3 - j); play('heart'); }, j * 800)));
     timers.current.push(setTimeout(go, 2400));
   };
   const go = () => {
@@ -190,7 +192,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
         lastSec.current = sec;
         beat.setValue(1.28);
         Animated.spring(beat, { toValue: 1, friction: 4, tension: 160, useNativeDriver: true }).start();
-        play('tick');
+        play(sec <= 3 ? 'heart' : 'tick');
       }
       timers.current.push(setTimeout(tick, 50));
     };
@@ -206,7 +208,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     if (c > (best[who] ?? -1)) best[who] = c;
     if (manualRef.current) tapped[who] = true;
     setTurns((t) => t + 1);
-    play('fanfare');
+    play('timeup');
     // タイムアップの「ブブッ」：振ってる最中は画面を見てへんので、手に伝える
     Vibration.vibrate([0, 300, 120, 300]);
     if (k + 1 >= n) {
@@ -222,7 +224,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     const items = losers.map((i) => ({ i, n: x, ...decks.batsu(members, i, x) }));
     setGacha(items);
     setPhase('batsu');
-    play(items.every((it) => it.lucky) ? 'gachaLucky' : 'gacha');
+    batsuCue(items, members);
   };
   /** 罰ガチャの結果を罰に足した新しい罰の数 */
   const applyGacha = () => {
@@ -304,7 +306,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
           {sensor === 'none' && <Text style={[s.small, { color: fg }]}>このスマホは振ったのがとられへんので、画面の連打で勝負するモードになる</Text>}
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={start} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={start} />;
       break;
     case 'hand':
       card = (

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog } from '../components/ModeParts';
@@ -16,6 +16,7 @@ import { useVoteCount } from '../lib/useVoteCount';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf, neonPal } from '../theme';
 import type { GachaItem, Level, Member, Night } from '../types';
+import { batsuCue } from '../lib/fx';
 
 type Props = {
   members: Member[];
@@ -102,7 +103,7 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
     const items = top.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
     setGacha(items);
     setPhase('batsu');
-    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
+    batsuCue(items, members);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   };
   const accept = () => {
@@ -141,7 +142,7 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードの質問も出る` : undefined} />
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="1問目へ" onPress={() => setPhase('q')} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="1問目へ" onPress={() => setPhase('q')} />;
       break;
     case 'q':
       card = (

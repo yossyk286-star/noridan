@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { iniFit, initialOf } from '../lib/game';
 import type React from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { play } from '../lib/sound';
 import { Tap } from './Tap';
 import { F, alpha, colorOf } from '../theme';

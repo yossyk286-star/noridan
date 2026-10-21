@@ -4,7 +4,7 @@ import type React from 'react';
 import { HurryFrame } from '../components/Fx';
 import { useHurry } from '../lib/useHurry';
 import { StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, Frame, GachaCard, RuleBanner, RuleSheet, RulesSheet, ScoreBar } from '../components/Stage';
 import { IntroCard, Lead, ModeCard, Outline, Prog, Roulette } from '../components/ModeParts';
@@ -18,6 +18,7 @@ import { useCountdown } from '../lib/useCountdown';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { GachaItem, Level, Member, Night, Rule, Segment } from '../types';
+import { batsuCue } from '../lib/fx';
 
 type Props = {
   members: Member[];
@@ -77,11 +78,11 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
     const items = [{ i, n: 1, ...decks.batsu(members, i) }];
     setGacha(items);
     setPhase('batsu');
-    play(items[0].lucky ? 'gachaLucky' : 'gacha');
+    batsuCue(items, members);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
   };
   const clock = useCountdown(() => {
-    play('alarm');
+    play('timeup');
     lose(praiser);
   });
   const hurry = useHurry(clock.left, phase === 'go');
@@ -143,7 +144,7 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
   switch (phase) {
     case 'intro':
       card = <IntroCard pal={pal} mode="homeru" tag={`${SEC}秒`} />;
-      controls = <BigButton pal={pal} label="ルーレットで最初の人を決める" onPress={() => { setPicked(null); setPhase('roul'); }} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="ルーレットで最初の人を決める" onPress={() => { setPicked(null); setPhase('roul'); }} />;
       break;
     case 'roul':
       card = (

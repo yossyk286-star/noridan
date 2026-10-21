@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack, SegText } from '../components/Stage';
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, Note, Outline, Prog } from '../components/ModeParts';
@@ -16,6 +16,7 @@ import { speak } from '../lib/speech';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { GachaItem, Level, Member, Night, Segment } from '../types';
+import { batsuCue } from '../lib/fx';
 
 type Props = {
   members: Member[];
@@ -115,7 +116,7 @@ export default function PittariScreen({ members, level, night, onQuit, onSetting
     const items = losers.map((i) => ({ i, n: times, ...decks.batsu(members, i, times) }));
     setGacha(items);
     setPhase('batsu');
-    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
+    batsuCue(items, members);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   };
   const accept = () => {
@@ -173,7 +174,7 @@ export default function PittariScreen({ members, level, night, onQuit, onSetting
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} />
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="1問目へ" onPress={() => setPhase('q')} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="1問目へ" onPress={() => setPhase('q')} />;
       break;
     case 'q':
       card = (

@@ -8,6 +8,10 @@ import type { Night } from '../types';
 type Props = {
   visible: boolean;
   sound: boolean;
+  vol: number;
+  vibe: boolean;
+  onVol: (v: number) => void;
+  onVibe: (on: boolean) => void;
   dual: boolean;
   voice: boolean;
   night: Night;
@@ -20,7 +24,7 @@ type Props = {
 };
 
 /** 歯車から開く設定。夜モードはONの時だけ出る（隠しコマンドなので存在は書かない） */
-export default function SettingsSheet({ visible, sound, dual, voice, night, onSound, onDual, onVoice, onNight, onTutorial, onClose }: Props) {
+export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, voice, night, onSound, onDual, onVoice, onNight, onTutorial, onClose }: Props) {
   const { resetSeen } = useSeen();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -30,6 +34,17 @@ export default function SettingsSheet({ visible, sound, dual, voice, night, onSo
             <View style={s.grip} />
             <Text style={s.title}>設定</Text>
             <Toggle label="効果音" sub="めくる音・ガチャ・爆発" on={sound} onPress={() => onSound(!sound)} />
+            {sound && (
+              <View style={s.volRow} accessibilityLabel="音量">
+                <Text style={s.volLabel}>音量</Text>
+                {([[1, '小'], [2, '中'], [3, '大']] as const).map(([v, t]) => (
+                  <Tap key={v} onPress={() => onVol(v)} accessibilityState={{ selected: vol === v }} style={[s.volBtn, vol === v && s.volOn]}>
+                    <Text style={[s.volText, vol === v && { color: C.ink }]}>{t}</Text>
+                  </Tap>
+                ))}
+              </View>
+            )}
+            <Toggle label="バイブ" sub="罰・爆発・ボタンでブルッ" on={vibe} onPress={() => onVibe(!vibe)} />
             <Toggle label="お題の読み上げ" sub="札が出たら声で読む（爆弾の中身は読まへん）" on={voice} onPress={() => onVoice(!voice)} />
             <Toggle label="向かい合わせ表示" sub="机の真ん中に置いて両側から読める" on={dual} onPress={() => onDual(!dual)} />
             {night && (
@@ -93,6 +108,11 @@ function Toggle({ label, sub, on, onPress }: { label: string; sub: string; on: b
 }
 
 const s = StyleSheet.create({
+  volRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  volLabel: { color: C.muted, fontSize: 13, fontWeight: '800', paddingHorizontal: 4 },
+  volBtn: { flex: 1, paddingVertical: 9, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', alignItems: 'center' },
+  volOn: { backgroundColor: C.cream, borderColor: 'transparent' },
+  volText: { color: C.paper, fontSize: 14, fontWeight: '900' },
   back: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: '#1d1a17', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 34, maxHeight: '88%', width: '100%', maxWidth: 560, alignSelf: 'center' },
   grip: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(247,243,234,0.25)', alignSelf: 'center' },

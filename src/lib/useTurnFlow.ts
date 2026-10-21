@@ -1,5 +1,5 @@
 import { useReducer, useRef } from 'react';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from './vibe';
 import { CHANCE, Decks, PERSONAL, makeCard, nameSeg, othersOf, pick } from './game';
 import { play } from './sound';
 import { newStats, type Why } from './titles';

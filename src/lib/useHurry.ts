@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from './vibe';
 import { play } from './sound';
 
 /** 残り10秒を切ったら1秒ごとにカチッ。赤いフチを出すかどうかを返す */
@@ -13,7 +13,7 @@ export function useHurry(secLeft: number, running: boolean) {
     }
     if (secLeft !== last.current) {
       last.current = secLeft;
-      play('hurry');
+      play(secLeft <= 5 ? 'heart' : 'hurry'); // ラスト5秒は心臓の音
       Haptics.selectionAsync().catch(() => {});
     }
   }, [on, secLeft]);

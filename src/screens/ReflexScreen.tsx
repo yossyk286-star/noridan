@@ -276,7 +276,7 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
           </View>
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={() => newRound(1)} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={() => newRound(1)} />;
       break;
     case 'hand':
       card = (

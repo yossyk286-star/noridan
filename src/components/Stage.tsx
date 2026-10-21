@@ -925,8 +925,22 @@ export function RoundEnd({ pal, next, onNext, onEnd, endLabel = '結果発表へ
 }
 
 export function BigButton({
-  pal, label, onPress, disabled, danger,
-}: { pal: Pal; label: string; onPress: () => void; disabled?: boolean; danger?: boolean }) {
+  pal, label, onPress, disabled, danger, onBack,
+}: { pal: Pal; label: string; onPress: () => void; disabled?: boolean; danger?: boolean; onBack?: () => void }) {
+  // 遊び方の説明の画面だけ、左に小さい「戻る」（遊び方を選び直せる）
+  if (onBack) {
+    return (
+      <View style={styles.introRow}>
+        <Tap onPress={onBack} accessibilityLabel="遊び方を選び直す" style={({ pressed }) => [styles.introBack, { borderColor: pal.neon ?? 'rgba(136,136,136,0.45)', transform: [{ scale: pressed ? 0.95 : 1 }] }]}>
+          <Icon name="back" size={20} color={pal.neon ? '#fff' : pal.muted} />
+          <Text style={[styles.introBackT, { color: pal.neon ? '#fff' : pal.muted }]}>戻る</Text>
+        </Tap>
+        <View style={{ flex: 1 }}>
+          <BigButton pal={pal} label={label} onPress={onPress} disabled={disabled} danger={danger} />
+        </View>
+      </View>
+    );
+  }
   const jigoku = !!pal.jigoku;
   const bg = danger ? (jigoku ? pal.cardEdge : PEN_RED) : pal.fg;
   const fg = danger ? (jigoku ? '#000' : '#fff') : pal.bg;
@@ -950,6 +964,9 @@ export function BigButton({
 }
 
 const styles = StyleSheet.create({
+  introRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8 },
+  introBack: { width: 64, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 1 },
+  introBackT: { fontSize: 11, fontWeight: '900' },
   x2Meter: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.35)', borderWidth: 2, borderColor: 'rgba(255,42,42,0.6)' },
   x2Old: { fontFamily: F.display, fontSize: 18, color: '#ff8a80', opacity: 0.8 },
   x2Line: { position: 'absolute', left: -3, right: -3, top: '50%', height: 4, borderRadius: 2, backgroundColor: '#ff2a2a' },

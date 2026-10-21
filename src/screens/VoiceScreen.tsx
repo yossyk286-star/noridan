@@ -198,7 +198,7 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${level === 'jigoku' ? '一番小さい人の罰が2倍' : '一番小さい人が罰'}`} note="次にマイクの許可を聞かれる。録音はせえへん（大きさを測るだけ）" />
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={start} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={start} />;
       break;
     case 'pick':
       card = (

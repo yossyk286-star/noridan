@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, Frame, GachaCard, RulesSheet, ScoreBar } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, Peek } from '../components/ModeParts';
@@ -16,6 +16,7 @@ import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf, neonPal } from '../theme';
 import type { GachaItem, Level, Member, Night } from '../types';
 import itoJson from '../data/ito.json';
+import { batsuCue } from '../lib/fx';
 
 type Props = {
   members: Member[];
@@ -106,7 +107,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
     H.hold('答え合わせ…', 1800, () => {
       setDone(done + 1);
       setPhase('reveal');
-      play(b.size ? 'warn' : 'fanfare');
+      play(b.size ? 'buzzer' : 'pinpon');
       Haptics.notificationAsync(b.size ? Haptics.NotificationFeedbackType.Error : Haptics.NotificationFeedbackType.Success).catch(() => {});
     });
   };
@@ -114,7 +115,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
     const items = bad.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
     setGacha(items);
     setPhase('batsu');
-    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
+    batsuCue(items, members);
   };
   const accept = () => {
     const np = pen.slice();
@@ -154,7 +155,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="数字を配る" onPress={newRound} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="数字を配る" onPress={newRound} />;
       break;
     case 'hand':
       card = (

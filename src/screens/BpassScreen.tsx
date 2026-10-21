@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { Animated, Easing, StyleSheet, Text, View, Vibration } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Vibration } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
@@ -30,6 +31,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
   const P = usePenalty(members, level, night, 'bpass');
   const [phase, setPhase] = useState<Phase>('intro');
   const phaseRef = useRef<Phase>('intro');
+  const tk = useRef(false); // チクタクの交互
   phaseRef.current = phase;
   const [round, setRound] = useState(1);
   const [topic, setTopic] = useState('');
@@ -97,7 +99,8 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
       if (phaseRef.current !== 'play') return;
       const now = Date.now();
       if (now >= end) return;
-      play('tick');
+      tk.current = !tk.current;
+      play(tk.current ? 'tik' : 'tok'); // チクタク
       const el = (now - start) / 1000;
       timer.current = setTimeout(tick, Math.max(140, 650 - el * (level === 'jigoku' ? 45 : 28)));
     };
@@ -135,7 +138,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
           </View>
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={() => newRound(1)} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={() => newRound(1)} />;
       break;
     case 'ready':
       card = (

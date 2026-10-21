@@ -4,10 +4,10 @@ import { StyleSheet, View } from 'react-native';
 import { Frame, RulesSheet, ScoreBar } from './Stage';
 import GameMenu from './GameMenu';
 import { Decks } from '../lib/game';
-import { play } from '../lib/sound';
 import { newStats, type Stats, type Why } from '../lib/titles';
 import type { Pal } from '../theme';
 import type { GachaItem, Level, Member, Night } from '../types';
+import { batsuCue } from '../lib/fx';
 
 /**
  * 罰の数・罰ガチャ・称号の記録（新しい遊び方で共通）。
@@ -24,7 +24,7 @@ export function usePenalty(members: Member[], level: Level, night: Night, why: W
   const draw = (losers: number[], x = 1) => {
     const items = losers.map((i) => ({ i, n: x, ...decks.batsu(members, i, x) }));
     setGacha(items);
-    play(items.every((it) => it.lucky) ? 'gachaLucky' : 'gacha');
+    batsuCue(items, members);
   };
   const apply = () => {
     const np = pen.slice();

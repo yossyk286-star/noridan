@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { Animated, ScrollView, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
+import { Animated, ScrollView, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Vibration } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
@@ -14,6 +15,7 @@ import { load, save } from '../lib/storage';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { GachaItem, Level, Member, Night } from '../types';
+import { batsuCue } from '../lib/fx';
 
 type Props = {
   members: Member[];
@@ -115,8 +117,8 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const countdown = () => {
     setPhase('count');
     setCount(3);
-    play('tick');
-    [1, 2].forEach((j) => timers.current.push(setTimeout(() => { setCount(3 - j); play('tick'); }, j * 700)));
+    play('heart');
+    [1, 2].forEach((j) => timers.current.push(setTimeout(() => { setCount(3 - j); play('heart'); }, j * 700)));
     timers.current.push(setTimeout(go, 2100));
   };
   const go = () => {
@@ -213,7 +215,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
     const items = losers.map((i) => ({ i, n: x, ...decks.batsu(members, i, x) }));
     setGacha(items);
     setPhase('batsu');
-    play(items.every((it) => it.lucky) ? 'gachaLucky' : 'gacha');
+    batsuCue(items, members);
   };
   /** 罰ガチャの結果を罰に足した新しい罰の数 */
   const applyGacha = () => {
@@ -307,7 +309,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
           </View>
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={() => newRound(1)} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={() => newRound(1)} />;
       break;
     case 'hand':
       card = (

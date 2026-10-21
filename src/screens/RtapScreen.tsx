@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type React from 'react';
-import { StyleSheet, Text, View, Vibration } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Vibration } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { IntroCard, LevelBox, ModeCard, Prog } from '../components/ModeParts';
@@ -64,7 +65,7 @@ export default function RtapScreen({ members, level, night, onQuit, onSettings, 
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：パネル${tiles}枚の中に爆弾が1つ`} />
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={() => newRound(1)} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={() => newRound(1)} />;
       break;
     case 'play':
     case 'boom': {

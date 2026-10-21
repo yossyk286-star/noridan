@@ -25,7 +25,10 @@ import HiloScreen from './src/screens/HiloScreen';
 import ReflexScreen from './src/screens/ReflexScreen';
 import VoiceScreen from './src/screens/VoiceScreen';
 import { cleanMembers, load, save } from './src/lib/storage';
-import { setSoundEnabled } from './src/lib/sound';
+import { play, setSoundEnabled, setVolume } from './src/lib/sound';
+import { setVibeEnabled, Vibration } from './src/lib/vibe';
+import { cancelFx, quakeX, resetStreak } from './src/lib/fx';
+import FxLayer from './src/components/FxLayer';
 import { PrefsContext } from './src/lib/prefs';
 import { speak, stopSpeak } from './src/lib/speech';
 import type { Stats } from './src/lib/titles';
@@ -61,6 +64,8 @@ export default function App() {
   const [level, setLevel] = useState<Level>('futsu');
   const [night, setNight] = useState<Night>(false);
   const [sound, setSound] = useState(true);
+  const [vol, setVol] = useState(3); // 音量 1=小 2=中 3=大
+  const [vibe, setVibe] = useState(true);
   const [dual, setDual] = useState(false);
   const [voice, setVoice] = useState(false);
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
@@ -83,6 +88,13 @@ export default function App() {
       const sv = await load<boolean>('nd_sound', true);
       setSound(sv);
       setSoundEnabled(sv);
+      const vl = await load<number>('nd_vol', 3);
+      const v3 = [1, 2, 3].includes(vl) ? vl : 3;
+      setVol(v3);
+      setVolume(v3);
+      const vb = await load<boolean>('nd_vibe', true);
+      setVibe(vb);
+      setVibeEnabled(vb);
       if (!(await load<boolean>('nd_tut', false))) setTut(true); // 初回だけ遊び方
       const gs = await load<unknown>('nd_groups', []);
       setGroups((Array.isArray(gs) ? gs : []).map(cleanMembers).filter((g): g is Member[] => !!g).slice(0, 3));
@@ -104,6 +116,18 @@ export default function App() {
     setSound(on);
     setSoundEnabled(on);
     save('nd_sound', on);
+  };
+  const updateVol = (v: number) => {
+    setVol(v);
+    setVolume(v);
+    save('nd_vol', v);
+    play('jan');
+  };
+  const updateVibe = (on: boolean) => {
+    setVibe(on);
+    setVibeEnabled(on);
+    save('nd_vibe', on);
+    if (on) Vibration.vibrate(40);
   };
   const updateDual = (on: boolean) => {
     setDual(on);
@@ -129,6 +153,8 @@ export default function App() {
   };
   const start = (mode: Mode, again = false) => {
     if (screen.name === 'home') rememberGroup();
+    resetStreak(); // 連続罰はゲームごとに数え直し
+    cancelFx();
     setScreen({ name: mode, key: Date.now(), again });
   };
   const finish = (mode: Mode) => (pen: number[], turns: number, stats: Stats, words?: string[], scores?: number[]) => setScreen({ name: 'result', mode, pen, turns, stats: { ...stats }, words, scores });
@@ -166,7 +192,7 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={[s.root, { backgroundColor: bg }]}>
         <StatusBar style="light" />
-        <Animated.View style={[s.root, { opacity: slide.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }), transform: [{ translateX: slide.interpolate({ inputRange: [0, 1], outputRange: [dir.current * 28, 0] }) }] }]}>
+        <Animated.View style={[s.root, { opacity: slide.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }), transform: [{ translateX: Animated.add(slide.interpolate({ inputRange: [0, 1], outputRange: [dir.current * 28, 0] }), quakeX) }] }]}>
           {screen.name === 'home' && (
             <HomeScreen
               members={members}
@@ -203,9 +229,14 @@ export default function App() {
             />
           )}
         </Animated.View>
+        <FxLayer deep={night === 'shinya' && screen.name !== 'result'} />
         <SettingsSheet
           visible={sheet}
           sound={sound}
+          vol={vol}
+          vibe={vibe}
+          onVol={updateVol}
+          onVibe={updateVibe}
           dual={dual}
           voice={voice}
           night={night}

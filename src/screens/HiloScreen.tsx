@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { StyleSheet, Text, View, Vibration } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Vibration } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
@@ -72,7 +73,7 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
     if (good) {
       setStreak(streak + 1);
       hits[who]++;
-      play('coin');
+      play('pinpon');
     } else {
       setX(streak >= X2[level] ? 2 : 1);
       play('boom');
@@ -96,7 +97,7 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${level === 'jigoku' ? '同じ数字もアウト。3連続のあとに外したら罰2倍' : level === 'futsu' ? '5連続のあとに外したら罰2倍' : '同じ数字はセーフ'}`} />
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={() => newRound(1)} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={() => newRound(1)} />;
       break;
     case 'guess':
       card = (

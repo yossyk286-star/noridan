@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Tap } from '../components/Tap';
 import { Animated, Easing, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import Svg, { Circle, Defs, Ellipse, Path, RadialGradient, Stop } from 'react-native-svg';
 import { Angel, Confetti, Crown, Skull } from '../components/Fx';
 import { captureRef } from 'react-native-view-shot';
@@ -60,6 +60,9 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       return;
     }
     play('drumroll');
+    // 戦犯が決まったらブーイングと笑い声
+    timers.push(setTimeout(() => play('boo'), SLOT_MS + 450));
+    timers.push(setTimeout(() => play('laugh'), SLOT_MS + 1100));
     let t = 0;
     let k = 0;
     while (t < SLOT_MS) {

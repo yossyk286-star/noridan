@@ -39,6 +39,8 @@ const S = {
   seen: store.get("nd_seen", {}) || {}, // 初登場のひとこと説明を見たかどうか
   rules: false,     // ルール早見表 // 昼間でもたまにヒントを出す（起動ごとに固定）
   sound: store.get("nd_sound", true),
+  vol: [1, 2, 3].includes(store.get("nd_vol", 3)) ? store.get("nd_vol", 3) : 3, // 音量 1=小 2=中 3=大
+  vibe: store.get("nd_vibe", true),    // バイブ
   dual: store.get("nd_dual", false),   // 向かい合わせ表示
   voice: store.get("nd_voice", false), // お題の読み上げ
   step: 1,          // ホーム: 1=メンバー 2=モード選択
@@ -380,7 +382,7 @@ function hop(me, target, done) {
   const step = () => {
     if (g.vpos[me] === target) { done(); return; }
     g.vpos[me] += target > g.vpos[me] ? 1 : -1;
-    play("tick");
+    play("step");
     paintBoard();
     setTimeout(step, 260);
   };
@@ -410,6 +412,7 @@ function land(n) {
   const target = Math.min(GOAL, g.pos[me] + n);
   hop(me, target, () => {
     g.pos[me] = target;
+    play("land");
     resolveCell(me); // 進む・戻る・入れ替えで pos が変わることがある
     const after = g.pos.slice();
     // 入れ替えで動いた人はワープ、自分は続けてピョンピョン
@@ -422,7 +425,7 @@ function land(n) {
       const text = c.type === "swap" ? "入れ替え！" : diff > 0 ? `+${diff}マス進む！` : `${diff}マス戻る…`;
       callout(text, target, c.type === "swap" ? "swap" : diff > 0 ? "plus" : "minus");
       play(diff < 0 ? "warn" : "coin");
-      if (navigator.vibrate) navigator.vibrate(diff < 0 ? [60, 40, 60] : 40);
+      vib(diff < 0 ? [60, 40, 60] : 40);
       const wait = 1200;
       if (c.type === "swap" || Math.abs(diff) > 6) {
         setTimeout(() => { g.vpos = after.slice(); paintBoard(); setTimeout(finish, 450); }, wait);
@@ -623,7 +626,7 @@ function hurryFx(left) {
   if (left > 10000 || left <= 0) { hurryOff(); return; }
   document.body.classList.add("hurry10");
   const sec = Math.ceil(left / 1000);
-  if (sec !== hurrySec) { hurrySec = sec; play("hurry"); if (navigator.vibrate) navigator.vibrate(8); }
+  if (sec !== hurrySec) { hurrySec = sec; play(sec <= 5 ? "heart" : "hurry"); vib(sec <= 5 ? 30 : 8); } // ラスト5秒は心臓の音
 }
 function hurryOff() { hurrySec = -1; document.body.classList.remove("hurry10"); }
 const fmtTime = (ms) => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
@@ -794,9 +797,9 @@ function count3(st, go, ms) {
     if (!Object.values(S.game || {}).includes(st) || st.phase !== "count") return;
     st.n--;
     if (st.n <= 0) { go(); return; }
-    play("tick"); render(); setTimeout(step, ms);
+    play("heart"); render(); setTimeout(step, ms);
   };
-  play("tick"); setTimeout(step, ms);
+  play("heart"); setTimeout(step, ms); // 3・2・1は心臓の音でドクン
 }
 function tiltCount() { count3(S.game.tl, tiltGo, 800); }
 function tiltGo() {
@@ -829,7 +832,7 @@ function secClock(tl, alive, onEnd) {
       tl.sec = sec;
       clock.classList.toggle("hurry", sec <= 3);
       clock.classList.remove("beat"); void clock.offsetWidth; clock.classList.add("beat");
-      play("tick");
+      play(sec <= 3 ? "heart" : "tick");
     }
   };
   paint();
@@ -880,7 +883,7 @@ function tiltOut() {
   if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
   g.turn++;
   // ちょっとためてから判定を出す
-  tl.phase = "out"; play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]);
+  tl.phase = "out"; play("boom"); vib([120, 60, 200]);
   render(true);
 }
 function tiltSafe() {
@@ -986,7 +989,7 @@ function skDone() {
   if (sk.cur > (sk.best[sk.who] ?? -1)) sk.best[sk.who] = sk.cur;
   if (sk.manual) sk.tapped[sk.who] = true;
   g.turn++;
-  play("fanfare"); if (navigator.vibrate) navigator.vibrate([250, 120, 250]); // タイムアップの「ブブッ」（Androidだけ。iPhoneのブラウザはバイブ不可）
+  play("timeup"); vib([250, 120, 250]); // タイムアップの「ブブッ」（Androidだけ。iPhoneのブラウザはバイブ不可）
   if (sk.k + 1 >= S.members.length) {
     // 全員振った：ドラムロールでためてから順位発表
     const min = Math.min(...sk.cnt);
@@ -1096,7 +1099,7 @@ function spReveal() {
   const sp = S.game.sp, r = sp.res[sp.who];
   // ちょっとためてから判定。最後の人はそのまま順位発表まで
   const go = () => {
-    if (r.over) { play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
+    if (r.over) { play("boom"); vib([120, 60, 200]); }
     else if (sp.after !== "rank") play(r.exact ? "fanfare" : "coin");
     sp.phase = sp.after;
     if (sp.phase === "rank") S.game.doer = -1;
@@ -1120,7 +1123,7 @@ function rtTap(t) {
   rt.open.push(t); g.turn++;
   if (t === rt.bomb) {
     rt.loser = rt.who; rt.phase = "boom";
-    play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 220]);
+    play("boom"); vib([120, 60, 220]);
   } else {
     play("pop"); rt.who = (rt.who + 1) % S.members.length; g.doer = rt.who;
   }
@@ -1153,7 +1156,7 @@ function bpGo() {
     if (S.game?.bp !== bp || bp.phase !== "play") return;
     const now = Date.now();
     if (now >= bp.endAt) return;
-    play("tick");
+    bp.tk = !bp.tk; play(bp.tk ? "tik" : "tok"); // チクタク
     const el = (now - bp.startAt) / 1000;
     bp.t = setTimeout(tick, Math.max(140, 650 - el * (S.level === "jigoku" ? 45 : 28)));
   };
@@ -1169,7 +1172,7 @@ function bpPass() {
 function bpBoom() {
   const g = S.game, bp = g.bp;
   clearTimeout(bp.t); clearTimeout(bp.boomT); bp.phase = "boom"; bp.loser = bp.holder; g.doer = bp.holder;
-  play("boom"); if (navigator.vibrate) navigator.vibrate([200, 80, 300]);
+  play("boom"); vib([200, 80, 300]);
   render(true);
 }
 
@@ -1190,8 +1193,8 @@ function hlGuess(up) {
   hl.same = same;
   hl.ok = same ? S.level !== "jigoku" : up ? hl.next > hl.cur : hl.next < hl.cur;
   // 1枚ごとにためると間延びするので、すぐめくる
-  if (hl.ok) { hl.streak++; hl.hits[hl.who]++; if (hl.streak > hl.best) hl.best = hl.streak; play("coin"); }
-  else { hl.loser = hl.who; hl.x = hl.streak >= (HL_X2[S.level] || 5) ? 2 : 1; play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
+  if (hl.ok) { hl.streak++; hl.hits[hl.who]++; if (hl.streak > hl.best) hl.best = hl.streak; play("pinpon"); }
+  else { hl.loser = hl.who; hl.x = hl.streak >= (HL_X2[S.level] || 5) ? 2 : 1; play("boom"); vib([120, 60, 200]); }
   hl.phase = "reveal";
   render(true);
 }
@@ -1568,7 +1571,7 @@ function startTimer(sec, onEnd, fmt, quiet = false) {
     const left = endAt - Date.now();
     const el = document.getElementById("modeTimer");
     if (!quiet) hurryFx(left);
-    if (left <= 0) { stopTimer(); if (!quiet) play("alarm"); if (navigator.vibrate) navigator.vibrate([80, 40, 160]); onEnd(); return; }
+    if (left <= 0) { stopTimer(); if (!quiet) play("timeup"); vib([80, 40, 160]); onEnd(); return; }
     if (el) { el.textContent = fmt ? fmt(left) : Math.ceil(left / 1000); el.classList.toggle("hurry", left < (fmt ? 30000 : 10000)); }
   }, 200);
   return endAt;
@@ -1587,7 +1590,7 @@ function spinRoulette(onDone) {
     idx = k % n;
     document.querySelectorAll(".roul-chip").forEach((el, j) => el.classList.toggle("on", j === idx));
     play("tick");
-    if (navigator.vibrate) navigator.vibrate(5);
+    vib(5);
     if (k >= steps) { setTimeout(() => { S.spinning = false; onDone(idx); }, 450); return; }
     k++;
     const p = k / steps;

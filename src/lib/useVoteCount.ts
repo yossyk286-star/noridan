@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from './vibe';
 import { play } from './sound';
 
 /**

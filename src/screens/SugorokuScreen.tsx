@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
 import { BombBanner, Coach, Who, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, BigButton } from '../components/Stage';
@@ -152,7 +152,7 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
       at += target > at ? 1 : -1;
       const now = at;
       setVpos((v) => v.map((q, i) => (i === me ? now : q)));
-      play('tick');
+      play('step');
       setTimeout(step, 260);
     };
     setTimeout(step, 200);
@@ -171,7 +171,7 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
     const t = setInterval(() => {
       const v = 1 + Math.floor(Math.random() * 6);
       setDie(v);
-      play('tick');
+      play('clack');
       if (++k >= 10) {
         clearInterval(t);
         setRolling(false);
@@ -182,6 +182,7 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
         const start = pos[me];
         const target = Math.min(GOAL, start + v);
         hop(me, start, target, () => {
+          play('land');
           const p = pos.slice();
           p[me] = target;
           const after = resolve(me, p); // 進む・戻る・入れ替えで変わることがある
@@ -249,7 +250,7 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
               <LevelBox pal={basePal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る` : undefined} />
             </IntroCard>
           </View>
-          <BigButton pal={basePal} label={`${members[0].name}からスタート`} onPress={() => setIntro(false)} />
+          <BigButton onBack={onQuit} pal={basePal} label={`${members[0].name}からスタート`} onPress={() => setIntro(false)} />
         </View>
         <Frame color={C.muted} />
         <GameMenu visible={menu} meta={'すごろく・' + LEVEL_LABEL[level]} rulesSub="すごろくの遊び方" flipped={false} onFlip={() => {}} onRules={() => setRules(true)} onEnd={onQuit} onSettings={onSettings} onQuit={onQuit} onClose={() => setMenu(false)} />

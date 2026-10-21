@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type React from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Tap } from '../components/Tap';
 import { BigButton, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, RuleSheet, RulesSheet, ScoreBar } from '../components/Stage';
@@ -14,6 +14,7 @@ import { play } from '../lib/sound';
 import { newStats, type Stats, type Why } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { Card, GachaItem, Level, Member, Night, Rule, Segment } from '../types';
+import { batsuCue } from '../lib/fx';
 
 type Props = {
   members: Member[];
@@ -95,7 +96,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
     setGacha(items);
     setWhy(w);
     setPhase(ph);
-    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
+    batsuCue(items, members);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
   };
   const flip = (k: number) => {
@@ -124,11 +125,11 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
     if (a.id === b.id) {
       setCard(makeCard(a.deep ? '深夜お題' : a.yoru ? '夜お題' : `アホお題・${LEVEL_LABEL[level]}`, a.tpl!, members, cur, { noNg: a.yoru, yoru: a.yoru }));
       setPhase('match');
-      play('coin');
+      play('pinpon');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } else {
       setPhase('miss');
-      play('warn');
+      play('buzzer');
     }
   };
   const answer = (ok: boolean) => {
@@ -188,7 +189,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
         <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
       </IntroCard>
     );
-    controls = <BigButton pal={pal} label={`${members[0].name}からスタート`} onPress={() => setPhase('pick')} />;
+    controls = <BigButton onBack={onQuit} pal={pal} label={`${members[0].name}からスタート`} onPress={() => setPhase('pick')} />;
   } else if (phase === 'over' || phase === 'low' || phase === 'end') {
     const low = lowest();
     const rows = members.map((m, i) => ({ m, i, v: score[i] })).sort((a, b) => b.v - a.v);

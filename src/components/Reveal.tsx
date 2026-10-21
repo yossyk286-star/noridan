@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Vibration } from '../lib/vibe';
 import { play } from '../lib/sound';
 import { F, type Pal } from '../theme';
 import { ModeCard, Note } from './ModeParts';

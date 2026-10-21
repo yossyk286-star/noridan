@@ -1,11 +1,12 @@
 import { GACHA_MS } from '../components/Fx';
 import { useEffect, useState } from 'react';
-import { Vibration } from 'react-native';
+import { Vibration } from './vibe';
 import { play } from './sound';
 import { doubleSegments } from './game';
 import type { TurnFlow } from './useTurnFlow';
 import { usePrefs } from './prefs';
 import { plain, speak } from './speech';
+import { batsuCue } from './fx';
 
 /** カードや段階が変わった時の効果音。爆発の時はフラッシュ用のキーを返す */
 export function useStageCues(flow: TurnFlow, muted = false) {
@@ -14,7 +15,7 @@ export function useStageCues(flow: TurnFlow, muted = false) {
   const { voice } = usePrefs();
   useEffect(() => {
     if (!st.card.kind || muted) return; // すごろくのサイコロ待ちの間は鳴らさない
-    if (st.phase === 'batsu') play(st.gacha.every((g) => g.lucky) ? 'gachaLucky' : 'gacha');
+    if (st.phase === 'batsu') batsuCue(st.gacha, flow.members);
     else if (st.card.kind.includes('ドカン')) {
       play('boom');
       setFlash((x) => x + 1);
@@ -22,7 +23,7 @@ export function useStageCues(flow: TurnFlow, muted = false) {
     } else if (st.phase === 'bombSet') play('alarm');
     else if (st.phase === 'offer') play('coin');
     else if (st.card.alert) play('warn');
-    else play('flip');
+    else play('jan'); // お題が出る「ジャン！」
     // 読み上げ（仕掛け人だけが見る爆弾の中身は絶対読まない）
     if (voice && st.phase !== 'bombPeek') {
       const members = flow.members;

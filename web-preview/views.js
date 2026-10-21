@@ -1,10 +1,12 @@
 // ---------- sound (WebAudio synth, no files) ----------
+const VOL = { 1: 0.4, 2: 0.7, 3: 1 }; // 設定の音量（小・中・大）
 const SFX = (() => {
-  let ctx = null;
+  let ctx = null, master = null;
   const ac = () => {
     try {
-      if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ctx = new C(); }
+      if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ctx = new C(); master = ctx.createGain(); master.connect(ctx.destination); }
       if (ctx.state === "suspended") ctx.resume();
+      master.gain.value = VOL[S.vol] ?? 1;
       return ctx;
     } catch { return null; }
   };
@@ -14,7 +16,7 @@ const SFX = (() => {
     o.type = type; o.frequency.setValueAtTime(freq, t);
     if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
+    o.connect(g).connect(master); o.start(t); o.stop(t + dur + 0.02);
   }
   function noise(dur, vol = 0.3, cutoff = 2000, delay = 0) {
     const c = ac(); if (!c) return;
@@ -23,8 +25,22 @@ const SFX = (() => {
     for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
     const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
     s.buffer = buf; f.type = "lowpass"; f.frequency.value = cutoff; g.gain.value = vol;
-    s.connect(f).connect(g).connect(c.destination); s.start(t);
+    s.connect(f).connect(g).connect(master); s.start(t);
   }
+  // 声っぽい音：ふわっと立ち上がる＋フィルター＋ゆらぎ（天使の「ア〜」・ブーイング・笑い声）
+  function voice(freq, dur, o = {}) {
+    const c = ac(); if (!c) return;
+    const { type = "sawtooth", vol = 0.1, delay = 0, att = 0.02, cut = 1200, bp = false, q = 1, vib = 0, rate = 5.5, slide = 0 } = o;
+    const t = c.currentTime + delay, osc = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, t);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(slide, t + dur);
+    if (vib) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = rate; lg.gain.value = vib; l.connect(lg).connect(osc.frequency); l.start(t); l.stop(t + dur + 0.05); }
+    f.type = bp ? "bandpass" : "lowpass"; f.frequency.value = cut; f.Q.value = q;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(f).connect(g).connect(master); osc.start(t); osc.stop(t + dur + 0.05);
+  }
+  // 決まった乱数（毎回同じ聞こえ方にして、アプリ版のwavと揃える）
+  const seeded = (n) => { let x = n; return () => ((x = (x * 16807) % 2147483647) / 2147483647); };
   return {
     unlock: () => ac(),
     ctx: () => ac(), // 声デカのマイクもこの（タップで起こした）AudioContext を使う
@@ -45,13 +61,42 @@ const SFX = (() => {
     drumroll: (T = 2.4) => { let t = 0, k = 0; while (t < T) { noise(0.05, 0.12 + 0.18 * (t / T), 1400, t); t += 0.055; k++; } [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.55 : 0.13, "triangle", 0.18, 0, T + i * 0.1)); noise(0.5, 0.35, 5000, T + 0.3); },
     hurry: () => { tone(1800, 0.04, "square", 0.07); },
     fanfare: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.45 : 0.13, "triangle", 0.16, 0, i * 0.12)); },
+    // ---- お題が出る「ジャン！」3種類（毎回ランダム）----
+    jan1: () => { noise(0.12, 0.3, 6000); [523, 659, 784].forEach((f) => tone(f, 0.2, "square", 0.05)); tone(1047, 0.32, "triangle", 0.13, 0, 0.04); },
+    jan2: () => { noise(0.22, 0.16, 2600); tone(300, 0.2, "sine", 0.12, 1200); tone(1568, 0.55, "sine", 0.14, 0, 0.19); tone(2093, 0.4, "sine", 0.06, 0, 0.19); },
+    jan3: () => { [659, 784, 988, 1319].forEach((f, i) => tone(f, i === 3 ? 0.32 : 0.09, "triangle", 0.13, 0, i * 0.05)); },
+    // ---- 罰：情けない「ワワワワーン」／「チーン」----
+    sad: () => { [392, 370, 349].forEach((f, i) => voice(f, 0.3, { type: "sawtooth", vol: 0.12, delay: i * 0.3, att: 0.03, cut: 1400 })); voice(330, 1.0, { type: "sawtooth", vol: 0.12, delay: 0.9, att: 0.03, cut: 1400, vib: 9, rate: 6, slide: 300 }); },
+    chin: () => { tone(2093, 1.4, "sine", 0.2); tone(2093 * 2.76, 0.6, "sine", 0.05); tone(1046, 1.2, "sine", 0.05); },
+    // ---- ラッキー：キラキラ＋天使の「ア〜」----
+    kira: () => { const r = seeded(11); for (let k = 0; k < 9; k++) tone(2000 + r() * 2200, 0.14, "sine", 0.06, 0, k * 0.06); [523, 659, 784, 1047].forEach((f) => voice(f, 1.5, { type: "triangle", vol: 0.05, delay: 0.1, att: 0.35, cut: 3000, vib: 5, rate: 5 })); },
+    // ---- すごろく：サイコロ・1マス進む「トン」・止まる「ポン」----
+    clack: () => { noise(0.03, 0.25, 3500); tone(380 + Math.random() * 220, 0.03, "triangle", 0.08); },
+    step: () => { tone(620, 0.07, "triangle", 0.16); tone(310, 0.06, "sine", 0.14); },
+    land: () => { tone(880, 0.09, "sine", 0.2, 1320); tone(1320, 0.18, "sine", 0.1, 0, 0.07); },
+    // ---- 正解・ハズレ・時間切れ ----
+    pinpon: () => { tone(1319, 0.5, "sine", 0.2); tone(1047, 0.85, "sine", 0.2, 0, 0.28); },
+    buzzer: () => { [0, 0.24].forEach((d, i) => { tone(140, i ? 0.45 : 0.17, "square", 0.07, 0, d); tone(143, i ? 0.45 : 0.17, "sawtooth", 0.05, 0, d); }); },
+    timeup: () => { voice(110, 1.0, { type: "sawtooth", vol: 0.16, att: 0.01, cut: 1800 }); voice(113, 1.0, { type: "square", vol: 0.1, att: 0.01, cut: 1500 }); },
+    // ---- 爆弾のチクタク・心臓の音 ----
+    tik: () => { tone(2300, 0.02, "square", 0.05); noise(0.015, 0.12, 7000); },
+    tok: () => { tone(1500, 0.03, "square", 0.05); noise(0.02, 0.12, 4000); },
+    heart: () => { tone(72, 0.13, "sine", 0.7, 45); tone(66, 0.16, "sine", 0.5, 40, 0.19); },
+    // ---- 結果発表：ブーイングと笑い声 ----
+    boo: () => { const r = seeded(5); for (let k = 0; k < 7; k++) voice(105 + r() * 60, 1.3, { type: "sawtooth", vol: 0.06, delay: r() * 0.12, att: 0.18, cut: 650, vib: 4, rate: 3 + r() * 3, slide: 90 + r() * 30 }); noise(1.2, 0.12, 500); },
+    laugh: () => { const r = seeded(9); for (let v = 0; v < 4; v++) { const base = 210 + r() * 120, off = v * 0.05 + r() * 0.08; for (let k = 0; k < 6; k++) { const d = off + k * (0.12 + r() * 0.03); voice(base * (1 - k * 0.025), 0.09, { type: "sawtooth", vol: 0.09, delay: d, att: 0.01, cut: 950, bp: true, q: 2.2 }); noise(0.06, 0.05, 2500, d); } } },
+    // ---- 連続罰の「ボウッ」（炎）----
+    streak: () => { noise(0.6, 0.35, 1800); voice(180, 0.55, { type: "sawtooth", vol: 0.1, att: 0.05, cut: 2000, slide: 520 }); tone(80, 0.45, "sine", 0.45, 40, 0.32); },
   };
 })();
 const play = (k) => {
   // 罰ガチャのマシンが回る時は、ガラガラ音のあとに結果の音
   if (S.gIntro && (k === "pop" || k === "lucky" || k === "boom")) k = k === "lucky" ? "gachaLucky" : "gachaPop";
+  if (k === "jan") k = "jan" + (1 + Math.floor(Math.random() * 3)); // お題のジャン！は3種類からランダム
   if (S.sound) try { SFX[k](); } catch {}
 };
+// バイブ（設定でOFFにできる。iPhoneのブラウザは非対応）
+const vib = (p) => { if (S.vibe && navigator.vibrate) try { navigator.vibrate(p); } catch {} };
 
 // ---------- icons ----------
 // 線のアイコン（1本のパスで描く）
@@ -330,6 +375,8 @@ function vSheet() {
       <div class="sheet-grip"></div>
       <h2>設定</h2>
       <button class="toggle" data-act="sound" aria-pressed="${S.sound}"><span>効果音<small>めくる音・ガチャ・爆発</small></span><b>${S.sound ? "ON" : "OFF"}</b></button>
+      ${S.sound ? `<div class="vol-row" role="group" aria-label="音量"><span>音量</span>${[[1, "小"], [2, "中"], [3, "大"]].map(([v, t]) => `<button data-act="vol" data-v="${v}" aria-pressed="${S.vol === v}">${t}</button>`).join("")}</div>` : ""}
+      <button class="toggle" data-act="vibe" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="voice" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="dual" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
       ${S.night ? `<div class="night-box">
@@ -1747,7 +1794,7 @@ function vIntroStage(mode, { tag = "", extra = "", btn, act, disabled = false })
         ${extra}
       </div>
     </div></div>
-    <button class="big" data-act="${act}" ${disabled ? "disabled" : ""}>${btn}</button>
+    <div class="intro-acts"><button class="intro-back" data-act="home" aria-label="遊び方を選び直す">${ICON.back}<span>戻る</span></button><button class="big" data-act="${act}" ${disabled ? "disabled" : ""}>${btn}</button></div>
   </div>`;
 }
 const nightNote = (noNg) => (S.night ? `<small>${S.night === "shinya" ? "深夜" : "夜"}モードのお題も出る${noNg && S.members.some((m) => m.ng) ? "（下ネタNGの人がおるので今回は混ぜへん）" : ""}</small>` : "");
@@ -2233,7 +2280,7 @@ function postFx() {
       li.classList.remove("hit"); void li.offsetWidth; li.classList.add("hit");
       play("tick");
     }, 300 + j * step));
-    later(() => { ul.classList.add("done"); play("warn"); if (navigator.vibrate) navigator.vibrate([30, 30, 60]); }, 300 + seq.length * step + 150);
+    later(() => { ul.classList.add("done"); play("warn"); vib([30, 30, 60]); }, 300 + seq.length * step + 150);
   }
   // 結果発表：戦犯の名前がスロットみたいに回って、止まったら揺れて紙吹雪
   const slot = app.querySelector(".mvp[data-slot]");
@@ -2243,45 +2290,104 @@ function postFx() {
     play("drumroll");
     let t = 0, k = 0;
     while (t < T * 1000) { const nm = names[k % names.length]; later(() => { b.textContent = nm; }, t); t += 60 + (t / (T * 1000)) ** 2 * 260; k++; }
-    later(() => { b.textContent = final; slot.classList.add("landed"); app.querySelector(".result")?.classList.add("landed"); confetti(); if (navigator.vibrate) navigator.vibrate([60, 40, 120]); }, T * 1000);
+    later(() => { b.textContent = final; slot.classList.add("landed"); app.querySelector(".result")?.classList.add("landed"); confetti(); vib([60, 40, 120]); }, T * 1000);
+    // 戦犯がおったらブーイングと笑い声（該当者なしは拍手がわりのファンファーレ）
+    if (Math.max(0, ...(S.game?.pen || [0])) > 0) { later(() => play("boo"), T * 1000 + 450); later(() => play("laugh"), T * 1000 + 1100); }
+    else later(() => play("fanfare"), T * 1000 + 450);
   }
 }
-function confetti() {
+function confetti(cols = ["#ffd23f", "#ff5aa5", "#3ec7ff", "#7be36b", "#ff8a1a", "#e8202a", "#b48cff"], count = 70) {
   const box = document.createElement("div");
   box.className = "confetti";
   box.setAttribute("aria-hidden", "true");
-  const cols = ["#ffd23f", "#ff5aa5", "#3ec7ff", "#7be36b", "#ff8a1a", "#e8202a", "#b48cff"];
-  box.innerHTML = Array.from({ length: 70 }, (_, k) => `<i style="left:${(Math.random() * 100).toFixed(1)}%;background:${cols[k % cols.length]};--x:${((Math.random() * 2 - 1) * 120).toFixed(0)}px;--r:${(Math.random() * 720 - 360).toFixed(0)}deg;--t:${(1.6 + Math.random() * 1.4).toFixed(2)}s;--d:${(Math.random() * 0.35).toFixed(2)}s;width:${(6 + Math.random() * 6).toFixed(0)}px;height:${(10 + Math.random() * 8).toFixed(0)}px"></i>`).join("");
+  box.innerHTML = Array.from({ length: count }, (_, k) => `<i style="left:${(Math.random() * 100).toFixed(1)}%;background:${cols[k % cols.length]};--x:${((Math.random() * 2 - 1) * 120).toFixed(0)}px;--r:${(Math.random() * 720 - 360).toFixed(0)}deg;--t:${(1.6 + Math.random() * 1.4).toFixed(2)}s;--d:${(Math.random() * 0.35).toFixed(2)}s;width:${(6 + Math.random() * 6).toFixed(0)}px;height:${(10 + Math.random() * 8).toFixed(0)}px"></i>`).join("");
   document.body.appendChild(box);
   setTimeout(() => box.remove(), 3600);
 }
 
+// 罰が決まった瞬間：情けない音＋画面がグラッと揺れて赤く光る／ラッキーはキラキラ＋金の紙吹雪。
+// 同じ人が続けて罰やったら「2連続！」。ガチャのマシンが回る時は、カプセルが割れてから
+const cuedGacha = new WeakSet();
+function batsuCue() {
+  const g = S.game, gs = g.gacha || [];
+  if (!gs.length) return "";
+  const lucky = gs.every((x) => x.lucky), intro = S.gIntro;
+  if (intro) play(lucky ? "lucky" : "pop"); // ガラガラ → パカッ
+  else if (lucky) play("lucky");
+  // 連続で罰の人を数える（描き直しで2回数えへんように）
+  let streak = null;
+  if (!cuedGacha.has(gs)) {
+    cuedGacha.add(gs);
+    const losers = gs.filter((x) => !x.lucky).map((x) => x.i);
+    g.stk = S.members.map((_, i) => (losers.includes(i) ? ((g.stk && g.stk[i]) || 0) + 1 : 0));
+    const top = losers.filter((i) => g.stk[i] >= 2).sort((a, b) => g.stk[b] - g.stk[a])[0];
+    if (top != null) streak = { i: top, n: g.stk[top] };
+  }
+  const fx = () => {
+    if (lucky) { play("kira"); goldFx(); }
+    else { play(Math.random() < 0.5 ? "sad" : "chin"); quakeFx(); }
+    if (streak) S.cueTs.push(setTimeout(() => streakFx(streak), 700));
+  };
+  if (intro) S.cueTs.push(setTimeout(fx, GACHA_T * 1000 + 60)); else fx();
+  return "";
+}
+// 罰：画面がグラッと揺れて、フチが赤く光る
+function quakeFx() {
+  app.classList.remove("quake"); void app.offsetWidth; app.classList.add("quake");
+  setTimeout(() => app.classList.remove("quake"), 600);
+  const el = document.createElement("div");
+  el.className = "redflash"; el.setAttribute("aria-hidden", "true");
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+  vib([60, 40, 120]);
+}
+// ラッキー：光がパッと広がって、金色の紙吹雪
+function goldFx() {
+  const el = document.createElement("div");
+  el.className = "goldburst"; el.setAttribute("aria-hidden", "true");
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1400);
+  confetti(["#ffd23f", "#ffe680", "#fff3b0", "#f5b700", "#ffffff"], 50);
+  vib(30);
+}
+// 連続罰：「たく 3連続！」を炎つきでドーン
+function streakFx({ i, n }) {
+  if (!isStage(S.screen)) return;
+  play("streak");
+  const el = document.createElement("div");
+  el.className = "streak"; el.setAttribute("aria-hidden", "true");
+  el.innerHTML = `<div class="streak-in"><i class="fl"></i><i class="fl"></i><i class="fl"></i><b>${esc(S.members[i]?.name || "")}</b><strong>${n}連続！</strong></div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1900);
+  vib([40, 30, 40, 30, 90]);
+}
 // 画面が変わった時の効果音と演出
 function cue() {
+  (S.cueTs || []).forEach(clearTimeout); S.cueTs = [];
   const sc = S.screen;
   if (sc === "result") { if (!app.querySelector(".mvp[data-slot]")) play("fanfare"); return; }
-  if (sc === "ngword") { const p = S.game.ng.phase; if (p === "gbatsu") { play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; } play(p === "out" ? (S.game.ng.res.lucky ? "lucky" : "boom") : p === "over" ? "alarm" : p === "confirm" ? "warn" : "flip"); if (p === "out" && !S.game.ng.res.lucky) boomFlash(); return; }
-  if (sc === "gesture") { const p = S.game.gs.phase; play(p === "low" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "over" ? "fanfare" : p === "act" ? "coin" : "flip"); return; }
-  if (sc === "homeru") { const p = S.game.hm.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "go" ? "coin" : "flip"); return; }
-  if (sc === "ito") { const p = S.game.it.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? (S.game.it.bad.length ? "warn" : "fanfare") : "flip"); return; }
-  if (sc === "memory") { const p = S.game.mm.phase; play(p === "skull" ? "boom" : p === "fail" || p === "low" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "match" ? "coin" : p === "miss" ? "warn" : p === "over" ? "fanfare" : "flip"); if (p === "skull") boomFlash(); return; }
-  if (["rtap", "bpass", "hilo", "reflex", "voice"].includes(sc)) { if (S.game.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
-  if (sc === "stop") { if (S.game.sp.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
-  if (sc === "shake") { if (S.game.sk.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
-  if (sc === "tilt") { if (S.game.tl.phase === "batsu") play(S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop"); return; }
-  if (sc === "wolf") { const p = S.game.wf.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "group" ? (S.game.wf.res.lucky ? "lucky" : "pop") : p === "reveal" || p === "result" ? "fanfare" : "flip"); return; }
-  if (sc === "pittari") { const p = S.game.pt.phase; if (p === "input" || p === "answer") return; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? "fanfare" : "flip"); return; }
-  if (sc === "vote") { const p = S.game.vt.phase; play(p === "batsu" ? (S.game.gacha.every((x) => x.lucky) ? "lucky" : "pop") : p === "reveal" ? "fanfare" : "flip"); return; }
+  if (sc === "ngword") { const p = S.game.ng.phase; if (p === "gbatsu") { batsuCue(); return; } play(p === "out" ? (S.game.ng.res.lucky ? "lucky" : "boom") : p === "over" ? "timeup" : p === "confirm" ? "warn" : "flip"); if (p === "out" && !S.game.ng.res.lucky) boomFlash(); return; }
+  if (sc === "gesture") { const p = S.game.gs.phase; play(p === "low" ? batsuCue() : p === "over" ? "fanfare" : p === "act" ? "coin" : "flip"); return; }
+  if (sc === "homeru") { const p = S.game.hm.phase; play(p === "batsu" ? batsuCue() : p === "go" ? "coin" : "flip"); return; }
+  if (sc === "ito") { const p = S.game.it.phase; play(p === "batsu" ? batsuCue() : p === "reveal" ? (S.game.it.bad.length ? "buzzer" : "pinpon") : "flip"); return; }
+  if (sc === "memory") { const p = S.game.mm.phase; play(p === "skull" ? "boom" : p === "fail" || p === "low" ? batsuCue() : p === "match" ? "pinpon" : p === "miss" ? "buzzer" : p === "over" ? "fanfare" : "flip"); if (p === "skull") boomFlash(); return; }
+  if (["rtap", "bpass", "hilo", "reflex", "voice"].includes(sc)) { if (S.game.phase === "batsu") batsuCue(); return; }
+  if (sc === "stop") { if (S.game.sp.phase === "batsu") batsuCue(); return; }
+  if (sc === "shake") { if (S.game.sk.phase === "batsu") batsuCue(); return; }
+  if (sc === "tilt") { if (S.game.tl.phase === "batsu") batsuCue(); return; }
+  if (sc === "wolf") { const p = S.game.wf.phase; play(p === "batsu" ? batsuCue() : p === "group" ? (S.game.wf.res.lucky ? "lucky" : "pop") : p === "reveal" || p === "result" ? "fanfare" : "flip"); return; }
+  if (sc === "pittari") { const p = S.game.pt.phase; if (p === "input" || p === "answer") return; play(p === "batsu" ? batsuCue() : p === "reveal" ? "fanfare" : "flip"); return; }
+  if (sc === "vote") { const p = S.game.vt.phase; play(p === "batsu" ? batsuCue() : p === "reveal" ? "fanfare" : "flip"); return; }
   if (sc !== "odai" && sc !== "sugoroku") return;
   const g = S.game, c = g.card || {};
   if (g.intro) { play("flip"); return; }
   if (sc === "sugoroku" && !g.rolled) return; // サイコロ待ちの時は鳴らさない
-  if (g.phase === "batsu") play(g.gacha.every((x) => x.lucky) ? "lucky" : "pop");
+  if (g.phase === "batsu") batsuCue();
   else if (c.kind?.includes("ドカン")) { play("boom"); boomFlash(); }
   else if (g.phase === "bombSet") play("alarm");
   else if (g.phase === "offer") play("coin");
   else if (c.alert) play("warn");
-  else play("flip");
+  else play("jan"); // お題が出る「ジャン！」
 }
 // 1画面に固定してるので、お題が札からはみ出す時は文字を小さくして収める
 function fitCard() {
@@ -2334,9 +2440,9 @@ function boomFlash() {
   el.className = "flash";
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 950);
-  if (navigator.vibrate) navigator.vibrate([80, 40, 160]);
+  vib([80, 40, 160]);
 }
-function paintDie() { const d = document.getElementById("die"); if (d) d.innerHTML = dieFace(S.game.die); play("tick"); }
+function paintDie() { const d = document.getElementById("die"); if (d) d.innerHTML = dieFace(S.game.die); play("clack"); }
 
 function saveMembers() { S.isExample = false; store.set("nd_members", S.members); }
 function onAdd(e) {
@@ -2392,7 +2498,7 @@ function onClick(e) {
   // シートの中身をタップしても閉じないように
   if ((b.dataset.act === "sheetClose" || b.dataset.act === "menuClose" || b.dataset.act === "scoresClose" || b.dataset.act === "rulesClose" || b.dataset.act === "bombLookClose") && b.classList.contains("sheet-back") && e.target.closest("[data-stop]")) return;
   SFX.unlock();
-  if (navigator.vibrate && b.tagName === "BUTTON") navigator.vibrate(6); // 押した手応え（Androidのみ）
+  if (b.tagName === "BUTTON") vib(6); // 押した手応え（Androidのみ）
   const act = b.dataset.act, g = S.game, i = +b.dataset.i;
   rememberStep(act);
   switch (act) {
@@ -2430,6 +2536,8 @@ function onClick(e) {
     case "sheet": S.menu = false; S.sheet = true; render(); break;
     case "sheetClose": S.sheet = false; render(); break;
     case "sound": S.sound = !S.sound; store.set("nd_sound", S.sound); render(); if (S.sound) play("pop"); break;
+    case "vol": S.vol = +b.dataset.v; store.set("nd_vol", S.vol); SFX.unlock(); render(); play("jan"); break;
+    case "vibe": S.vibe = !S.vibe; store.set("nd_vibe", S.vibe); render(); vib(40); break;
     case "voice": S.voice = !S.voice; store.set("nd_voice", S.voice); render(); if (S.voice) speak("読み上げオン"); else stopSpeak(); break;
     case "dual": S.dual = !S.dual; store.set("nd_dual", S.dual); render(); break;
     case "tut": S.sheet = false; S.tut = 0; render(); break;
@@ -2441,7 +2549,7 @@ function onClick(e) {
     case "pen": {
       g.add.has(i) ? g.add.delete(i) : g.add.set(i, 1);
       play(g.add.has(i) ? "warn" : "tick");
-      if (navigator.vibrate && g.add.has(i)) navigator.vibrate(30);
+      if (g.add.has(i)) vib(30);
       const y = window.scrollY;
       render(); window.scrollTo(0, y);
       break;
@@ -2460,7 +2568,7 @@ function onClick(e) {
       S.ruleSheet = { i, lucky, html };
       if (!lucky && PERSONAL.test(html)) addRule({ html: `${nm(i)}の罰：${html}`, left: untilNext(i), who: i });
       play(lucky ? "lucky" : "pop");
-      if (navigator.vibrate) navigator.vibrate(lucky ? 30 : [60, 40, 60]);
+      vib(lucky ? 30 : [60, 40, 60]);
       render(); break;
     }
     case "clear": g.add = new Map(); finishCard(); break;
@@ -2493,7 +2601,7 @@ function onClick(e) {
     case "ngTopic": g.ng.topic = draw("ngt", DATA.ngwords.topics); render(); break;
     case "ngTap": ngPause(); g.ng.out = i; g.ng.phase = "confirm"; render(true); break;
     case "ngNo": ngPlay(); render(); break;
-    case "ngYes": ngOut(g.ng.out); render(true); if (navigator.vibrate) navigator.vibrate([80, 40, 160]); break;
+    case "ngYes": ngOut(g.ng.out); render(true); vib([80, 40, 160]); break;
     case "ngNew": g.ng.phase = "eyes"; render(true); break;
     // タイムアップ後の自分のワード当て
     case "ngGuess": g.ng.gk = 0; g.ng.ghit = Array(S.members.length).fill(null); g.ng.phase = "guess"; g.doer = 0; render(true); break;
@@ -2517,7 +2625,7 @@ function onClick(e) {
     case "gsRoul": g.gs.phase = "roul"; g.gs.picked = null; render(true); spinRoulette((i) => { g.gs.picked = i; g.gs.actor = i; g.doer = g.cur = i; play("coin"); render(true); }); break;
     case "gsBegin": g.gs.phase = "hand"; render(true); break;
     case "gsGo": gsStart(); render(true); break;
-    case "gsHit": gsHit(i); play("coin"); if (navigator.vibrate) navigator.vibrate(30); render(true); break;
+    case "gsHit": gsHit(i); play("pinpon"); vib(30); render(true); break;
     case "gsPass": g.gs.word = gsWord(); play("tick"); render(true); break;
     case "gsNext": gsNextActor(); render(true); break;
     case "gsLow": {
@@ -2607,7 +2715,7 @@ function onClick(e) {
     case "wfPick":
       g.wf.votes[g.wf.order[g.wf.k]] = i; g.wf.k++;
       g.wf.phase = g.wf.k < S.members.length ? "vhand" : "done";
-      play("tick"); if (navigator.vibrate) navigator.vibrate(20);
+      play("tick"); vib(20);
       render(true); break;
     case "wfReveal": hold("開票…", 1800, wfReveal); break;
     case "wfGuess": g.wf.phase = "guess"; render(true); break;
@@ -2712,7 +2820,7 @@ function onClick(e) {
       if (pt.input === "") break;
       pt.guess[pt.order[pt.k]] = +pt.input; pt.input = ""; pt.k++;
       pt.phase = pt.k < pt.order.length ? "hand" : "done";
-      if (navigator.vibrate) navigator.vibrate(20);
+      vib(20);
       render(true); break;
     }
     case "ptAns": g.pt.input = ""; g.pt.phase = "answer"; render(true); break;
@@ -2732,7 +2840,7 @@ function onClick(e) {
     case "vPick":
       g.vt.votes[g.vt.order[g.vt.k]] = i; g.vt.k++;
       g.vt.phase = g.vt.k < S.members.length ? "hand" : "done";
-      play("tick"); if (navigator.vibrate) navigator.vibrate(20);
+      play("tick"); vib(20);
       render(true); break;
     case "vReveal": hold("開票…", 1800, voteReveal); break;
     case "vGacha":
@@ -2824,7 +2932,7 @@ app.addEventListener("pointerdown", (e) => {
   pk.classList.add("on", "seen");
   try { pk.setPointerCapture(e.pointerId); } catch {}
   play("flip");
-  if (navigator.vibrate) navigator.vibrate(12);
+  vib(12);
 });
 const peekOff = () => document.querySelectorAll("[data-peek].on").forEach((el) => el.classList.remove("on"));
 ["pointerup", "pointercancel", "blur"].forEach((ev) => window.addEventListener(ev, peekOff));
@@ -2892,7 +3000,7 @@ const endDrag = () => {
     const out = (S.flip ? -dx : dx) > 0 ? 1 : -1;
     card.style.transition = "transform .22s ease-in";
     card.style.transform = `translateX(${out * 520}px) rotate(${out * 24}deg)`;
-    if (navigator.vibrate) navigator.vibrate(dx > 0 ? 20 : [30, 30, 30]);
+    vib(dx > 0 ? 20 : [30, 30, 30]);
     setTimeout(() => { g.add = dx > 0 ? new Map() : new Map([[g.doer, 1]]); finishCard(); }, 200);
   } else {
     card.style.transition = "transform .3s cubic-bezier(.3,1.6,.5,1)";

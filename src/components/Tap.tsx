@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, type PressableProps, type PressableStateCallbackType, type StyleProp, type ViewStyle } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 
 const APressable = Animated.createAnimatedComponent(Pressable);
 

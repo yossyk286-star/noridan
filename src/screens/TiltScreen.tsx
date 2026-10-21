@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
@@ -14,6 +14,7 @@ import { play } from '../lib/sound';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { GachaItem, Level, Member, Night } from '../types';
+import { batsuCue } from '../lib/fx';
 
 type Props = {
   members: Member[];
@@ -139,8 +140,8 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   const countdown = () => {
     setPhase('count');
     setCount(3);
-    play('tick');
-    [1, 2].forEach((j) => timers.current.push(setTimeout(() => { setCount(3 - j); play('tick'); }, j * 800)));
+    play('heart');
+    [1, 2].forEach((j) => timers.current.push(setTimeout(() => { setCount(3 - j); play('heart'); }, j * 800)));
     timers.current.push(setTimeout(go, 2400));
   };
   const go = () => {
@@ -165,7 +166,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
         lastSec.current = sec;
         beat.setValue(1.28);
         Animated.spring(beat, { toValue: 1, friction: 4, tension: 160, useNativeDriver: true }).start();
-        play('tick');
+        play(sec <= 3 ? 'heart' : 'tick');
       }
       timers.current.push(setTimeout(tick, 50));
     };
@@ -199,7 +200,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     const items = [{ i: who, n: 1, ...decks.batsu(members, who) }];
     setGacha(items);
     setPhase('batsu');
-    play(items[0].lucky ? 'gachaLucky' : 'gacha');
+    batsuCue(items, members);
   };
   /** 罰ガチャの結果を罰に足した新しい罰の数 */
   const applyGacha = () => {
@@ -260,7 +261,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
           {sensor === 'none' && <Text style={[s.small, { color: fg }]}>このスマホは角度がとられへんので、みんなの目で判定するモードになる</Text>}
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={() => begin(0)} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={() => begin(0)} />;
       break;
     case 'hand':
       card = (

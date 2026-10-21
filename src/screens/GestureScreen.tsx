@@ -3,7 +3,7 @@ import type React from 'react';
 import { HurryFrame } from '../components/Fx';
 import { useHurry } from '../lib/useHurry';
 import { StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Tap } from '../components/Tap';
 import { BigButton, DeckStack, Frame, GachaCard, RulesSheet, ScoreBar } from '../components/Stage';
@@ -17,6 +17,7 @@ import { useCountdown } from '../lib/useCountdown';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { GachaItem, Level, Member, Night } from '../types';
+import { batsuCue } from '../lib/fx';
 
 type Props = {
   members: Member[];
@@ -59,7 +60,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
   const [flipped, setFlipped] = useState(false);
   const clock = useCountdown(() => {
     setPhase('timeup');
-    play('alarm');
+    play('timeup');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   });
   const hurry = useHurry(clock.left, phase === 'act');
@@ -82,7 +83,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
     setCorrect(correct + 1);
     setLast(i);
     setWord(decks.gesture(level, night, members));
-    play('coin');
+    play('pinpon');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
   const nextActor = () => {
@@ -104,7 +105,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
     const items = L.who.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
     setGacha(items);
     setPhase('low');
-    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
+    batsuCue(items, members);
   };
   const accept = () => {
     const np = pen.slice();
@@ -141,7 +142,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
           </View>
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="ルーレットで最初の人を決める" onPress={() => { setPicked(null); setPhase('roul'); }} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="ルーレットで最初の人を決める" onPress={() => { setPicked(null); setPhase('roul'); }} />;
       break;
     case 'roul':
       card = (

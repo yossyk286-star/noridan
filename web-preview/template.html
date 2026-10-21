@@ -143,6 +143,10 @@ body:not(.stage) .frame { display: none; }
 .toggle[aria-pressed="true"] b { background: var(--yuru); color: var(--ink); }
 .night-box { padding: 14px; border-radius: 12px; border: 1px solid var(--night); display: flex; flex-direction: column; gap: 10px; }
 .night-box .h2 { color: var(--night); }
+.vol-row { display: grid; grid-template-columns: auto 1fr 1fr 1fr; gap: 6px; align-items: center; margin: -2px 0 2px; }
+.vol-row span { font-size: 13px; font-weight: 800; opacity: .7; padding: 0 6px 0 2px; }
+.vol-row button { padding: 9px 0; border-radius: 10px; border: 1px solid var(--line); font-weight: 900; font-size: 14px; opacity: .6; }
+.vol-row button[aria-pressed="true"] { background: var(--cream, #fff); color: var(--ink); opacity: 1; border-color: transparent; }
 .night-lv { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .night-lv button { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--night); font-weight: 900; font-size: 16px; opacity: .55; }
 .night-lv button small { display: block; font-size: 10px; font-weight: 700; margin-top: 2px; }
@@ -1378,11 +1382,45 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .vote-rule.bad { background: rgba(255,59,59,.14); color: #ff3b3b; }
 .vote-rule.good { background: rgba(60,180,110,.16); color: #1f9d55; }
 body.stage.neon .vote-rule.good, body[data-level="jigoku"] .vote-rule.good { color: #5fe39a; }
+
+/* ===== 罰・ラッキー・連続罰・深夜の演出 ===== */
+#app.quake { animation: quake .55s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes quake { 10%, 90% { transform: translate(-2px, 1px) rotate(-.4deg); } 20%, 80% { transform: translate(5px, -2px) rotate(.8deg); } 30%, 50%, 70% { transform: translate(-8px, 2px) rotate(-1.2deg); } 40%, 60% { transform: translate(8px, -1px) rotate(1deg); } }
+.redflash { position: fixed; inset: 0; z-index: 24; pointer-events: none; box-shadow: inset 0 0 0 6px #ff2a2a, inset 0 0 90px 30px rgba(255,30,30,.75); animation: redflash .85s ease-out forwards; }
+@keyframes redflash { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
+.goldburst { position: fixed; inset: 0; z-index: 24; pointer-events: none; background: radial-gradient(circle at 50% 45%, rgba(255,255,255,.95) 0, rgba(255,226,110,.85) 18%, rgba(255,200,40,.35) 40%, transparent 65%), repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,220,90,.45) 0 6deg, transparent 6deg 18deg); animation: goldburst 1.3s ease-out forwards; }
+@keyframes goldburst { 0% { opacity: 0; transform: scale(.3) rotate(0deg); } 15% { opacity: 1; } 100% { opacity: 0; transform: scale(1.8) rotate(40deg); } }
+.streak { position: fixed; inset: 0; z-index: 62; pointer-events: none; display: grid; place-items: center; background: radial-gradient(circle at 50% 50%, rgba(10,0,0,.82) 0, rgba(10,0,0,.6) 38%, transparent 72%); animation: streakBg 1.85s ease forwards; }
+@keyframes streakBg { 0% { opacity: 0; } 10%, 80% { opacity: 1; } 100% { opacity: 0; } }
+.streak-in { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 18px 28px 16px; animation: streakIn 1.85s cubic-bezier(.2,1.4,.4,1) forwards; }
+.streak-in b { font-size: 26px; font-weight: 900; color: #fff; text-shadow: 0 2px 0 #000, 0 0 12px rgba(0,0,0,.6); position: relative; }
+.streak-in strong { font-family: var(--display); font-size: 64px; line-height: 1; color: #ffe14a; -webkit-text-stroke: 2px #8a1200; text-shadow: 0 0 18px #ff5a00, 0 0 36px #ff2a00, 0 5px 0 #8a1200; position: relative; transform: rotate(-6deg); }
+.streak .fl { position: absolute; bottom: 8px; width: 70px; height: 110px; border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%; background: radial-gradient(ellipse at 50% 85%, #fff6a0 0, #ffb21a 30%, #ff4a00 60%, transparent 72%); filter: blur(2px); mix-blend-mode: screen; animation: flame .22s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+.streak .fl:nth-child(1) { left: -6px; animation-delay: -.1s; }
+.streak .fl:nth-child(2) { left: calc(50% - 45px); width: 90px; height: 140px; bottom: 0; }
+.streak .fl:nth-child(3) { right: -6px; animation-delay: -.05s; }
+@keyframes flame { from { transform: scaleY(.88) skewX(-4deg); opacity: .8; } to { transform: scaleY(1.08) skewX(5deg); opacity: 1; } }
+@keyframes streakIn { 0% { transform: scale(3); opacity: 0; } 14% { transform: scale(.92); opacity: 1; } 22% { transform: scale(1.04); } 30%, 80% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.15) translateY(-20px); opacity: 0; } }
+/* 深夜モード：画面のフチがピンクにぼわっと光って、ハートがゆっくり昇る */
+body.deep::after { content: ""; position: fixed; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 28px 4px rgba(255,79,168,.55), inset 0 0 70px 10px rgba(255,79,168,.18); animation: deepGlow 2.6s ease-in-out infinite alternate; }
+@keyframes deepGlow { from { opacity: .55; } to { opacity: 1; } }
+#hearts { position: fixed; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; display: none; }
+body.deep #hearts { display: block; }
+#hearts i { position: absolute; bottom: -30px; width: var(--s); height: var(--s); opacity: 0; animation: heartUp var(--t) linear var(--d) infinite; }
+#hearts svg { width: 100%; height: 100%; fill: var(--deep); filter: drop-shadow(0 0 6px var(--deep)); }
+@keyframes heartUp { 0% { transform: translate(0, 0) rotate(-10deg); opacity: 0; } 10% { opacity: .55; } 50% { transform: translate(14px, -50vh) rotate(8deg); opacity: .4; } 100% { transform: translate(-10px, -105vh) rotate(-6deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #app.quake, .goldburst, .streak-in, .streak .fl, body.deep::after, #hearts i { animation: none !important; } #hearts { display: none !important; } }
+.intro-acts { display: flex; gap: 8px; align-items: stretch; }
+.intro-acts .big { flex: 1; min-width: 0; width: auto; }
+.intro-back { flex: none; width: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 16px; border: 1.5px solid var(--line); font-size: 11px; font-weight: 900; color: var(--muted); }
+.intro-back svg { width: 20px; height: 20px; }
+body.neon .intro-back { border-color: color-mix(in srgb, var(--nc) 60%, transparent); color: #fff; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
 <div id="app"></div>
 <div id="overlay"></div>
+<div id="hearts" aria-hidden="true"><i style="left:6%;--d:0s;--t:7s;--s:18px"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.4A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.6 5.2C19.5 16.4 12 21 12 21z"/></svg></i><i style="left:18%;--d:2.6s;--t:8.5s;--s:12px"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.4A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.6 5.2C19.5 16.4 12 21 12 21z"/></svg></i><i style="left:31%;--d:5.1s;--t:7.4s;--s:15px"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.4A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.6 5.2C19.5 16.4 12 21 12 21z"/></svg></i><i style="left:47%;--d:1.2s;--t:9s;--s:11px"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.4A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.6 5.2C19.5 16.4 12 21 12 21z"/></svg></i><i style="left:63%;--d:3.8s;--t:7.8s;--s:17px"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.4A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.6 5.2C19.5 16.4 12 21 12 21z"/></svg></i><i style="left:76%;--d:0.6s;--t:8.2s;--s:13px"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.4A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.6 5.2C19.5 16.4 12 21 12 21z"/></svg></i><i style="left:88%;--d:4.4s;--t:7.2s;--s:16px"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.4A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.6 5.2C19.5 16.4 12 21 12 21z"/></svg></i><i style="left:94%;--d:6.3s;--t:9.4s;--s:10px"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.4A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.6 5.2C19.5 16.4 12 21 12 21z"/></svg></i></div>
 
 <script>
 /*SCRIPT*/

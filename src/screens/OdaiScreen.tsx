@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
 import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, BigButton } from '../components/Stage';
@@ -95,7 +95,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
               <LevelBox pal={basePal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る` : undefined} />
             </IntroCard>
           </View>
-          <BigButton pal={basePal} label={`${members[0].name}からスタート`} onPress={() => setIntro(false)} />
+          <BigButton onBack={onQuit} pal={basePal} label={`${members[0].name}からスタート`} onPress={() => setIntro(false)} />
         </View>
         <Frame color={C.muted} />
         <GameMenu visible={menu} meta={'アホお題・' + LEVEL_LABEL[level]} rulesSub="アホお題の遊び方" flipped={false} onFlip={() => {}} onRules={() => setRules(true)} onEnd={onQuit} onSettings={onSettings} onQuit={onQuit} onClose={() => setMenu(false)} />

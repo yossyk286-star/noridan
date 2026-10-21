@@ -3,7 +3,7 @@ import type React from 'react';
 import { HurryFrame } from '../components/Fx';
 import { useHurry } from '../lib/useHurry';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, Peek } from '../components/ModeParts';
@@ -21,6 +21,7 @@ import { useVoteCount } from '../lib/useVoteCount';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf, neonPal } from '../theme';
 import type { GachaItem, Level, Member, Night, Segment } from '../types';
+import { batsuCue } from '../lib/fx';
 
 type Props = {
   members: Member[];
@@ -86,7 +87,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
   const H = useHold();
   const clock = useCountdown(() => {
     setTimeUp(true);
-    play('alarm');
+    play('timeup');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   });
   const talkRunning = useRef(false);
@@ -176,14 +177,14 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       const items = losers.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
       setGacha(items);
       setPhase('batsu');
-      play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
+      batsuCue(items, members);
     } else {
       const g = decks.groupBatsu(members);
       setGroup(g);
       setGroupRoll(true);
       setTimeout(() => setGroupRoll(false), GACHA_MS);
       setPhase('group');
-      play(g.lucky ? 'gachaLucky' : 'gacha');
+      batsuCue([{ i: -1, lucky: g.lucky }], members);
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   };
@@ -264,7 +265,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
           {n >= 4 && <SetRow label="全員市民の回" fg={fg} bg={pal.cardBg} opts={[{ label: 'たまに', on: peace, press: () => { setPeace(true); save('nd_wf_peace', true); } }, { label: 'なし', on: !peace, press: () => { setPeace(false); save('nd_wf_peace', false); } }]} />}
         </IntroCard>
       );
-      controls = <BigButton pal={pal} label="お題を配る" onPress={() => startRound(1)} />;
+      controls = <BigButton onBack={onQuit} pal={pal} label="お題を配る" onPress={() => startRound(1)} />;
       break;
     case 'hand':
       card = (

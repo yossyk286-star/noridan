@@ -359,7 +359,8 @@ export function Crown() {
 }
 
 /** 紙吹雪（trigger が変わるたびに降る） */
-export function Confetti({ trigger }: { trigger: number }) {
+const CONF_COLS = ['#ffd23f', '#ff5aa5', '#3ec7ff', '#7be36b', '#ff8a1a', '#e8202a', '#b48cff'];
+export function Confetti({ trigger, colors = CONF_COLS }: { trigger: number; colors?: string[] }) {
   const { width, height } = useWindowDimensions();
   const pieces = useRef(
     Array.from({ length: 60 }, (_, k) => ({
@@ -370,7 +371,7 @@ export function Confetti({ trigger }: { trigger: number }) {
       t: 1600 + Math.random() * 1400,
       w: 6 + Math.random() * 6,
       h: 10 + Math.random() * 8,
-      c: ['#ffd23f', '#ff5aa5', '#3ec7ff', '#7be36b', '#ff8a1a', '#e8202a', '#b48cff'][k % 7],
+      c: colors[k % colors.length],
       v: new Animated.Value(0),
     })),
   ).current;
