@@ -577,7 +577,7 @@ function vBar() {
       <span class="av ${i === g.doer ? "is-turn" : ""} ${bump(i) ? "bump" : ""}" style="--mc:${colorOf(i)}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
         ${kings.includes(i) ? CROWN : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
-    <button class="bar-res ${S.endArm ? "armed" : ""}" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>${S.endArm ? "もう一回" : "結果"}</span></button>
+    <button class="bar-res" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>結果</span></button>
     <button class="icon-btn bar-btn" data-act="flip" aria-pressed="${S.flip}" aria-label="上下反転">${ICON.flip}</button>
     <button class="icon-btn menu-btn" data-act="menu" aria-label="メニュー">${ICON.more}</button>
   </div>`;
@@ -624,10 +624,10 @@ function vMenu() {
   <div class="sheet-back" data-act="menuClose">
     <div class="sheet menu" role="dialog" aria-label="確認" data-stop>
       <div class="sheet-grip"></div>
-      <h2>${end ? "ここで結果発表する？" : "ゲームをやめる？"}</h2>
+      <h2>${end ? "もう結果出す？" : "ゲームをやめる？"}</h2>
       <p class="sheet-note">${end ? "ゲームはここで終わり。罰が一番多い人を発表するで" : "罰の記録は消えて、最初の画面に戻る"}</p>
       <button class="${end ? "big" : "big danger-btn"}" data-act="${end ? "end" : "home"}">${end ? "結果発表する" : "やめる"}</button>
-      <button class="ghost" data-act="askNo">続ける</button>
+      <button class="ghost" data-act="askNo">${end ? "まだ続ける" : "続ける"}</button>
     </div>
   </div>`;
   }
@@ -1267,7 +1267,7 @@ function vBpass() {
   if (bp.phase === "batsu") return stageWrap(vCard(), roundEnd("bpAccept", true));
   let card, controls;
   if (bp.phase === "ready") {
-    card = `<div class="odai mode-card center board-card bp-card" id="card"><p class="prog">第${bp.round}回戦</p><p class="bp-topic-l"><span>お題</span><span class="bp-tier ${bp.tier}">${BP_TIER_LABEL[bp.tier] || ""}</span></p><p class="bp-topic">${esc(bp.topic)}</p><p class="hand-note">1つ言えたら「パス」を押して次の人（${mName((bp.holder + 1) % S.members.length)}の方）へ手渡し。<br>お題は毎回変わって、だんだん難しくなる。いつ爆発するかは分からへん</p>${bigWho(bp.holder, "から")}</div>`;
+    card = `<div class="odai mode-card center board-card bp-card" id="card"><p class="prog">第${bp.round}回戦</p><p class="bp-topic-l"><span>お題</span></p><p class="bp-topic bp-hidden">？？？</p><p class="hand-note">1つ言えたら「パス」を押して次の人（${mName((bp.holder + 1) % S.members.length)}の方）へ手渡し。<br>お題はスタートを押したら出る（先に考えるのはナシ）。毎回変わって、だんだん難しくなる</p>${bigWho(bp.holder, "から")}</div>`;
     controls = `<button class="big" data-act="bpGo">スタート</button>`;
   } else if (bp.phase === "play") {
     card = `<div class="odai mode-card center board-card bp-card bp-play" id="card"><p class="bp-topic-l"><span>お題</span><span class="bp-tier ${bp.tier}">${BP_TIER_LABEL[bp.tier] || ""}</span></p><p class="bp-topic">${esc(bp.topic)}</p><div class="bp-bomb" aria-hidden="true">💣</div>${bigWho(bp.holder, "が持ってる")}<p class="hand-note">${bp.passes}回パス</p></div>`;
@@ -1297,11 +1297,13 @@ function vHilo() {
   return stageWrap(card, controls);
 }
 
+// 反射神経：アウトの理由（フライング・遅すぎ）
+const rfOutWord = (rf) => { const f = rf.losers.some((i) => rf.res[i].fly), l = rf.losers.some((i) => !rf.res[i].fly && rf.res[i].ms >= RF_LATE); return f && l ? "フライング・遅すぎでアウト" : f ? "フライング" : "遅すぎでアウト"; };
 // 反射神経バトル
 function rfRows(rf) {
   const idx = S.members.map((_, i) => i), lose = rf.phase === "rank" || rf.phase === "batsu" ? rf.losers : [];
   const done = idx.filter((i) => rf.res[i]).sort((a, b) => (rf.res[a].fly ? 1e9 : rf.res[a].ms) - (rf.res[b].fly ? 1e9 : rf.res[b].ms));
-  return [...done.map((i) => ({ i, v: rf.res[i].fly ? "フライング" : rf.res[i].ms >= RF_LATE ? "遅すぎ" : `${rf.res[i].ms}ms`, bad: lose.includes(i), rk: rf.res[i].fly ? "×" : undefined })), ...idx.filter((i) => !rf.res[i]).map((i) => ({ i, v: "?", wait: true }))];
+  return [...done.map((i) => ({ i, v: rf.res[i].fly ? "フライング" : rf.res[i].ms >= RF_LATE ? "遅すぎ" : `${rf.res[i].ms}ms`, bad: lose.includes(i), rk: rf.res[i].fly || rf.res[i].ms >= RF_LATE ? "×" : undefined })), ...idx.filter((i) => !rf.res[i]).map((i) => ({ i, v: "?", wait: true }))];
 }
 function vReflex() {
   const g = S.game, rf = g.rf, n = S.members.length;
@@ -1320,7 +1322,7 @@ function vReflex() {
     controls = `<p class="hint">画面のどこを押してもOK</p>`;
   } else {
     const r = rf.res[rf.who];
-    card = `<div class="odai mode-card center board-card ${n >= 7 ? "dense" : ""} ${rf.phase === "rank" || r.fly ? "batsu" : ""}" id="card" ${rf.phase === "rank" ? rvCard(n) : ""}><p class="prog">${rf.phase === "rank" ? `第${rf.round}回戦の結果` : `${mName(rf.who)}の記録`}</p>${rf.phase === "done" ? `<p class="sp-num sp-res ${r.fly ? "over rf-fly" : ""}">${r.fly ? "フライング" : r.ms >= RF_LATE ? "遅すぎ" : r.ms + "<small>ms</small>"}</p>` : ""}${rankList(rfRows(rf), rf.phase === "done" ? rf.who : -1, rf.phase === "rank")}${rf.phase === "rank" ? `<p class="ng-lead ${rvLate(n)}">${rf.losers.map(mName).join("・")}が${rf.losers.some((i) => rf.res[i].fly) ? "フライング" : "一番遅い"}</p>` : ""}</div>`;
+    card = `<div class="odai mode-card center board-card ${n >= 7 ? "dense" : ""} ${rf.phase === "rank" || r.fly || r.ms >= RF_LATE ? "batsu" : ""}" id="card" ${rf.phase === "rank" ? rvCard(n) : ""}><p class="prog">${rf.phase === "rank" ? `第${rf.round}回戦の結果` : `${mName(rf.who)}の記録`}</p>${rf.phase === "done" ? `<p class="sp-num sp-res ${r.fly || r.ms >= RF_LATE ? "over rf-fly" : ""}">${r.fly ? "フライング" : r.ms >= RF_LATE ? "遅すぎ" : r.ms + "<small>ms</small>"}</p>` : ""}${rankList(rfRows(rf), rf.phase === "done" ? rf.who : -1, rf.phase === "rank")}${rf.phase === "rank" ? `<p class="ng-lead ${rvLate(n)}">${rf.losers.map(mName).join("・")}が${rf.losers.some((i) => rf.res[i].fly || rf.res[i].ms >= RF_LATE) ? rfOutWord(rf) : "一番遅い"}</p>` : ""}</div>`;
     controls = rf.phase === "rank" ? `<button class="big has-pen" data-act="rfGacha">${rf.losers.map(mName).join("・")}に罰ガチャ</button>` : `<button class="big" data-act="rfNext">次は${mName(rfWho({ k: rf.k + 1, round: rf.round }))}</button>`;
   }
   return stageWrap(card, controls);
@@ -2383,7 +2385,7 @@ function undoGame() {
   render(true);
 }
 
-function endGame() { stopTimer(); clearTimeout(S.holdT); S.hold = null; S.menu = false; S.ask = null; applyAdds(); S.shareMsg = ""; S.screen = "result"; render(true); }
+function endGame() { stopTimer(); clearTimeout(S.holdT); S.hold = null; S.menu = false; S.ask = null; S.askBar = false; applyAdds(); S.shareMsg = ""; S.screen = "result"; render(true); }
 function onClick(e) {
   const b = e.target.closest("[data-act]");
   if (!b || b.disabled) return;
@@ -2403,23 +2405,19 @@ function onClick(e) {
     case "start": rememberGroup(); newGame(b.dataset.m); break;
     case "home": stopTimer(); S.menu = false; S.ask = null; S.screen = "home"; S.step = 2; render(); break;
     case "again": S.shareMsg = ""; newGame(g.mode, true); break;
-    // 上のバーの「結果」：うっかり押しても終わらんように、2回押したら結果発表
-    case "endArm":
-      if (S.endArm) { clearTimeout(S.endArmT); S.endArm = 0; endGame(); break; }
-      S.endArm = Date.now(); render();
-      clearTimeout(S.endArmT); S.endArmT = setTimeout(() => { S.endArm = 0; if (isStage(S.screen)) render(); }, 3000);
-      break;
+    // 上のバーの「結果」：「もう結果出す？」の確認を出す
+    case "endArm": S.menu = true; S.ask = "end"; S.askBar = true; render(); break;
     case "end": endGame(); break;
     case "menu": S.menu = true; S.ask = null; render(); break;
     case "ask": S.ask = b.dataset.v; render(); break;
-    case "askNo": S.ask = null; render(); break;
+    case "askNo": S.ask = null; if (S.askBar) S.menu = false; S.askBar = false; render(); break;
     case "undo": undoGame(); break;
     case "scores": S.scores = true; render(); break;
     case "bombLook": S.bombLook = 1; render(); break;
     case "bombLookShow": S.bombLook = 2; render(); break;
     case "bombLookClose": S.bombLook = 0; render(); break;
     case "scoresClose": S.scores = false; render(); break;
-    case "menuClose": S.menu = false; S.ask = null; render(); break;
+    case "menuClose": S.menu = false; S.ask = null; S.askBar = false; render(); break;
     case "share": shareResult(); break;
     case "clearAll": S.members = []; saveMembers(); render(); document.getElementById("inName")?.focus(); break;
     case "loadGroup": {

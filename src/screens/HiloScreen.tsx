@@ -68,19 +68,17 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
     setSame(sm);
     setOk(good);
     setTurns((t) => t + 1);
-    // ちょっとためてからめくる
-    H.hold(`${u ? 'ハイ' : 'ロー'}…\nめくるで`, 1000, () => {
-      if (good) {
-        setStreak(streak + 1);
-        hits[who]++;
-        play('coin');
-      } else {
-        setX(streak >= X2[level] ? 2 : 1);
-        play('boom');
-        Vibration.vibrate([0, 120, 60, 200]);
-      }
-      setPhase('reveal');
-    });
+    // 1枚ごとにためると間延びするので、すぐめくる
+    if (good) {
+      setStreak(streak + 1);
+      hits[who]++;
+      play('coin');
+    } else {
+      setX(streak >= X2[level] ? 2 : 1);
+      play('boom');
+      Vibration.vibrate([0, 120, 60, 200]);
+    }
+    setPhase('reveal');
   };
   const finish = (p: number[] = P.pen) => {
     P.stats.hiloHits = hits.slice();

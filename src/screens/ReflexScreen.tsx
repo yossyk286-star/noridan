@@ -129,7 +129,7 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
     play(fly ? 'boom' : 'coin');
     if (k + 1 >= n) {
       const idx = members.map((_, i) => i);
-      const flyers = idx.filter((i) => nr[i]!.fly);
+      const flyers = idx.filter((i) => nr[i]!.fly || (nr[i]!.ms as number) >= LATE); // フライングと遅すぎはアウト
       if (flyers.length) setLosers(flyers);
       else {
         const worst = Math.max(...idx.map((i) => nr[i]!.ms as number));
@@ -170,7 +170,7 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
       return;
     }
     const idx = members.map((_, i) => i);
-    const flyers = idx.filter((i) => nr[i]!.fly);
+    const flyers = idx.filter((i) => nr[i]!.fly || (nr[i]!.ms as number) >= LATE); // フライングと遅すぎはアウト
     if (flyers.length) setLosers(flyers);
     else {
       const worst = Math.max(...idx.map((i) => nr[i]!.ms as number));
@@ -357,7 +357,7 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
         <ModeCard pal={pal} center bg="#1a0606" edge="#e8202a">
           <Prog fg="#f7f3ea">{`第${round}回戦の結果`}</Prog>
           {board(-1, true)}
-          {RV.ready && <Text style={s.lose}>{`${losers.map((i) => members[i].name).join('・')}が${losers.some((i) => res[i]?.fly) ? 'フライング' : '一番遅い'}`}</Text>}
+          {RV.ready && <Text style={s.lose}>{`${losers.map((i) => members[i].name).join('・')}が${losers.some((i) => res[i]?.fly) ? (losers.some((i) => !res[i]?.fly && (res[i]?.ms as number) >= LATE) ? 'フライング・遅すぎでアウト' : 'フライング') : losers.some((i) => (res[i]?.ms as number) >= LATE) ? '遅すぎでアウト' : '一番遅い'}`}</Text>}
         </ModeCard>
         </Pressable>
       );

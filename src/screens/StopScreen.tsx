@@ -195,9 +195,10 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const after = useRef<Phase>('done');
   const reveal = () => {
     const r = res[who]!;
-    // ちょっとためてから判定。最後の人はそのまま順位発表まで（1人ずつ出す）
+    // 1人ずつの判定はすぐ。最後の人のあとの順位発表だけためる（1人ずつ出す）
     const last = after.current === 'rank';
-    H.hold(last ? '判定…\nそして結果は…' : '判定…', last ? 2000 : 900, () => revealNow(r, last));
+    if (last) H.hold('結果は…', 1800, () => revealNow(r, last));
+    else revealNow(r, last);
   };
   const revealNow = (r: Res, last: boolean) => {
     if (last) RV.start(n);

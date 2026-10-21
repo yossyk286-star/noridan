@@ -141,12 +141,9 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
       card = (
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round}回戦`}</Prog>
-          <View style={s.topicRow}>
-            <Text style={[s.topicL, { color: fg }]}>お題</Text>
-            <Text style={[s.tier, { backgroundColor: TIER_COLOR[tier] }]}>{TIER_LABEL[tier]}</Text>
-          </View>
-          <Text style={[s.topic, { color: fg }]}>{topic}</Text>
-          <Note fg={fg}>{`1つ言えたら「パス」を押して次の人（${next}の方）へ手渡し。\nお題は毎回変わって、だんだん難しくなる。いつ爆発するかは分からへん`}</Note>
+          <Text style={[s.topicL, { color: fg }]}>お題</Text>
+          <Text style={[s.topic, { color: fg, opacity: 0.35 }]}>？？？</Text>
+          <Note fg={fg}>{`1つ言えたら「パス」を押して次の人（${next}の方）へ手渡し。\nお題はスタートを押したら出る（先に考えるのはナシ）。毎回変わって、だんだん難しくなる`}</Note>
           <HandWho members={members} i={holder} sub="から" fg={fg} />
         </ModeCard>
       );

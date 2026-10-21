@@ -182,23 +182,18 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     clear();
     setOutSec((Date.now() - startAt.current) / 1000);
     record(!base.current);
-    // ちょっとためてから判定を出す
-    H.hold('判定…', 800, () => {
-      setPhase('out');
-      play('boom');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    });
+    setPhase('out');
+    play('boom');
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
   };
   const safe = () => {
     if (phaseRef.current !== 'play') return;
     phaseRef.current = 'safe';
     clear();
     record(!base.current);
-    H.hold('判定…', 800, () => {
-      setPhase('safe');
-      play('fanfare');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    });
+    setPhase('safe');
+    play('fanfare');
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   };
   const doGacha = () => {
     const items = [{ i: who, n: 1, ...decks.batsu(members, who) }];

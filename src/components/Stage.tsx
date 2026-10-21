@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Tap } from './Tap';
 import type React from 'react';
-import { Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { doubleSegments, iniFit, initialOf, isSituational, mustPick, needsPick, othersOf, penHead } from '../lib/game';
 import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
@@ -46,21 +46,13 @@ export function ScoreBar({
   pal, members, pen, rev, doer, onMenu, flipped, onFlip, onEnd,
 }: { pal: Pal; members: Member[]; pen: number[]; rev: boolean[]; doer: number; onMenu: () => void; flipped?: boolean; onFlip?: () => void; onEnd?: () => void }) {
   const { dual, setDual } = usePrefs();
-  // 「結果」ボタン：うっかり押しても終わらんように、2回押したら結果発表
-  const [armed, setArmed] = useState(false);
-  const armT = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (armT.current) clearTimeout(armT.current); }, []);
+  // 「結果」ボタン：うっかり押しても終わらんように「もう結果出す？」の確認を出す
   const pressEnd = () => {
     if (!onEnd) return;
-    if (armed) {
-      if (armT.current) clearTimeout(armT.current);
-      setArmed(false);
-      onEnd();
-      return;
-    }
-    setArmed(true);
-    if (armT.current) clearTimeout(armT.current);
-    armT.current = setTimeout(() => setArmed(false), 3000);
+    Alert.alert('もう結果出す？', 'ゲームはここで終わり。罰が一番多い人を発表するで', [
+      { text: 'まだ続ける', style: 'cancel' },
+      { text: '結果発表する', onPress: onEnd },
+    ]);
   };
   const { width } = useWindowDimensions();
   const [all, setAll] = useState(false);
@@ -119,9 +111,9 @@ export function ScoreBar({
         </Tap>
       )}
       {onEnd ? (
-        <Tap onPress={pressEnd} accessibilityLabel="結果発表" style={[styles.menuBtn, { backgroundColor: armed ? '#ffd23f' : pal.chip }]}>
-          <Icon name="flag" color={armed ? '#141210' : pal.fg} size={15} />
-          <Text style={{ fontSize: 9, fontWeight: '900', color: armed ? '#141210' : pal.fg }}>{armed ? 'もう一回' : '結果'}</Text>
+        <Tap onPress={pressEnd} accessibilityLabel="結果発表" style={[styles.menuBtn, { backgroundColor: pal.chip }]}>
+          <Icon name="flag" color={pal.fg} size={15} />
+          <Text style={{ fontSize: 9, fontWeight: '900', color: pal.fg }}>結果</Text>
         </Tap>
       ) : (
         <Tap onPress={() => setDual(!dual)} accessibilityLabel="向かい合わせ表示" accessibilityState={{ selected: dual }} style={quick(dual)}>
