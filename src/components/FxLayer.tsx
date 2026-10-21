@@ -7,10 +7,9 @@ import { Confetti } from './Fx';
 
 const GOLD = ['#ffd23f', '#ffe680', '#fff3b0', '#f5b700', '#ffffff'];
 
-/** 画面の一番上に重ねる演出：罰の赤いフチ・ラッキーの光と金の紙吹雪・連続罰の炎・深夜のピンクのフチとハート */
+/** 画面の一番上に重ねる演出：罰の赤いフチ・ラッキーの金の紙吹雪・連続罰の炎・深夜のピンクのフチとハート */
 export default function FxLayer({ deep }: { deep: boolean }) {
   const red = useRef(new Animated.Value(0)).current;
-  const gold = useRef(new Animated.Value(0)).current;
   const [goldN, setGoldN] = useState(0);
   const [stk, setStk] = useState<{ name: string; n: number; k: number } | null>(null);
   useEffect(
@@ -23,8 +22,6 @@ export default function FxLayer({ deep }: { deep: boolean }) {
             Animated.timing(red, { toValue: 0, duration: 750, easing: Easing.out(Easing.quad), useNativeDriver: true }),
           ]).start();
         } else if (e.kind === 'gold') {
-          gold.setValue(0);
-          Animated.timing(gold, { toValue: 1, duration: 1300, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
           setGoldN((x) => x + 1);
         } else setStk({ name: e.name, n: e.n, k: Date.now() });
       }),
@@ -34,15 +31,6 @@ export default function FxLayer({ deep }: { deep: boolean }) {
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       {deep && <DeepGlow />}
       <Animated.View style={[StyleSheet.absoluteFill, s.red, { opacity: red }]} />
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          s.goldWrap,
-          { opacity: gold.interpolate({ inputRange: [0, 0.12, 1], outputRange: [0, 1, 0] }), transform: [{ scale: gold.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1.8] }) }] },
-        ]}
-      >
-        <View style={s.goldCore} />
-      </Animated.View>
       <Confetti trigger={goldN} colors={GOLD} />
       {stk && <Streak key={stk.k} name={stk.name} n={stk.n} onDone={() => setStk(null)} />}
     </View>
@@ -135,8 +123,6 @@ function DeepGlow() {
 
 const s = StyleSheet.create({
   red: { borderWidth: 6, borderColor: '#ff2a2a', backgroundColor: 'rgba(255,30,30,0.18)' },
-  goldWrap: { alignItems: 'center', justifyContent: 'center' },
-  goldCore: { width: 420, height: 420, borderRadius: 210, backgroundColor: 'rgba(255,226,110,0.55)', shadowColor: '#ffd23f', shadowOpacity: 1, shadowRadius: 80 },
   center: { alignItems: 'center', justifyContent: 'center' },
   dim: { position: 'absolute', width: 420, height: 420, borderRadius: 210, backgroundColor: 'rgba(10,0,0,0.72)' },
   stkBox: { width: 230, paddingTop: 18, paddingBottom: 16, alignItems: 'center' },

@@ -56,9 +56,10 @@ export function ScoreBar({
   };
   const { width } = useWindowDimensions();
   const [all, setAll] = useState(false);
-  // 右のボタン（結果 or 向かい合わせ・上下反転・⋯）をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
-  const btns = (onFlip ? 1 : 0) + 2;
-  const fit = Math.max(2, Math.floor((Math.min(width, 560) - 32 - btns * 50 - 18) / 44));
+  // 右のボタン（上下反転・結果・向かい合わせ・⋯）をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
+  const btns = (onFlip ? 1 : 0) + (onEnd ? 1 : 0) + 2;
+  // ボタン1個 37px＋すき間6px、顔1人 34px＋すき間6px
+  const fit = Math.max(2, Math.floor((Math.min(width, 560) - 32 - btns * 43 - 15 + 6) / 40));
   let shown = members.map((_, i) => i);
   if (members.length > fit) {
     shown = shown.slice(0, fit - 1);
@@ -110,16 +111,15 @@ export function ScoreBar({
           <Icon name="flip" color={flipped ? pal.bg : pal.fg} size={19} />
         </Tap>
       )}
-      {onEnd ? (
+      {onEnd && (
         <Tap onPress={pressEnd} accessibilityLabel="結果発表" style={[styles.menuBtn, { backgroundColor: pal.chip }]}>
           <Icon name="flag" color={pal.fg} size={15} />
           <Text style={{ fontSize: 9, fontWeight: '900', color: pal.fg }}>結果</Text>
         </Tap>
-      ) : (
-        <Tap onPress={() => setDual(!dual)} accessibilityLabel="向かい合わせ表示" accessibilityState={{ selected: dual }} style={quick(dual)}>
-          <Icon name="split" color={dual ? pal.bg : pal.fg} size={19} />
-        </Tap>
       )}
+      <Tap onPress={() => setDual(!dual)} accessibilityLabel="向かい合わせ表示" accessibilityState={{ selected: dual }} style={quick(dual)}>
+        <Icon name="split" color={dual ? pal.bg : pal.fg} size={19} />
+      </Tap>
       <Tap onPress={onMenu} accessibilityLabel="メニュー" style={[styles.menuBtn, { backgroundColor: pal.chip }]}>
         <Icon name="more" color={pal.fg} size={20} />
       </Tap>
@@ -978,15 +978,15 @@ const styles = StyleSheet.create({
   roundEnd: { flexDirection: 'row', gap: 10, alignItems: 'stretch' },
   roundEndGhost: { flex: 1, borderWidth: 2, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
   roundEndGhostText: { fontSize: 15, fontWeight: '900' },
-  bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  score: { gap: 10, paddingVertical: 10, paddingLeft: 8, paddingRight: 10, alignItems: 'center' },
+  bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  score: { gap: 6, paddingVertical: 10, paddingLeft: 9, paddingRight: 6, alignItems: 'center' },
   av: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#141210' },
   avText: { color: '#141210', fontWeight: '900', fontSize: 15 },
   cnt: { position: 'absolute', top: -7, right: -8, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: '#e8202a', borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   cntText: { color: '#fff', fontSize: 10, fontWeight: '900' },
   rvDot: { position: 'absolute', bottom: -5, right: -5, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   rvText: { fontSize: 9, fontWeight: '900' },
-  menuBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  menuBtn: { width: 37, height: 37, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   nextUp: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nextText: { fontSize: 13, fontWeight: '900' },
   avSm: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },

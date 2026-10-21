@@ -29,7 +29,7 @@ export function cancelFx() {
 
 /**
  * 罰が決まった瞬間：ガチャのガラガラ → カプセルが割れたら
- * 罰は情けない音＋赤いフチ／ラッキーはキラキラ＋金の紙吹雪。続けて罰の人は「2連続！」
+ * 罰は情けない音＋赤いフチ／ラッキーはキラキラの音＋金の紙吹雪。続けて罰の人は「2連続！」
  */
 export function batsuCue(items: { i: number; lucky?: boolean }[], members: { name: string }[], gacha = true) {
   if (!items.length) return;

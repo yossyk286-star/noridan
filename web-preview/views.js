@@ -603,7 +603,8 @@ function vBar() {
   const g = S.game, n = S.members.length;
   // 右のボタン（結果発表・上下反転・⋯）の分をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
   const frameW = Math.min(window.innerWidth, 560) - 32;
-  const fit = Math.max(2, Math.floor((frameW - 2 * 46 - 46 - 18) / 44)); // 右：結果発表・上下反転・⋯（向かい合わせは設定の中）
+  // 右：結果発表(38)・上下反転(36)・向かい合わせ(36)・⋯(38)とすき間6px。顔は1人34px＋すき間6px
+  const fit = Math.max(2, Math.floor((frameW - (38 + 36 + 36 + 38 + 4 * 6) - 15 + 6) / 40));
   let shown = S.members.map((_, i) => i);
   if (n > fit) {
     shown = shown.slice(0, fit - 1);
@@ -626,6 +627,7 @@ function vBar() {
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
     <button class="bar-res" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>結果</span></button>
     <button class="icon-btn bar-btn" data-act="flip" aria-pressed="${S.flip}" aria-label="上下反転">${ICON.flip}</button>
+    <button class="icon-btn bar-btn" data-act="dual" aria-pressed="${S.dual}" aria-label="向かい合わせ表示">${ICON.split}</button>
     <button class="icon-btn menu-btn" data-act="menu" aria-label="メニュー">${ICON.more}</button>
   </div>`;
 }
@@ -2339,12 +2341,8 @@ function quakeFx() {
   setTimeout(() => el.remove(), 900);
   vib([60, 40, 120]);
 }
-// ラッキー：光がパッと広がって、金色の紙吹雪
+// ラッキー：金色の紙吹雪
 function goldFx() {
-  const el = document.createElement("div");
-  el.className = "goldburst"; el.setAttribute("aria-hidden", "true");
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 1400);
   confetti(["#ffd23f", "#ffe680", "#fff3b0", "#f5b700", "#ffffff"], 50);
   vib(30);
 }
