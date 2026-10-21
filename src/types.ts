@@ -1,7 +1,7 @@
 export type Level = 'yurume' | 'futsu' | 'jigoku';
 /** 夜モード: オフ / 夜（恋愛・ちょいエロ） / 深夜（性癖・経験まで） */
 export type Night = false | 'yoru' | 'shinya';
-export type Mode = 'odai' | 'sugoroku' | 'memory' | 'ito' | 'gesture' | 'homeru' | 'ngword' | 'vote' | 'wolf' | 'pittari' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky';
+export type Mode = 'odai' | 'sugoroku' | 'memory' | 'ito' | 'gesture' | 'homeru' | 'ngword' | 'vote' | 'wolf' | 'pittari' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle';
 
 export type Member = { name: string; /** 夜モードで下ネタを振らない */ ng?: boolean; /** 性別（男女で組むゲーム用。未設定でもOK） */ sex?: 'm' | 'f' };
 

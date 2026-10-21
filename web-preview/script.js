@@ -183,10 +183,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
@@ -210,6 +210,7 @@ function newGame(mode, again = false) {
   if (mode === "rtap") { S.game.doer = -1; S.game.rt = { phase: "intro", round: 0 }; if (again) rtRound(); render(true); return; }
   if (mode === "bpass") { S.game.doer = -1; S.game.bp = { phase: "intro", round: 0 }; if (again) bpRound(); render(true); return; }
   if (mode === "blind") { S.game.doer = -1; S.game.bl = { phase: "intro", k: 0, hits: Array(n).fill(0), fool: Array(n).fill(0) }; if (again) blRound(); render(true); return; }
+  if (mode === "tickle") { S.game.doer = -1; S.game.tk = { phase: "intro", k: 0, got: Array(n).fill(0), safe: Array(n).fill(0), last: null }; if (again) tkRound(); render(true); return; }
   if (mode === "pocky") { S.game.doer = -1; S.game.pk = { phase: "intro", k: 0, mate: null, full: Array(n).fill(0) }; if (again) pkRound(); render(true); return; }
   if (mode === "hilo") { S.game.doer = -1; S.game.hl = { phase: "intro", round: 0, best: 0, hits: Array(n).fill(0) }; if (again) hlRound(); render(true); return; }
   if (mode === "reflex") { S.game.doer = -1; S.game.rf = { phase: "intro", style: store.get("nd_rfstyle", "solo") === "multi" ? "multi" : "solo", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [], timers: [] }; render(true); return; }
@@ -517,6 +518,7 @@ function titles() {
   if (g.mode === "reflex" && g.rf) { const ok = S.members.map((_, i) => i).filter((i) => g.rf.best[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => g.rf.best[i])); add("反射神経王", ok.filter((i) => g.rf.best[i] === m), `最速 ${m}ミリ秒`); } }
   if (g.mode === "voice" && g.vc) { const b = g.vc.best.map((v) => v ?? 0); const t = top(b, 1); if (t) add("声量おばけ", t, `最大 ${b[t[0]]}`); }
   if (g.mode === "blind" && g.bl) { const t = top(g.bl.hits, 1); if (t) add("触覚の達人", t, `当てた ${g.bl.hits[t[0]]}回`); const f = top(g.bl.fool, 1); if (f) add("気配を消す人", f, `バレへんかった ${g.bl.fool[f[0]]}回`); }
+  if (g.mode === "tickle" && g.tk) { const t = top(g.tk.safe, 1); if (t) add("鉄壁の我慢", t, `耐えた ${g.tk.safe[t[0]]}回`); }
   if (g.mode === "pocky" && g.pk) { const t = top(g.pk.full, 1); if (t) add("ポッキー完走", t, `最後まで ${g.pk.full[t[0]]}回`); }
   if (g.mode === "hilo" && g.hl) { const t = top(g.hl.hits, 2); if (t) add("読みの達人", t, `当てた ${g.hl.hits[t[0]]}回`); }
   if (g.mode === "stop" && g.sp) { const t = top(g.sp.exact, 1); if (t) add("ピタ止め職人", t, `ピッタリ ${g.sp.exact[t[0]]}回`); }
@@ -1222,6 +1224,32 @@ function blGuess(i) {
   bl.loser = bl.ok ? bl.toucher : bl.who;
   hold("正解は…", 1800, () => { bl.phase = "reveal"; play(bl.ok ? "pinpon" : "buzzer"); });
   render();
+}
+// こしょばし我慢：くすぐられる人（基本女性・3回に1回は逆転で男性）を、くすぐる人（異性）が10秒くすぐる。笑ったら罰、耐えたらセーフ
+const TK_SEC = 10;
+const TK_PART = ["脇腹", "首すじ", "足の裏", "膝の裏", "脇の下", "耳のうしろ", "おなか", "二の腕の内側"];
+function tkRound() {
+  const g = S.game, tk = g.tk, pool = nightPool();
+  tk.swap = tk.k % 3 === 2; // 逆転ラウンド
+  const want = tk.swap ? "m" : "f";
+  let c = pool.filter((i) => S.members[i].sex === want);
+  if (!c.length) c = pool.filter((i) => !S.members[i].sex);
+  if (!c.length) c = pool;
+  // 当たった回数が少ない人から。前回の人はなるべく外す
+  const c2 = c.filter((i) => i !== tk.last); if (c2.length) c = c2;
+  const min = Math.min(...c.map((i) => tk.got[i]));
+  tk.who = pick(c.filter((i) => tk.got[i] === min));
+  const rest = sexPrefer(tk.who, pool.filter((i) => i !== tk.who));
+  tk.by = shuffle(rest).slice(0, S.level === "jigoku" ? 2 : 1);
+  tk.part = pick(TK_PART);
+  g.doer = tk.who; tk.phase = "ready";
+}
+function tkEnd(laughed) {
+  const g = S.game, tk = g.tk;
+  stopTimer();
+  g.turn++; tk.got[tk.who]++; tk.last = tk.who;
+  if (laughed) { tk.phase = "lose"; play("buzzer"); vib([80, 40, 160]); }
+  else { tk.safe[tk.who]++; tk.phase = "safe"; play("fanfare"); }
 }
 // ポッキーゲーム：2人で両端をくわえて交互に食べ進める。先に離した方が罰、折れたら2人とも罰、最後まで行けたらセーフ
 function pkRound() {

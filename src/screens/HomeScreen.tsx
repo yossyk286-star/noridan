@@ -304,6 +304,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
         return (
           <>
             <ModeCard icon="blind" title="目隠し当て" desc={ok < 3 ? '下ネタOKの人が3人から遊べる' : HELP.blind.desc} disabled={ok < 3} onPress={() => onStart('blind')} />
+            <ModeCard icon="tickle" title="こしょばし我慢" desc={ok < 2 ? '下ネタOKの人が2人から遊べる' : HELP.tickle.desc} disabled={ok < 2} onPress={() => onStart('tickle')} />
             <ModeCard icon="pocky" title="ポッキーゲーム" desc={ok < 2 ? '下ネタOKの人が2人から遊べる' : HELP.pocky.desc} disabled={ok < 2} onPress={() => onStart('pocky')} />
           </>
         );
@@ -348,7 +349,7 @@ function StepHead({ num, title, sub }: { num: string; title: string; sub?: strin
   );
 }
 
-function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote' | 'wolf' | 'target' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
+function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote' | 'wolf' | 'target' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Tap onPress={onPress} disabled={disabled} style={({ pressed }) => [s.mode, { opacity: disabled ? 0.45 : 1, transform: [{ translateY: pressed ? 4 : 0 }] }]}>
       <View style={s.modeIc}>

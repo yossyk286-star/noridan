@@ -134,6 +134,7 @@ const ICON = {
   rtap: ico("M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM16.5 13.5a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM18.6 13.2l1.4-1.4"),
   bpass: ico("M10 21a6.5 6.5 0 1 0 0-13a6.5 6.5 0 1 0 0 13zM14.6 9.4l2-2M17 5.5l1.5-1.5M19.5 7.5l1.5.5M16.5 3l.5 1.5"),
   blind: ico("M3 12s3.5-6 9-6c1.6 0 3 .5 4.3 1.2M21 12s-3.5 6-9 6c-1.6 0-3-.5-4.3-1.2M4 20L20 4M9.5 14.5a3 3 0 0 1 4.9-4.1"),
+  tickle: ico("M7 11V6a1.5 1.5 0 0 1 3 0v5M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10.5V6a1.5 1.5 0 0 1 3 0v6.5c0 4-2.5 7-6.5 7S4 17 3 14l-1-3a1.5 1.5 0 0 1 2.8-1L7 13M18 4l2-1M19 8h2M18 12l2 1"),
   pocky: ico("M5 19L17 7M7 21L19 9M17 7l2-2a1.4 1.4 0 0 1 2 2l-2 2M5 19l-1.5 1.5"),
   hilo: ico("M5 4h9a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM20 7l-2-3l-2 3M20 17l-2 3l-2-3M18 4v16"),
   reflex: ico("M13 2L4 14h7l-1 8l9-12h-7z"),
@@ -333,6 +334,7 @@ function vHome2() {
       <button class="mode" data-act="start" data-m="reflex"><i class="mode-ic">${ICON.reflex}</i><b>反射神経バトル</b><span>${HELP.reflex.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="voice"><i class="mode-ic">${ICON.voice}</i><b>声デカ選手権</b><span>${HELP.voice.desc}</span><em class="go">開始</em></button>
       ${S.night === "shinya" ? (() => { const ok = S.members.filter((m) => !m.ng).length; return `<button class="mode deep-mode" data-act="start" data-m="blind" ${ok < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.blind}</i><b>目隠し当て</b><span>${ok < 3 ? "下ネタOKの人が3人から遊べる" : HELP.blind.desc}</span><em class="go">開始</em></button>
+      <button class="mode deep-mode" data-act="start" data-m="tickle" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.tickle}</i><b>こしょばし我慢</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.tickle.desc}</span><em class="go">開始</em></button>
       <button class="mode deep-mode" data-act="start" data-m="pocky" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.pocky}</i><b>ポッキーゲーム</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.pocky.desc}</span><em class="go">開始</em></button>`; })() : ""}
       <button class="mode" data-act="start" data-m="pittari" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.target}</i><b>ピッタリ予想</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.pittari.desc}</span><em class="go">開始</em></button>
     </div>
@@ -1378,6 +1380,28 @@ function vBlind() {
   }
   return stageWrap(card, controls);
 }
+// こしょばし我慢
+function vTickle() {
+  const g = S.game, tk = g.tk;
+  if (tk.phase === "intro") return vIntroStage("tickle", { extra: lvBox(S.level === "jigoku" ? "くすぐる人が2人" : "くすぐる人は1人", false), btn: "スタート", act: "tkStart" });
+  if (tk.phase === "batsu") return stageWrap(vCard(), roundEnd("tkAccept", true));
+  const byNames = tk.by.map(mName).join("と");
+  let card, controls;
+  if (tk.phase === "ready") {
+    card = `<div class="odai mode-card center deep" id="card"><p class="prog">第${tk.k + 1}回戦${tk.swap ? "・逆転ラウンド" : ""}</p><p class="bl-l">くすぐられる人</p>${bigWho(tk.who)}<p class="bl-l">くすぐる人</p><p class="tk-by">${byNames}</p><p class="bl-l">場所</p><p class="bl-touch">${esc(tk.part)}</p><p class="hand-note">${TK_SEC}秒、声を出して笑ったらアウト。<br>出た場所以外はアカン</p></div>`;
+    controls = `<div class="intro-acts"><button class="intro-back tk-pass" data-act="tkPass" aria-label="パス（罰なし）">${ICON.next}<span>パス</span></button><button class="big" data-act="tkGo">スタート（${TK_SEC}秒）</button></div>`;
+  } else if (tk.phase === "play") {
+    card = `<div class="odai mode-card center deep" id="card"><p class="prog">${byNames} → ${mName(tk.who)}の${esc(tk.part)}</p><p class="tl-count" id="modeTimer">${TK_SEC}</p><p class="ng-lead">笑うな…！</p></div>`;
+    controls = `<button class="big has-pen" data-act="tkLaugh">笑った！アウト</button>`;
+  } else if (tk.phase === "safe") {
+    card = `<div class="odai mode-card center lucky" id="card"><p class="tl-big q-ok">耐えた！</p>${bigWho(tk.who)}<p class="hand-note">${TK_SEC}秒笑わんかったので罰なし</p></div>`;
+    controls = roundEnd("tkNext");
+  } else {
+    card = `<div class="odai mode-card center batsu ${S.anim ? "shake" : ""}" id="card"><p class="tl-big q-ng">笑った！</p>${bigWho(tk.who, "の負け")}<p class="hand-note">${esc(tk.part)}をこしょばされて笑ったので罰</p></div>`;
+    controls = `<button class="big has-pen" data-act="tkGacha">${mName(tk.who)}に罰ガチャ</button>`;
+  }
+  return stageWrap(card, controls);
+}
 // ポッキーゲーム
 function vPocky() {
   const g = S.game, pk = g.pk;
@@ -2265,7 +2289,7 @@ const app = document.getElementById("app");
 const overlay = document.getElementById("overlay");
 let lastSoundKey = "";
 // 画面ごとの描き方（新しい遊び方はここと MODE_NAME に足す）
-const VIEWS = { blind: () => vBlind(), pocky: () => vPocky(), home: () => vHome(), odai: () => vOdai(), sugoroku: () => vSugo(), memory: () => vMemory(), ito: () => vIto(), gesture: () => vGesture(), homeru: () => vHomeru(), ngword: () => vNg(), vote: () => vVote(), wolf: () => vWolf(), pittari: () => vPittari(), tilt: () => vTilt(), shake: () => vShake(), stop: () => vStop(), rtap: () => vRtap(), bpass: () => vBpass(), hilo: () => vHilo(), reflex: () => vReflex(), voice: () => vVoice() };
+const VIEWS = { tickle: () => vTickle(), blind: () => vBlind(), pocky: () => vPocky(), home: () => vHome(), odai: () => vOdai(), sugoroku: () => vSugo(), memory: () => vMemory(), ito: () => vIto(), gesture: () => vGesture(), homeru: () => vHomeru(), ngword: () => vNg(), vote: () => vVote(), wolf: () => vWolf(), pittari: () => vPittari(), tilt: () => vTilt(), shake: () => vShake(), stop: () => vStop(), rtap: () => vRtap(), bpass: () => vBpass(), hilo: () => vHilo(), reflex: () => vReflex(), voice: () => vVoice() };
 function render(anim) {
   const sc = S.screen;
   const onStage = isStage(sc);
@@ -2445,6 +2469,7 @@ function cue() {
   if (sc === "memory") { const p = S.game.mm.phase; play(p === "skull" ? "boom" : p === "fail" || p === "low" ? batsuCue() : p === "match" ? "pinpon" : p === "miss" ? "buzzer" : p === "over" ? "fanfare" : "flip"); if (p === "skull") boomFlash(); return; }
   if (["rtap", "bpass", "hilo", "reflex", "voice"].includes(sc)) { if (S.game.phase === "batsu") batsuCue(); return; }
   if (sc === "blind") { const p = S.game.bl.phase; if (p === "batsu") batsuCue(); else if (p === "close" || p === "secret") play("flip"); return; }
+  if (sc === "tickle") { const p = S.game.tk.phase; if (p === "batsu") batsuCue(); else if (p === "ready") play("jan"); return; }
   if (sc === "pocky") { const p = S.game.pk.phase; if (p === "batsu") batsuCue(); else if (p === "ready") play("jan"); return; }
   if (sc === "stop") { if (S.game.sp.phase === "batsu") batsuCue(); return; }
   if (sc === "shake") { if (S.game.sk.phase === "batsu") batsuCue(); return; }
@@ -2839,6 +2864,14 @@ function onClick(e) {
     case "blGuess": if (g.bl.phase === "guess") blGuess(i); break;
     case "blGacha": startGacha([g.bl.loser], 1, "blind", g.bl); render(true); break;
     case "blAccept": applyAdds(); g.gacha = []; g.phase = "play"; g.bl.k++; blRound(); render(true); break;
+    // こしょばし我慢
+    case "tkStart": tkRound(); render(true); break;
+    case "tkPass": g.tk.last = g.tk.who; g.tk.k++; tkRound(); render(true); break;
+    case "tkGo": g.tk.phase = "play"; play("coin"); render(true); startTimer(TK_SEC, () => { if (S.game?.tk?.phase === "play") { tkEnd(false); render(true); } }); break;
+    case "tkLaugh": if (g.tk.phase === "play") { tkEnd(true); render(true); } break;
+    case "tkGacha": startGacha([g.tk.who], 1, "tickle", g.tk); render(true); break;
+    case "tkNext": g.tk.k++; tkRound(); render(true); break;
+    case "tkAccept": applyAdds(); g.gacha = []; g.phase = "play"; g.tk.k++; tkRound(); render(true); break;
     // ポッキーゲーム
     case "pkStart": pkRound(); render(true); break;
     case "pkGo": count3(g.pk, () => { g.pk.phase = "play"; play("coin"); render(true); }, 800); render(true); break;

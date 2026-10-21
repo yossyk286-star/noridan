@@ -18,13 +18,14 @@ export type Stats = {
   blindHits?: number[]; // 目隠し当てで当てた回数
   blindFool?: number[]; // 目隠し当てでバレへんかった回数
   pockyFull?: number[]; // ポッキーを最後まで行った回数
+  tickleSafe?: number[]; // こしょばされて耐えた回数
   stopExact?: number[]; // ピタッとストップでピッタリ止めた回数
   shakeBest?: (number | null)[]; // 全力シェイクの自己ベスト
   steady?: (number | null)[]; // 傾けたらアウトの最大角度（測れた人だけ）
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
-export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky';
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle';
 /** 罰の理由の名前（src/data/why.json。Web版と共通） */
 export const WHY_LABEL = whyJson as Record<Why, string>;
 export function whyText(st: Stats | undefined, i: number) {
@@ -99,6 +100,8 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
   if (bf) add('気配を消す人', bf, `バレへんかった ${st.blindFool![bf[0]]}回`);
   const pf = st.pockyFull ? top(st.pockyFull, 1) : null;
   if (pf) add('ポッキー完走', pf, `最後まで ${st.pockyFull![pf[0]]}回`);
+  const ts = st.tickleSafe ? top(st.tickleSafe, 1) : null;
+  if (ts) add('鉄壁の我慢', ts, `耐えた ${st.tickleSafe![ts[0]]}回`);
   const se = st.stopExact ? top(st.stopExact, 1) : null;
   if (se) add('ピタ止め職人', se, `ピッタリ ${st.stopExact![se[0]]}回`);
   if (st.shakeBest && pen.length > 1) {
