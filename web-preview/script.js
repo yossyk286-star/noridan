@@ -509,7 +509,28 @@ function titles() {
   const d = top(st.dbl, 1); if (d) add("ギャンブラー", d, `倍プッシュ ${st.dbl[d[0]]}回（成功${st.dwin[d[0]]}）`);
   const p = top(st.pass, 2); if (p) add("パス魔", p, `パス ${st.pass[p[0]]}回`);
   const nm2 = top(st.notme, 2); if (nm2) add("当てはまらん人生", nm2, `当てはまらん ${st.notme[nm2[0]]}回`);
-  return out.slice(0, 6);
+  // 準戦犯：罰が2番目に多い（戦犯とは別の人）
+  const sorted = [...new Set(g.pen)].sort((a, b) => b - a);
+  if (sorted.length > 2 && sorted[1] > 0) add("あと一歩で戦犯", S.members.map((_, i) => i).filter((i) => g.pen[i] === sorted[1]), `罰 ${sorted[1]}回`);
+  // 罰を1人で半分以上背負った
+  const total = g.pen.reduce((a, b) => a + b, 0);
+  if (total >= 4) { const big = S.members.map((_, i) => i).filter((i) => g.pen[i] * 2 > total); if (big.length) add("全部背負った人", big, `全体の罰の${Math.round((g.pen[big[0]] / total) * 100)}%`); }
+  // 天使に見放された：罰3回以上で天使0回
+  const nolucky = S.members.map((_, i) => i).filter((i) => g.pen[i] >= 3 && !st.lucky[i] && g.pen[i] === maxPen);
+  if (nolucky.length) add("天使に見放された人", nolucky, `罰 ${maxPen}回・天使 0回`);
+  // 罰の理由ごとの称号（何でやられたか）
+  let whyN = 0; // 理由ごとの称号は多くても3つまで（いろんな称号が出るように）
+  const whyTop = (key, min, title, unit) => { if (whyN >= 3) return; const a = S.members.map((_, i) => st.why[i]?.[key] || 0); const t = top(a, min); if (t && t.length < n) { add(title, t, `${unit} ${a[t[0]]}回`); whyN++; } };
+  whyTop("rule", 2, "ルール破りの常習犯", "違反");
+  whyTop("bomb", 1, "爆弾処理班（失敗）", "爆発");
+  whyTop("skull", 2, "ドクロの申し子", "ドクロ");
+  whyTop("ng", 2, "口がすべる人", "NGワード");
+  whyTop("hmlaugh", 1, "笑いの沸点ゼロ", "笑った");
+  whyTop("double", 1, "倍プッシュ爆死", "失敗");
+  whyTop("stop", 2, "止まられへん人", "止め負け");
+  whyTop("reflex", 2, "反応遅め", "負け");
+  whyTop("rtap", 2, "爆弾に好かれる人", "爆弾");
+  return out.slice(0, 8);
 }
 const titleNames = (t) => t.idx.map((i) => S.members[i].name).join("・");
 
