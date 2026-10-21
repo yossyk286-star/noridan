@@ -69,7 +69,7 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
     setOk(good);
     setTurns((t) => t + 1);
     // ちょっとためてからめくる
-    H.hold(`${u ? 'ハイ' : 'ロー'}…めくるで`, 1000, () => {
+    H.hold(`${u ? 'ハイ' : 'ロー'}…\nめくるで`, 1000, () => {
       if (good) {
         setStreak(streak + 1);
         hits[who]++;

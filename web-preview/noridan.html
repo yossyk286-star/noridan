@@ -363,7 +363,7 @@ body.hurry10::after { content: ""; position: fixed; inset: 0; pointer-events: no
 .tl-count { margin: 0; font-family: var(--display); font-size: clamp(96px, 34vw, 150px); line-height: 1; animation: pulse .8s ease-in-out infinite; }
 /* ため（結果の前のドラムロール） */
 .hold-card { cursor: pointer; gap: 18px !important; }
-.hold-t { margin: 0; font-family: var(--display); font-size: clamp(40px, 13vw, 60px); animation: holdPulse .5s ease-in-out infinite alternate; }
+.hold-t { white-space: pre-line; line-height: 1.25; margin: 0; font-family: var(--display); font-size: clamp(40px, 13vw, 60px); animation: holdPulse .5s ease-in-out infinite alternate; }
 .hold-dots { display: flex; gap: 10px; margin: 0; }
 .hold-dots i { width: 14px; height: 14px; border-radius: 50%; background: currentColor; animation: holdDot .6s ease-in-out infinite; }
 .hold-dots i:nth-child(2) { animation-delay: .15s; } .hold-dots i:nth-child(3) { animation-delay: .3s; }
@@ -2458,7 +2458,7 @@ function spStop(auto = false) {
 function spReveal() {
   const sp = S.game.sp, r = sp.res[sp.who];
   // ちょっとためてから判定。最後の人はそのまま順位発表まで
-  hold(sp.after === "rank" ? "判定…そして結果は…" : "判定…", sp.after === "rank" ? 2000 : 900, () => {
+  hold(sp.after === "rank" ? "判定…\nそして結果は…" : "判定…", sp.after === "rank" ? 2000 : 900, () => {
     if (r.over) { play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
     else if (sp.after !== "rank") play(r.exact ? "fanfare" : "coin");
     sp.phase = sp.after;
@@ -2551,7 +2551,7 @@ function hlGuess(up) {
   hl.ok = same ? S.level !== "jigoku" : up ? hl.next > hl.cur : hl.next < hl.cur;
   hl.phase = "flip";
   // 裏のカードをガタガタさせてからめくる
-  hold(`${up ? "ハイ" : "ロー"}…めくるで`, 1000, () => {
+  hold(`${up ? "ハイ" : "ロー"}…\nめくるで`, 1000, () => {
     if (hl.ok) { hl.streak++; hl.hits[hl.who]++; if (hl.streak > hl.best) hl.best = hl.streak; play("coin"); }
     else { hl.loser = hl.who; hl.x = hl.streak >= (HL_X2[S.level] || 5) ? 2 : 1; play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
     hl.phase = "reveal";

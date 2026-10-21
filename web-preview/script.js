@@ -1072,7 +1072,7 @@ function spStop(auto = false) {
 function spReveal() {
   const sp = S.game.sp, r = sp.res[sp.who];
   // ちょっとためてから判定。最後の人はそのまま順位発表まで
-  hold(sp.after === "rank" ? "判定…そして結果は…" : "判定…", sp.after === "rank" ? 2000 : 900, () => {
+  hold(sp.after === "rank" ? "判定…\nそして結果は…" : "判定…", sp.after === "rank" ? 2000 : 900, () => {
     if (r.over) { play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
     else if (sp.after !== "rank") play(r.exact ? "fanfare" : "coin");
     sp.phase = sp.after;
@@ -1165,7 +1165,7 @@ function hlGuess(up) {
   hl.ok = same ? S.level !== "jigoku" : up ? hl.next > hl.cur : hl.next < hl.cur;
   hl.phase = "flip";
   // 裏のカードをガタガタさせてからめくる
-  hold(`${up ? "ハイ" : "ロー"}…めくるで`, 1000, () => {
+  hold(`${up ? "ハイ" : "ロー"}…\nめくるで`, 1000, () => {
     if (hl.ok) { hl.streak++; hl.hits[hl.who]++; if (hl.streak > hl.best) hl.best = hl.streak; play("coin"); }
     else { hl.loser = hl.who; hl.x = hl.streak >= (HL_X2[S.level] || 5) ? 2 : 1; play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
     hl.phase = "reveal";
