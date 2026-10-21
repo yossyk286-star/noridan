@@ -39,8 +39,22 @@ const shuffle = <T,>(a: T[]): T[] => {
 export const othersOf = (members: Member[], i: number) => members.map((_, j) => j).filter((j) => j !== i);
 
 /** {P}{X}{Y} を埋めて表示用の部品にする */
-export function fill(tpl: string, members: Member[], p: number, opts: { noNg?: boolean } = {}): Segment[] {
-  const others = othersOf(members, p).filter((i) => !opts.noNg || !members[i].ng);
+/** 深夜の接触系は、なるべく男女で組む：異性 → 性別未設定 → 同性 の順。男だけの時はそのまま */
+export function sexPrefer(members: Member[], p: number, list: number[]) {
+  const sx = members[p]?.sex;
+  if (!sx) return list;
+  const opp = list.filter((i) => members[i].sex && members[i].sex !== sx);
+  if (opp.length) return opp;
+  const any = list.filter((i) => !members[i].sex);
+  return any.length ? any : list;
+}
+
+export function fill(tpl: string, members: Member[], p: number, opts: { noNg?: boolean; shinya?: boolean } = {}): Segment[] {
+  let others = othersOf(members, p).filter((i) => !opts.noNg || !members[i].ng);
+  if (opts.shinya && p >= 0) {
+    const pref = sexPrefer(members, p, others);
+    if (pref.length >= (tpl.includes('{Y}') ? 2 : 1)) others = pref;
+  }
   const x = pick(others);
   const yPool = others.filter((i) => i !== x);
   const y = yPool.length ? pick(yPool) : x;
@@ -133,7 +147,7 @@ export function makeCard(kind: string, tpl: string, members: Member[], p: number
     kind,
     tpl,
     noNg: extra.noNg,
-    segments: fill(tpl, members, p, { noNg: extra.noNg }),
+    segments: fill(tpl, members, p, { noNg: extra.noNg, shinya: extra.shinya }),
     solo: tpl.includes('{P}'),
     ...extra,
   };
@@ -183,7 +197,7 @@ export class Decks {
         // 深夜×地獄は全部下ネタ（深夜お題だけ）。それ以外の深夜は6割が深夜お題、4割が夜お題
         const deep = shinya && (level === 'jigoku' || Math.random() < 0.6);
         const tpl = deep ? this.str('shinya', odai.shinya, n) : this.str('yoru', odai.yoru, n);
-        if (tpl && canYoru(tpl, members, p)) return makeCard(deep ? '深夜お題' : '夜お題', tpl, members, p, { noNg: true, yoru: true });
+        if (tpl && canYoru(tpl, members, p)) return makeCard(deep ? '深夜お題' : '夜お題', tpl, members, p, { noNg: true, yoru: true, shinya });
       }
     }
     if (Math.random() < CHANCE.minna) {
@@ -325,7 +339,7 @@ export class Decks {
       const tpl = pickFrom('batsu_' + list, batsu[list]);
       // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらんかったら普通の罰
       const okX = members.some((m, j) => j !== p && !m.ng);
-      if (tpl && (!tpl.includes('{X}') || okX)) return { segments: fill(tpl, members, p, { noNg: true }), lucky: false, night: list };
+      if (tpl && (!tpl.includes('{X}') || okX)) return { segments: fill(tpl, members, p, { noNg: true, shinya: this.night === 'shinya' }), lucky: false, night: list };
     }
     return { segments: fill(pickFrom('batsu', batsu.bad)!, members, p), lucky: false };
   }

@@ -9,7 +9,7 @@ import { HandWho, IntroCard, Lead, LevelBox, ModeCard, Note, Prog } from '../com
 import { HELP } from '../lib/help';
 import { useHold } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
-import { Decks } from '../lib/game';
+import { Decks, sexPrefer } from '../lib/game';
 import { play } from '../lib/sound';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
@@ -144,7 +144,8 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     // 相方はランダム（前回と同じ組はなるべく避ける）
     if (pair) {
       const w = pool[next % pn];
-      const c = pool.filter((i) => i !== w);
+      // なるべく男女で組む（男だけの時はそのまま）
+      const c = sexPrefer(members, w, pool.filter((i) => i !== w));
       const c2 = c.filter((i) => i !== mate);
       const list = c2.length ? c2 : c;
       setMate(list[Math.floor(Math.random() * list.length)]);

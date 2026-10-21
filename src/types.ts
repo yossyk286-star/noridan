@@ -3,13 +3,15 @@ export type Level = 'yurume' | 'futsu' | 'jigoku';
 export type Night = false | 'yoru' | 'shinya';
 export type Mode = 'odai' | 'sugoroku' | 'memory' | 'ito' | 'gesture' | 'homeru' | 'ngword' | 'vote' | 'wolf' | 'pittari' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice';
 
-export type Member = { name: string; /** 夜モードで下ネタを振らない */ ng?: boolean };
+export type Member = { name: string; /** 夜モードで下ネタを振らない */ ng?: boolean; /** 性別（男女で組むゲーム用。未設定でもOK） */ sex?: 'm' | 'f' };
 
 /** お題の表示用。hl=true の部分は名前として強調する */
 export type Segment = { text: string; hl?: boolean; /** 名前の場合、その人の番号（色分け用） */ who?: number; /** 罰2倍の時：old=元の数（赤い取り消し線）、new=倍の数 */ x2?: 'old' | 'new' };
 
 export type Card = {
   kind: string;
+  /** 深夜モードのお題（巻き込む相手はなるべく異性） */
+  shinya?: boolean;
   segments: Segment[];
   alert?: boolean;
   /** 元のお題。リベンジで人を入れ替えるときに使う */

@@ -264,6 +264,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       st.card = makeCard(`${c.kind.replace(/（.*）$/, '')}（${members[from].name}は当てはまらん）`, c.tpl, members, to, {
         noNg: c.noNg,
         yoru: c.yoru,
+        shinya: c.shinya,
         passed: true,
       });
       rerender();
@@ -288,6 +289,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       st.card = makeCard(`${base}（${members[from].name}から押し付け）`, c.tpl, members, i, {
         noNg: c.noNg,
         yoru: c.yoru,
+        shinya: c.shinya,
         alert: true,
       });
       st.phase = 'play';

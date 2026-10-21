@@ -273,6 +273,7 @@ function vHome1() {
       <div class="mem">
         ${dot(i)}
         <div class="nm"><b>${esc(m.name)}</b></div>
+        <div class="sex" role="group" aria-label="${esc(m.name)}の性別">${[["m", "男"], ["f", "女"]].map(([v, t]) => `<button data-act="sex" data-i="${i}" data-v="${v}" aria-pressed="${m.sex === v}" class="${v}">${t}</button>`).join("")}</div>
         ${S.night ? `<button class="ng" data-act="ng" data-i="${i}" aria-pressed="${!!m.ng}">${m.ng ? "下ネタNG" : "下ネタOK"}</button>` : "<span></span>"}
         <button class="x" data-act="del" data-i="${i}" aria-label="${esc(m.name)}を外す">${ICON.close}</button>
       </div>`).join("")}
@@ -2545,7 +2546,7 @@ function onClick(e) {
     case "clearAll": S.members = []; saveMembers(); render(); document.getElementById("inName")?.focus(); break;
     case "loadGroup": {
       const gs = loadGroups().filter((x) => x.map((m) => m.name).join() !== S.members.map((m) => m.name).join());
-      if (gs[i]) { S.members = gs[i].map((m) => ({ name: m.name, ...(m.ng ? { ng: true } : {}) })); saveMembers(); render(); }
+      if (gs[i]) { S.members = gs[i].map((m) => ({ name: m.name, ...(m.ng ? { ng: true } : {}), ...(m.sex ? { sex: m.sex } : {}) })); saveMembers(); render(); }
       break;
     }
 
@@ -2893,6 +2894,8 @@ function onClick(e) {
     case "nightOff": S.night = false; S.nightAsk = false; S.sheet = false; store.set("nd_night", false); render(); break;
     case "nightCancel": S.nightAsk = false; render(); break;
     case "ng": S.members[i].ng = !S.members[i].ng; saveMembers(); render(); break;
+    // 性別：押したらその性別、もう一回押したら未設定に戻る
+    case "sex": { const m = S.members[i]; if (m.sex === b.dataset.v) delete m.sex; else m.sex = b.dataset.v; saveMembers(); render(); break; }
     case "pass": g.st.pass[g.doer]++; g.add = new Map(); advance(); break;
 
     // 時限爆弾

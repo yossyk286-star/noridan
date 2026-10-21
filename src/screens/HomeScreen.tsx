@@ -121,6 +121,13 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
     setTimeout(() => input.current?.focus(), 0);
   };
   const toggleNg = (i: number) => onMembers(members.map((m, j) => (j === i ? { ...m, ng: !m.ng } : m)));
+  // 性別：押したらその性別、もう一回押したら未設定に戻る
+  const setSex = (i: number, v: 'm' | 'f') =>
+    onMembers(members.map((m, j) => {
+      if (j !== i) return m;
+      const { sex, ...rest } = m;
+      return sex === v ? rest : { ...rest, sex: v };
+    }));
   const logoColor = night === 'shinya' ? C.deep : night ? C.night : C.yuru;
   // ロゴをタップするたびに一瞬光る
   const [glow, setGlow] = useState(false);
@@ -186,6 +193,16 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
           <View key={`${m.name}-${i}`} style={s.mem}>
             <Dot i={i} name={initialOf(members, i)} />
             <Text style={[s.memName, { flex: 1 }]} numberOfLines={1}>{m.name}</Text>
+            <View style={s.sex} accessibilityLabel={`${m.name}の性別`}>
+              {(['m', 'f'] as const).map((v, k) => {
+                const on = m.sex === v;
+                return (
+                  <Tap key={v} onPress={() => setSex(i, v)} accessibilityState={{ selected: on }} style={[s.sexBtn, k > 0 && s.sexSep, on && { backgroundColor: v === 'm' ? '#3ec7ff' : '#ff5aa5' }]}>
+                    <Text style={[s.sexText, on && { color: C.ink }]}>{v === 'm' ? '男' : '女'}</Text>
+                  </Tap>
+                );
+              })}
+            </View>
             {night && (
               <Tap onPress={() => toggleNg(i)} accessibilityState={{ selected: !!m.ng }} style={[s.ng, m.ng && s.ngOn]}>
                 <Text style={[s.ngText, m.ng && { color: C.ink }]}>{m.ng ? '下ネタNG' : '下ネタOK'}</Text>
@@ -411,6 +428,10 @@ const s = StyleSheet.create({
   x: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   xText: { color: C.muted, fontSize: 20 },
   ng: { borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 999, paddingVertical: 6, paddingHorizontal: 10 },
+  sex: { flexDirection: 'row', borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 999, overflow: 'hidden' },
+  sexBtn: { width: 30, height: 28, alignItems: 'center', justifyContent: 'center' },
+  sexSep: { borderLeftWidth: 1, borderLeftColor: 'rgba(247,243,234,0.16)' },
+  sexText: { color: C.muted, fontSize: 12, fontWeight: '900' },
   ngOn: { backgroundColor: C.night, borderColor: C.night },
   ngText: { color: C.muted, fontSize: 11, fontWeight: '900' },
   row: { flexDirection: 'row', gap: 8 },

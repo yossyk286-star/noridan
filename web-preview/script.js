@@ -16,7 +16,7 @@ const cleanMembers = (v) => {
   for (const m of v) {
     const name = String(m?.name ?? "").trim().slice(0, 10);
     if (!name || seen.has(name)) continue;
-    seen.add(name); out.push(m.ng ? { name, ng: true } : { name });
+    seen.add(name); out.push({ name, ...(m.ng ? { ng: true } : {}), ...(m.sex === "m" || m.sex === "f" ? { sex: m.sex } : {}) }); // sex：性別（男女で組むゲーム用。未設定でもOK）
     if (out.length >= 12) break;
   }
   return out.length ? out : null;
@@ -62,9 +62,19 @@ const nm = (i) => `<mark style="--mc:${colorOf(i)}">${esc(S.members[i]?.name ?? 
 const others = (i) => S.members.map((_, j) => j).filter((j) => j !== i);
 
 // {P}{X}{Y} を埋める
+// 深夜の接触系（下ネタお題・罰）は、なるべく男女で組む：異性 → 性別未設定 → 同性 の順。男だけの時はそのまま
+function sexPrefer(p, list) {
+  const sx = S.members[p]?.sex;
+  if (!sx || S.night !== "shinya") return list;
+  const opp = list.filter((i) => S.members[i].sex && S.members[i].sex !== sx);
+  if (opp.length) return opp;
+  const any = list.filter((i) => !S.members[i].sex);
+  return any.length ? any : list;
+}
 function fill(tpl, pIdx, opts = {}) {
   const ms = S.members;
-  const os = others(pIdx).filter((i) => !opts.noNg || !ms[i].ng);
+  let os = others(pIdx).filter((i) => !opts.noNg || !ms[i].ng);
+  if (opts.noNg && pIdx >= 0) { const pref = sexPrefer(pIdx, os); if (pref.length >= (tpl.includes("{Y}") ? 2 : 1)) os = pref; }
   const x = pick(os);
   const y = pick(os.filter((i) => i !== x));
   return esc(tpl)
@@ -793,7 +803,8 @@ function tiltBegin() {
   if (tl.pair && !tiltPairOk()) tl.pair = false;
   tl.who = pool[tl.k % pool.length];
   // 相方はランダム（前回と同じ組はなるべく避ける）
-  if (tl.pair) { const prev = tl.mate; const c = pool.filter((i) => i !== tl.who); const c2 = c.filter((i) => i !== prev); const list = c2.length ? c2 : c; tl.mate = list[rnd(list.length)]; } else tl.mate = null;
+  // 性別が登録してあったら、なるべく異性と組む（未設定の人は誰とでも）
+  if (tl.pair) { const prev = tl.mate; const c = sexPrefer(tl.who, pool.filter((i) => i !== tl.who)); const c2 = c.filter((i) => i !== prev); const list = c2.length ? c2 : c; tl.mate = list[rnd(list.length)]; } else tl.mate = null;
   tiltHeat(0);
   S.game.doer = tl.who;
   tl.phase = "hand"; tl.angle = 0; tl.peak = 0; tl.outAt = 0; tl.manual = false;

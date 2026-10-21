@@ -101,7 +101,7 @@ body:not(.stage) .frame { display: none; }
 .step-dots i.on { background: var(--yuru); }
 
 .members { display: flex; flex-direction: column; gap: 8px; }
-.mem { display: grid; grid-template-columns: 34px minmax(0,1fr) auto auto; align-items: center; gap: 10px; padding: 10px 6px 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.mem { display: grid; grid-template-columns: 34px minmax(0,1fr) auto auto auto; align-items: center; gap: 8px; padding: 10px 6px 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
 .mem .dot, .mchip .dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; color: var(--ink); font-size: 15px; }
 .mem .nm b { display: block; font-size: 17px; }
 .mem .nm span { display: block; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
@@ -1456,6 +1456,12 @@ body.neon .intro-back { border-color: color-mix(in srgb, var(--nc) 60%, transpar
 .tl-duo { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .tl-duo .hand-who { min-width: 0; }
 .tl-x { font-family: var(--display); font-size: 28px; color: var(--deep); }
+/* メンバーの性別（男・女。どっちも押してへんかったら未設定） */
+.mem .sex { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.mem .sex button { width: 30px; height: 28px; font-size: 12px; font-weight: 900; color: var(--muted); }
+.mem .sex button + button { border-left: 1px solid var(--line); }
+.mem .sex button.m[aria-pressed="true"] { background: #3ec7ff; color: #0b1a24; }
+.mem .sex button.f[aria-pressed="true"] { background: #ff5aa5; color: #2a0716; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

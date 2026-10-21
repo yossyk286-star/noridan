@@ -101,7 +101,7 @@ body:not(.stage) .frame { display: none; }
 .step-dots i.on { background: var(--yuru); }
 
 .members { display: flex; flex-direction: column; gap: 8px; }
-.mem { display: grid; grid-template-columns: 34px minmax(0,1fr) auto auto; align-items: center; gap: 10px; padding: 10px 6px 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.mem { display: grid; grid-template-columns: 34px minmax(0,1fr) auto auto auto; align-items: center; gap: 8px; padding: 10px 6px 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
 .mem .dot, .mchip .dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; color: var(--ink); font-size: 15px; }
 .mem .nm b { display: block; font-size: 17px; }
 .mem .nm span { display: block; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
@@ -1456,6 +1456,12 @@ body.neon .intro-back { border-color: color-mix(in srgb, var(--nc) 60%, transpar
 .tl-duo { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .tl-duo .hand-who { min-width: 0; }
 .tl-x { font-family: var(--display); font-size: 28px; color: var(--deep); }
+/* メンバーの性別（男・女。どっちも押してへんかったら未設定） */
+.mem .sex { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.mem .sex button { width: 30px; height: 28px; font-size: 12px; font-weight: 900; color: var(--muted); }
+.mem .sex button + button { border-left: 1px solid var(--line); }
+.mem .sex button.m[aria-pressed="true"] { background: #3ec7ff; color: #0b1a24; }
+.mem .sex button.f[aria-pressed="true"] { background: #ff5aa5; color: #2a0716; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
@@ -1482,7 +1488,7 @@ const cleanMembers = (v) => {
   for (const m of v) {
     const name = String(m?.name ?? "").trim().slice(0, 10);
     if (!name || seen.has(name)) continue;
-    seen.add(name); out.push(m.ng ? { name, ng: true } : { name });
+    seen.add(name); out.push({ name, ...(m.ng ? { ng: true } : {}), ...(m.sex === "m" || m.sex === "f" ? { sex: m.sex } : {}) }); // sex：性別（男女で組むゲーム用。未設定でもOK）
     if (out.length >= 12) break;
   }
   return out.length ? out : null;
@@ -2259,7 +2265,8 @@ function tiltBegin() {
   if (tl.pair && !tiltPairOk()) tl.pair = false;
   tl.who = pool[tl.k % pool.length];
   // 相方はランダム（前回と同じ組はなるべく避ける）
-  if (tl.pair) { const prev = tl.mate; const c = pool.filter((i) => i !== tl.who); const c2 = c.filter((i) => i !== prev); const list = c2.length ? c2 : c; tl.mate = list[rnd(list.length)]; } else tl.mate = null;
+  // 性別が登録してあったら、なるべく異性と組む（未設定の人は誰とでも）
+  if (tl.pair) { const prev = tl.mate; let c = pool.filter((i) => i !== tl.who); const sx = S.members[tl.who].sex; const opp = c.filter((i) => !sx || !S.members[i].sex || S.members[i].sex !== sx); if (opp.length) c = opp; const c2 = c.filter((i) => i !== prev); const list = c2.length ? c2 : c; tl.mate = list[rnd(list.length)]; } else tl.mate = null;
   tiltHeat(0);
   S.game.doer = tl.who;
   tl.phase = "hand"; tl.angle = 0; tl.peak = 0; tl.outAt = 0; tl.manual = false;
@@ -3412,6 +3419,7 @@ function vHome1() {
       <div class="mem">
         ${dot(i)}
         <div class="nm"><b>${esc(m.name)}</b></div>
+        <div class="sex" role="group" aria-label="${esc(m.name)}の性別">${[["m", "男"], ["f", "女"]].map(([v, t]) => `<button data-act="sex" data-i="${i}" data-v="${v}" aria-pressed="${m.sex === v}" class="${v}">${t}</button>`).join("")}</div>
         ${S.night ? `<button class="ng" data-act="ng" data-i="${i}" aria-pressed="${!!m.ng}">${m.ng ? "下ネタNG" : "下ネタOK"}</button>` : "<span></span>"}
         <button class="x" data-act="del" data-i="${i}" aria-label="${esc(m.name)}を外す">${ICON.close}</button>
       </div>`).join("")}
@@ -5684,7 +5692,7 @@ function onClick(e) {
     case "clearAll": S.members = []; saveMembers(); render(); document.getElementById("inName")?.focus(); break;
     case "loadGroup": {
       const gs = loadGroups().filter((x) => x.map((m) => m.name).join() !== S.members.map((m) => m.name).join());
-      if (gs[i]) { S.members = gs[i].map((m) => ({ name: m.name, ...(m.ng ? { ng: true } : {}) })); saveMembers(); render(); }
+      if (gs[i]) { S.members = gs[i].map((m) => ({ name: m.name, ...(m.ng ? { ng: true } : {}), ...(m.sex ? { sex: m.sex } : {}) })); saveMembers(); render(); }
       break;
     }
 
@@ -6032,6 +6040,8 @@ function onClick(e) {
     case "nightOff": S.night = false; S.nightAsk = false; S.sheet = false; store.set("nd_night", false); render(); break;
     case "nightCancel": S.nightAsk = false; render(); break;
     case "ng": S.members[i].ng = !S.members[i].ng; saveMembers(); render(); break;
+    // 性別：押したらその性別、もう一回押したら未設定に戻る
+    case "sex": { const m = S.members[i]; if (m.sex === b.dataset.v) delete m.sex; else m.sex = b.dataset.v; saveMembers(); render(); break; }
     case "pass": g.st.pass[g.doer]++; g.add = new Map(); advance(); break;
 
     // 時限爆弾
