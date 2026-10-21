@@ -1447,6 +1447,15 @@ body.neon .intro-back { border-color: color-mix(in srgb, var(--nc) 60%, transpar
 @keyframes bbCard { from { transform: scale(.6) rotate(-6deg); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes bbText { from { transform: scale(3) rotate(-12deg); opacity: 0; } to { transform: rotate(-4deg); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .bigboom, #app.bb-shake { animation: none !important; } .bigboom { display: none; } }
+/* 傾けたらアウト：ふたりで（深夜だけ） */
+.tl-pairsel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.tl-pairsel button { padding: 9px 4px; border-radius: 12px; white-space: nowrap; border: 1.5px solid color-mix(in srgb, var(--card-fg) 25%, transparent); font-weight: 900; font-size: 13px; color: var(--card-fg); opacity: .6; }
+.tl-pairsel button small { display: block; font-size: 10px; font-weight: 700; margin-top: 2px; opacity: .8; }
+.tl-pairsel button[aria-pressed="true"] { opacity: 1; border-color: var(--deep); background: color-mix(in srgb, var(--deep) 18%, transparent); }
+.tl-pairsel button[data-v="1"][aria-pressed="true"] { color: var(--deep); }
+.tl-duo { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.tl-duo .hand-who { min-width: 0; }
+.tl-x { font-family: var(--display); font-size: 28px; color: var(--deep); }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
@@ -1661,7 +1670,7 @@ function newGame(mode, again = false) {
   if (mode === "voice") { S.game.doer = -1; S.game.vc = { phase: "intro", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [] }; render(true); return; }
   if (mode === "stop") { S.game.doer = -1; S.game.sp = { phase: "intro", dir: ((v) => (["up", "blind"].includes(v) ? v : "down"))(store.get("nd_spdir", "down")), round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), exact: Array(n).fill(0), losers: [] }; render(true); return; }
   if (mode === "shake") { S.game.doer = -1; S.game.sk = { phase: "intro", round: 0, k: 0, cnt: Array(n).fill(null), best: Array(n).fill(null), tapped: Array(n).fill(false), losers: [] }; render(true); return; }
-  if (mode === "tilt") { S.game.doer = -1; S.game.tl = { phase: "intro", k: 0, max: Array(n).fill(null), tries: Array(n).fill(0), outs: Array(n).fill(0) }; render(true); return; }
+  if (mode === "tilt") { S.game.doer = -1; S.game.tl = { phase: "intro", k: 0, pair: false, mate: null, max: Array(n).fill(null), tries: Array(n).fill(0), outs: Array(n).fill(0) }; render(true); return; }
   if (mode === "pittari") { S.game.doer = -1; S.game.pt = { phase: "intro", round: 0 }; if (again) ptRound(); render(true); return; }
   if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
   if (mode === "gesture") { S.game.doer = 0; S.game.gs = { phase: "intro", sec: store.get("nd_gs_sec", 60), score: Array(n).fill(0), actor: 0, acted: 0, word: null, got: 0, endAt: 0 }; render(true); return; }
@@ -2240,9 +2249,17 @@ async function tiltAsk() {
   if (tiltSensor.perm === "granted") tiltListen();
 }
 const tiltLive = () => tiltSensor.at && Date.now() - tiltSensor.at < 1500; // センサーの値が来てるか
+// 深夜モードだけ：2人で手を合わせて、その上にスマホを乗せる。どっちが傾けても2人ともアウト（下ネタNGの人は入らへん）
+const tiltPairOk = () => S.night === "shinya" && S.members.filter((m) => !m.ng).length >= 2;
+const tiltPool = () => { const tl = S.game.tl; return tl.pair ? S.members.map((_, i) => i).filter(okForYoru) : S.members.map((_, i) => i); };
+const tiltDuo = (tl) => (tl.mate != null ? [tl.who, tl.mate] : [tl.who]);
+const tiltNames = (tl) => tiltDuo(tl).map(mName).join("と");
 function tiltBegin() {
-  const tl = S.game.tl, n = S.members.length;
-  tl.who = (tl.k) % n;
+  const tl = S.game.tl, pool = tiltPool();
+  if (tl.pair && !tiltPairOk()) tl.pair = false;
+  tl.who = pool[tl.k % pool.length];
+  // 相方はランダム（前回と同じ組はなるべく避ける）
+  if (tl.pair) { const prev = tl.mate; const c = pool.filter((i) => i !== tl.who); const c2 = c.filter((i) => i !== prev); const list = c2.length ? c2 : c; tl.mate = list[rnd(list.length)]; } else tl.mate = null;
   tiltHeat(0);
   S.game.doer = tl.who;
   tl.phase = "hand"; tl.angle = 0; tl.peak = 0; tl.outAt = 0; tl.manual = false;
@@ -2336,8 +2353,7 @@ function tiltOut() {
   stopTimer();
   tiltHeat(1);
   tl.phase = "judge"; tl.outAt = Date.now();
-  tl.tries[tl.who]++; tl.outs[tl.who]++;
-  if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
+  tiltDuo(tl).forEach((i) => { tl.tries[i]++; tl.outs[i]++; if (!tl.manual) tl.max[i] = Math.max(tl.max[i] ?? 0, tl.peak); });
   g.turn++;
   // ちょっとためてから判定を出す
   tl.phase = "out"; play("boom"); vib([120, 60, 200]);
@@ -2348,8 +2364,7 @@ function tiltSafe() {
   stopTimer();
   tiltHeat(0);
   tl.phase = "judge";
-  tl.tries[tl.who]++;
-  if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
+  tiltDuo(tl).forEach((i) => { tl.tries[i]++; if (!tl.manual) tl.max[i] = Math.max(tl.max[i] ?? 0, tl.peak); });
   g.turn++;
   tl.phase = "safe"; play("fanfare");
   render(true);
@@ -4636,14 +4651,19 @@ function vShake() {
 function vTiltCard() {
   const g = S.game, tl = g.tl, lim = tiltLimit();
   switch (tl.phase) {
-    case "hand": return `<div class="odai mode-card center" id="card">
-      <p class="prog">第${Math.floor(tl.k / S.members.length) + 1}回戦・${tl.k % S.members.length + 1}/${S.members.length}人目</p>
+    case "hand": { const pn = tiltPool().length; return tl.mate != null ? `<div class="odai mode-card center deep" id="card">
+      <p class="prog">第${Math.floor(tl.k / pn) + 1}回戦・${tl.k % pn + 1}/${pn}組目</p>
+      <div class="tl-duo">${bigWho(tl.who)}<span class="tl-x">×</span>${bigWho(tl.mate)}</div>
+      <p class="hand-note">2人で向かい合って、片手ずつ<b>手のひらをぴったり合わせて</b>並べる。<br>その上にスマホを平らに乗せて10秒キープ。<br>どっちが傾けても<b>2人ともアウト</b></p>
+      <p class="tl-lim">${lim}°<small>超えたら2人ともアウト</small></p>
+    </div>` : `<div class="odai mode-card center" id="card">
+      <p class="prog">第${Math.floor(tl.k / pn) + 1}回戦・${tl.k % pn + 1}/${pn}人目</p>
       ${bigWho(tl.who, "の番")}
       <p class="hand-note">画面を上にして、手のひらに平らに乗せて。<br>周りは触らんかったら、しゃべって邪魔してOK</p>
       <p class="tl-lim">${lim}°<small>超えたらアウト</small></p>
-    </div>`;
+    </div>`; }
     case "count": return `<div class="odai mode-card center" id="card">
-      <p class="prog">${mName(tl.who)}、動くな…</p>
+      <p class="prog">${tiltNames(tl)}、動くな…</p>
       <p class="tl-count">${tl.n}</p>
       <p class="hand-note">0になった瞬間の向きが0°</p>
     </div>`;
@@ -4662,25 +4682,25 @@ function vTiltCard() {
     case "out": return `<div class="odai batsu mode-card center ${S.anim ? "shake" : ""}" id="card">
       <p class="tl-big q-ng">アウト！</p>
       ${tl.manual ? "" : `<p class="tl-deg"><b>${tl.peak.toFixed(1)}</b>°<small> 傾いた</small></p>`}
-      <p class="hand-note">${tl.manual ? "みんなの判定でアウト" : `${((tl.outAt - tl.startAt) / 1000).toFixed(1)}秒で${lim}°を超えた`}</p>
+      <p class="hand-note">${tl.manual ? "みんなの判定でアウト" : `${((tl.outAt - tl.startAt) / 1000).toFixed(1)}秒で${lim}°を超えた`}${tl.mate != null ? `<br>${tiltNames(tl)}は2人とも罰` : ""}</p>
     </div>`;
     case "safe": return `<div class="odai lucky mode-card center" id="card">
       <p class="tl-big q-ok">セーフ！</p>
       ${tl.manual ? "" : `<p class="tl-deg"><b>${tl.peak.toFixed(1)}</b>°<small> まで（最大）</small></p>`}
-      <p class="hand-note">${TILT_SEC}秒キープ成功。${mName(tl.who)}は罰なし</p>
+      <p class="hand-note">${TILT_SEC}秒キープ成功。${tiltNames(tl)}は罰なし</p>
     </div>`;
     case "batsu": return vCard();
   }
   return "";
 }
 function vTiltControls() {
-  const g = S.game, tl = g.tl, n = S.members.length, last = tl.k % n === n - 1; // その回戦の最後の人
-  const nextName = mName((tl.k + 1) % n);
+  const g = S.game, tl = g.tl, pool = tiltPool(), n = pool.length, last = tl.k % n === n - 1; // その回戦の最後の人（組）
+  const nextName = mName(pool[(tl.k + 1) % n]) + (tl.pair ? "の組" : "");
   switch (tl.phase) {
     case "hand": return `<button class="big" data-act="tiltReady">準備OK → カウントダウン</button>`;
     case "count": return `<p class="hint">スマホを動かさんといて</p>`;
     case "play": return tl.manual ? `<button class="big has-pen" data-act="tiltManualOut">傾いた！アウト</button>` : `<p class="hint">${lim0()}</p>`;
-    case "out": return `<button class="big has-pen" data-act="tiltGacha">${mName(tl.who)}に罰ガチャ</button>`;
+    case "out": return `<button class="big has-pen" data-act="tiltGacha">${tiltNames(tl)}に罰ガチャ</button>`;
     case "safe": return last ? roundEnd("tiltNext") : `<button class="big" data-act="tiltNext">次は${nextName}</button>`;
     case "batsu": return last ? roundEnd("tiltAccept", true) : `<button class="big" data-act="tiltAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次は${nextName}</button>`;
   }
@@ -4691,7 +4711,8 @@ function vTilt() {
   const tl = S.game.tl;
   if (tl.phase === "intro") {
     const none = typeof window.DeviceOrientationEvent === "undefined";
-    return vIntroStage("tilt", { extra: `${lvBox(`${tiltLimit()}°を超えたらアウト（ゆるめ5°・普通3°・地獄1°）`, false)}<p class="how-note">${none ? "このブラウザは角度がとられへんので、みんなの目で判定するモードになる" : "iPhoneは次に「動きと方向へのアクセス」を聞かれるので「許可」を押してな"}</p>`, btn: "スタート", act: "tiltStart" });
+    const pairSel = tiltPairOk() ? `<div class="tl-pairsel" role="group" aria-label="遊び方"><button data-act="tiltPair" data-v="0" aria-pressed="${!tl.pair}">ひとりで</button><button data-act="tiltPair" data-v="1" aria-pressed="${tl.pair}">ふたりで手を合わせて</button></div>` : "";
+    return vIntroStage("tilt", { extra: `${pairSel}${lvBox(`${tiltLimit()}°を超えたらアウト（ゆるめ5°・普通3°・地獄1°）`, false)}<p class="how-note">${none ? "このブラウザは角度がとられへんので、みんなの目で判定するモードになる" : "iPhoneは次に「動きと方向へのアクセス」を聞かれるので「許可」を押してな"}</p>`, btn: "スタート", act: "tiltStart" });
   }
   return `<div id="stage" class="${S.flip ? "flipped" : ""}">
     ${vBar()}
@@ -5871,10 +5892,11 @@ function onClick(e) {
     case "tiltStart": tiltAsk().finally(() => { g.tl.k = 0; tiltBegin(); render(true); }); break;
     case "tiltReady": tiltCount(); render(true); break;
     case "tiltManualOut": if (g.tl.phase === "play") tiltOut(); break;
+    case "tiltPair": g.tl.pair = b.dataset.v === "1" && tiltPairOk(); render(); break;
     case "tiltGacha": {
-      const t = g.tl.who;
-      g.add = new Map([[t, 1]]); g.addReason = "tilt";
-      g.gacha = [{ i: t, n: 1, ...drawBatsu(t) }];
+      const duo = tiltDuo(g.tl); // ふたりモードは2人とも罰
+      g.add = new Map(duo.map((t) => [t, 1])); g.addReason = "tilt";
+      g.gacha = duo.map((t) => ({ i: t, n: 1, ...drawBatsu(t) }));
       g.phase = "batsu"; g.tl.phase = "batsu"; render(true); break;
     }
     case "tiltNext": g.tl.k++; tiltBegin(); render(true); break;

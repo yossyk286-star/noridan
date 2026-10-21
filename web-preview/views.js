@@ -1512,14 +1512,19 @@ function vShake() {
 function vTiltCard() {
   const g = S.game, tl = g.tl, lim = tiltLimit();
   switch (tl.phase) {
-    case "hand": return `<div class="odai mode-card center" id="card">
-      <p class="prog">第${Math.floor(tl.k / S.members.length) + 1}回戦・${tl.k % S.members.length + 1}/${S.members.length}人目</p>
+    case "hand": { const pn = tiltPool().length; return tl.mate != null ? `<div class="odai mode-card center deep" id="card">
+      <p class="prog">第${Math.floor(tl.k / pn) + 1}回戦・${tl.k % pn + 1}/${pn}組目</p>
+      <div class="tl-duo">${bigWho(tl.who)}<span class="tl-x">×</span>${bigWho(tl.mate)}</div>
+      <p class="hand-note">2人で向かい合って、片手ずつ<b>手のひらをぴったり合わせて</b>並べる。<br>その上にスマホを平らに乗せて10秒キープ。<br>どっちが傾けても<b>2人ともアウト</b></p>
+      <p class="tl-lim">${lim}°<small>超えたら2人ともアウト</small></p>
+    </div>` : `<div class="odai mode-card center" id="card">
+      <p class="prog">第${Math.floor(tl.k / pn) + 1}回戦・${tl.k % pn + 1}/${pn}人目</p>
       ${bigWho(tl.who, "の番")}
       <p class="hand-note">画面を上にして、手のひらに平らに乗せて。<br>周りは触らんかったら、しゃべって邪魔してOK</p>
       <p class="tl-lim">${lim}°<small>超えたらアウト</small></p>
-    </div>`;
+    </div>`; }
     case "count": return `<div class="odai mode-card center" id="card">
-      <p class="prog">${mName(tl.who)}、動くな…</p>
+      <p class="prog">${tiltNames(tl)}、動くな…</p>
       <p class="tl-count">${tl.n}</p>
       <p class="hand-note">0になった瞬間の向きが0°</p>
     </div>`;
@@ -1538,25 +1543,25 @@ function vTiltCard() {
     case "out": return `<div class="odai batsu mode-card center ${S.anim ? "shake" : ""}" id="card">
       <p class="tl-big q-ng">アウト！</p>
       ${tl.manual ? "" : `<p class="tl-deg"><b>${tl.peak.toFixed(1)}</b>°<small> 傾いた</small></p>`}
-      <p class="hand-note">${tl.manual ? "みんなの判定でアウト" : `${((tl.outAt - tl.startAt) / 1000).toFixed(1)}秒で${lim}°を超えた`}</p>
+      <p class="hand-note">${tl.manual ? "みんなの判定でアウト" : `${((tl.outAt - tl.startAt) / 1000).toFixed(1)}秒で${lim}°を超えた`}${tl.mate != null ? `<br>${tiltNames(tl)}は2人とも罰` : ""}</p>
     </div>`;
     case "safe": return `<div class="odai lucky mode-card center" id="card">
       <p class="tl-big q-ok">セーフ！</p>
       ${tl.manual ? "" : `<p class="tl-deg"><b>${tl.peak.toFixed(1)}</b>°<small> まで（最大）</small></p>`}
-      <p class="hand-note">${TILT_SEC}秒キープ成功。${mName(tl.who)}は罰なし</p>
+      <p class="hand-note">${TILT_SEC}秒キープ成功。${tiltNames(tl)}は罰なし</p>
     </div>`;
     case "batsu": return vCard();
   }
   return "";
 }
 function vTiltControls() {
-  const g = S.game, tl = g.tl, n = S.members.length, last = tl.k % n === n - 1; // その回戦の最後の人
-  const nextName = mName((tl.k + 1) % n);
+  const g = S.game, tl = g.tl, pool = tiltPool(), n = pool.length, last = tl.k % n === n - 1; // その回戦の最後の人（組）
+  const nextName = mName(pool[(tl.k + 1) % n]) + (tl.pair ? "の組" : "");
   switch (tl.phase) {
     case "hand": return `<button class="big" data-act="tiltReady">準備OK → カウントダウン</button>`;
     case "count": return `<p class="hint">スマホを動かさんといて</p>`;
     case "play": return tl.manual ? `<button class="big has-pen" data-act="tiltManualOut">傾いた！アウト</button>` : `<p class="hint">${lim0()}</p>`;
-    case "out": return `<button class="big has-pen" data-act="tiltGacha">${mName(tl.who)}に罰ガチャ</button>`;
+    case "out": return `<button class="big has-pen" data-act="tiltGacha">${tiltNames(tl)}に罰ガチャ</button>`;
     case "safe": return last ? roundEnd("tiltNext") : `<button class="big" data-act="tiltNext">次は${nextName}</button>`;
     case "batsu": return last ? roundEnd("tiltAccept", true) : `<button class="big" data-act="tiltAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次は${nextName}</button>`;
   }
@@ -1567,7 +1572,8 @@ function vTilt() {
   const tl = S.game.tl;
   if (tl.phase === "intro") {
     const none = typeof window.DeviceOrientationEvent === "undefined";
-    return vIntroStage("tilt", { extra: `${lvBox(`${tiltLimit()}°を超えたらアウト（ゆるめ5°・普通3°・地獄1°）`, false)}<p class="how-note">${none ? "このブラウザは角度がとられへんので、みんなの目で判定するモードになる" : "iPhoneは次に「動きと方向へのアクセス」を聞かれるので「許可」を押してな"}</p>`, btn: "スタート", act: "tiltStart" });
+    const pairSel = tiltPairOk() ? `<div class="tl-pairsel" role="group" aria-label="遊び方"><button data-act="tiltPair" data-v="0" aria-pressed="${!tl.pair}">ひとりで</button><button data-act="tiltPair" data-v="1" aria-pressed="${tl.pair}">ふたりで手を合わせて</button></div>` : "";
+    return vIntroStage("tilt", { extra: `${pairSel}${lvBox(`${tiltLimit()}°を超えたらアウト（ゆるめ5°・普通3°・地獄1°）`, false)}<p class="how-note">${none ? "このブラウザは角度がとられへんので、みんなの目で判定するモードになる" : "iPhoneは次に「動きと方向へのアクセス」を聞かれるので「許可」を押してな"}</p>`, btn: "スタート", act: "tiltStart" });
   }
   return `<div id="stage" class="${S.flip ? "flipped" : ""}">
     ${vBar()}
@@ -2747,10 +2753,11 @@ function onClick(e) {
     case "tiltStart": tiltAsk().finally(() => { g.tl.k = 0; tiltBegin(); render(true); }); break;
     case "tiltReady": tiltCount(); render(true); break;
     case "tiltManualOut": if (g.tl.phase === "play") tiltOut(); break;
+    case "tiltPair": g.tl.pair = b.dataset.v === "1" && tiltPairOk(); render(); break;
     case "tiltGacha": {
-      const t = g.tl.who;
-      g.add = new Map([[t, 1]]); g.addReason = "tilt";
-      g.gacha = [{ i: t, n: 1, ...drawBatsu(t) }];
+      const duo = tiltDuo(g.tl); // ふたりモードは2人とも罰
+      g.add = new Map(duo.map((t) => [t, 1])); g.addReason = "tilt";
+      g.gacha = duo.map((t) => ({ i: t, n: 1, ...drawBatsu(t) }));
       g.phase = "batsu"; g.tl.phase = "batsu"; render(true); break;
     }
     case "tiltNext": g.tl.k++; tiltBegin(); render(true); break;

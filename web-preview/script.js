@@ -204,7 +204,7 @@ function newGame(mode, again = false) {
   if (mode === "voice") { S.game.doer = -1; S.game.vc = { phase: "intro", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [] }; render(true); return; }
   if (mode === "stop") { S.game.doer = -1; S.game.sp = { phase: "intro", dir: ((v) => (["up", "blind"].includes(v) ? v : "down"))(store.get("nd_spdir", "down")), round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), exact: Array(n).fill(0), losers: [] }; render(true); return; }
   if (mode === "shake") { S.game.doer = -1; S.game.sk = { phase: "intro", round: 0, k: 0, cnt: Array(n).fill(null), best: Array(n).fill(null), tapped: Array(n).fill(false), losers: [] }; render(true); return; }
-  if (mode === "tilt") { S.game.doer = -1; S.game.tl = { phase: "intro", k: 0, max: Array(n).fill(null), tries: Array(n).fill(0), outs: Array(n).fill(0) }; render(true); return; }
+  if (mode === "tilt") { S.game.doer = -1; S.game.tl = { phase: "intro", k: 0, pair: false, mate: null, max: Array(n).fill(null), tries: Array(n).fill(0), outs: Array(n).fill(0) }; render(true); return; }
   if (mode === "pittari") { S.game.doer = -1; S.game.pt = { phase: "intro", round: 0 }; if (again) ptRound(); render(true); return; }
   if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
   if (mode === "gesture") { S.game.doer = 0; S.game.gs = { phase: "intro", sec: store.get("nd_gs_sec", 60), score: Array(n).fill(0), actor: 0, acted: 0, word: null, got: 0, endAt: 0 }; render(true); return; }
@@ -783,9 +783,17 @@ async function tiltAsk() {
   if (tiltSensor.perm === "granted") tiltListen();
 }
 const tiltLive = () => tiltSensor.at && Date.now() - tiltSensor.at < 1500; // センサーの値が来てるか
+// 深夜モードだけ：2人で手を合わせて、その上にスマホを乗せる。どっちが傾けても2人ともアウト（下ネタNGの人は入らへん）
+const tiltPairOk = () => S.night === "shinya" && S.members.filter((m) => !m.ng).length >= 2;
+const tiltPool = () => { const tl = S.game.tl; return tl.pair ? S.members.map((_, i) => i).filter(okForYoru) : S.members.map((_, i) => i); };
+const tiltDuo = (tl) => (tl.mate != null ? [tl.who, tl.mate] : [tl.who]);
+const tiltNames = (tl) => tiltDuo(tl).map(mName).join("と");
 function tiltBegin() {
-  const tl = S.game.tl, n = S.members.length;
-  tl.who = (tl.k) % n;
+  const tl = S.game.tl, pool = tiltPool();
+  if (tl.pair && !tiltPairOk()) tl.pair = false;
+  tl.who = pool[tl.k % pool.length];
+  // 相方はランダム（前回と同じ組はなるべく避ける）
+  if (tl.pair) { const prev = tl.mate; const c = pool.filter((i) => i !== tl.who); const c2 = c.filter((i) => i !== prev); const list = c2.length ? c2 : c; tl.mate = list[rnd(list.length)]; } else tl.mate = null;
   tiltHeat(0);
   S.game.doer = tl.who;
   tl.phase = "hand"; tl.angle = 0; tl.peak = 0; tl.outAt = 0; tl.manual = false;
@@ -879,8 +887,7 @@ function tiltOut() {
   stopTimer();
   tiltHeat(1);
   tl.phase = "judge"; tl.outAt = Date.now();
-  tl.tries[tl.who]++; tl.outs[tl.who]++;
-  if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
+  tiltDuo(tl).forEach((i) => { tl.tries[i]++; tl.outs[i]++; if (!tl.manual) tl.max[i] = Math.max(tl.max[i] ?? 0, tl.peak); });
   g.turn++;
   // ちょっとためてから判定を出す
   tl.phase = "out"; play("boom"); vib([120, 60, 200]);
@@ -891,8 +898,7 @@ function tiltSafe() {
   stopTimer();
   tiltHeat(0);
   tl.phase = "judge";
-  tl.tries[tl.who]++;
-  if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
+  tiltDuo(tl).forEach((i) => { tl.tries[i]++; if (!tl.manual) tl.max[i] = Math.max(tl.max[i] ?? 0, tl.peak); });
   g.turn++;
   tl.phase = "safe"; play("fanfare");
   render(true);

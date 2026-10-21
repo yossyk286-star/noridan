@@ -15,6 +15,7 @@ import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { GachaItem, Level, Member, Night } from '../types';
 import { batsuCue } from '../lib/fx';
+import { Tap } from '../components/Tap';
 
 type Props = {
   members: Member[];
@@ -52,8 +53,17 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   decks.night = night;
   decks.level = level;
   const [phase, setPhase] = useState<Phase>(skipIntro ? 'hand' : 'intro');
-  const [k, setK] = useState(0); // 何人目か
-  const who = k % n;
+  const [k, setK] = useState(0); // 何人目（何組目）か
+  // 深夜モードだけ：2人で手を合わせて、その上にスマホを乗せる。どっちが傾けても2人ともアウト（下ネタNGの人は入らへん）
+  const pairOk = night === 'shinya' && members.filter((m) => !m.ng).length >= 2;
+  const [pairOn, setPairOn] = useState(false);
+  const pair = pairOn && pairOk;
+  const pool = pair ? members.map((_, i) => i).filter((i) => !members[i].ng) : members.map((_, i) => i);
+  const pn = pool.length;
+  const who = pool[k % pn];
+  const [mate, setMate] = useState<number | null>(null);
+  const duo = pair && mate != null ? [who, mate] : [who];
+  const duoName = duo.map((i) => members[i].name).join('と');
   const [count, setCount] = useState(3);
   const [left, setLeft] = useState(SEC);
   const [angle, setAngle] = useState(0);
@@ -131,6 +141,14 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   const begin = (next: number) => {
     clear();
     setK(next);
+    // 相方はランダム（前回と同じ組はなるべく避ける）
+    if (pair) {
+      const w = pool[next % pn];
+      const c = pool.filter((i) => i !== w);
+      const c2 = c.filter((i) => i !== mate);
+      const list = c2.length ? c2 : c;
+      setMate(list[Math.floor(Math.random() * list.length)]);
+    } else setMate(null);
     setAngle(0);
     setPeak(0);
     peakRef.current = 0;
@@ -173,7 +191,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     timers.current.push(setTimeout(tick, 100));
   };
   const record = (isManual: boolean) => {
-    if (!isManual) maxOf[who] = Math.max(maxOf[who] ?? 0, peakRef.current);
+    if (!isManual) duo.forEach((i) => (maxOf[i] = Math.max(maxOf[i] ?? 0, peakRef.current)));
     setPeak(peakRef.current);
     setTries((t) => t + 1);
   };
@@ -197,7 +215,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   };
   const doGacha = () => {
-    const items = [{ i: who, n: 1, ...decks.batsu(members, who) }];
+    const items = duo.map((i) => ({ i, n: 1, ...decks.batsu(members, i) })); // ふたりモードは2人とも罰
     setGacha(items);
     setPhase('batsu');
     batsuCue(items, members);
@@ -248,8 +266,8 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   const pal = STAGE[level];
   const fg = pal.cardFg;
   const frame = phase === 'intro' ? C.muted : mix(colorOf(who), '#ff2a2a', heat);
-  const nextName = members[(k + 1) % n].name;
-  const last = k % n === n - 1; // その回戦の最後の人
+  const nextName = members[pool[(k + 1) % pn]].name + (pair ? 'の組' : '');
+  const last = k % pn === pn - 1; // その回戦の最後の人（組）
 
   let card: React.ReactNode = null;
   let controls: React.ReactNode = null;
@@ -257,6 +275,15 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     case 'intro':
       card = (
         <IntroCard pal={pal} mode="tilt" tag={`${n}人`}>
+          {pairOk && (
+            <View style={s.pairSel}>
+              {([false, true] as const).map((v) => (
+                <Tap key={String(v)} onPress={() => setPairOn(v)} accessibilityState={{ selected: pair === v }} style={[s.pairBtn, { borderColor: pair === v ? C.deep : alpha('#888888', 0.4) }, pair === v && { backgroundColor: alpha(C.deep, 0.15) }]}>
+                  <Text style={[s.pairText, { color: pair === v && v ? C.deep : fg, opacity: pair === v ? 1 : 0.6 }]}>{v ? 'ふたりで手を合わせて' : 'ひとりで'}</Text>
+                </Tap>
+              ))}
+            </View>
+          )}
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${lim}°を超えたらアウト`} note="ゆるめ5°・普通3°・地獄1°" />
           {sensor === 'none' && <Text style={[s.small, { color: fg }]}>このスマホは角度がとられへんので、みんなの目で判定するモードになる</Text>}
         </IntroCard>
@@ -265,20 +292,34 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
       break;
     case 'hand':
       card = (
-        <ModeCard pal={pal} center>
-          <Prog fg={fg}>{`第${Math.floor(k / n) + 1}回戦・${(k % n) + 1}/${n}人目`}</Prog>
-          <HandWho members={members} i={who} sub="の番" fg={fg} />
-          <Note fg={fg}>{'画面を上にして、手のひらに平らに乗せて。\n周りは触らんかったら、しゃべって邪魔してOK'}</Note>
-          <Text style={[s.lim, { color: fg }]}>{lim}°</Text>
-          <Text style={[s.small, { color: fg }]}>超えたらアウト</Text>
-        </ModeCard>
+        duo.length > 1 ? (
+          <ModeCard pal={pal} center bg="#120c1d" edge={C.deep}>
+            <Prog fg="#fff">{`第${Math.floor(k / pn) + 1}回戦・${(k % pn) + 1}/${pn}組目`}</Prog>
+            <View style={s.duo}>
+              <View style={{ flex: 1 }}><HandWho members={members} i={duo[0]} fg="#fff" /></View>
+              <Text style={s.x}>×</Text>
+              <View style={{ flex: 1 }}><HandWho members={members} i={duo[1]} fg="#fff" /></View>
+            </View>
+            <Note fg="#fff">{'2人で向かい合って、片手ずつ手のひらをぴったり合わせて並べる。\nその上にスマホを平らに乗せて10秒キープ。\nどっちが傾けても2人ともアウト'}</Note>
+            <Text style={[s.lim, { color: '#fff' }]}>{lim}°</Text>
+            <Text style={[s.small, { color: '#fff' }]}>超えたら2人ともアウト</Text>
+          </ModeCard>
+        ) : (
+          <ModeCard pal={pal} center>
+            <Prog fg={fg}>{`第${Math.floor(k / pn) + 1}回戦・${(k % pn) + 1}/${pn}人目`}</Prog>
+            <HandWho members={members} i={who} sub="の番" fg={fg} />
+            <Note fg={fg}>{'画面を上にして、手のひらに平らに乗せて。\n周りは触らんかったら、しゃべって邪魔してOK'}</Note>
+            <Text style={[s.lim, { color: fg }]}>{lim}°</Text>
+            <Text style={[s.small, { color: fg }]}>超えたらアウト</Text>
+          </ModeCard>
+        )
       );
       controls = <BigButton pal={pal} label="準備OK → カウントダウン" onPress={countdown} />;
       break;
     case 'count':
       card = (
         <ModeCard pal={pal} center>
-          <Prog fg={fg}>{`${members[who].name}、動くな…`}</Prog>
+          <Prog fg={fg}>{`${duoName}、動くな…`}</Prog>
           <Text style={[s.count, { color: fg }]}>{count}</Text>
           <Note fg={fg}>0になった瞬間の向きが0°</Note>
         </ModeCard>
@@ -343,10 +384,10 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
               <Text style={s.degSub}>° 傾いた</Text>
             </Text>
           )}
-          <Note fg="#f7f3ea">{manual ? 'みんなの判定でアウト' : `${outSec.toFixed(1)}秒で${lim}°を超えた`}</Note>
+          <Note fg="#f7f3ea">{(manual ? 'みんなの判定でアウト' : `${outSec.toFixed(1)}秒で${lim}°を超えた`) + (duo.length > 1 ? `\n${duoName}は2人とも罰` : '')}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} danger label={`${members[who].name}に罰ガチャ`} onPress={doGacha} />;
+      controls = <BigButton pal={pal} danger label={`${duoName}に罰ガチャ`} onPress={doGacha} />;
       break;
     case 'safe':
       card = (
@@ -358,7 +399,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
               <Text style={s.degSub}>° まで（最大）</Text>
             </Text>
           )}
-          <Note fg={fg}>{`${SEC}秒キープ成功。${members[who].name}は罰なし`}</Note>
+          <Note fg={fg}>{`${SEC}秒キープ成功。${duoName}は罰なし`}</Note>
         </ModeCard>
       );
       controls = last ? <RoundEnd pal={pal} next="もう1回戦" onNext={() => begin(k + 1)} onEnd={() => finish()} /> : <BigButton pal={pal} label={`次は${nextName}`} onPress={() => begin(k + 1)} />;
@@ -427,4 +468,9 @@ const s = StyleSheet.create({
   deg: { fontFamily: F.display, fontSize: 56, lineHeight: 64 },
   degSub: { fontSize: 16, opacity: 0.6 },
   big: { fontFamily: F.display, fontSize: 64, lineHeight: 72 },
+  pairSel: { flexDirection: 'row', gap: 8, width: '100%' },
+  pairBtn: { flex: 1, paddingVertical: 9, borderRadius: 12, borderWidth: 1.5, alignItems: 'center' },
+  pairText: { fontSize: 13, fontWeight: '900' },
+  duo: { flexDirection: 'row', alignItems: 'center', width: '100%' },
+  x: { fontFamily: F.display, fontSize: 28, color: C.deep },
 });

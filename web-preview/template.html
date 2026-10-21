@@ -1447,6 +1447,15 @@ body.neon .intro-back { border-color: color-mix(in srgb, var(--nc) 60%, transpar
 @keyframes bbCard { from { transform: scale(.6) rotate(-6deg); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes bbText { from { transform: scale(3) rotate(-12deg); opacity: 0; } to { transform: rotate(-4deg); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .bigboom, #app.bb-shake { animation: none !important; } .bigboom { display: none; } }
+/* 傾けたらアウト：ふたりで（深夜だけ） */
+.tl-pairsel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.tl-pairsel button { padding: 9px 4px; border-radius: 12px; white-space: nowrap; border: 1.5px solid color-mix(in srgb, var(--card-fg) 25%, transparent); font-weight: 900; font-size: 13px; color: var(--card-fg); opacity: .6; }
+.tl-pairsel button small { display: block; font-size: 10px; font-weight: 700; margin-top: 2px; opacity: .8; }
+.tl-pairsel button[aria-pressed="true"] { opacity: 1; border-color: var(--deep); background: color-mix(in srgb, var(--deep) 18%, transparent); }
+.tl-pairsel button[data-v="1"][aria-pressed="true"] { color: var(--deep); }
+.tl-duo { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.tl-duo .hand-who { min-width: 0; }
+.tl-x { font-family: var(--display); font-size: 28px; color: var(--deep); }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
