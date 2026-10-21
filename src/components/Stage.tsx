@@ -186,9 +186,10 @@ export function NextUp({ pal, name, color }: { pal: Pal; name: string; color: st
 /** 札の後ろに山札を重ねて見せる */
 export function DeckStack({ pal, children, minHeight = 280 }: { pal: Pal; children: React.ReactNode; minHeight?: number }) {
   return (
-    <View style={{ flex: 1, minHeight }}>
-      <View style={[styles.stack, { backgroundColor: pal.cardBg, opacity: 0.32, transform: [{ rotate: '-1.8deg' }, { translateY: 8 }] }]} />
-      <View style={[styles.stack, { backgroundColor: pal.cardBg, opacity: 0.55, transform: [{ rotate: '2.6deg' }, { translateY: 4 }] }]} />
+    // 後ろの山札はこの箱の中に収める（下の文字やボタンに被らんように、札の下に14px空けてそこに覗かせる）
+    <View style={{ flex: 1, minHeight, paddingBottom: 14 }}>
+      <View style={[styles.stack, { backgroundColor: pal.cardBg, opacity: 0.32, transform: [{ rotate: '-0.8deg' }, { translateY: 8 }] }]} />
+      <View style={[styles.stack, { backgroundColor: pal.cardBg, opacity: 0.55, transform: [{ rotate: '1.1deg' }, { translateY: 4 }] }]} />
       {children}
     </View>
   );
@@ -990,7 +991,7 @@ const styles = StyleSheet.create({
   nextText: { fontSize: 13, fontWeight: '900' },
   avSm: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   avSmText: { color: '#141210', fontSize: 11, fontWeight: '900' },
-  stack: { position: 'absolute', left: 12, right: 12, top: 14, bottom: -2, borderRadius: 22 },
+  stack: { position: 'absolute', left: 14, right: 14, top: 14, bottom: 11, borderRadius: 22 },
   tools: { flexDirection: 'row', gap: 6 },
   pill: { paddingVertical: 9, paddingHorizontal: 12, borderRadius: 999 },
   pillText: { fontWeight: '900', fontSize: 13 },
