@@ -1462,6 +1462,19 @@ body.neon .intro-back { border-color: color-mix(in srgb, var(--nc) 60%, transpar
 .mem .sex button + button { border-left: 1px solid var(--line); }
 .mem .sex button.m[aria-pressed="true"] { background: #3ec7ff; color: #0b1a24; }
 .mem .sex button.f[aria-pressed="true"] { background: #ff5aa5; color: #2a0716; }
+/* 深夜だけのモード（目隠し当て・ポッキー） */
+.mode.deep-mode { box-shadow: 0 0 0 2px var(--deep), 0 6px 0 rgba(0,0,0,.35); }
+.mode.deep-mode .mode-ic { color: var(--deep); }
+.bl-l { margin: 4px 0 0; font-size: 12px; font-weight: 800; opacity: .6; }
+.bl-touch { margin: 0; font-family: var(--display); font-size: clamp(24px, 8vw, 34px); color: var(--deep); text-shadow: 0 0 10px color-mix(in srgb, var(--deep) 50%, transparent); }
+.pk-go { font-size: clamp(36px, 12vw, 54px) !important; color: var(--deep); }
+.pk-res { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pk-res .big { font-size: 15px; padding: 14px 8px; }
+.pk-res .ghost, .pk-res .pk-full { grid-column: span 1; }
+.pk-res .pk-full { background: var(--deep); color: #fff; }
+.bl-grid { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 8px; }
+.bl-grid .pen-tile { min-height: 64px; width: 100%; }
+.bl-grid .pen-tile .nm { font-size: 18px; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

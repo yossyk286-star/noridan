@@ -183,10 +183,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
@@ -209,6 +209,8 @@ function newGame(mode, again = false) {
   if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: store.get("nd_wf_min", 3), count: store.get("nd_wf_n", 0), peace: store.get("nd_wf_peace", true), wolves: [] }; render(true); return; }
   if (mode === "rtap") { S.game.doer = -1; S.game.rt = { phase: "intro", round: 0 }; if (again) rtRound(); render(true); return; }
   if (mode === "bpass") { S.game.doer = -1; S.game.bp = { phase: "intro", round: 0 }; if (again) bpRound(); render(true); return; }
+  if (mode === "blind") { S.game.doer = -1; S.game.bl = { phase: "intro", k: 0, hits: Array(n).fill(0), fool: Array(n).fill(0) }; if (again) blRound(); render(true); return; }
+  if (mode === "pocky") { S.game.doer = -1; S.game.pk = { phase: "intro", k: 0, mate: null, full: Array(n).fill(0) }; if (again) pkRound(); render(true); return; }
   if (mode === "hilo") { S.game.doer = -1; S.game.hl = { phase: "intro", round: 0, best: 0, hits: Array(n).fill(0) }; if (again) hlRound(); render(true); return; }
   if (mode === "reflex") { S.game.doer = -1; S.game.rf = { phase: "intro", style: store.get("nd_rfstyle", "solo") === "multi" ? "multi" : "solo", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [], timers: [] }; render(true); return; }
   if (mode === "voice") { S.game.doer = -1; S.game.vc = { phase: "intro", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [] }; render(true); return; }
@@ -514,6 +516,8 @@ function titles() {
   if (g.mode === "tilt" && g.tl) { const tl = g.tl, ok = S.members.map((_, i) => i).filter((i) => tl.tries[i] && tl.max[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => tl.max[i])); add("鋼の手", ok.filter((i) => tl.max[i] === m), `最大でも ${m.toFixed(1)}°`); } }
   if (g.mode === "reflex" && g.rf) { const ok = S.members.map((_, i) => i).filter((i) => g.rf.best[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => g.rf.best[i])); add("反射神経王", ok.filter((i) => g.rf.best[i] === m), `最速 ${m}ミリ秒`); } }
   if (g.mode === "voice" && g.vc) { const b = g.vc.best.map((v) => v ?? 0); const t = top(b, 1); if (t) add("声量おばけ", t, `最大 ${b[t[0]]}`); }
+  if (g.mode === "blind" && g.bl) { const t = top(g.bl.hits, 1); if (t) add("触覚の達人", t, `当てた ${g.bl.hits[t[0]]}回`); const f = top(g.bl.fool, 1); if (f) add("気配を消す人", f, `バレへんかった ${g.bl.fool[f[0]]}回`); }
+  if (g.mode === "pocky" && g.pk) { const t = top(g.pk.full, 1); if (t) add("ポッキー完走", t, `最後まで ${g.pk.full[t[0]]}回`); }
   if (g.mode === "hilo" && g.hl) { const t = top(g.hl.hits, 2); if (t) add("読みの達人", t, `当てた ${g.hl.hits[t[0]]}回`); }
   if (g.mode === "stop" && g.sp) { const t = top(g.sp.exact, 1); if (t) add("ピタ止め職人", t, `ピッタリ ${g.sp.exact[t[0]]}回`); }
   if (g.mode === "shake" && g.sk) { const b = g.sk.best.map((v) => v ?? 0); const t = top(b, 1); if (t && S.members.length > 1) add("シェイク王", t, `10秒で ${b[t[0]]}回`); }
@@ -1192,6 +1196,52 @@ function bpBoom() {
   play("bigboom"); vib([300, 60, 120, 60, 400]);
   render(true);
   bigBoom(); // 画面ごと吹っ飛ぶ演出
+}
+
+// ---------- 深夜だけの接触系（目隠し当て・ポッキーゲーム） ----------
+// 下ネタNGの人は入らへん。組む相手はなるべく異性（sexPrefer）
+const nightPool = () => S.members.map((_, i) => i).filter(okForYoru);
+// 目隠し当て：番の人が目をつぶって、アプリが決めた人がそっと触る。誰やったか当てる。当てたら触った人、外したら当てた人が罰
+const BL_SEC = 5; // 触る時間（秒）
+const BL_TOUCH = ["両手で手を握る", "手のひらを合わせる", "頭をなでる", "ほっぺを指でつつく", "肩をもむ", "手の甲をなでる", "腕をつかむ", "耳たぶをつまむ", "背中をトントンする", "指を絡める", "肩に頭を乗せる", "首の後ろに息をかける"];
+function blRound() {
+  const g = S.game, bl = g.bl, pool = nightPool();
+  bl.who = pool[bl.k % pool.length];
+  const prev = bl.toucher;
+  const c = sexPrefer(bl.who, pool.filter((i) => i !== bl.who));
+  const c2 = c.filter((i) => i !== prev);
+  bl.toucher = pick(c2.length ? c2 : c);
+  bl.touch = pick(BL_TOUCH);
+  bl.guess = null; bl.ok = null;
+  g.doer = bl.who; bl.phase = "close";
+}
+function blGuess(i) {
+  const g = S.game, bl = g.bl;
+  bl.guess = i; bl.ok = i === bl.toucher; g.turn++;
+  if (bl.ok) bl.hits[bl.who]++; else bl.fool[bl.toucher]++;
+  bl.loser = bl.ok ? bl.toucher : bl.who;
+  hold("正解は…", 1800, () => { bl.phase = "reveal"; play(bl.ok ? "pinpon" : "buzzer"); });
+  render();
+}
+// ポッキーゲーム：2人で両端をくわえて交互に食べ進める。先に離した方が罰、折れたら2人とも罰、最後まで行けたらセーフ
+function pkRound() {
+  const g = S.game, pk = g.pk, pool = nightPool();
+  pk.who = pool[pk.k % pool.length];
+  const prev = pk.mate;
+  const c = sexPrefer(pk.who, pool.filter((i) => i !== pk.who));
+  const c2 = c.filter((i) => i !== prev);
+  pk.mate = pick(c2.length ? c2 : c);
+  pk.losers = []; g.doer = pk.who; pk.phase = "ready";
+}
+function pkEnd(kind) {
+  const g = S.game, pk = g.pk;
+  g.turn++;
+  pk.kind = kind;
+  pk.losers = kind === "who" ? [pk.who] : kind === "mate" ? [pk.mate] : kind === "broke" ? [pk.who, pk.mate] : [];
+  if (kind === "full") { pk.full[pk.who]++; pk.full[pk.mate]++; }
+  pk.phase = pk.losers.length ? "lose" : "safe";
+  play(pk.losers.length ? "buzzer" : "fanfare");
+  if (pk.losers.length) vib([80, 40, 160]);
 }
 
 // ---------- ハイ&ロー ----------
