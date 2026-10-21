@@ -1,4 +1,3 @@
-import { Animated, Easing } from 'react-native';
 import { GACHA_MS } from '../components/Fx';
 import { play } from './sound';
 import { Vibration } from './vibe';
@@ -18,14 +17,6 @@ export function onFx(fn: Listener) {
 }
 const emit = (e: FxEvent) => listeners.forEach((fn) => fn(e));
 
-/** 画面全体のグラッ（App のいちばん外側の View がこれで横に揺れる） */
-export const quakeX = new Animated.Value(0);
-function quake() {
-  quakeX.setValue(0);
-  const seq = [-8, 8, -7, 6, -4, 3, -1, 0];
-  Animated.sequence(seq.map((x) => Animated.timing(quakeX, { toValue: x, duration: 55, easing: Easing.linear, useNativeDriver: true }))).start();
-}
-
 // 同じ人が続けて罰になった回数（ゲームを始めるたびにリセット）
 let streak: Record<number, number> = {};
 export function resetStreak() {
@@ -38,7 +29,7 @@ export function cancelFx() {
 
 /**
  * 罰が決まった瞬間：ガチャのガラガラ → カプセルが割れたら
- * 罰は情けない音＋グラッ＋赤いフチ／ラッキーはキラキラ＋金の紙吹雪。続けて罰の人は「2連続！」
+ * 罰は情けない音＋赤いフチ／ラッキーはキラキラ＋金の紙吹雪。続けて罰の人は「2連続！」
  */
 export function batsuCue(items: { i: number; lucky?: boolean }[], members: { name: string }[], gacha = true) {
   if (!items.length) return;
@@ -58,8 +49,7 @@ export function batsuCue(items: { i: number; lucky?: boolean }[], members: { nam
       Vibration.vibrate(30);
     } else {
       play(Math.random() < 0.5 ? 'sad' : 'chin');
-      quake();
-      emit({ kind: 'quake' });
+      emit({ kind: 'quake' }); // 赤いフチだけ（罰ガチャの画面は揺らさへん）
       Vibration.vibrate([0, 60, 40, 120]);
     }
     if (top != null && members[top]) {

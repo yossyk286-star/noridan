@@ -2305,7 +2305,7 @@ function confetti(cols = ["#ffd23f", "#ff5aa5", "#3ec7ff", "#7be36b", "#ff8a1a",
   setTimeout(() => box.remove(), 3600);
 }
 
-// 罰が決まった瞬間：情けない音＋画面がグラッと揺れて赤く光る／ラッキーはキラキラ＋金の紙吹雪。
+// 罰が決まった瞬間：情けない音＋フチが赤く光る／ラッキーはキラキラ＋金の紙吹雪。
 // 同じ人が続けて罰やったら「2連続！」。ガチャのマシンが回る時は、カプセルが割れてから
 const cuedGacha = new WeakSet();
 function batsuCue() {
@@ -2331,10 +2331,8 @@ function batsuCue() {
   if (intro) S.cueTs.push(setTimeout(fx, GACHA_T * 1000 + 60)); else fx();
   return "";
 }
-// 罰：画面がグラッと揺れて、フチが赤く光る
+// 罰：フチが赤く光る（罰ガチャの画面は揺らさへん）
 function quakeFx() {
-  app.classList.remove("quake"); void app.offsetWidth; app.classList.add("quake");
-  setTimeout(() => app.classList.remove("quake"), 600);
   const el = document.createElement("div");
   el.className = "redflash"; el.setAttribute("aria-hidden", "true");
   document.body.appendChild(el);
