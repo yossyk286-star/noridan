@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Polygon } from 'react-native-svg';
 import { onFx } from '../lib/fx';
 import { C, F } from '../theme';
 import { Confetti } from './Fx';
@@ -12,6 +12,7 @@ export default function FxLayer({ deep }: { deep: boolean }) {
   const red = useRef(new Animated.Value(0)).current;
   const [goldN, setGoldN] = useState(0);
   const [stk, setStk] = useState<{ name: string; n: number; k: number } | null>(null);
+  const [bb, setBb] = useState(0);
   useEffect(
     () =>
       onFx((e) => {
@@ -23,7 +24,8 @@ export default function FxLayer({ deep }: { deep: boolean }) {
           ]).start();
         } else if (e.kind === 'gold') {
           setGoldN((x) => x + 1);
-        } else setStk({ name: e.name, n: e.n, k: Date.now() });
+        } else if (e.kind === 'bigboom') setBb(Date.now());
+        else setStk({ name: e.name, n: e.n, k: Date.now() });
       }),
     [],
   );
@@ -33,6 +35,7 @@ export default function FxLayer({ deep }: { deep: boolean }) {
       <Animated.View style={[StyleSheet.absoluteFill, s.red, { opacity: red }]} />
       <Confetti trigger={goldN} colors={GOLD} />
       {stk && <Streak key={stk.k} name={stk.name} n={stk.n} onDone={() => setStk(null)} />}
+      {bb > 0 && <BigBoomFx key={bb} onDone={() => setBb(0)} />}
     </View>
   );
 }
@@ -67,6 +70,75 @@ function Streak({ name, n, onDone }: { name: string; n: number; onDone: () => vo
         <Text style={s.stkN}>{n}連続！</Text>
       </Animated.View>
     </Animated.View>
+  );
+}
+
+// 爆弾パスの大爆発（白い光・ギザギザの火の玉・衝撃波・破片・煙）
+const SPIKES = Array.from({ length: 22 }, (_, k) => {
+  const r = k % 2 ? 30 : 50;
+  const a = (k / 22) * Math.PI * 2;
+  return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`;
+}).join(' ');
+function BigBoomFx({ onDone }: { onDone: () => void }) {
+  const { width, height } = useWindowDimensions();
+  const v = useRef(new Animated.Value(0)).current;
+  const bits = useRef(
+    Array.from({ length: 26 }, (_, k) => {
+      const a = (k / 26) * Math.PI * 2 + Math.random() * 0.3;
+      const d = 140 + Math.random() * 220;
+      return { x: Math.cos(a) * d, y: Math.sin(a) * d + 80, r: Math.random() * 900 - 450, s: 6 + Math.random() * 10, c: ['#2a1a10', '#ff7a1a', '#ffd23f', '#4a3a30'][k % 4] };
+    }),
+  ).current;
+  useEffect(() => {
+    Animated.timing(v, { toValue: 1, duration: 1800, easing: Easing.linear, useNativeDriver: true }).start(() => onDone());
+  }, []);
+  const size = Math.max(width, height) * 1.2;
+  const cx = width / 2;
+  const cy = height * 0.45;
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#fff', opacity: v.interpolate({ inputRange: [0, 0.28], outputRange: [1, 0], extrapolate: 'clamp' }) }]} />
+      <Animated.View
+        style={{
+          position: 'absolute', left: cx - size / 2, top: cy - size / 2, width: size, height: size,
+          opacity: v.interpolate({ inputRange: [0, 0.2, 0.6], outputRange: [1, 1, 0], extrapolate: 'clamp' }),
+          transform: [
+            { scale: v.interpolate({ inputRange: [0, 0.6], outputRange: [0.05, 1.1], extrapolate: 'clamp' }) },
+            { rotate: v.interpolate({ inputRange: [0, 0.6], outputRange: ['0deg', '25deg'], extrapolate: 'clamp' }) },
+          ],
+        }}
+      >
+        <Svg width={size} height={size} viewBox="0 0 100 100">
+          <Polygon points={SPIKES} fill="#ffd23f" stroke="#ff4a00" strokeWidth={5} strokeLinejoin="round" />
+          <Polygon points={SPIKES} fill="#fff6c0" transform="translate(50 50) scale(.55) translate(-50 -50)" />
+        </Svg>
+      </Animated.View>
+      {[0, 0.07].map((d, k) => (
+        <Animated.View
+          key={k}
+          style={{
+            position: 'absolute', left: cx - 30, top: cy - 30, width: 60, height: 60, borderRadius: 30, borderWidth: 8,
+            borderColor: k ? 'rgba(255,120,30,0.7)' : 'rgba(255,240,200,0.9)',
+            opacity: v.interpolate({ inputRange: [d, d + 0.45], outputRange: [1, 0], extrapolate: 'clamp' }),
+            transform: [{ scale: v.interpolate({ inputRange: [d, d + 0.45], outputRange: [0.2, 14], extrapolate: 'clamp' }) }],
+          }}
+        />
+      ))}
+      {bits.map((b, k) => (
+        <Animated.View
+          key={k}
+          style={{
+            position: 'absolute', left: cx - b.s / 2, top: cy - b.s / 2, width: b.s, height: b.s * 0.7, borderRadius: 2, backgroundColor: b.c,
+            opacity: v.interpolate({ inputRange: [0, 0.45, 0.6], outputRange: [1, 1, 0], extrapolate: 'clamp' }),
+            transform: [
+              { translateX: v.interpolate({ inputRange: [0, 0.6], outputRange: [0, b.x], extrapolate: 'clamp' }) },
+              { translateY: v.interpolate({ inputRange: [0, 0.6], outputRange: [0, b.y], extrapolate: 'clamp' }) },
+              { rotate: v.interpolate({ inputRange: [0, 0.6], outputRange: ['0deg', `${b.r}deg`], extrapolate: 'clamp' }) },
+            ],
+          }}
+        />
+      ))}
+    </View>
   );
 }
 

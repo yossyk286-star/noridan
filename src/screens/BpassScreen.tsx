@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { Vibration } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
@@ -12,6 +11,7 @@ import type { Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, colorOf } from '../theme';
 import type { Level, Member, Night } from '../types';
 import bpassJson from '../data/bpass.json';
+import { bigBoom } from '../lib/fx';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
 type Phase = 'intro' | 'ready' | 'play' | 'boom' | 'batsu';
@@ -91,8 +91,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
       if (timer.current) clearTimeout(timer.current);
       phaseRef.current = 'boom';
       setPhase('boom');
-      play('boom');
-      Vibration.vibrate([0, 200, 80, 300]);
+      bigBoom(); // 画面ごと吹っ飛ぶ演出
     }, end - start);
     // チクタク：経過時間でだんだん速くなる（残り時間はバレへん）
     const tick = () => {
@@ -169,8 +168,8 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
       break;
     case 'boom':
       card = (
-        <ModeCard pal={pal} center bg="#1a0606" edge="#e8202a">
-          <Text style={s.boom} numberOfLines={1} adjustsFontSizeToFit>ドカーン！</Text>
+        <ModeCard pal={pal} center bg="#1a0d08" edge="#ff4a00">
+          <Text style={[s.boom, s.burnt]} numberOfLines={1} adjustsFontSizeToFit>ドカーン！</Text>
           <HandWho members={members} i={holder} sub="が持ってた" fg="#f7f3ea" />
           <Note fg="#f7f3ea">{`${passes}回パスで爆発`}</Note>
         </ModeCard>
@@ -195,6 +194,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
 }
 
 const s = StyleSheet.create({
+  burnt: { color: '#ffe14a', textShadowColor: '#ff3a00', textShadowRadius: 18, textShadowOffset: { width: 0, height: 0 }, transform: [{ rotate: '-4deg' }] },
   topicRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tier: { color: '#fff', fontSize: 11, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 1, borderRadius: 999, overflow: 'hidden' },
   topicL: { fontSize: 12, fontWeight: '800', opacity: 0.6 },

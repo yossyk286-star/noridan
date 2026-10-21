@@ -85,6 +85,8 @@ const SFX = (() => {
     // ---- 結果発表：ブーイングと笑い声 ----
     boo: () => { const r = seeded(5); for (let k = 0; k < 7; k++) voice(105 + r() * 60, 1.3, { type: "sawtooth", vol: 0.06, delay: r() * 0.12, att: 0.18, cut: 650, vib: 4, rate: 3 + r() * 3, slide: 90 + r() * 30 }); noise(1.2, 0.12, 500); },
     laugh: () => { const r = seeded(9); for (let v = 0; v < 4; v++) { const base = 210 + r() * 120, off = v * 0.05 + r() * 0.08; for (let k = 0; k < 6; k++) { const d = off + k * (0.12 + r() * 0.03); voice(base * (1 - k * 0.025), 0.09, { type: "sawtooth", vol: 0.09, delay: d, att: 0.01, cut: 950, bp: true, q: 2.2 }); noise(0.06, 0.05, 2500, d); } } },
+    // ---- 爆弾パスの大爆発：ドッカーン＋ゴゴゴ…＋パラパラ ----
+    bigboom: () => { noise(0.08, 0.9, 8000); noise(1.8, 0.85, 900, 0.02); tone(70, 1.4, "sine", 0.7, 28, 0.02); tone(140, 0.5, "sawtooth", 0.18, 40, 0.02); noise(1.2, 0.3, 300, 0.4); const r = seeded(3); for (let k = 0; k < 14; k++) noise(0.03, 0.18 + r() * 0.15, 3000 + r() * 3000, 0.5 + r() * 1.1); },
     // ---- 連続罰の「ボウッ」（炎）----
     streak: () => { noise(0.6, 0.35, 1800); voice(180, 0.55, { type: "sawtooth", vol: 0.1, att: 0.05, cut: 2000, slide: 520 }); tone(80, 0.45, "sine", 0.45, 40, 0.32); },
   };
@@ -1322,7 +1324,7 @@ function vBpass() {
     card = `<div class="odai mode-card center board-card bp-card bp-play" id="card"><p class="bp-topic-l"><span>お題</span><span class="bp-tier ${bp.tier}">${BP_TIER_LABEL[bp.tier] || ""}</span></p><p class="bp-topic">${esc(bp.topic)}</p><div class="bp-bomb" aria-hidden="true">💣</div>${bigWho(bp.holder, "が持ってる")}<p class="hand-note">${bp.passes}回パス</p></div>`;
     controls = `<button class="big bp-pass" data-act="bpPass">言えた！パス → ${mName((bp.holder + 1) % S.members.length)}</button>`;
   } else {
-    card = `<div class="odai batsu mode-card center ${S.anim ? "shake" : ""}" id="card"><p class="tl-big q-ng bp-boom-t">ドカーン！</p>${bigWho(bp.loser, "が持ってた")}<p class="hand-note">${bp.passes}回パスで爆発</p></div>`;
+    card = `<div class="odai batsu mode-card center bp-burnt ${S.anim ? "bp-blast" : ""}" id="card"><div class="bp-scorch" aria-hidden="true"></div><p class="tl-big q-ng bp-boom-t">ドカーン！</p>${bigWho(bp.loser, "が持ってた")}<p class="hand-note">${bp.passes}回パスで爆発</p></div>`;
     controls = `<button class="big has-pen" data-act="bpGacha">${mName(bp.loser)}に罰ガチャ</button>`;
   }
   return stageWrap(card, controls);
@@ -2356,6 +2358,19 @@ function streakFx({ i, n }) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 1900);
   vib([40, 30, 40, 30, 90]);
+}
+// 爆弾パスの大爆発：白く光る → 火の玉が広がる → 衝撃波 → 破片と煙が飛び散る → 画面がガタガタ揺れる
+function bigBoom() {
+  const box = document.createElement("div");
+  box.className = "bigboom"; box.setAttribute("aria-hidden", "true");
+  const spikes = Array.from({ length: 22 }, (_, k) => { const r = k % 2 ? 30 : 50, a = (k / 22) * Math.PI * 2; return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`; }).join(" ");
+  const bits = Array.from({ length: 26 }, (_, k) => { const a = (k / 26) * Math.PI * 2 + Math.random() * 0.3, d = 140 + Math.random() * 220; return `<i class="bb-bit" style="--x:${(Math.cos(a) * d).toFixed(0)}px;--y:${(Math.sin(a) * d).toFixed(0)}px;--r:${(Math.random() * 900 - 450).toFixed(0)}deg;--s:${(6 + Math.random() * 10).toFixed(0)}px;--c:${["#2a1a10", "#ff7a1a", "#ffd23f", "#4a3a30"][k % 4]};--t:${(0.6 + Math.random() * 0.5).toFixed(2)}s"></i>`; }).join("");
+  const smoke = Array.from({ length: 9 }, (_, k) => { const a = (k / 9) * Math.PI * 2, d = 60 + Math.random() * 70; return `<i class="bb-smoke" style="--x:${(Math.cos(a) * d).toFixed(0)}px;--y:${(Math.sin(a) * d - 30).toFixed(0)}px;--d:${(0.15 + Math.random() * 0.2).toFixed(2)}s;--s:${(90 + Math.random() * 70).toFixed(0)}px"></i>`; }).join("");
+  box.innerHTML = `<div class="bb-white"></div><div class="bb-ball"><svg viewBox="0 0 100 100"><polygon points="${spikes}" fill="#ffd23f" stroke="#ff4a00" stroke-width="5" stroke-linejoin="round"/><polygon points="${spikes}" fill="#fff6c0" transform="translate(50 50) scale(.55) translate(-50 -50)"/></svg></div><div class="bb-ring"></div><div class="bb-ring r2"></div>${smoke}${bits}`;
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 2200);
+  app.classList.remove("bb-shake"); void app.offsetWidth; app.classList.add("bb-shake");
+  setTimeout(() => app.classList.remove("bb-shake"), 900);
 }
 // 画面が変わった時の効果音と演出
 function cue() {

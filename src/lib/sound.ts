@@ -33,6 +33,7 @@ const FILES = {
   boo: require('../../assets/sounds/boo.wav'),
   laugh: require('../../assets/sounds/laugh.wav'),
   streak: require('../../assets/sounds/streak.wav'),
+  bigboom: require('../../assets/sounds/bigboom.wav'),
 };
 export type SoundName = keyof typeof FILES | 'jan'; // jan はお題が出る音（3種類からランダム）
 

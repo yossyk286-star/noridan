@@ -139,4 +139,11 @@ for v in range(4):
 save('laugh', b, 0.75)
 # 連続罰の「ボウッ」
 b = blank(0.85); add_noise(b, .6, .35, 1800); add_voice(b, 180, .55, 'saw', .1, 0, .05, 2000, slide=520); add_tone(b, 80, .45, 'sine', .45, 40, .32); save('streak', b, 0.8)
+# 爆弾パスの大爆発：ドッカーン＋ゴゴゴ…＋パラパラ
+b = blank(2.0); add_noise(b, .08, .9, 8000); add_noise(b, 1.8, .85, 900, .02); add_tone(b, 70, 1.4, 'sine', .7, 28, .02); add_tone(b, 140, .5, 'saw', .18, 40, .02); add_noise(b, 1.2, .3, 300, .4)
+r = seeded(3)
+for k in range(14):
+    vol = .18 + r() * .15; cut = 3000 + r() * 3000; d = .5 + r() * 1.1
+    add_noise(b, .03, vol, cut, d)
+save('bigboom', b, .95)
 print('ok')

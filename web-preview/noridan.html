@@ -1419,6 +1419,34 @@ body.neon .intro-back { border-color: color-mix(in srgb, var(--nc) 60%, transpar
 .bar .bar-res, .bar .menu-btn { width: 38px; height: 38px; }
 .bar .icon-btn.bar-btn { width: 36px; height: 36px; }
 .bar .icon-btn.bar-btn svg { width: 19px; height: 19px; }
+/* ===== 爆弾パスの大爆発 ===== */
+.bigboom { position: fixed; inset: 0; z-index: 70; pointer-events: none; overflow: hidden; }
+.bigboom > i, .bb-ball, .bb-ring { position: absolute; left: 50%; top: 45%; }
+.bb-white { position: fixed; inset: 0; background: #fff; animation: bbWhite .5s ease-out forwards; }
+@keyframes bbWhite { 0% { opacity: 1; } 100% { opacity: 0; } }
+.bb-ball { width: 120vmax; height: 120vmax; margin: -60vmax 0 0 -60vmax; animation: bbBall 1.1s cubic-bezier(.15,.8,.3,1) forwards; filter: drop-shadow(0 0 30px #ff7a1a); }
+.bb-ball svg { width: 100%; height: 100%; }
+@keyframes bbBall { 0% { transform: scale(.05) rotate(0deg); opacity: 1; } 30% { opacity: 1; } 100% { transform: scale(1.1) rotate(25deg); opacity: 0; } }
+.bb-ring { width: 60px; height: 60px; margin: -30px 0 0 -30px; box-sizing: border-box; border-radius: 50%; border: 10px solid rgba(255,240,200,.9); animation: bbRing .7s ease-out forwards; }
+.bb-ring.r2 { border-color: rgba(255,120,30,.7); animation-delay: .12s; animation-duration: .9s; }
+@keyframes bbRing { 0% { transform: scale(.2); opacity: 1; } 100% { transform: scale(14); opacity: 0; border-width: 1px; } }
+.bb-bit { width: var(--s); height: calc(var(--s) * .7); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); background: var(--c); border-radius: 2px; animation: bbBit var(--t) cubic-bezier(.1,.7,.4,1) .05s both; }
+@keyframes bbBit { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(var(--x), calc(var(--y) + 80px)) rotate(var(--r)); opacity: 0; } }
+.bb-smoke { width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); border-radius: 50%; background: radial-gradient(circle, rgba(70,60,55,.85), rgba(40,35,30,.5) 55%, transparent 72%); filter: blur(4px); animation: bbSmoke 1.8s ease-out var(--d) both; }
+@keyframes bbSmoke { 0% { transform: translate(0, 0) scale(.3); opacity: 0; } 15% { opacity: .9; } 100% { transform: translate(var(--x), var(--y)) scale(2.2); opacity: 0; } }
+#app.bb-shake { animation: bbShake .85s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes bbShake { 0% { transform: translate(0,0); } 8% { transform: translate(-18px, 10px) rotate(-2.5deg); } 16% { transform: translate(16px, -12px) rotate(2deg); } 26% { transform: translate(-14px, 6px) rotate(-1.5deg); } 36% { transform: translate(12px, -6px) rotate(1.2deg); } 48% { transform: translate(-8px, 4px) rotate(-.8deg); } 60% { transform: translate(6px, -2px); } 74% { transform: translate(-3px, 1px); } 100% { transform: none; } }
+/* 爆発のあとの札：焦げて、まだ火がくすぶってる */
+.odai.bp-burnt { --card-bg: #1a0d08; --card-fg: #fff; box-shadow: 0 0 0 3px #ff4a00, 0 0 28px rgba(255,90,0,.55), inset 0 0 50px rgba(255,80,0,.35); overflow: hidden; }
+.bp-burnt .bp-scorch { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(circle at 50% 40%, rgba(255,140,30,.35), transparent 45%), radial-gradient(circle at 20% 80%, rgba(0,0,0,.6), transparent 40%), radial-gradient(circle at 85% 15%, rgba(0,0,0,.55), transparent 35%); animation: bbEmber 1.4s ease-in-out infinite alternate; }
+.bp-burnt > *:not(.bp-scorch) { position: relative; z-index: 1; }
+@keyframes bbEmber { from { opacity: .7; } to { opacity: 1; } }
+.bp-burnt .bp-boom-t { color: #ffe14a !important; -webkit-text-stroke: 4px #8a1200; paint-order: stroke fill; text-shadow: 0 0 16px #ff5a00, 0 0 34px #ff2a00, 0 4px 0 #8a1200; }
+.bp-blast { animation: bbCard .7s cubic-bezier(.2,1.5,.4,1) .15s both; }
+.bp-blast .bp-boom-t { animation: bbText .6s cubic-bezier(.2,1.6,.4,1) .3s both; }
+@keyframes bbCard { from { transform: scale(.6) rotate(-6deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes bbText { from { transform: scale(3) rotate(-12deg); opacity: 0; } to { transform: rotate(-4deg); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .bigboom, #app.bb-shake { animation: none !important; } .bigboom { display: none; } }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
@@ -2601,8 +2629,9 @@ function bpPass() {
 function bpBoom() {
   const g = S.game, bp = g.bp;
   clearTimeout(bp.t); clearTimeout(bp.boomT); bp.phase = "boom"; bp.loser = bp.holder; g.doer = bp.holder;
-  play("boom"); vib([200, 80, 300]);
+  play("bigboom"); vib([300, 60, 120, 60, 400]);
   render(true);
+  bigBoom(); // 画面ごと吹っ飛ぶ演出
 }
 
 // ---------- ハイ&ロー ----------
@@ -3180,6 +3209,8 @@ const SFX = (() => {
     // ---- 結果発表：ブーイングと笑い声 ----
     boo: () => { const r = seeded(5); for (let k = 0; k < 7; k++) voice(105 + r() * 60, 1.3, { type: "sawtooth", vol: 0.06, delay: r() * 0.12, att: 0.18, cut: 650, vib: 4, rate: 3 + r() * 3, slide: 90 + r() * 30 }); noise(1.2, 0.12, 500); },
     laugh: () => { const r = seeded(9); for (let v = 0; v < 4; v++) { const base = 210 + r() * 120, off = v * 0.05 + r() * 0.08; for (let k = 0; k < 6; k++) { const d = off + k * (0.12 + r() * 0.03); voice(base * (1 - k * 0.025), 0.09, { type: "sawtooth", vol: 0.09, delay: d, att: 0.01, cut: 950, bp: true, q: 2.2 }); noise(0.06, 0.05, 2500, d); } } },
+    // ---- 爆弾パスの大爆発：ドッカーン＋ゴゴゴ…＋パラパラ ----
+    bigboom: () => { noise(0.08, 0.9, 8000); noise(1.8, 0.85, 900, 0.02); tone(70, 1.4, "sine", 0.7, 28, 0.02); tone(140, 0.5, "sawtooth", 0.18, 40, 0.02); noise(1.2, 0.3, 300, 0.4); const r = seeded(3); for (let k = 0; k < 14; k++) noise(0.03, 0.18 + r() * 0.15, 3000 + r() * 3000, 0.5 + r() * 1.1); },
     // ---- 連続罰の「ボウッ」（炎）----
     streak: () => { noise(0.6, 0.35, 1800); voice(180, 0.55, { type: "sawtooth", vol: 0.1, att: 0.05, cut: 2000, slide: 520 }); tone(80, 0.45, "sine", 0.45, 40, 0.32); },
   };
@@ -4417,7 +4448,7 @@ function vBpass() {
     card = `<div class="odai mode-card center board-card bp-card bp-play" id="card"><p class="bp-topic-l"><span>お題</span><span class="bp-tier ${bp.tier}">${BP_TIER_LABEL[bp.tier] || ""}</span></p><p class="bp-topic">${esc(bp.topic)}</p><div class="bp-bomb" aria-hidden="true">💣</div>${bigWho(bp.holder, "が持ってる")}<p class="hand-note">${bp.passes}回パス</p></div>`;
     controls = `<button class="big bp-pass" data-act="bpPass">言えた！パス → ${mName((bp.holder + 1) % S.members.length)}</button>`;
   } else {
-    card = `<div class="odai batsu mode-card center ${S.anim ? "shake" : ""}" id="card"><p class="tl-big q-ng bp-boom-t">ドカーン！</p>${bigWho(bp.loser, "が持ってた")}<p class="hand-note">${bp.passes}回パスで爆発</p></div>`;
+    card = `<div class="odai batsu mode-card center bp-burnt ${S.anim ? "bp-blast" : ""}" id="card"><div class="bp-scorch" aria-hidden="true"></div><p class="tl-big q-ng bp-boom-t">ドカーン！</p>${bigWho(bp.loser, "が持ってた")}<p class="hand-note">${bp.passes}回パスで爆発</p></div>`;
     controls = `<button class="big has-pen" data-act="bpGacha">${mName(bp.loser)}に罰ガチャ</button>`;
   }
   return stageWrap(card, controls);
@@ -5451,6 +5482,19 @@ function streakFx({ i, n }) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 1900);
   vib([40, 30, 40, 30, 90]);
+}
+// 爆弾パスの大爆発：白く光る → 火の玉が広がる → 衝撃波 → 破片と煙が飛び散る → 画面がガタガタ揺れる
+function bigBoom() {
+  const box = document.createElement("div");
+  box.className = "bigboom"; box.setAttribute("aria-hidden", "true");
+  const spikes = Array.from({ length: 22 }, (_, k) => { const r = k % 2 ? 30 : 50, a = (k / 22) * Math.PI * 2; return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`; }).join(" ");
+  const bits = Array.from({ length: 26 }, (_, k) => { const a = (k / 26) * Math.PI * 2 + Math.random() * 0.3, d = 140 + Math.random() * 220; return `<i class="bb-bit" style="--x:${(Math.cos(a) * d).toFixed(0)}px;--y:${(Math.sin(a) * d).toFixed(0)}px;--r:${(Math.random() * 900 - 450).toFixed(0)}deg;--s:${(6 + Math.random() * 10).toFixed(0)}px;--c:${["#2a1a10", "#ff7a1a", "#ffd23f", "#4a3a30"][k % 4]};--t:${(0.6 + Math.random() * 0.5).toFixed(2)}s"></i>`; }).join("");
+  const smoke = Array.from({ length: 9 }, (_, k) => { const a = (k / 9) * Math.PI * 2, d = 60 + Math.random() * 70; return `<i class="bb-smoke" style="--x:${(Math.cos(a) * d).toFixed(0)}px;--y:${(Math.sin(a) * d - 30).toFixed(0)}px;--d:${(0.15 + Math.random() * 0.2).toFixed(2)}s;--s:${(90 + Math.random() * 70).toFixed(0)}px"></i>`; }).join("");
+  box.innerHTML = `<div class="bb-white"></div><div class="bb-ball"><svg viewBox="0 0 100 100"><polygon points="${spikes}" fill="#ffd23f" stroke="#ff4a00" stroke-width="5" stroke-linejoin="round"/><polygon points="${spikes}" fill="#fff6c0" transform="translate(50 50) scale(.55) translate(-50 -50)"/></svg></div><div class="bb-ring"></div><div class="bb-ring r2"></div>${smoke}${bits}`;
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 2200);
+  app.classList.remove("bb-shake"); void app.offsetWidth; app.classList.add("bb-shake");
+  setTimeout(() => app.classList.remove("bb-shake"), 900);
 }
 // 画面が変わった時の効果音と演出
 function cue() {

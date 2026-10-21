@@ -1172,8 +1172,9 @@ function bpPass() {
 function bpBoom() {
   const g = S.game, bp = g.bp;
   clearTimeout(bp.t); clearTimeout(bp.boomT); bp.phase = "boom"; bp.loser = bp.holder; g.doer = bp.holder;
-  play("boom"); vib([200, 80, 300]);
+  play("bigboom"); vib([300, 60, 120, 60, 400]);
   render(true);
+  bigBoom(); // 画面ごと吹っ飛ぶ演出
 }
 
 // ---------- ハイ&ロー ----------

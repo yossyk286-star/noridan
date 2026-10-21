@@ -1,3 +1,4 @@
+import { Animated, Easing } from 'react-native';
 import { GACHA_MS } from '../components/Fx';
 import { play } from './sound';
 import { Vibration } from './vibe';
@@ -6,7 +7,7 @@ import { Vibration } from './vibe';
  * 罰・ラッキー・連続罰の演出をどこからでも出すための小さな仕組み。
  * 画面は batsuCue(items) を呼ぶだけ。App の一番上にある <FxLayer> が受け取って光らせる
  */
-export type FxEvent = { kind: 'quake' } | { kind: 'gold' } | { kind: 'streak'; name: string; n: number };
+export type FxEvent = { kind: 'quake' } | { kind: 'gold' } | { kind: 'bigboom' } | { kind: 'streak'; name: string; n: number };
 type Listener = (e: FxEvent) => void;
 const listeners = new Set<Listener>();
 export function onFx(fn: Listener) {
@@ -16,6 +17,18 @@ export function onFx(fn: Listener) {
   };
 }
 const emit = (e: FxEvent) => listeners.forEach((fn) => fn(e));
+
+/** 画面全体のガタガタ（App のいちばん外側の View がこれで揺れる。爆弾パスの大爆発だけ） */
+export const quakeX = new Animated.Value(0);
+/** 爆弾パスの大爆発：白く光る → 火の玉 → 衝撃波 → 破片と煙 → 画面がガタガタ */
+export function bigBoom() {
+  play('bigboom');
+  Vibration.vibrate([0, 300, 60, 120, 60, 400]);
+  emit({ kind: 'bigboom' });
+  quakeX.setValue(0);
+  const seq = [-18, 16, -14, 12, -8, 6, -3, 0];
+  Animated.sequence(seq.map((x) => Animated.timing(quakeX, { toValue: x, duration: 90, easing: Easing.linear, useNativeDriver: true }))).start();
+}
 
 // 同じ人が続けて罰になった回数（ゲームを始めるたびにリセット）
 let streak: Record<number, number> = {};

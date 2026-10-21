@@ -27,7 +27,7 @@ import VoiceScreen from './src/screens/VoiceScreen';
 import { cleanMembers, load, save } from './src/lib/storage';
 import { play, setSoundEnabled, setVolume } from './src/lib/sound';
 import { setVibeEnabled, Vibration } from './src/lib/vibe';
-import { cancelFx, resetStreak } from './src/lib/fx';
+import { cancelFx, quakeX, resetStreak } from './src/lib/fx';
 import FxLayer from './src/components/FxLayer';
 import { PrefsContext } from './src/lib/prefs';
 import { speak, stopSpeak } from './src/lib/speech';
@@ -192,7 +192,7 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={[s.root, { backgroundColor: bg }]}>
         <StatusBar style="light" />
-        <Animated.View style={[s.root, { opacity: slide.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }), transform: [{ translateX: slide.interpolate({ inputRange: [0, 1], outputRange: [dir.current * 28, 0] }) }] }]}>
+        <Animated.View style={[s.root, { opacity: slide.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }), transform: [{ translateX: Animated.add(slide.interpolate({ inputRange: [0, 1], outputRange: [dir.current * 28, 0] }), quakeX) }, { translateY: Animated.multiply(quakeX, -0.5) }] }]}>
           {screen.name === 'home' && (
             <HomeScreen
               members={members}
