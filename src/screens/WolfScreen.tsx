@@ -11,6 +11,7 @@ import { Angel, GACHA_MS, GachaMachine, Skull } from '../components/Fx';
 import { Tap } from '../components/Tap';
 import Svg, { Defs, Ellipse, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 import { HELP } from '../lib/help';
+import { useHold } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
@@ -82,6 +83,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const H = useHold();
   const clock = useCountdown(() => {
     setTimeUp(true);
     play('alarm');
@@ -162,8 +164,11 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
     } else setPhase('done');
   };
   const reveal = () => {
-    setPlayed(played + 1);
-    setPhase('reveal');
+    // 開票の前にドラムロール
+    H.hold('開票…', 1800, () => {
+      setPlayed(played + 1);
+      setPhase('reveal');
+    });
   };
   const doGacha = () => {
     if (!round.allCit && !caught) round.wolves.forEach((w) => stats.wolf![w]++);
@@ -464,10 +469,13 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       break;
   }
 
+  // ため（ドラムロール）の間は結果を出さへん
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       <View style={[s.wrap, flipped && { transform: [{ rotate: '180deg' }] }]}>
-        <ScoreBar pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={-1} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={finish} pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={-1} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>

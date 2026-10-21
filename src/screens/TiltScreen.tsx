@@ -7,6 +7,7 @@ import { DeviceMotion } from 'expo-sensors';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { HELP } from '../lib/help';
+import { useHold } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
@@ -67,6 +68,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const H = useHold();
   const latest = useRef<Vec | null>(null);
   const latestAt = useRef(0);
   const base = useRef<Vec | null>(null);
@@ -180,18 +182,23 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     clear();
     setOutSec((Date.now() - startAt.current) / 1000);
     record(!base.current);
-    setPhase('out');
-    play('boom');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    // ちょっとためてから判定を出す
+    H.hold('判定…', 800, () => {
+      setPhase('out');
+      play('boom');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    });
   };
   const safe = () => {
     if (phaseRef.current !== 'play') return;
     phaseRef.current = 'safe';
     clear();
     record(!base.current);
-    setPhase('safe');
-    play('fanfare');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    H.hold('判定…', 800, () => {
+      setPhase('safe');
+      play('fanfare');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    });
   };
   const doGacha = () => {
     const items = [{ i: who, n: 1, ...decks.batsu(members, who) }];
@@ -374,10 +381,13 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
       break;
   }
 
+  // ため（ドラムロール）の間は判定を出さへん
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       <View style={[s.wrap, flipped && { transform: [{ rotate: '180deg' }] }]}>
-        <ScoreBar pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={phase === 'intro' ? -1 : who} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={() => finish()} pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={phase === 'intro' ? -1 : who} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         <Animated.View style={{ flex: 1, transform: [{ translateX: Animated.multiply(shake, 3) }] }}>{card}</Animated.View>
         {controls}
       </View>

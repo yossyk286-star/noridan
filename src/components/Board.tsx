@@ -88,6 +88,17 @@ export function Board({ pal, members, vpos, cur, callout, height }: { pal: Pal; 
               </View>
             );
           })}
+          {/* 進む向きの矢印（マスとマスの間） */}
+          {BOARD.slice(0, -1).map((_, i) => {
+            const a = center(i);
+            const b = center(i + 1);
+            const deg = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+            return (
+              <View key={`a${i}`} pointerEvents="none" style={[s.arrow, { left: (a.x + b.x) / 2 - 7, top: (a.y + b.y) / 2 - 7, transform: [{ rotate: `${deg}deg` }] }]}>
+                <View style={s.arrowHead} />
+              </View>
+            );
+          })}
           {/* コマ */}
           {members.map((m, i) => {
             const same = vpos.map((q, k) => (q === vpos[i] ? k : -1)).filter((k) => k >= 0);
@@ -244,6 +255,8 @@ export function Die({ value, rolling, disabled, onPress }: { value: number | nul
 }
 
 const s = StyleSheet.create({
+  arrow: { position: 'absolute', width: 14, height: 14, borderRadius: 7, backgroundColor: '#ffd23f', alignItems: 'center', justifyContent: 'center', zIndex: 2, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+  arrowHead: { width: 0, height: 0, marginLeft: 2, borderTopWidth: 4, borderBottomWidth: 4, borderLeftWidth: 7, borderTopColor: 'transparent', borderBottomColor: 'transparent', borderLeftColor: '#141210' },
   path: { position: 'absolute', borderRadius: 7 },
   cell: { position: 'absolute', padding: 4 },
   cellIn: {

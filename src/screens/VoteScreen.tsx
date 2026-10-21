@@ -6,6 +6,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog } from '../components/ModeParts';
 import { HELP } from '../lib/help';
+import { useHold } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
@@ -52,6 +53,7 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const H = useHold();
 
   useEffect(() => {
     if (phase === 'q' && voice) speak(round.q);
@@ -89,9 +91,12 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
     } else setPhase('done');
   };
   const reveal = () => {
-    counts.forEach((v, i) => (stats.votes![i] += v));
-    setDone(done + 1);
-    setPhase('reveal');
+    // 開票の前にドラムロール
+    H.hold('開票…', 1800, () => {
+      counts.forEach((v, i) => (stats.votes![i] += v));
+      setDone(done + 1);
+      setPhase('reveal');
+    });
   };
   const doGacha = () => {
     const items = top.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
@@ -215,10 +220,13 @@ export default function VoteScreen({ members, level, night, onQuit, onSettings, 
       break;
   }
 
+  // ため（ドラムロール）の間は結果を出さへん
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       <View style={[s.wrap, flipped && { transform: [{ rotate: '180deg' }] }]}>
-        <ScoreBar pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={-1} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={finish} pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={-1} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>

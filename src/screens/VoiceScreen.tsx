@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
@@ -8,13 +8,14 @@ import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../component
 import { StageShell, usePenalty } from '../components/StageShell';
 import { Tap } from '../components/Tap';
 import { HELP } from '../lib/help';
+import { RevealItem, useHold, useReveal } from '../components/Reveal';
 import { play } from '../lib/sound';
 import type { Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { Level, Member, Night } from '../types';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
-type Phase = 'intro' | 'hand' | 'count' | 'play' | 'done' | 'rank' | 'pick' | 'batsu';
+type Phase = 'intro' | 'hand' | 'count' | 'tally' | 'play' | 'done' | 'rank' | 'pick' | 'batsu';
 const SEC = 5;
 /** dBFS（-60〜0）を 0〜100 に */
 const score = (db: number) => Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
@@ -27,6 +28,8 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
   useKeepAwake();
   const n = members.length;
   const P = usePenalty(members, level, night, 'voice');
+  const H = useHold();
+  const RV = useReveal();
   const recorder = useAudioRecorder({ ...RecordingPresets.LOW_QUALITY, isMeteringEnabled: true });
   const [phase, setPhase] = useState<Phase>('intro');
   const phaseRef = useRef<Phase>('intro');
@@ -129,12 +132,16 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
     setRes(nr);
     if (sc > (best[who] ?? -1)) best[who] = sc;
     setTurns((t) => t + 1);
-    play('fanfare');
     if (k + 1 >= n) {
       const min = Math.min(...(nr as number[]));
       setLosers(members.map((_, i) => i).filter((i) => nr[i] === min));
-      setPhase('rank');
-    } else setPhase('done');
+      // ドラムロールでためてから、1人ずつ順位発表
+      setPhase('tally');
+      H.hold('結果は…', 1800, () => { setPhase('rank'); RV.start(n); });
+    } else {
+      play('fanfare');
+      setPhase('done');
+    }
   };
   const pick = (i: number) => {
     setRes(members.map((_, j) => (j === i ? 0 : 1)));
@@ -152,6 +159,9 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
   const pal = STAGE[level];
   const fg = pal.cardFg;
   const x = level === 'jigoku' ? 2 : 1;
+  // 順位発表の時だけ、1行ずつ出す
+  const rvWrap = (key: number, k: number, bad: boolean, el: React.ReactNode) =>
+    phase === 'rank' ? <RevealItem key={key} k={k} rv={RV} lose={bad}>{el}</RevealItem> : el;
   const board = (hi: number, dark: boolean) => {
     const idx = members.map((_, i) => i);
     const c = dark ? '#f7f3ea' : fg;
@@ -160,12 +170,12 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
       <ScrollView style={s.boardScroll} contentContainerStyle={s.board}>
         {rows.map((i, r) => {
           const bad = losers.includes(i) && (phase === 'rank' || phase === 'batsu');
-          return (
+          return rvWrap(i, r, bad,
             <View key={i} style={[s.row, i === hi && { borderColor: colorOf(i) }]}>
               <Text style={[s.rk, { color: c }]}>{r + 1}</Text>
               <Text style={[s.nm, { color: bad ? '#ff3b3b' : c }]} numberOfLines={1}>{members[i].name}</Text>
               <Text style={[s.v, { color: bad ? '#ff3b3b' : c }]}>{mic ? res[i] : bad ? '一番小さい' : ''}</Text>
-            </View>
+            </View>,
           );
         })}
         {idx.filter((i) => res[i] == null).map((i) => (
@@ -260,13 +270,15 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
       break;
     case 'rank':
       card = (
+        <Pressable style={{ flex: 1 }} onPress={RV.skip}>
         <ModeCard pal={pal} center bg="#1a0606" edge="#e8202a">
           <Prog fg="#f7f3ea">{`第${round}回戦の結果`}</Prog>
           {board(-1, true)}
-          <Text style={s.lose}>{`${losers.map((i) => members[i].name).join('・')}が一番小さい${x > 1 ? '（罰2倍）' : ''}`}</Text>
+          {RV.ready && <Text style={s.lose}>{`${losers.map((i) => members[i].name).join('・')}が一番小さい${x > 1 ? '（罰2倍）' : ''}`}</Text>}
         </ModeCard>
+        </Pressable>
       );
-      controls = <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers, x); setPhase('batsu'); }} />;
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers, x); setPhase('batsu'); }} />;
       break;
     case 'batsu':
       card = (
@@ -277,6 +289,9 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
       controls = <RoundEnd pal={pal} next={P.lucky ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={() => { P.apply(); newRound(round + 1); }} onEnd={() => finish(P.apply())} />;
       break;
   }
+  // ため（ドラムロール）の間は「結果は…」を出す
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   return (
     <StageShell
       pal={pal} members={members} pen={P.pen} doer={phase === 'hand' || phase === 'play' || phase === 'done' ? who : -1} frame={phase === 'intro' ? C.muted : phase === 'rank' ? '#ff2a2a' : colorOf(who)}

@@ -6,6 +6,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, Frame, GachaCard, RulesSheet, ScoreBar } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, Peek } from '../components/ModeParts';
 import { HELP } from '../lib/help';
+import { useHold } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
@@ -68,6 +69,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
   const [menu, setMenu] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const H = useHold();
 
   const newRound = () => {
     const r = round + 1;
@@ -100,10 +102,13 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
     const b = new Set<number>();
     for (let k = 1; k < order.length; k++) if (nums[order[k - 1]] > nums[order[k]]) { b.add(order[k - 1]); b.add(order[k]); }
     setBad([...b]);
-    setDone(done + 1);
-    setPhase('reveal');
-    play(b.size ? 'warn' : 'fanfare');
-    Haptics.notificationAsync(b.size ? Haptics.NotificationFeedbackType.Error : Haptics.NotificationFeedbackType.Success).catch(() => {});
+    // 答え合わせの前にドラムロール
+    H.hold('答え合わせ…', 1800, () => {
+      setDone(done + 1);
+      setPhase('reveal');
+      play(b.size ? 'warn' : 'fanfare');
+      Haptics.notificationAsync(b.size ? Haptics.NotificationFeedbackType.Error : Haptics.NotificationFeedbackType.Success).catch(() => {});
+    });
   };
   const doGacha = () => {
     const items = bad.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
@@ -277,11 +282,14 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
       break;
   }
 
+  // ため（ドラムロール）の間は結果を出さへん
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   const frame = phase === 'hand' || phase === 'look' ? colorOf(viewer) : C.muted;
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       <View style={[s.wrap, flipped && { transform: [{ rotate: '180deg' }] }]}>
-        <ScoreBar pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={-1} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={finish} pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={-1} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>

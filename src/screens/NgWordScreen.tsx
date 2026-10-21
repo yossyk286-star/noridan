@@ -6,7 +6,8 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Tap } from '../components/Tap';
-import { BigButton, Frame, RulesSheet, ScoreBar } from '../components/Stage';
+import { BigButton, DeckStack, Frame, GachaCard, RulesSheet, ScoreBar } from '../components/Stage';
+import { RevealItem, useHold, useReveal } from '../components/Reveal';
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, WordList, Peek } from '../components/ModeParts';
 import { HELP } from '../lib/help';
 import { Skull, Angel } from '../components/Fx';
@@ -16,7 +17,7 @@ import { load, save } from '../lib/storage';
 import { play } from '../lib/sound';
 import { newStats, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
-import type { Level, Member, Night, Segment } from '../types';
+import type { GachaItem, Level, Member, Night, Segment } from '../types';
 
 type Props = {
   members: Member[];
@@ -26,7 +27,7 @@ type Props = {
   onSettings: () => void;
   onFinish: (pen: number[], turns: number, stats: Stats, words: string[]) => void;
 };
-type Phase = 'setup' | 'hand' | 'look' | 'play' | 'who' | 'confirm' | 'out' | 'eyes' | 'newword' | 'over';
+type Phase = 'setup' | 'hand' | 'look' | 'play' | 'who' | 'confirm' | 'out' | 'eyes' | 'newword' | 'over' | 'guess' | 'gres' | 'gbatsu';
 const MINUTES = [3, 5, 10, 15, 0];
 const NG_LV: Record<Level, string> = { yurume: 'たまにしか言わん言葉', futsu: 'そこそこ言う言葉', jigoku: '絶対言うてまう口ぐせ' };
 
@@ -55,6 +56,12 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
   const [res, setRes] = useState<{ lucky: boolean; text: string } | null>(null);
   const [topic, setTopic] = useState<string | null>(null);
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
+  // タイムアップ後の自分のワード当て：当てたら勝ち、外したら罰
+  const [gk, setGk] = useState(0);
+  const [ghit, setGhit] = useState<boolean[]>([]);
+  const [gacha, setGacha] = useState<GachaItem[]>([]);
+  const H = useHold();
+  const RV = useReveal();
   const stats = useRef<Stats>(newStats(n)).current;
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
@@ -121,7 +128,34 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
     setPhase('out');
   };
-  const finish = () => onFinish(pen, pen.reduce((a, b) => a + b, 0), stats, words);
+  const finish = (p: number[] = pen) => onFinish(p, p.reduce((a, b) => a + b, 0), stats, words);
+  const judge = (hit: boolean) => {
+    const g = ghit.slice();
+    g[gk] = hit;
+    setGhit(g);
+    play(hit ? 'coin' : 'warn');
+    if (gk + 1 < n) setGk(gk + 1);
+    else H.hold('結果は…', 1600, () => { setPhase('gres'); RV.start(n); });
+  };
+  const guessGacha = () => {
+    const lose = members.map((_, i) => i).filter((i) => !ghit[i]);
+    const items = lose.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
+    setGacha(items);
+    setPhase('gbatsu');
+    play(items.every((x) => x.lucky) ? 'gachaLucky' : 'gacha');
+  };
+  const guessEnd = () => {
+    const np = pen.slice();
+    gacha.forEach((x) => {
+      if (x.lucky) stats.lucky[x.i]++;
+      else {
+        np[x.i] += 1;
+        stats.why[x.i].ng = (stats.why[x.i].ng || 0) + 1;
+      }
+    });
+    setPen(np);
+    finish(np);
+  };
 
   const remaining = endAt.current ? endAt.current - now : left.current;
   const hurry = useHurry(Math.ceil(remaining / 1000), phase === 'play' && !!endAt.current);
@@ -261,17 +295,73 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
         <ModeCard pal={pal} center>
           <Text style={[s.timer, { color: fg }]}>0:00</Text>
           <Lead fg={fg}>タイムアップ！</Lead>
-          <Note fg={fg}>結果発表で、みんなのNGワードを公開</Note>
+          <Note fg={fg}>{'最後に自分のNGワード当てタイム。\n自分のワードを当てたら勝ち、外したら罰'}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label="結果発表" onPress={finish} />;
+      controls = (
+        <View style={{ gap: 8 }}>
+          <BigButton pal={pal} label="自分のワード当てタイム" onPress={() => { setGk(0); setGhit(Array(n).fill(false)); setPhase('guess'); }} />
+          <Outline label="当てずに結果発表" fg={pal.fg} onPress={() => finish()} />
+        </View>
+      );
+      break;
+    case 'guess':
+      card = (
+        <ModeCard pal={pal} center>
+          <Prog fg={fg}>{`自分のワード当て ${gk + 1} / ${n}`}</Prog>
+          <HandWho members={members} i={gk} sub="の番" fg={fg} />
+          <Lead fg={fg}>{'自分のNGワードは\n何やと思う？'}</Lead>
+          <Note fg={fg}>声に出して答えて。合ってるかは他のみんなが判定</Note>
+        </ModeCard>
+      );
+      controls = (
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{ flex: 1 }}><BigButton pal={pal} danger label="ハズレ（罰）" onPress={() => judge(false)} /></View>
+          <View style={{ flex: 1 }}><BigButton pal={pal} label="当たり！（勝ち）" onPress={() => judge(true)} /></View>
+        </View>
+      );
+      break;
+    case 'gres': {
+      const all = ghit.every(Boolean);
+      card = (
+        <Tap style={{ flex: 1 }} onPress={RV.skip} haptic={false} scaleTo={1}>
+          <ModeCard pal={pal} center>
+            <Prog fg={fg}>ワード当ての結果</Prog>
+            <ScrollView style={{ alignSelf: 'stretch', flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ gap: 6 }}>
+              {members.map((m, i) => (
+                <RevealItem key={i} k={i} rv={RV} lose={!ghit[i]}>
+                  <View style={[s.gRow, { borderLeftColor: colorOf(i), backgroundColor: ghit[i] ? 'rgba(31,157,85,0.12)' : 'rgba(255,59,59,0.12)' }]}>
+                    <Text style={[s.gName, { color: ghit[i] ? fg : '#e8202a' }]} numberOfLines={1}>{m.name}</Text>
+                    <Text style={[s.gWord, { color: fg }]}>{`「${words[i]}」`}</Text>
+                    <Text style={[s.gRes, { color: ghit[i] ? '#1f9d55' : '#e8202a' }]}>{ghit[i] ? '当てた！' : '外した'}</Text>
+                  </View>
+                </RevealItem>
+              ))}
+            </ScrollView>
+            {RV.ready && <Note fg={fg}>{all ? '全員当てた！罰なし' : `外した${members.filter((_, i) => !ghit[i]).map((x) => x.name).join('・')}に罰`}</Note>}
+          </ModeCard>
+        </Tap>
+      );
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : all ? <BigButton pal={pal} label="結果発表" onPress={() => finish()} /> : <BigButton pal={pal} danger label="外した人に罰ガチャ" onPress={guessGacha} />;
+      break;
+    }
+    case 'gbatsu':
+      card = (
+        <DeckStack pal={pal} minHeight={0}>
+          <GachaCard pal={pal} members={members} items={gacha} />
+        </DeckStack>
+      );
+      controls = <BigButton pal={pal} label={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'} → 結果発表`} onPress={guessEnd} />;
       break;
   }
 
+  // ため（ドラムロール）の間は結果を出さへん
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       <View style={[s.wrap, flipped && { transform: [{ rotate: '180deg' }] }]}>
-        <ScoreBar pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={-1} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={() => finish()} pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={-1} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>
@@ -285,7 +375,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
         flipped={flipped}
         onFlip={() => setFlipped((f) => !f)}
         onRules={() => setRules(true)}
-        onEnd={finish}
+        onEnd={() => finish()}
         onSettings={onSettings}
         onQuit={onQuit}
         onClose={() => setMenu(false)}
@@ -296,6 +386,11 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
 
 const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  gRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, borderLeftWidth: 4 },
+  gName: { width: 70, fontSize: 15, fontWeight: '800' },
+  gWord: { flex: 1, fontSize: 16, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  gRes: { fontSize: 13, fontWeight: '900' },
   title: { fontFamily: F.display, fontSize: 24 },
   how: { fontSize: 17, fontWeight: '700', lineHeight: 26 },
   small: { fontSize: 12, fontWeight: '700', opacity: 0.65, lineHeight: 18 },

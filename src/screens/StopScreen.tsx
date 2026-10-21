@@ -6,6 +6,7 @@ import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack 
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { Tap } from '../components/Tap';
 import { HELP } from '../lib/help';
+import { RevealItem, useHold, useReveal } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
@@ -30,6 +31,7 @@ const PEEK: Record<Level, number> = { yurume: 3, futsu: 1, jigoku: 0 };
 type Res = { v: number; diff: number; over: boolean; exact: boolean };
 
 const RATES = [0.5, 1.5, 2];
+const RATE_TXT: Record<number, string> = { 0.5: 'ゆっくり進む', 1.5: 'ちょっと速く進む', 2: '倍の速さで進む' };
 /** これだけ行き過ぎたら勝手に止まる */
 const OVER = 1.5;
 /** -0.00 にならんように丸めてから */
@@ -69,6 +71,8 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const H = useHold();
+  const RV = useReveal();
   // 走ってる間の表示（毎フレーム）
   const [view, setView] = useState({ text: '0.00', hide: false, jam: false, over: false, badge: '' });
   const phaseRef = useRef<Phase>('intro');
@@ -77,7 +81,10 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   // この番の倍率（普通・地獄）。番の最初に見せて、止めるまでずっとこれ
   const [rate, setRate] = useState(1);
   const toHand = () => {
-    setRate(level === 'yurume' || dir === 'blind' ? 1 : RATES[rnd(RATES.length)]);
+    const r = level === 'yurume' || dir === 'blind' ? 1 : RATES[rnd(RATES.length)];
+    setRate(r);
+    // 目標の秒数は1人ずつ。実際にかかる時間が10秒を超えんように（×0.5の時は3〜5、それ以外は6〜10）
+    setTarget(r < 1 ? 3 + rnd(3) : 6 + rnd(5));
     setPhase('hand');
   };
   const shake = useRef(new Animated.Value(0)).current;
@@ -103,7 +110,6 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
     setRes(Array(n).fill(null));
     setLosers([]);
     setExactAny(false);
-    setTarget(6 + rnd(7));
     toHand();
   };
   const countdown = () => {
@@ -189,7 +195,13 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const after = useRef<Phase>('done');
   const reveal = () => {
     const r = res[who]!;
-    if (r.over) {
+    // ちょっとためてから判定。最後の人はそのまま順位発表まで（1人ずつ出す）
+    const last = after.current === 'rank';
+    H.hold(last ? '判定…そして結果は…' : '判定…', last ? 2000 : 900, () => revealNow(r, last));
+  };
+  const revealNow = (r: Res, last: boolean) => {
+    if (last) RV.start(n);
+    if (r.over && !last) {
       play('boom');
       Vibration.vibrate([0, 120, 60, 200]);
     } else play(r.exact ? 'fanfare' : 'coin');
@@ -236,6 +248,9 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const nextWho = (k + 1 + round - 1) % n;
   const diffText = (r: Res) => (r.exact ? 'ピッタリ！' : r.over ? `${Math.abs(r.diff).toFixed(2)}秒オーバー` : `あと${r.diff.toFixed(2)}秒`);
 
+  // 順位発表の時だけ、1行ずつ出す
+  const rvWrap = (key: number, k: number, bad: boolean, el: React.ReactNode) =>
+    phase === 'rank' ? <RevealItem key={key} k={k} rv={RV} lose={bad}>{el}</RevealItem> : el;
   const board = (hi: number) => {
     const rows = members.map((_, i) => i).filter((i) => res[i]).sort((a, b) => {
       const A = res[a]!, B = res[b]!;
@@ -250,13 +265,13 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
           const x = res[i]!;
           const bad = lose.includes(i);
           const col = bad || x.over ? '#ff3b3b' : x.exact ? '#1f9d55' : fg;
-          return (
+          return rvWrap(i, r, bad,
             <View key={i} style={[s.row, i === hi && { borderColor: colorOf(i) }]}>
               <Text style={[s.rk, { color: fg }]}>{x.over ? '×' : r + 1}</Text>
               <Text style={[s.nm, { color: bad ? '#ff3b3b' : fg }]} numberOfLines={1}>{members[i].name}</Text>
               <Text style={[s.v, { color: fg }]}>{fmt(x.v)}</Text>
               <Text style={[s.d, { color: col }]} numberOfLines={1}>{diffText(x)}</Text>
-            </View>
+            </View>,
           );
         })}
         {wait.map((i) => (
@@ -307,7 +322,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
             <View style={[s.rateBox, { backgroundColor: rate > 1 ? '#ff5d8f' : '#4d8dff' }]}>
               <Text style={s.rateSmall}>今回の速さ</Text>
               <Text style={s.rateBig}>×{rate}</Text>
-              <Text style={s.rateSmall}>{rate > 1 ? '速い！' : '遅い…'}止めるまでずっとこの速さ</Text>
+              <Text style={s.rateSmall}>{RATE_TXT[rate] ?? ''}（最後までこの速さ）</Text>
             </View>
           )}
           <Note fg={fg}>{`${level === 'jigoku' ? '数字が消えたり邪魔が入ったりする。' : ''}行き過ぎたらオーバーでアウト`}</Note>
@@ -377,15 +392,17 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
     }
     case 'rank':
       card = (
+        <Pressable style={{ flex: 1 }} onPress={RV.skip}>
         <ModeCard pal={pal} center bg="#1a0606" edge="#e8202a">
           <Prog fg="#f7f3ea">{`第${round}回戦の結果`}</Prog>
           {board(-1)}
-          <Text style={[s.lose, { color: losers.length ? '#ff3b3b' : '#1f9d55' }]}>
+          {RV.ready && <Text style={[s.lose, { color: losers.length ? '#ff3b3b' : '#1f9d55' }]}>
             {losers.length ? `${losers.map((i) => members[i].name).join('・')}が${losers.some((i) => res[i]?.over) ? 'オーバー' : '一番遠い'}${exactAny ? '（ピッタリが出たので罰2倍）' : ''}` : '全員ピッタリ！罰なし'}
-          </Text>
+          </Text>}
         </ModeCard>
+        </Pressable>
       );
-      controls = losers.length ? (
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : losers.length ? (
         <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={doGacha} />
       ) : (
         <RoundEnd pal={pal} next="もう1回戦" onNext={() => newRound(round + 1)} onEnd={() => finish()} />
@@ -401,10 +418,13 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
       break;
   }
 
+  // ため（ドラムロール）の間は「結果は…」を出す
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       <View style={[s.wrap, flipped && { transform: [{ rotate: '180deg' }] }]}>
-        <ScoreBar pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={phase === 'intro' || phase === 'rank' || phase === 'batsu' ? -1 : who} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={() => finish()} pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={phase === 'intro' || phase === 'rank' || phase === 'batsu' ? -1 : who} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>

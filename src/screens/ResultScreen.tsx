@@ -45,7 +45,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
   const { voice } = usePrefs();
   const line = mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' || mode === 'ito' || mode === 'pittari' ? '問' : mode === 'wolf' ? '回戦' : mode === 'tilt' ? '回挑戦' : ['shake', 'stop', 'rtap', 'bpass', 'hilo', 'reflex', 'voice'].includes(mode) ? '回戦' : mode === 'memory' ? 'ペア' : mode === 'gesture' ? '問正解' : mode === 'homeru' ? '回' : 'ターン'}`;
   // 戦犯の名前がスロットみたいに回って、止まったら揺れて紙吹雪（それまで下の称号やランキングは隠す）
-  const slot = top > 0 && members.length > 1;
+  const slot = top > 0 && members.length > 2; // 2人やとスロットで回しても意味ないので、すぐ出す
   const SLOT_MS = 2400;
   const [shown, setShown] = useState(slot ? '？？？' : who);
   const [landed, setLanded] = useState(!slot);

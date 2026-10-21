@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
+import { RevealItem, useHold, useReveal } from '../components/Reveal';
 import { load, save } from '../lib/storage';
 import { Tap } from '../components/Tap';
 import { play } from '../lib/sound';
@@ -14,7 +15,7 @@ import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { Level, Member, Night } from '../types';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
-type Phase = 'intro' | 'hand' | 'wait' | 'done' | 'mhand' | 'mwait' | 'mdone' | 'rank' | 'batsu';
+type Phase = 'intro' | 'hand' | 'wait' | 'done' | 'mhand' | 'mwait' | 'mdone' | 'tally' | 'rank' | 'batsu';
 type Style = 'solo' | 'multi';
 /** みんな同時：4人までの組に分ける（5→3+2、9→3+3+3 みたいに均等に） */
 const heatsOf = (n: number) => {
@@ -44,6 +45,8 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
   useKeepAwake();
   const n = members.length;
   const P = usePenalty(members, level, night, 'reflex');
+  const H = useHold();
+  const RV = useReveal();
   const [phase, setPhase] = useState<Phase>('intro');
   const phaseRef = useRef<Phase>('intro');
   phaseRef.current = phase;
@@ -132,7 +135,7 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
         const worst = Math.max(...idx.map((i) => nr[i]!.ms as number));
         setLosers(idx.filter((i) => nr[i]!.ms === worst));
       }
-      setPhase('rank');
+      toRank();
     } else setPhase('done');
   };
   // みんな同時：自分のエリアを押した瞬間。緑になる前ならその人だけフライング
@@ -173,8 +176,13 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
       const worst = Math.max(...idx.map((i) => nr[i]!.ms as number));
       setLosers(idx.filter((i) => nr[i]!.ms === worst));
     }
-    phaseRef.current = 'rank';
-    setPhase('rank');
+    toRank();
+  };
+  // ドラムロールでためてから、1人ずつ順位発表
+  const toRank = () => {
+    phaseRef.current = 'tally';
+    setPhase('tally');
+    H.hold('結果は…', 1800, () => { phaseRef.current = 'rank'; setPhase('rank'); RV.start(n); });
   };
   const finish = (p: number[] = P.pen) => {
     clear();
@@ -186,6 +194,9 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
   const pal = STAGE[level];
   const fg = pal.cardFg;
   const label = (r: Res) => (r.fly ? 'フライング' : (r.ms as number) >= LATE ? '遅すぎ' : `${r.ms}ms`);
+  // 順位発表の時だけ、1行ずつ出す
+  const rvWrap = (key: number, k: number, bad: boolean, el: React.ReactNode) =>
+    phase === 'rank' ? <RevealItem key={key} k={k} rv={RV} lose={bad}>{el}</RevealItem> : el;
   const board = (hi: number, dark: boolean) => {
     const idx = members.map((_, i) => i);
     const rows = idx.filter((i) => res[i]).sort((a, b) => (res[a]!.fly ? 1e9 : res[a]!.ms!) - (res[b]!.fly ? 1e9 : res[b]!.ms!));
@@ -194,12 +205,12 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
       <ScrollView style={s.boardScroll} contentContainerStyle={s.board}>
         {rows.map((i, r) => {
           const bad = losers.includes(i) && (phase === 'rank' || phase === 'batsu');
-          return (
+          return rvWrap(i, r, bad,
             <View key={i} style={[s.row, i === hi && { borderColor: colorOf(i) }]}>
               <Text style={[s.rk, { color: c }]}>{res[i]!.fly ? '×' : r + 1}</Text>
               <Text style={[s.nm, { color: bad ? '#ff3b3b' : c }]} numberOfLines={1}>{members[i].name}</Text>
               <Text style={[s.v, { color: bad ? '#ff3b3b' : c }]}>{label(res[i]!)}</Text>
-            </View>
+            </View>,
           );
         })}
         {idx.filter((i) => !res[i]).map((i) => (
@@ -342,13 +353,15 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
     }
     case 'rank':
       card = (
+        <Pressable style={{ flex: 1 }} onPress={RV.skip}>
         <ModeCard pal={pal} center bg="#1a0606" edge="#e8202a">
           <Prog fg="#f7f3ea">{`第${round}回戦の結果`}</Prog>
           {board(-1, true)}
-          <Text style={s.lose}>{`${losers.map((i) => members[i].name).join('・')}が${losers.some((i) => res[i]?.fly) ? 'フライング' : '一番遅い'}`}</Text>
+          {RV.ready && <Text style={s.lose}>{`${losers.map((i) => members[i].name).join('・')}が${losers.some((i) => res[i]?.fly) ? 'フライング' : '一番遅い'}`}</Text>}
         </ModeCard>
+        </Pressable>
       );
-      controls = <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers); setPhase('batsu'); }} />;
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers); setPhase('batsu'); }} />;
       break;
     case 'batsu':
       card = (
@@ -359,6 +372,9 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
       controls = <RoundEnd pal={pal} next={P.lucky ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={() => { P.apply(); newRound(round + 1); }} onEnd={() => finish(P.apply())} />;
       break;
   }
+  // ため（ドラムロール）の間は「結果は…」を出す
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   return (
     <StageShell
       pal={pal} members={members} pen={P.pen} doer={(phase === 'hand' || phase === 'wait' || phase === 'done') && style === 'solo' ? who : -1} frame={phase === 'intro' ? C.muted : phase === 'rank' ? '#ff2a2a' : style === 'multi' ? C.muted : colorOf(who)}

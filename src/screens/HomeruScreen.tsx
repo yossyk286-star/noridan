@@ -207,7 +207,7 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       <View style={[s.wrap, flipped && { transform: [{ rotate: '180deg' }] }]}>
-        <ScoreBar pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={phase === 'intro' ? -1 : praiser} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={finish} pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={phase === 'intro' ? -1 : praiser} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         <RuleBanner pal={pal} members={members} rules={rules} onViolate={(r) => { setRule(r); setRuleSheet('pick'); }} />
         <View style={{ flex: 1 }}>{card}</View>
         {controls}

@@ -79,10 +79,10 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
   }, []);
 
   /** 止まったマスの処理 */
-  const resolve = (me: number, positions: number[]) => {
+  const resolve = (me: number, positions: number[], pre = '', depth = 0): number[] => {
     const p = positions.slice();
     const c = BOARD[p[me]];
-    const head = `${p[me]}マス目`;
+    const head = `${pre}${p[me]}マス目`;
     const plain = (label: string, text: string): Card => ({ kind: `${head}・${label}`, segments: fill(text, members, me) });
     let finished = false;
 
@@ -105,6 +105,8 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
       }
       case 'move': {
         p[me] = Math.max(0, Math.min(GOAL, p[me] + c.value));
+        // 進むマス：進んだ先のマスのお題もやる（進んだ先がまた進む・戻るなら、そこで止まる）
+        if (c.value > 0 && p[me] < GOAL && !depth) return resolve(me, p, `${c.label}で+${c.value}→`, 1);
         const card = plain(c.label, c.text);
         if (p[me] === GOAL) {
           finished = true;
@@ -241,7 +243,7 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
     return (
       <View style={{ flex: 1, backgroundColor: basePal.bg }}>
         <View style={s.wrap}>
-          <ScoreBar pal={basePal} members={members} pen={Array(members.length).fill(0)} rev={Array(members.length).fill(false)} doer={-1} onMenu={() => setMenu(true)} />
+          <ScoreBar onEnd={() => onFinish(flow.finalPen(), turn, flow.st.stats)} pal={basePal} members={members} pen={Array(members.length).fill(0)} rev={Array(members.length).fill(false)} doer={-1} onMenu={() => setMenu(true)} />
           <View style={{ flex: 1 }}>
             <IntroCard pal={basePal} mode="sugoroku" tag={`${GOAL}マス`}>
               <LevelBox pal={basePal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る` : undefined} />
@@ -258,7 +260,7 @@ export default function SugorokuScreen({ members, level, night, onQuit, onSettin
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       {/* 1画面に固定（スクロールしない）。盤は残りの高さに収まるサイズにする */}
       <View style={[s.wrap, flipped && s.flipped]}>
-        <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={() => onFinish(flow.finalPen(), turn, flow.st.stats)} pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
         {/* ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので） */}
         <RuleBanner pal={pal} members={members} rules={st.rules} hideCard={st.phase === 'play' ? st.card : null} onViolate={(r) => { setRule(r); setRuleSheet('pick'); }} />

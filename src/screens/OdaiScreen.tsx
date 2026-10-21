@@ -89,7 +89,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
     return (
       <View style={{ flex: 1, backgroundColor: basePal.bg }}>
         <View style={s.wrap}>
-          <ScoreBar pal={basePal} members={members} pen={Array(members.length).fill(0)} rev={Array(members.length).fill(false)} doer={-1} onMenu={() => setMenu(true)} />
+          <ScoreBar onEnd={() => onFinish(flow.finalPen(), turn, flow.st.stats)} pal={basePal} members={members} pen={Array(members.length).fill(0)} rev={Array(members.length).fill(false)} doer={-1} onMenu={() => setMenu(true)} />
           <View style={{ flex: 1 }}>
             <IntroCard pal={basePal} mode="odai" tag={`${members.length}人`}>
               <LevelBox pal={basePal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る` : undefined} />
@@ -107,7 +107,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       {/* 1画面に固定（スクロールしない） */}
       <View style={[s.wrap, flipped && s.flipped]}>
-        <ScoreBar pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={() => onFinish(flow.finalPen(), turn, flow.st.stats)} pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
         {/* ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので） */}
         <RuleBanner pal={pal} members={members} rules={st.rules} hideCard={st.phase === 'play' ? st.card : null} onViolate={(r) => { setRule(r); setRuleSheet('pick'); }} />

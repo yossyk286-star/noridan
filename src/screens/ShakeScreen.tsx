@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { Animated, ScrollView, StyleSheet, Text, Vibration, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, Vibration, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { Icon } from '../components/Icon';
 import { HELP } from '../lib/help';
+import { RevealItem, useHold, useReveal } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
 import { play } from '../lib/sound';
@@ -23,7 +24,7 @@ type Props = {
   onFinish: (pen: number[], turns: number, stats: Stats) => void;
   skipIntro?: boolean;
 };
-type Phase = 'intro' | 'hand' | 'count' | 'play' | 'done' | 'rank' | 'batsu';
+type Phase = 'intro' | 'hand' | 'count' | 'play' | 'done' | 'tally' | 'rank' | 'batsu';
 
 const SEC = 10;
 /** m/s²（重力ぬき）。これより強い揺れだけ数える */
@@ -72,6 +73,8 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const H = useHold();
+  const RV = useReveal();
   const phaseRef = useRef<Phase>('intro');
   phaseRef.current = phase;
   const manualRef = useRef(false);
@@ -209,7 +212,9 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     if (k + 1 >= n) {
       const min = Math.min(...(nc as number[]));
       setLosers(members.map((_, i) => i).filter((i) => nc[i] === min));
-      setPhase('rank');
+      // ドラムロールでためてから、1人ずつ順位発表
+      setPhase('tally');
+      H.hold('結果は…', 1800, () => { setPhase('rank'); RV.start(n); });
     } else setPhase('done');
   };
   const doGacha = () => {
@@ -252,6 +257,9 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
   const frame = phase === 'intro' ? C.muted : phase === 'rank' && losers.length ? '#ff2a2a' : colorOf(who);
   const nextWho = (k + 1 + round - 1) % n;
 
+  // 順位発表の時だけ、1行ずつ出す
+  const rvWrap = (key: number, k: number, bad: boolean, el: React.ReactNode) =>
+    phase === 'rank' ? <RevealItem key={key} k={k} rv={RV} lose={bad}>{el}</RevealItem> : el;
   const board = (hi: number) => {
     const done = members.map((_, i) => i).filter((i) => cnt[i] != null).sort((a, b) => (cnt[b] as number) - (cnt[a] as number));
     const wait = members.map((_, i) => i).filter((i) => cnt[i] == null);
@@ -261,7 +269,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
       <ScrollView style={s.boardScroll} contentContainerStyle={s.board}>
         {done.map((i, r) => {
           const bad = lose.includes(i);
-          return (
+          return rvWrap(i, r, bad,
             <View key={i} style={[s.row, i === hi && { borderColor: colorOf(i) }]}>
               <Text style={[s.rk, { color: fg }]}>{r + 1}</Text>
               <Text style={[s.nm, { color: bad ? '#ff3b3b' : fg }]} numberOfLines={1}>{members[i].name}</Text>
@@ -270,7 +278,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
               </View>
               <Text style={[s.num, { color: bad ? '#ff3b3b' : fg }]}>{cnt[i]}</Text>
               {tapped[i] && <Text style={[s.tapTag, { color: fg }]}>連打</Text>}
-            </View>
+            </View>,
           );
         })}
         {wait.map((i) => (
@@ -377,13 +385,15 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
       break;
     case 'rank':
       card = (
-        <ModeCard pal={pal} center bg="#1a0606" edge="#e8202a">
-          <Prog fg="#f7f3ea">{`第${round}回戦の結果`}</Prog>
-          {board(-1)}
-          <Text style={[s.lose, { color: '#ff3b3b' }]}>{`${losers.map((i) => members[i].name).join('・')}が最下位${level === 'jigoku' ? '（罰2倍）' : ''}`}</Text>
-        </ModeCard>
+        <Pressable style={{ flex: 1 }} onPress={RV.skip}>
+          <ModeCard pal={pal} center bg="#1a0606" edge="#e8202a">
+            <Prog fg="#f7f3ea">{`第${round}回戦の結果`}</Prog>
+            {board(-1)}
+            {RV.ready && <Text style={[s.lose, { color: '#ff3b3b' }]}>{`${losers.map((i) => members[i].name).join('・')}が最下位${level === 'jigoku' ? '（罰2倍）' : ''}`}</Text>}
+          </ModeCard>
+        </Pressable>
       );
-      controls = <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={doGacha} />;
+      controls = RV.ready ? <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={doGacha} /> : <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text>;
       break;
     case 'batsu':
       card = (
@@ -395,10 +405,13 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
       break;
   }
 
+  // ため（ドラムロール）の間は「結果は…」を出す
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       <View style={[s.wrap, flipped && { transform: [{ rotate: '180deg' }] }]}>
-        <ScoreBar pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={phase === 'intro' || phase === 'rank' || phase === 'batsu' ? -1 : who} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={() => finish()} pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={phase === 'intro' || phase === 'rank' || phase === 'batsu' ? -1 : who} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>

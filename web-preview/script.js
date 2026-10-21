@@ -430,10 +430,10 @@ function land(n) {
     } else setTimeout(finish, 350);
   });
 }
-function resolveCell(me) {
+function resolveCell(me, pre = "", depth = 0) {
   const g = S.game;
   const c = DATA.board[g.pos[me]];
-  const head = `${g.pos[me]}マス目`;
+  const head = `${pre}${g.pos[me]}マス目`;
   const show = (card) => { g.phase = "play"; g.double = false; g.card = card; };
   if (c.type === "start") {
     show({ kind: "START", html: `${nm(me)}はスタートに戻った。次の番まで待機` });
@@ -446,6 +446,8 @@ function resolveCell(me) {
     const e = drawEvent(me); if (e.rule) addRule(e.rule); e.card.kind = `${head}・${e.card.kind}`; show(e.card);
   } else if (c.type === "move") {
     g.pos[me] = Math.max(0, Math.min(GOAL, g.pos[me] + c.value));
+    // 進むマス：進んだ先のマスのお題もやる（進んだ先がまた進む・戻るなら、そこで止まる）
+    if (c.value > 0 && g.pos[me] < GOAL && !depth) { resolveCell(me, `${c.label}で+${c.value}→`, 1); return; }
     const card = { kind: `${head}・${c.label}`, html: fill(c.text, me) };
     if (g.pos[me] === GOAL) { g.done = true; card.html += "　そのままゴール！"; }
     show(card);
@@ -852,23 +854,22 @@ function tiltOut() {
   const g = S.game, tl = g.tl;
   stopTimer();
   tiltHeat(1);
-  tl.phase = "out"; tl.outAt = Date.now();
+  tl.phase = "judge"; tl.outAt = Date.now();
   tl.tries[tl.who]++; tl.outs[tl.who]++;
   if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
   g.turn++;
-  play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]);
-  render(true);
+  // ちょっとためてから判定を出す
+  hold("判定…", 800, () => { tl.phase = "out"; play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); });
 }
 function tiltSafe() {
   const g = S.game, tl = g.tl;
   stopTimer();
   tiltHeat(0);
-  tl.phase = "safe";
+  tl.phase = "judge";
   tl.tries[tl.who]++;
   if (!tl.manual) tl.max[tl.who] = Math.max(tl.max[tl.who] ?? 0, tl.peak);
   g.turn++;
-  play("fanfare");
-  render(true);
+  hold("判定…", 800, () => { tl.phase = "safe"; play("fanfare"); });
 }
 
 // ---------- 全力シェイク ----------
@@ -963,12 +964,15 @@ function skDone() {
   if (sk.manual) sk.tapped[sk.who] = true;
   g.turn++;
   play("fanfare"); if (navigator.vibrate) navigator.vibrate([250, 120, 250]); // タイムアップの「ブブッ」（Androidだけ。iPhoneのブラウザはバイブ不可）
-  sk.phase = sk.k + 1 >= S.members.length ? "rank" : "done";
-  if (sk.phase === "rank") {
-    g.doer = -1;
+  if (sk.k + 1 >= S.members.length) {
+    // 全員振った：ドラムロールでためてから順位発表
     const min = Math.min(...sk.cnt);
     sk.losers = S.members.map((_, i) => i).filter((i) => sk.cnt[i] === min);
+    sk.phase = "tally";
+    hold("結果は…", 1800, () => { sk.phase = "rank"; g.doer = -1; });
+    return;
   }
+  sk.phase = "done";
   render(true);
 }
 function skRound() {
@@ -987,7 +991,6 @@ const spLen = (sp) => sp.target; // 動く秒数（表示上）
 function spRound() {
   const sp = S.game.sp;
   sp.round++; sp.k = 0; sp.res = Array(S.members.length).fill(null); sp.losers = []; sp.exactAny = false;
-  sp.target = 6 + rnd(7); // 6〜12秒
   spBegin();
 }
 const spWho = (sp) => (sp.k + sp.round - 1) % S.members.length;
@@ -996,6 +999,8 @@ function spBegin() {
   sp.who = spWho(sp); S.game.doer = sp.who;
   // 普通・地獄はこの番の倍率を先に決めて見せる。止めるまでずっとこの倍率（体内時計はふつうの速さ）
   sp.rate = S.level === "yurume" || sp.dir === "blind" ? 1 : SP_RATES[rnd(SP_RATES.length)];
+  // 目標の秒数は1人ずつ。実際にかかる時間が10秒を超えんように（×0.5の時は3〜5、それ以外は6〜10）
+  sp.target = sp.rate < 1 ? 3 + rnd(3) : 6 + rnd(5);
   sp.phase = "hand";
 }
 function spCount() { count3(S.game.sp, spGo, 700); }
@@ -1066,10 +1071,13 @@ function spStop(auto = false) {
 // 止めた秒数を見たあと：結果を出す
 function spReveal() {
   const sp = S.game.sp, r = sp.res[sp.who];
-  if (r.over) { play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
-  else play(r.exact ? "fanfare" : "coin");
-  sp.phase = sp.after;
-  if (sp.phase === "rank") S.game.doer = -1;
+  // ちょっとためてから判定。最後の人はそのまま順位発表まで
+  hold(sp.after === "rank" ? "判定…そして結果は…" : "判定…", sp.after === "rank" ? 2000 : 900, () => {
+    if (r.over) { play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
+    else if (sp.after !== "rank") play(r.exact ? "fanfare" : "coin");
+    sp.phase = sp.after;
+    if (sp.phase === "rank") S.game.doer = -1;
+  });
 }
 
 // ---------- ロシアンタップ ----------
@@ -1155,10 +1163,13 @@ function hlGuess(up) {
   const same = hl.next === hl.cur;
   hl.same = same;
   hl.ok = same ? S.level !== "jigoku" : up ? hl.next > hl.cur : hl.next < hl.cur;
-  if (hl.ok) { hl.streak++; hl.hits[hl.who]++; if (hl.streak > hl.best) hl.best = hl.streak; play("coin"); }
-  else { hl.loser = hl.who; hl.x = hl.streak >= (HL_X2[S.level] || 5) ? 2 : 1; play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
-  hl.phase = "reveal";
-  render(true);
+  hl.phase = "flip";
+  // 裏のカードをガタガタさせてからめくる
+  hold(`${up ? "ハイ" : "ロー"}…めくるで`, 1000, () => {
+    if (hl.ok) { hl.streak++; hl.hits[hl.who]++; if (hl.streak > hl.best) hl.best = hl.streak; play("coin"); }
+    else { hl.loser = hl.who; hl.x = hl.streak >= (HL_X2[S.level] || 5) ? 2 : 1; play("boom"); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); }
+    hl.phase = "reveal";
+  });
 }
 function hlNext() {
   const g = S.game, hl = g.hl;
@@ -1227,13 +1238,8 @@ function rfTap(late = false) {
   if (!fly && (rf.best[rf.who] == null || ms < rf.best[rf.who])) rf.best[rf.who] = ms;
   g.turn++;
   play(fly ? "boom" : "coin");
-  rf.phase = rf.k + 1 >= S.members.length ? "rank" : "done";
-  if (rf.phase === "rank") {
-    g.doer = -1;
-    const idx = S.members.map((_, i) => i), flyers = idx.filter((i) => rf.res[i].fly);
-    if (flyers.length) rf.losers = flyers;
-    else { const worst = Math.max(...idx.map((i) => rf.res[i].ms)); rf.losers = idx.filter((i) => rf.res[i].ms === worst); }
-  }
+  if (rf.k + 1 >= S.members.length) { rfFinal(); return; }
+  rf.phase = "done";
   render(true);
 }
 
@@ -1260,14 +1266,16 @@ function rfHeatEnd() {
     if (!r.fly && r.ms < RF_LATE && (rf.best[j] == null || r.ms < rf.best[j])) rf.best[j] = r.ms;
   }
   g.turn++;
-  if (rf.h + 1 < rf.heats.length) { rf.phase = "mdone"; }
-  else {
-    rf.phase = "rank"; g.doer = -1;
-    const idx = S.members.map((_, i) => i), flyers = idx.filter((i) => rf.res[i].fly);
-    if (flyers.length) rf.losers = flyers;
-    else { const worst = Math.max(...idx.map((i) => rf.res[i].ms)); rf.losers = idx.filter((i) => rf.res[i].ms === worst); }
-  }
-  render(true);
+  if (rf.h + 1 < rf.heats.length) { rf.phase = "mdone"; render(true); return; }
+  rfFinal();
+}
+// 全員終わった：罰の人を決めて、ドラムロールでためてから順位発表
+function rfFinal() {
+  const g = S.game, rf = g.rf, idx = S.members.map((_, i) => i), flyers = idx.filter((i) => rf.res[i].fly);
+  if (flyers.length) rf.losers = flyers;
+  else { const worst = Math.max(...idx.map((i) => rf.res[i].ms)); rf.losers = idx.filter((i) => rf.res[i].ms === worst); }
+  rf.phase = "tally";
+  hold("結果は…", 1800, () => { rf.phase = "rank"; g.doer = -1; });
 }
 
 // ---------- 声デカ選手権 ----------
@@ -1340,9 +1348,9 @@ function vcDone() {
   vc.res[vc.who] = score;
   if (score > (vc.best[vc.who] ?? -1)) vc.best[vc.who] = score;
   g.turn++;
+  if (vc.k + 1 >= S.members.length) { vc.phase = "tally"; hold("結果は…", 1800, vcRank); return; }
   play("fanfare");
-  vc.phase = vc.k + 1 >= S.members.length ? "rank" : "done";
-  if (vc.phase === "rank") vcRank();
+  vc.phase = "done";
   render(true);
 }
 function vcRank() {

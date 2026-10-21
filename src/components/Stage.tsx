@@ -43,12 +43,28 @@ export function Frame({ color }: { color: string }) {
 
 /** 上のバー：左に罰スコアの顔アイコン列、右に「⋯」メニュー */
 export function ScoreBar({
-  pal, members, pen, rev, doer, onMenu, flipped, onFlip,
-}: { pal: Pal; members: Member[]; pen: number[]; rev: boolean[]; doer: number; onMenu: () => void; flipped?: boolean; onFlip?: () => void }) {
+  pal, members, pen, rev, doer, onMenu, flipped, onFlip, onEnd,
+}: { pal: Pal; members: Member[]; pen: number[]; rev: boolean[]; doer: number; onMenu: () => void; flipped?: boolean; onFlip?: () => void; onEnd?: () => void }) {
   const { dual, setDual } = usePrefs();
+  // 「結果」ボタン：うっかり押しても終わらんように、2回押したら結果発表
+  const [armed, setArmed] = useState(false);
+  const armT = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (armT.current) clearTimeout(armT.current); }, []);
+  const pressEnd = () => {
+    if (!onEnd) return;
+    if (armed) {
+      if (armT.current) clearTimeout(armT.current);
+      setArmed(false);
+      onEnd();
+      return;
+    }
+    setArmed(true);
+    if (armT.current) clearTimeout(armT.current);
+    armT.current = setTimeout(() => setArmed(false), 3000);
+  };
   const { width } = useWindowDimensions();
   const [all, setAll] = useState(false);
-  // 右のボタン（上下反転・向かい合わせ・⋯）をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
+  // 右のボタン（結果 or 向かい合わせ・上下反転・⋯）をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
   const btns = (onFlip ? 1 : 0) + 2;
   const fit = Math.max(2, Math.floor((Math.min(width, 560) - 32 - btns * 50 - 18) / 44));
   let shown = members.map((_, i) => i);
@@ -102,9 +118,16 @@ export function ScoreBar({
           <Icon name="flip" color={flipped ? pal.bg : pal.fg} size={19} />
         </Tap>
       )}
-      <Tap onPress={() => setDual(!dual)} accessibilityLabel="向かい合わせ表示" accessibilityState={{ selected: dual }} style={quick(dual)}>
-        <Icon name="split" color={dual ? pal.bg : pal.fg} size={19} />
-      </Tap>
+      {onEnd ? (
+        <Tap onPress={pressEnd} accessibilityLabel="結果発表" style={[styles.menuBtn, { backgroundColor: armed ? '#ffd23f' : pal.chip }]}>
+          <Icon name="flag" color={armed ? '#141210' : pal.fg} size={15} />
+          <Text style={{ fontSize: 9, fontWeight: '900', color: armed ? '#141210' : pal.fg }}>{armed ? 'もう一回' : '結果'}</Text>
+        </Tap>
+      ) : (
+        <Tap onPress={() => setDual(!dual)} accessibilityLabel="向かい合わせ表示" accessibilityState={{ selected: dual }} style={quick(dual)}>
+          <Icon name="split" color={dual ? pal.bg : pal.fg} size={19} />
+        </Tap>
+      )}
       <Tap onPress={onMenu} accessibilityLabel="メニュー" style={[styles.menuBtn, { backgroundColor: pal.chip }]}>
         <Icon name="more" color={pal.fg} size={20} />
       </Tap>
@@ -639,7 +662,7 @@ export function Controls({
     case 'offer':
       return (
         <View style={styles.choices}>
-          <Choice pal={pal} hot title="倍プッシュ" sub="成功→押し付け／失敗→罰2倍" onPress={() => flow.chooseDouble(true)} />
+          <Choice pal={pal} hot title="倍プッシュ" sub={"成功→誰かに罰\n失敗→罰2倍"} onPress={() => flow.chooseDouble(true)} />
           <Choice pal={pal} title="普通に見る" sub="いつも通り" onPress={() => flow.chooseDouble(false)} />
         </View>
       );

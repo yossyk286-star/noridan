@@ -6,6 +6,7 @@ import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
+import { useHold } from '../components/Reveal';
 import { play } from '../lib/sound';
 import type { Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, colorOf } from '../theme';
@@ -34,6 +35,7 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
   useKeepAwake();
   const n = members.length;
   const P = usePenalty(members, level, night, 'hilo');
+  const H = useHold();
   const [phase, setPhase] = useState<Phase>('intro');
   const [round, setRound] = useState(1);
   const [who, setWho] = useState(0);
@@ -66,16 +68,19 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
     setSame(sm);
     setOk(good);
     setTurns((t) => t + 1);
-    if (good) {
-      setStreak(streak + 1);
-      hits[who]++;
-      play('coin');
-    } else {
-      setX(streak >= X2[level] ? 2 : 1);
-      play('boom');
-      Vibration.vibrate([0, 120, 60, 200]);
-    }
-    setPhase('reveal');
+    // ちょっとためてからめくる
+    H.hold(`${u ? 'ハイ' : 'ロー'}…めくるで`, 1000, () => {
+      if (good) {
+        setStreak(streak + 1);
+        hits[who]++;
+        play('coin');
+      } else {
+        setX(streak >= X2[level] ? 2 : 1);
+        play('boom');
+        Vibration.vibrate([0, 120, 60, 200]);
+      }
+      setPhase('reveal');
+    });
   };
   const finish = (p: number[] = P.pen) => {
     P.stats.hiloHits = hits.slice();
@@ -143,6 +148,9 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
       controls = <RoundEnd pal={pal} next={P.lucky ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={() => { P.apply(); newRound(round + 1); }} onEnd={() => finish(P.apply())} />;
       break;
   }
+  // ため（ドラムロール）の間は判定を出さへん
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   return (
     <StageShell
       pal={pal} members={members} pen={P.pen} doer={phase === 'guess' ? who : -1} frame={phase === 'intro' ? C.muted : phase === 'reveal' && !ok ? '#ff2a2a' : colorOf(who)}

@@ -7,6 +7,7 @@ import { BigButton, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack, SegText }
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, Note, Outline, Prog } from '../components/ModeParts';
 import { Tap } from '../components/Tap';
 import { HELP } from '../lib/help';
+import { useHold } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
 import { Decks, fill } from '../lib/game';
 import { play } from '../lib/sound';
@@ -57,6 +58,7 @@ export default function PittariScreen({ members, level, night, onQuit, onSetting
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const H = useHold();
 
   const qText = round.segs.map((x) => x.text).join('');
   useEffect(() => {
@@ -102,9 +104,12 @@ export default function PittariScreen({ members, level, night, onQuit, onSetting
     setRound(r);
     setInput('');
     r.order.forEach((i) => r.guess[i] === answer && (stats.exact![i] += 1));
-    setDone(done + 1);
-    setPhase('reveal');
-    play('fanfare');
+    // 一番遠い人の発表の前にドラムロール
+    H.hold('一番遠いのは…', 1800, () => {
+      setDone(done + 1);
+      setPhase('reveal');
+      play('fanfare');
+    });
   };
   const doGacha = () => {
     const items = losers.map((i) => ({ i, n: times, ...decks.batsu(members, i, times) }));
@@ -275,10 +280,13 @@ export default function PittariScreen({ members, level, night, onQuit, onSetting
       break;
   }
 
+  // ため（ドラムロール）の間は結果を出さへん
+  const hv = H.view(pal);
+  if (hv) { card = hv.card; controls = hv.controls; }
   return (
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       <View style={[s.wrap, flipped && { transform: [{ rotate: '180deg' }] }]}>
-        <ScoreBar pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={-1} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={finish} pal={pal} members={members} pen={pen} rev={Array(n).fill(false)} doer={-1} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>
