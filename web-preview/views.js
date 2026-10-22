@@ -1480,7 +1480,7 @@ function vWhack() {
     card = `<div class="odai mode-card center" id="card"><p class="prog">第${wk.round}回戦・${wk.k + 1}/${n}人目</p>${bigWho(wk.who, "の番")}<p class="hand-note">出てきたワニをタップで1点。<br><b>ドクロを押したらマイナス1点</b></p><p class="tl-lim">${WK_SEC}秒</p></div>`;
     controls = `<button class="big" data-act="wkGo">スタート</button>`;
   } else if (wk.phase === "play") {
-    card = `<div class="odai mode-card center wk-card" id="card"><p class="dk-time"><b id="modeTimer">${WK_SEC}</b>秒・<span id="wkScore">${wk.score[wk.who]}</span>点 <span id="wkSkull" class="wk-sk" ${wk.skull[wk.who] ? "" : "hidden"}>ドクロ ${wk.skull[wk.who]}</span></p><div class="wk-grid">${Array.from({ length: 9 }, (_, i) => `<div class="wk-hole" data-wk="${i}"></div>`).join("")}</div></div>`;
+    card = `<div class="odai mode-card center wk-card" id="card"><div class="wk-hud"><div class="wk-pill wk-time"><span class="wk-lbl">のこり</span><b id="modeTimer">${WK_SEC}</b><i class="wk-tbar"><i style="animation-duration:${WK_SEC}s"></i></i></div><div class="wk-pill wk-pt" style="--mc:${colorOf(wk.who)}"><span class="wk-lbl">${mName(wk.who)}</span><b id="wkScore">${wk.score[wk.who]}</b><small>点</small></div><div class="wk-pill wk-skp" id="wkSkull" ${wk.skull[wk.who] ? "" : "hidden"}>${SKULL}<b>${wk.skull[wk.who]}</b></div></div><div class="wk-board"><div class="wk-grid">${Array.from({ length: 9 }, (_, i) => `<div class="wk-hole" data-wk="${i}"></div>`).join("")}</div></div></div>`;
     controls = `<p class="hint">ワニだけタップ！ドクロはアカン</p>`;
   } else if (wk.phase === "turn") {
     const sk = wk.skull[wk.who];

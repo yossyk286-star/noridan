@@ -1334,15 +1334,15 @@ function wkTap(i) {
   if (h.skull) { // ドクロは押すたびにマイナス1点（終わりにはならへん）
     wk.holes[i] = null; wk.skull[wk.who]++; wk.score[wk.who]--; wkPaint(i);
     const sc = document.getElementById("wkScore"); if (sc) sc.textContent = wk.score[wk.who];
-    const el = document.querySelector(`[data-wk="${i}"]`); if (el) { el.classList.add("ouch"); setTimeout(() => el.classList.remove("ouch"), 260); }
-    const sk = document.getElementById("wkSkull"); if (sk) { sk.textContent = `ドクロ ${wk.skull[wk.who]}`; sk.hidden = false; }
+    const el = document.querySelector(`[data-wk="${i}"]`); if (el) { el.classList.add("ouch"); setTimeout(() => el.classList.remove("ouch"), 300); }
+    const sk = document.getElementById("wkSkull"); if (sk) { sk.hidden = false; const b = sk.querySelector("b"); if (b) b.textContent = wk.skull[wk.who]; sk.classList.remove("pop"); void sk.offsetWidth; sk.classList.add("pop"); }
     quakeFx(); play("buzzer"); // フチが赤く光るだけ（爆発は大げさなので）
     return;
   }
   wk.holes[i] = null; wk.score[wk.who]++;
-  const el = document.querySelector(`[data-wk="${i}"]`); if (el) { el.classList.add("hit"); setTimeout(() => el.classList.remove("hit"), 200); }
+  const el = document.querySelector(`[data-wk="${i}"]`); if (el) { el.classList.add("hit"); setTimeout(() => el.classList.remove("hit"), 300); }
   wkPaint(i);
-  const sc = document.getElementById("wkScore"); if (sc) sc.textContent = wk.score[wk.who];
+  const sc = document.getElementById("wkScore"); if (sc) { sc.textContent = wk.score[wk.who]; sc.classList.remove("pop"); void sc.offsetWidth; sc.classList.add("pop"); }
   play("pop"); vib(10);
 }
 function wkEnd() {

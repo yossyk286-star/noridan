@@ -1571,22 +1571,39 @@ body[data-level="yurume"] .qz-tip b, body[data-level="futsu"] .qz-tip b { color:
 .dr-chain b { font-family: var(--display); font-weight: 400; font-size: 26px; }
 .dr-by { font-size: 12px; font-weight: 900; padding: 2px 10px; border-radius: 999px; background: color-mix(in srgb, var(--mc, #8d857a) 25%, transparent); }
 /* ワニワニタップ */
-.wk-card { justify-content: flex-start !important; gap: 10px; }
-.wk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; flex: 1; }
-.wk-hole { position: relative; border-radius: 18px; aspect-ratio: 1; align-self: center; background: radial-gradient(ellipse 40% 14% at 50% 82%, #1e140d 0 96%, transparent 100%), linear-gradient(#5ec3f0, #2f8fd0); overflow: hidden; touch-action: none; }
-.wk-face { position: absolute; left: 12%; right: 12%; bottom: 17%; top: 2%; display: block; animation: wkUp .12s ease-out; }
-.wk-face .mole { display: block; width: 100%; height: 100%; }
-.wk-hole::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: 4%; height: 14%; border-radius: 0 0 50% 50% / 0 0 100% 100%; background: #3a2616; z-index: 1; pointer-events: none; }
-.wk-hole.bad .wk-face { background: transparent; border: 0; }
+.wk-card { justify-content: flex-start !important; gap: 12px; }
+/* 上のHUD：のこり時間（バー付き）・点数・ドクロ */
+.wk-hud { display: flex; gap: 8px; width: 100%; align-items: stretch; }
+.wk-pill { position: relative; display: flex; align-items: baseline; gap: 4px; padding: 6px 12px 8px; border-radius: 16px; background: #141210; color: #f7f3ea; box-shadow: 0 4px 0 rgba(0,0,0,.25); overflow: hidden; }
+.wk-pill b { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
+.wk-pill small { font-size: 12px; font-weight: 900; opacity: .7; }
+.wk-lbl { font-size: 11px; font-weight: 900; opacity: .65; margin-right: 2px; max-width: 5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-time { flex: 1; }
+.wk-tbar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255,255,255,.12); }
+.wk-tbar i { display: block; height: 100%; background: #ffd23f; transform-origin: left; animation: wkBar linear forwards; }
+@keyframes wkBar { from { transform: scaleX(1); } 80% { background: #ffd23f; } to { transform: scaleX(0); background: #ff2a2a; } }
+.wk-pt { box-shadow: 0 4px 0 rgba(0,0,0,.25), inset 0 0 0 2.5px var(--mc); }
+.wk-skp { align-items: center; background: #3a0b0b; color: #ff4a4a; }
+.wk-skp .skull { width: 22px; height: 22px; animation: none; filter: none; }
+.wk-pill .pop, .wk-pill.pop { animation: wkNum .25s cubic-bezier(.3,1.7,.5,1); }
+@keyframes wkNum { from { transform: scale(1.5); } }
+/* 水場のボード */
+.wk-board { flex: 1; width: 100%; padding: 12px; border-radius: 24px; background: radial-gradient(circle at 20% 15%, rgba(255,255,255,.35) 0 8%, transparent 9%), radial-gradient(circle at 85% 80%, rgba(255,255,255,.25) 0 6%, transparent 7%), linear-gradient(160deg, #5ec8f2, #2a86cc); box-shadow: inset 0 -6px 0 rgba(0,0,0,.18), inset 0 0 0 3px rgba(255,255,255,.25), 0 6px 0 #1d5f94; display: flex; align-items: center; }
+.wk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 10px; width: 100%; }
+.wk-hole { position: relative; aspect-ratio: 1; background: radial-gradient(ellipse 44% 16% at 50% 82%, #0b2a44 0 92%, rgba(255,255,255,.55) 93% 100%, transparent 101%), radial-gradient(ellipse 50% 20% at 50% 82%, rgba(255,255,255,.18) 0 99%, transparent 100%); overflow: hidden; touch-action: none; border-radius: 0 0 40% 40%; }
+.wk-hole::after { content: ""; position: absolute; left: 6%; right: 6%; bottom: 2%; height: 16%; border-radius: 0 0 50% 50% / 0 0 100% 100%; background: linear-gradient(#3aa0e0, #2a86cc); border-top: 2px solid rgba(255,255,255,.55); z-index: 1; pointer-events: none; }
+.wk-face { position: absolute; left: 12%; right: 12%; bottom: 17%; top: 4%; display: block; animation: wkUp .22s cubic-bezier(.3,1.5,.5,1); }
+.wk-face .mole { display: block; width: 100%; height: 100%; filter: drop-shadow(0 3px 0 rgba(0,0,0,.25)); }
 .wk-hole.bad .wk-face { left: 18%; right: 18%; top: 14%; bottom: 14%; }
 .wk-hole.bad .wk-face .skull { width: 100%; height: 100%; animation: none; }
 .wk-skn { font-size: clamp(30px, 10vw, 44px); white-space: nowrap; }
-.wk-sk { color: #e8202a; font-weight: 900; margin-left: 6px; }
 .wk-hole.ouch { animation: wkOuch .26s ease-out; }
+.wk-hole.ouch::before { content: "-1"; color: #ff3b3b; }
 @keyframes wkOuch { 0%, 100% { transform: none; } 30% { transform: translateX(-5px) rotate(-4deg); } 60% { transform: translateX(5px) rotate(4deg); } }
-.wk-hole.hit::before { content: "+1"; position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 28px; color: #1f9d55; animation: wkHit .2s ease-out; z-index: 2; }
-@keyframes wkUp { from { transform: translateY(70%); } to { transform: none; } }
-@keyframes wkHit { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.3) translateY(-20%); opacity: 0; } }
+.wk-hole.hit::before, .wk-hole.ouch::before { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 34px; -webkit-text-stroke: 5px #141210; paint-order: stroke fill; animation: wkHit .3s ease-out forwards; z-index: 2; pointer-events: none; }
+.wk-hole.hit::before { content: "+1"; color: #ffd23f; }
+@keyframes wkUp { from { transform: translateY(85%); } to { transform: none; } }
+@keyframes wkHit { from { transform: scale(.5); opacity: 1; } 60% { transform: scale(1.25) translateY(-18%); opacity: 1; } to { transform: scale(1.3) translateY(-30%); opacity: 0; } }
 
 /* 人を選ぶボタン（B3）：本人の色の枠と下の厚み＋頭文字の丸。中身の色はカード（地獄度）に合わせる */
 .pen-tile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center; justify-content: stretch; align-items: center; column-gap: 9px; row-gap: 1px; padding: 6px 10px; border: 2px solid var(--mc); border-bottom-width: 6px; background: color-mix(in srgb, var(--mc) 9%, #1d1a17); color: var(--paper); transition: transform .08s, border-bottom-width .08s, margin-top .08s, background .15s; }

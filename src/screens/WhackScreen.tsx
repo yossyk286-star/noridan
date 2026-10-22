@@ -170,10 +170,25 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
     case 'play':
       card = (
         <ModeCard pal={pal}>
-          <Text style={[s.time, { color: fg }]}>
-            {`${clock.left}秒・${score[who]}点`}
-            {skulls[who] > 0 && <Text style={{ color: '#e8202a' }}>{`  ドクロ ${skulls[who]}`}</Text>}
-          </Text>
+          <View style={s.hud}>
+            <View style={[s.pill, { flex: 1 }]}>
+              <Text style={s.lbl}>のこり</Text>
+              <Text style={s.pillNum}>{clock.left}</Text>
+              <View style={s.tbar}><View style={[s.tbarIn, { width: `${(clock.left / SEC) * 100}%`, backgroundColor: clock.left <= 3 ? '#ff2a2a' : '#ffd23f' }]} /></View>
+            </View>
+            <View style={[s.pill, { borderWidth: 2.5, borderColor: colorOf(who) }]}>
+              <Text style={s.lbl} numberOfLines={1}>{members[who].name}</Text>
+              <Text style={s.pillNum}>{score[who]}</Text>
+              <Text style={s.lbl}>点</Text>
+            </View>
+            {skulls[who] > 0 && (
+              <View style={[s.pill, { backgroundColor: '#3a0b0b', alignItems: 'center' }]}>
+                <View style={{ width: 22, height: 22 }}><Skull /></View>
+                <Text style={[s.pillNum, { color: '#ff4a4a' }]}>{skulls[who]}</Text>
+              </View>
+            )}
+          </View>
+          <View style={s.board}>
           <View style={s.grid}>
             {holes.map((h, i) => (
               <Pressable key={i} onPressIn={() => tap(i)} style={s.cell}>
@@ -186,6 +201,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
                 <View style={s.lip} pointerEvents="none" />
               </Pressable>
             ))}
+          </View>
           </View>
         </ModeCard>
       );
@@ -234,12 +250,18 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
 
 const s = StyleSheet.create({
   lim: { fontFamily: F.display, fontSize: 44, lineHeight: 50 },
-  time: { fontSize: 18, fontWeight: '900', textAlign: 'center', marginBottom: 6 },
-  grid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignContent: 'space-around' },
-  cell: { width: '31%', aspectRatio: 1, alignItems: 'center', justifyContent: 'flex-end', borderRadius: 18, overflow: 'hidden', backgroundColor: '#3fa6e0' },
-  hole: { position: 'absolute', bottom: '8%', width: '80%', height: '26%', borderRadius: 999, backgroundColor: '#1e140d' },
-  face: { position: 'absolute', left: '12%', right: '12%', top: '2%', bottom: '17%' },
-  lip: { position: 'absolute', left: '10%', right: '10%', bottom: '4%', height: '14%', borderBottomLeftRadius: 999, borderBottomRightRadius: 999, backgroundColor: '#3a2616' },
+  hud: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  pill: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 9, borderRadius: 16, backgroundColor: '#141210', overflow: 'hidden' },
+  lbl: { color: 'rgba(247,243,234,0.65)', fontSize: 11, fontWeight: '900', marginBottom: 3, maxWidth: 64 },
+  pillNum: { color: '#f7f3ea', fontFamily: F.display, fontSize: 26, lineHeight: 28 },
+  tbar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 4, backgroundColor: 'rgba(255,255,255,0.12)' },
+  tbarIn: { height: 4 },
+  board: { flex: 1, padding: 12, borderRadius: 24, backgroundColor: '#3aa0e0', borderWidth: 3, borderColor: 'rgba(255,255,255,0.3)', borderBottomWidth: 8, borderBottomColor: '#1d5f94', justifyContent: 'center' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 },
+  cell: { width: '31%', aspectRatio: 1, alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden', borderBottomLeftRadius: 40, borderBottomRightRadius: 40 },
+  hole: { position: 'absolute', bottom: '10%', width: '88%', height: '24%', borderRadius: 999, backgroundColor: '#0b2a44', borderWidth: 2, borderColor: 'rgba(255,255,255,0.55)' },
+  face: { position: 'absolute', left: '12%', right: '12%', top: '4%', bottom: '17%' },
+  lip: { position: 'absolute', left: '6%', right: '6%', bottom: '2%', height: '16%', borderBottomLeftRadius: 999, borderBottomRightRadius: 999, backgroundColor: '#3aa0e0', borderTopWidth: 2, borderTopColor: 'rgba(255,255,255,0.55)' },
   skull: { width: '74%', height: '74%', marginBottom: '8%', alignItems: 'center', justifyContent: 'center' },
   hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
   verdict: { fontFamily: F.display, fontSize: 44, lineHeight: 52 },
