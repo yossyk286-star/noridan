@@ -21,6 +21,9 @@ export type Stats = {
   tickleSafe?: number[]; // こしょばされて耐えた回数
   quizWins?: number[]; // 早押しクイズで正解した数
   faceHits?: number[]; // テンション伝言で伝わった数
+  dekoBest?: number[]; // おでこ当ての1回での最多正解
+  doubtFooled?: number[]; // ダウトで騙した回数
+  doubtSeen?: number[]; // ダウトで見破った回数
   hugBest?: (number | null)[]; // ハグタイム当ての一番小さいズレ（秒）
   stopExact?: number[]; // ピタッとストップでピッタリ止めた回数
   shakeBest?: (number | null)[]; // 全力シェイクの自己ベスト
@@ -28,7 +31,7 @@ export type Stats = {
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
-export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face';
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt';
 /** 罰の理由の名前（src/data/why.json。Web版と共通） */
 export const WHY_LABEL = whyJson as Record<Why, string>;
 export function whyText(st: Stats | undefined, i: number) {
@@ -109,6 +112,12 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
   if (qw) add('クイズ王', qw, `正解 ${st.quizWins![qw[0]]}問`);
   const fh = st.faceHits ? top(st.faceHits, 2) : null;
   if (fh) add('顔芸の天才', fh, `伝わった ${st.faceHits![fh[0]]}回`);
+  const db = st.dekoBest ? top(st.dekoBest, 1) : null;
+  if (db) add('おでこの天才', db, `1回で ${st.dekoBest![db[0]]}問正解`);
+  const df = st.doubtFooled ? top(st.doubtFooled, 1) : null;
+  if (df) add('嘘つき名人', df, `騙した ${st.doubtFooled![df[0]]}回`);
+  const ds = st.doubtSeen ? top(st.doubtSeen, 2) : null;
+  if (ds) add('名探偵', ds, `見破った ${st.doubtSeen![ds[0]]}回`);
   if (st.hugBest) {
     const hb = st.hugBest;
     const ok = hb.map((_, i) => i).filter((i) => hb[i] != null);

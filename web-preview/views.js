@@ -134,6 +134,8 @@ const ICON = {
   rtap: ico("M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM16.5 13.5a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM18.6 13.2l1.4-1.4"),
   bpass: ico("M10 21a6.5 6.5 0 1 0 0-13a6.5 6.5 0 1 0 0 13zM14.6 9.4l2-2M17 5.5l1.5-1.5M19.5 7.5l1.5.5M16.5 3l.5 1.5"),
   blind: ico("M3 12s3.5-6 9-6c1.6 0 3 .5 4.3 1.2M21 12s-3.5 6-9 6c-1.6 0-3-.5-4.3-1.2M4 20L20 4M9.5 14.5a3 3 0 0 1 4.9-4.1"),
+  deko: ico("M12 3a7 7 0 0 0-7 7v1h14v-1a7 7 0 0 0-7-7zM8 14h8v7H8zM10 17h4"),
+  doubt: ico("M9 4h6l1 4H8zM6 8h12M8 12a2 2 0 1 0 0-.01M16 12a2 2 0 1 0 0-.01M9 18c1 1 5 1 6 0M4 21l3-2M20 21l-3-2"),
   quiz: ico("M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5v.4M12 16.8h.01M19 3l2 2M21 3l-2 2"),
   face: ico("M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M8 9.5l2 1M16 9.5l-2 1M8.5 15c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2"),
   hug: ico("M8 7a2.5 2.5 0 1 0 0-.01M16 7a2.5 2.5 0 1 0 0-.01M3 20c.5-4 2.5-7 5-7 1.5 0 2.8.9 4 2.5 1.2-1.6 2.5-2.5 4-2.5 2.5 0 4.5 3 5 7M6 15l6 3 6-3"),
@@ -340,6 +342,8 @@ function vHome2() {
       <button class="mode deep-mode" data-act="start" data-m="hug" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.hug}</i><b>ハグタイム当て</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.hug.desc}</span><em class="go">開始</em></button>
       <button class="mode deep-mode" data-act="start" data-m="tickle" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.tickle}</i><b>こしょばし我慢</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.tickle.desc}</span><em class="go">開始</em></button>
       <button class="mode deep-mode" data-act="start" data-m="pocky" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.pocky}</i><b>ポッキーゲーム</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.pocky.desc}</span><em class="go">開始</em></button>`; })() : ""}
+      <button class="mode" data-act="start" data-m="deko"><i class="mode-ic">${ICON.deko}</i><b>おでこ当て</b><span>${HELP.deko.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="doubt" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.doubt}</i><b>ダウト</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.doubt.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="quiz"><i class="mode-ic">${ICON.quiz}</i><b>早押し雑学クイズ</b><span>${HELP.quiz.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="face" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.face}</i><b>テンション伝言</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.face.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="pittari" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.target}</i><b>ピッタリ予想</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.pittari.desc}</span><em class="go">開始</em></button>
@@ -1386,6 +1390,57 @@ function vBlind() {
   }
   return stageWrap(card, controls);
 }
+// おでこ当て
+function vDeko() {
+  const g = S.game, dk = g.dk, n = S.members.length;
+  if (dk.phase === "intro") {
+    const none = typeof window.DeviceOrientationEvent === "undefined";
+    return vIntroStage("deko", { extra: `${lvBox(`1人${dkSec()}秒（ゆるめ90秒・普通60秒・地獄45秒）`, false)}<p class="how-note">${none ? "このブラウザは傾きがとられへんので、周りの人が「正解」「パス」を押すモードになる" : "iPhoneは次に「動きと方向へのアクセス」を聞かれるので「許可」を押してな"}</p>`, btn: "スタート", act: "dkStart" });
+  }
+  if (dk.phase === "batsu") return stageWrap(vCard(), roundEnd("dkAccept", true));
+  let card, controls;
+  if (dk.phase === "hand") {
+    card = `<div class="odai mode-card center" id="card"><p class="prog">第${dk.round}回戦・${dk.k + 1}/${n}人目</p>${bigWho(dk.who, "の番")}<p class="hand-note">スマホを縦にして<b>おでこに当てる</b>（画面は外向き、自分は見たらアカン）。<br>当てたら<b>下に傾けて正解</b>、わからんかったら<b>上に傾けてパス</b></p><p class="tl-lim">${dkSec()}秒</p></div>`;
+    controls = `<button class="big" data-act="dkReady">おでこに当てた → 3・2・1</button>`;
+  } else if (dk.phase === "count") {
+    card = `<div class="odai mode-card center" id="card"><p class="prog">${mName(dk.who)}、構えて…</p><p class="tl-count">${dk.n}</p></div>`;
+    controls = `<p class="hint">0の瞬間の向きがまっすぐ</p>`;
+  } else if (dk.phase === "play") {
+    card = `<div class="odai mode-card center dk-play ${dk.flash || ""}" id="card"><p class="dk-time"><b id="modeTimer">${dkSec()}</b>秒・<span>${dk.score[dk.who]}問正解</span></p><p class="dk-cat">${esc(dk.cur.c)}</p><p class="dk-word" style="${wordSize(dk.cur.w, 64)}">${dk.flash === "ok" ? "正解！" : dk.flash === "pass" ? "パス" : esc(dk.cur.w)}</p><p class="hand-note">${dk.manual ? "周りの人が下のボタンを押して" : "下に傾けたら正解・上に傾けたらパス"}</p></div>`;
+    controls = `<div class="row2"><button class="ghost" data-act="dkHit" data-v="0">パス</button><button class="big" data-act="dkHit" data-v="1">正解</button></div>`;
+  } else if (dk.phase === "turn") {
+    card = `<div class="odai mode-card center board-card" id="card"><p class="prog">${mName(dk.who)}の結果</p><p class="sp-num sp-res">${dk.score[dk.who]}<small>問正解</small></p><ul class="dk-list">${dk.list.map((x) => `<li class="${x.ok ? "ok" : ""}"><i>${x.ok ? "○" : "×"}</i>${esc(x.w)}</li>`).join("") || "<li>なし</li>"}</ul></div>`;
+    controls = `<button class="big" data-act="dkAfter">${dk.k + 1 < n ? `次は${mName((dk.who + 1) % n)}` : "結果発表"}</button>`;
+  } else {
+    const idx = S.members.map((_, i) => i).sort((a, b) => dk.score[b] - dk.score[a]);
+    card = `<div class="odai mode-card center board-card batsu" id="card" ${rvCard(n)}><p class="prog">第${dk.round}回戦の結果</p>${rankList(idx.map((i) => ({ i, v: `${dk.score[i]}問`, bad: dk.losers.includes(i) })), -1, true)}<p class="ng-lead ${rvLate(n)}">${dk.losers.map(mName).join("・")}が最下位</p></div>`;
+    controls = `<button class="big has-pen" data-act="dkGacha">${dk.losers.map(mName).join("・")}に罰ガチャ</button>`;
+  }
+  return stageWrap(card, controls);
+}
+// ダウト
+function vDoubt() {
+  const g = S.game, du = g.du, n = S.members.length;
+  if (du.phase === "intro") return vIntroStage("doubt", { extra: lvBox("", false), btn: "スタート", act: "duStart" });
+  const last = du.k + 1 >= n;
+  if (du.phase === "batsu") return stageWrap(vCard(), last ? roundEnd("duAccept", true) : `<button class="big" data-act="duAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次は${mName((du.who + 1) % n)}</button>`);
+  let card, controls;
+  if (du.phase === "hand") {
+    card = `<div class="odai mode-card center" id="card"><p class="prog">第${du.round}回戦・${du.k + 1}/${n}人目</p>${bigWho(du.who, "が話す")}<p class="hand-note">${mName(du.who)}だけ長押しで見て。ほかの人は見たらアカン</p>${peekBox(`<p class="bl-l">お題</p><p class="fc-t">${esc(du.topic)}</p><p class="du-mode ${du.lie ? "lie" : ""}">${du.lie ? "嘘をつく" : "本当のことを言う"}</p>`)}</div>`;
+    controls = `<button class="big" data-act="duTalk">覚えた → 話す</button>`;
+  } else if (du.phase === "talk") {
+    card = `<div class="odai mode-card center" id="card"><p class="prog">${mName(du.who)}が話す</p><p class="bl-l">お題</p><p class="fc-t">${esc(du.topic)}</p><p class="hand-note">30秒くらいでそれっぽく話して。<br>周りは質問してもOK。本当か嘘か見破れ</p></div>`;
+    controls = `<button class="big" data-act="duVote">話し終わった → 投票</button>`;
+  } else if (du.phase === "vote") {
+    const voters = S.members.map((_, i) => i).filter((i) => i !== du.who), done = voters.every((i) => du.votes[i]);
+    card = `<div class="odai mode-card center board-card" id="card"><p class="prog">「${esc(du.topic)}」</p><p class="ng-lead">本当？嘘？</p><ul class="du-votes">${voters.map((i) => `<li style="--mc:${colorOf(i)}"><span class="nm">${mName(i)}</span><button data-act="duPick" data-i="${i}" data-v="T" aria-pressed="${du.votes[i] === "T"}">本当</button><button data-act="duPick" data-i="${i}" data-v="L" aria-pressed="${du.votes[i] === "L"}" class="l">嘘</button></li>`).join("")}</ul></div>`;
+    controls = `<button class="big" data-act="duOpen" ${done ? "" : "disabled"}>${done ? "開票" : `あと${voters.filter((i) => !du.votes[i]).length}人`}</button>`;
+  } else {
+    card = `<div class="odai mode-card center ${du.caught ? "batsu" : "lucky"}" id="card"><p class="prog">「${esc(du.topic)}」は…</p><p class="tl-big sp-verdict ${du.lie ? "q-ng" : "q-ok"}">${du.lie ? "嘘！" : "本当！"}</p><p class="ng-lead">${du.caught ? "見破られた！" : "騙された！"}</p><p class="hand-note">${du.caught ? `${mName(du.who)}が罰` : `外した${du.losers.map(mName).join("・")}が罰`}</p></div>`;
+    controls = `<button class="big has-pen" data-act="duGacha">${du.losers.map(mName).join("・")}に罰ガチャ</button>`;
+  }
+  return stageWrap(card, controls);
+}
 // 早押し雑学クイズ
 const qzScoreRows = (qz, rv = false) => { const idx = S.members.map((_, i) => i).sort((a, b) => qz.score[b] - qz.score[a]); return rankList(idx.map((i) => ({ i, v: `${qz.score[i]}点`, bad: qz.phase === "rank" && qz.losers.includes(i) })), -1, rv); };
 function vQuiz() {
@@ -2371,7 +2426,7 @@ const app = document.getElementById("app");
 const overlay = document.getElementById("overlay");
 let lastSoundKey = "";
 // 画面ごとの描き方（新しい遊び方はここと MODE_NAME に足す）
-const VIEWS = { quiz: () => vQuiz(), face: () => vFace(), hug: () => vHug(), tickle: () => vTickle(), blind: () => vBlind(), pocky: () => vPocky(), home: () => vHome(), odai: () => vOdai(), sugoroku: () => vSugo(), memory: () => vMemory(), ito: () => vIto(), gesture: () => vGesture(), homeru: () => vHomeru(), ngword: () => vNg(), vote: () => vVote(), wolf: () => vWolf(), pittari: () => vPittari(), tilt: () => vTilt(), shake: () => vShake(), stop: () => vStop(), rtap: () => vRtap(), bpass: () => vBpass(), hilo: () => vHilo(), reflex: () => vReflex(), voice: () => vVoice() };
+const VIEWS = { deko: () => vDeko(), doubt: () => vDoubt(), quiz: () => vQuiz(), face: () => vFace(), hug: () => vHug(), tickle: () => vTickle(), blind: () => vBlind(), pocky: () => vPocky(), home: () => vHome(), odai: () => vOdai(), sugoroku: () => vSugo(), memory: () => vMemory(), ito: () => vIto(), gesture: () => vGesture(), homeru: () => vHomeru(), ngword: () => vNg(), vote: () => vVote(), wolf: () => vWolf(), pittari: () => vPittari(), tilt: () => vTilt(), shake: () => vShake(), stop: () => vStop(), rtap: () => vRtap(), bpass: () => vBpass(), hilo: () => vHilo(), reflex: () => vReflex(), voice: () => vVoice() };
 function render(anim) {
   const sc = S.screen;
   const onStage = isStage(sc);
@@ -2551,6 +2606,8 @@ function cue() {
   if (sc === "memory") { const p = S.game.mm.phase; play(p === "skull" ? "boom" : p === "fail" || p === "low" ? batsuCue() : p === "match" ? "pinpon" : p === "miss" ? "buzzer" : p === "over" ? "fanfare" : "flip"); if (p === "skull") boomFlash(); return; }
   if (["rtap", "bpass", "hilo", "reflex", "voice"].includes(sc)) { if (S.game.phase === "batsu") batsuCue(); return; }
   if (sc === "blind") { const p = S.game.bl.phase; if (p === "batsu") batsuCue(); else if (p === "close" || p === "secret") play("flip"); return; }
+  if (sc === "deko") { const p = S.game.dk.phase; if (p === "batsu") batsuCue(); return; }
+  if (sc === "doubt") { const p = S.game.du.phase; if (p === "batsu") batsuCue(); else if (p === "hand") play("flip"); return; }
   if (sc === "quiz") { const p = S.game.qz.phase; if (p === "batsu") batsuCue(); else if (p === "q" && !S.game.qz.locked.length) play("jan"); return; }
   if (sc === "face") { const p = S.game.fc.phase; if (p === "batsu") batsuCue(); else if (p === "hand") play("flip"); return; }
   if (sc === "hug") { const p = S.game.hg.phase; if (p === "batsu") batsuCue(); else if (p === "ready") play("jan"); return; }
@@ -2949,6 +3006,21 @@ function onClick(e) {
     case "blGuess": if (g.bl.phase === "guess") blGuess(i); break;
     case "blGacha": startGacha([g.bl.loser], 1, "blind", g.bl); render(true); break;
     case "blAccept": applyAdds(); g.gacha = []; g.phase = "play"; g.bl.k++; blRound(); render(true); break;
+    // おでこ当て
+    case "dkStart": tiltAsk().finally(() => { dkRound(); render(true); }); break;
+    case "dkReady": count3(g.dk, dkGo, 800); render(true); break;
+    case "dkHit": dkHit(b.dataset.v === "1"); break;
+    case "dkAfter": dkAfter(); break;
+    case "dkGacha": startGacha(g.dk.losers, 1, "deko", g.dk); render(true); break;
+    case "dkAccept": applyAdds(); g.gacha = []; g.phase = "play"; dkRound(); render(true); break;
+    // ダウト
+    case "duStart": duRound(); render(true); break;
+    case "duTalk": g.du.phase = "talk"; render(true); break;
+    case "duVote": g.du.phase = "vote"; render(true); break;
+    case "duPick": g.du.votes[i] = b.dataset.v; render(); break;
+    case "duOpen": duOpen(); break;
+    case "duGacha": startGacha(g.du.losers, 1, "doubt", g.du); render(true); break;
+    case "duAccept": { applyAdds(); g.gacha = []; g.phase = "play"; const last = g.du.k + 1 >= S.members.length; if (last) duRound(); else { g.du.k++; duTurn(); } render(true); break; }
     // 早押し雑学クイズ
     case "qzStart": qzRound(); render(true); break;
     case "qzGo": qzNext(); render(true); break;

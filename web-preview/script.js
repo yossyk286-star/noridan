@@ -183,10 +183,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢", hug: "ハグタイム当て", quiz: "早押し雑学クイズ", face: "テンション伝言" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢", hug: "ハグタイム当て", quiz: "早押し雑学クイズ", face: "テンション伝言", deko: "おでこ当て", doubt: "ダウト" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face", "deko", "doubt"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
@@ -210,6 +210,8 @@ function newGame(mode, again = false) {
   if (mode === "rtap") { S.game.doer = -1; S.game.rt = { phase: "intro", round: 0 }; if (again) rtRound(); render(true); return; }
   if (mode === "bpass") { S.game.doer = -1; S.game.bp = { phase: "intro", round: 0 }; if (again) bpRound(); render(true); return; }
   if (mode === "blind") { S.game.doer = -1; S.game.bl = { phase: "intro", k: 0, hits: Array(n).fill(0), fool: Array(n).fill(0) }; if (again) blRound(); render(true); return; }
+  if (mode === "deko") { S.game.doer = -1; S.game.dk = { phase: "intro", round: 0, best: Array(n).fill(0) }; if (again) dkRound(); render(true); return; }
+  if (mode === "doubt") { S.game.doer = -1; S.game.du = { phase: "intro", round: 0, fooled: Array(n).fill(0), seen: Array(n).fill(0) }; if (again) duRound(); render(true); return; }
   if (mode === "quiz") { S.game.doer = -1; S.game.qz = { phase: "intro", round: 0, wins: Array(n).fill(0) }; if (again) qzRound(); render(true); return; }
   if (mode === "face") { S.game.doer = -1; S.game.fc = { phase: "intro", round: 0, hits: Array(n).fill(0) }; if (again) fcRound(); render(true); return; }
   if (mode === "hug") { S.game.doer = -1; S.game.hg = { phase: "intro", k: 0, mate: null, best: Array(n).fill(null) }; if (again) hgRound(); render(true); return; }
@@ -521,6 +523,8 @@ function titles() {
   if (g.mode === "reflex" && g.rf) { const ok = S.members.map((_, i) => i).filter((i) => g.rf.best[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => g.rf.best[i])); add("反射神経王", ok.filter((i) => g.rf.best[i] === m), `最速 ${m}ミリ秒`); } }
   if (g.mode === "voice" && g.vc) { const b = g.vc.best.map((v) => v ?? 0); const t = top(b, 1); if (t) add("声量おばけ", t, `最大 ${b[t[0]]}`); }
   if (g.mode === "blind" && g.bl) { const t = top(g.bl.hits, 1); if (t) add("触覚の達人", t, `当てた ${g.bl.hits[t[0]]}回`); const f = top(g.bl.fool, 1); if (f) add("気配を消す人", f, `バレへんかった ${g.bl.fool[f[0]]}回`); }
+  if (g.mode === "deko" && g.dk) { const t = top(g.dk.best, 1); if (t) add("おでこの天才", t, `1回で ${g.dk.best[t[0]]}問正解`); }
+  if (g.mode === "doubt" && g.du) { const t = top(g.du.fooled, 1); if (t) add("嘘つき名人", t, `騙した ${g.du.fooled[t[0]]}回`); const s = top(g.du.seen, 2); if (s) add("名探偵", s, `見破った ${g.du.seen[s[0]]}回`); }
   if (g.mode === "quiz" && g.qz) { const t = top(g.qz.wins, 1); if (t) add("クイズ王", t, `正解 ${g.qz.wins[t[0]]}問`); }
   if (g.mode === "face" && g.fc) { const t = top(g.fc.hits, 2); if (t) add("顔芸の天才", t, `伝わった ${g.fc.hits[t[0]]}回`); }
   if (g.mode === "hug" && g.hg) { const ok = S.members.map((_, i) => i).filter((i) => g.hg.best[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => g.hg.best[i])); add("ハグ職人", ok.filter((i) => g.hg.best[i] === m), `ズレ ${m.toFixed(2)}秒`); } }
@@ -790,7 +794,7 @@ function tiltListen() {
   window.addEventListener("deviceorientation", (e) => {
     if (e.beta == null || e.gamma == null) return;
     tiltSensor.beta = e.beta; tiltSensor.gamma = e.gamma; tiltSensor.at = Date.now();
-    tiltTick();
+    tiltTick(); dkTick();
   });
 }
 // iPhone は押したタイミングで許可を取る必要がある
@@ -1204,6 +1208,85 @@ function bpBoom() {
   play("bigboom"); vib([300, 60, 120, 60, 400]);
   render(true);
   bigBoom(); // 画面ごと吹っ飛ぶ演出
+}
+
+// ---------- おでこ当て ----------
+// 番の人がスマホをおでこに当てる（画面は外向き）。周りのヒントで当てたら下に傾けて正解、上に傾けてパス。時間内の正解数が一番少ない人が罰
+const DK_SEC = { yurume: 90, futsu: 60, jigoku: 45 };
+const dkSec = () => DK_SEC[S.level] || 60;
+const DK_ALL = () => Object.entries(DATA.deko).flatMap(([c, ws]) => ws.map((w) => ({ c, w })));
+function dkRound() {
+  const g = S.game, dk = g.dk;
+  dk.round++; dk.k = 0; dk.score = Array(S.members.length).fill(0); dk.losers = [];
+  dkTurn();
+}
+function dkTurn() {
+  const g = S.game, dk = g.dk;
+  dk.who = dk.k % S.members.length; g.doer = dk.who;
+  dk.list = []; dk.phase = "hand";
+}
+function dkWord() { const dk = S.game.dk; dk.cur = draw("deko", DK_ALL()); dk.flash = null; }
+function dkGo() {
+  const dk = S.game.dk;
+  dk.manual = !tiltLive();
+  dk.base = dk.manual ? null : tiltSensor.beta; dk.armed = false;
+  dkWord(); dk.phase = "play"; play("coin");
+  render(true);
+  startTimer(dkSec(), () => { if (S.game?.dk === dk && dk.phase === "play") dkEnd(); }, (ms) => String(Math.ceil(ms / 1000)));
+}
+function dkHit(ok) {
+  const dk = S.game?.dk;
+  if (!dk || dk.phase !== "play" || dk.flash) return;
+  dk.list.push({ w: dk.cur.w, ok }); if (ok) dk.score[dk.who]++;
+  dk.flash = ok ? "ok" : "pass"; dk.armed = false;
+  play(ok ? "pinpon" : "tick"); vib(ok ? 40 : 15);
+  render();
+  setTimeout(() => { if (S.game?.dk === dk && dk.phase === "play") { dkWord(); render(); } }, 650);
+}
+// 傾き：始めた時の向きから、画面が床を向く方（beta が増える）＝正解、天井を向く方＝パス。いったん戻してから次を受け付ける
+function dkTick() {
+  const dk = S.game?.dk;
+  if (!dk || dk.phase !== "play" || dk.manual || dk.base == null || S.screen !== "deko") return;
+  const d = tiltSensor.beta - dk.base;
+  if (!dk.armed) { if (Math.abs(d) < 15) dk.armed = true; return; }
+  if (d > 35) dkHit(true); else if (d < -35) dkHit(false);
+}
+function dkEnd() {
+  const g = S.game, dk = g.dk;
+  stopTimer();
+  dk.best[dk.who] = Math.max(dk.best[dk.who], dk.score[dk.who]);
+  dk.phase = "turn"; g.turn++; play("timeup");
+  render(true);
+}
+function dkAfter() {
+  const g = S.game, dk = g.dk;
+  dk.k++;
+  if (dk.k < S.members.length) { dkTurn(); render(true); return; }
+  const min = Math.min(...dk.score);
+  dk.losers = S.members.map((_, i) => i).filter((i) => dk.score[i] === min);
+  hold("結果は…", 1800, () => { dk.phase = "rank"; });
+  render();
+}
+
+// ---------- ダウト ----------
+// 番の人だけお題と「本当／嘘」を見て話す。ほかの人が本当か嘘か投票。半分以上当てたら話した人、当てたのが半分未満なら外した人が罰
+function duRound() { const du = S.game.du; du.round++; du.k = 0; duTurn(); }
+function duTurn() {
+  const g = S.game, du = g.du;
+  du.who = du.k % S.members.length; g.doer = du.who;
+  du.topic = draw("doubt", DATA.doubt); du.lie = Math.random() < 0.5;
+  du.votes = {}; du.losers = []; du.phase = "hand";
+}
+function duOpen() {
+  const g = S.game, du = g.du;
+  const voters = S.members.map((_, i) => i).filter((i) => i !== du.who);
+  const right = voters.filter((i) => (du.votes[i] === "L") === du.lie);
+  du.caught = right.length * 2 >= voters.length;
+  du.losers = du.caught ? [du.who] : voters.filter((i) => !right.includes(i));
+  if (du.caught) right.forEach((i) => du.seen[i]++); else du.fooled[du.who]++;
+  g.turn++;
+  hold("正解は…", 1800, () => { du.phase = "reveal"; play(du.caught ? "buzzer" : "pinpon"); });
+  render();
 }
 
 // ---------- 早押し雑学クイズ ----------

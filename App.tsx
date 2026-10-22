@@ -30,6 +30,8 @@ import TickleScreen from './src/screens/TickleScreen';
 import HugScreen from './src/screens/HugScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import FaceScreen from './src/screens/FaceScreen';
+import DekoScreen from './src/screens/DekoScreen';
+import DoubtScreen from './src/screens/DoubtScreen';
 import { cleanMembers, load, save } from './src/lib/storage';
 import { play, setSoundEnabled, setVolume } from './src/lib/sound';
 import { setVibeEnabled, Vibration } from './src/lib/vibe';
@@ -51,7 +53,7 @@ import type { Level, Member, Mode, Night } from './src/types';
 const STAGES: Record<Mode, ComponentType<any>> = {
   odai: OdaiScreen, sugoroku: SugorokuScreen, memory: MemoryScreen, ito: ItoScreen, gesture: GestureScreen, homeru: HomeruScreen,
   ngword: NgWordScreen, vote: VoteScreen, wolf: WolfScreen, pittari: PittariScreen, tilt: TiltScreen, shake: ShakeScreen, stop: StopScreen,
-  rtap: RtapScreen, bpass: BpassScreen, hilo: HiloScreen, reflex: ReflexScreen, voice: VoiceScreen, blind: BlindScreen, pocky: PockyScreen, tickle: TickleScreen, hug: HugScreen, quiz: QuizScreen, face: FaceScreen,
+  rtap: RtapScreen, bpass: BpassScreen, hilo: HiloScreen, reflex: ReflexScreen, voice: VoiceScreen, blind: BlindScreen, pocky: PockyScreen, tickle: TickleScreen, hug: HugScreen, quiz: QuizScreen, face: FaceScreen, deko: DekoScreen, doubt: DoubtScreen,
 };
 const isStage = (name: string): name is Mode => name in STAGES;
 

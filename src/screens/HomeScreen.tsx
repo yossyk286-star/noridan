@@ -298,6 +298,8 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       <ModeCard icon="hilo" title="ハイ&ロー" desc={HELP.hilo.desc} onPress={() => onStart('hilo')} />
       <ModeCard icon="reflex" title="反射神経バトル" desc={HELP.reflex.desc} onPress={() => onStart('reflex')} />
       <ModeCard icon="voice" title="声デカ選手権" desc={HELP.voice.desc} onPress={() => onStart('voice')} />
+      <ModeCard icon="deko" title="おでこ当て" desc={HELP.deko.desc} onPress={() => onStart('deko')} />
+      <ModeCard icon="doubt" title="ダウト" desc={members.length < 3 ? '3人から遊べる' : HELP.doubt.desc} disabled={members.length < 3} onPress={() => onStart('doubt')} />
       <ModeCard icon="quiz" title="早押し雑学クイズ" desc={HELP.quiz.desc} onPress={() => onStart('quiz')} />
       <ModeCard icon="face" title="テンション伝言" desc={members.length < 3 ? '3人から遊べる' : HELP.face.desc} disabled={members.length < 3} onPress={() => onStart('face')} />
       {/* 深夜だけの接触系。下ネタNGの人は入らへん */}
@@ -352,7 +354,7 @@ function StepHead({ num, title, sub }: { num: string; title: string; sub?: strin
   );
 }
 
-function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote' | 'wolf' | 'target' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
+function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote' | 'wolf' | 'target' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Tap onPress={onPress} disabled={disabled} style={({ pressed }) => [s.mode, { opacity: disabled ? 0.45 : 1, transform: [{ translateY: pressed ? 4 : 0 }] }]}>
       <View style={s.modeIc}>
