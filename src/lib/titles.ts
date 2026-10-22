@@ -123,7 +123,7 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
   const kc = st.kingCount ? top(st.kingCount, 2) : null;
   if (kc) add('天下人', kc, `王様 ${st.kingCount![kc[0]]}回`);
   const wb = st.whackBest ? top(st.whackBest, 1) : null;
-  if (wb) add('モグラ叩き名人', wb, `最高 ${st.whackBest![wb[0]]}点`);
+  if (wb) add('ワニワニ名人', wb, `最高 ${st.whackBest![wb[0]]}点`);
   if (st.hugBest) {
     const hb = st.hugBest;
     const ok = hb.map((_, i) => i).filter((i) => hb[i] != null);

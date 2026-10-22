@@ -347,22 +347,30 @@ export function TwinSkulls() {
 }
 
 /** 罰が一番多い人の王冠 */
-/** ワニワニのモグラ（穴から上半身だけ出てる） */
-export function Mole() {
+/** ワニワニのワニ（穴から頭だけ出てる） */
+export function Wani() {
   return (
     <Svg width="100%" height="100%" viewBox="0 0 100 100">
-      <Path d="M16 100V50a34 34 0 0 1 68 0v50z" fill="#8a5a3b" stroke="#141210" strokeWidth={4} />
-      <Ellipse cx={50} cy={66} rx={25} ry={21} fill="#d9ab84" />
-      <Circle cx={37} cy={45} r={4.5} fill="#141210" />
-      <Circle cx={63} cy={45} r={4.5} fill="#141210" />
-      <Circle cx={38.5} cy={43.5} r={1.4} fill="#fff" />
-      <Circle cx={64.5} cy={43.5} r={1.4} fill="#fff" />
-      <Path d="M28 60h-14M28 65l-13 4M72 60h14M72 65l13 4" stroke="#141210" strokeWidth={2} strokeLinecap="round" />
-      <Rect x={45} y={66} width={10} height={9} rx={1.5} fill="#fff" stroke="#141210" strokeWidth={2} />
-      <Path d="M50 66v9" stroke="#141210" strokeWidth={1.6} />
-      <Ellipse cx={50} cy={59} rx={9} ry={6.5} fill="#ff7aa2" stroke="#141210" strokeWidth={2.5} />
-      <Ellipse cx={26} cy={90} rx={10} ry={7} fill="#f0b896" stroke="#141210" strokeWidth={2.5} />
-      <Ellipse cx={74} cy={90} rx={10} ry={7} fill="#f0b896" stroke="#141210" strokeWidth={2.5} />
+      <Path d="M14 100V54q0-16 16-16h40q16 0 16 16v46z" fill="#3fa34d" stroke="#141210" strokeWidth={4}/>
+      <Path d="M16 71h68v11H16z" fill="#7a1020"/>
+      <Path d="M16 82h68v16H16z" fill="#d4ec9e"/>
+      <Path d="M16 71h68M16 82h68" stroke="#141210" strokeWidth={2.5}/>
+      <Path d="M20 71l4 6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4-6z" fill="#fff" stroke="#141210" strokeWidth={1.6} strokeLinejoin="round"/>
+      <Path d="M22 82l4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6z" fill="#fff" stroke="#141210" strokeWidth={1.6} strokeLinejoin="round"/>
+      <Ellipse cx={50} cy={58} rx={26} ry={8} fill="#5cc46a"/>
+      <Ellipse cx={43} cy={57} rx={2.6} ry={2} fill="#141210"/>
+      <Ellipse cx={57} cy={57} rx={2.6} ry={2} fill="#141210"/>
+      <Circle cx={38} cy={46} r={2} fill="#2e7d3a"/>
+      <Circle cx={50} cy={44} r={2} fill="#2e7d3a"/>
+      <Circle cx={62} cy={46} r={2} fill="#2e7d3a"/>
+      <Circle cx={31} cy={32} r={13} fill="#3fa34d" stroke="#141210" strokeWidth={4}/>
+      <Circle cx={69} cy={32} r={13} fill="#3fa34d" stroke="#141210" strokeWidth={4}/>
+      <Circle cx={31} cy={34} r={8} fill="#ffd23f"/>
+      <Circle cx={69} cy={34} r={8} fill="#ffd23f"/>
+      <Ellipse cx={31} cy={35} rx={2} ry={5} fill="#141210"/>
+      <Ellipse cx={69} cy={35} rx={2} ry={5} fill="#141210"/>
+      <Path d="M22 33a9 9 0 0 1 18 0z" fill="#3fa34d" stroke="#141210" strokeWidth={2.5} strokeLinejoin="round"/>
+      <Path d="M60 33a9 9 0 0 1 18 0z" fill="#3fa34d" stroke="#141210" strokeWidth={2.5} strokeLinejoin="round"/>
     </Svg>
   );
 }

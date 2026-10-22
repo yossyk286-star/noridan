@@ -532,7 +532,7 @@ function titles() {
   if (g.mode === "voice" && g.vc) { const b = g.vc.best.map((v) => v ?? 0); const t = top(b, 1); if (t) add("声量おばけ", t, `最大 ${b[t[0]]}`); }
   if (g.mode === "blind" && g.bl) { const t = top(g.bl.hits, 1); if (t) add("触覚の達人", t, `当てた ${g.bl.hits[t[0]]}回`); const f = top(g.bl.fool, 1); if (f) add("気配を消す人", f, `バレへんかった ${g.bl.fool[f[0]]}回`); }
   if (g.mode === "king" && g.kg) { const t = top(g.kg.kings, 2); if (t) add("天下人", t, `王様 ${g.kg.kings[t[0]]}回`); }
-  if (g.mode === "whack" && g.wk) { const t = top(g.wk.best, 1); if (t) add("モグラ叩き名人", t, `最高 ${g.wk.best[t[0]]}点`); }
+  if (g.mode === "whack" && g.wk) { const t = top(g.wk.best, 1); if (t) add("ワニワニ名人", t, `最高 ${g.wk.best[t[0]]}点`); }
   if (g.mode === "deko" && g.dk) { const t = top(g.dk.best, 1); if (t) add("おでこの天才", t, `1回で ${g.dk.best[t[0]]}問正解`); }
   if (g.mode === "doubt" && g.du) { const t = top(g.du.fooled, 1); if (t) add("嘘つき名人", t, `騙した ${g.du.fooled[t[0]]}回`); const s = top(g.du.seen, 2); if (s) add("名探偵", s, `見破った ${g.du.seen[s[0]]}回`); }
   if (g.mode === "quiz" && g.qz) { const t = top(g.qz.wins, 1); if (t) add("クイズ王", t, `正解 ${g.qz.wins[t[0]]}問`); }
@@ -1293,7 +1293,7 @@ function drSetup() {
 function drFinishPic() { const cv = document.getElementById("drCanvas"); drSubmit(cv ? cv.toDataURL("image/jpeg", 0.7) : ""); }
 
 // ---------- ワニワニタップ ----------
-// 1人15秒。穴から出てくるモグラをタップで1点、ドクロを押したらマイナス1点。一番低い人が罰
+// 1人15秒。穴から出てくるワニをタップで1点、ドクロを押したらマイナス1点。一番低い人が罰
 const WK_SEC = 15;
 const WK_LV = { yurume: { every: 650, life: 950, skull: 0.12 }, futsu: { every: 520, life: 780, skull: 0.18 }, jigoku: { every: 400, life: 620, skull: 0.26 } };
 function wkRound() {
@@ -1325,7 +1325,7 @@ function wkPaint(i) {
   const el = document.querySelector(`[data-wk="${i}"]`); if (!el) return;
   const h = S.game.wk.holes[i];
   el.classList.toggle("up", !!h); el.classList.toggle("bad", !!h?.skull);
-  el.innerHTML = h ? (h.skull ? `<span class="wk-face">${SKULL}</span>` : `<span class="wk-face">${MOLE}</span>`) : "";
+  el.innerHTML = h ? (h.skull ? `<span class="wk-face">${SKULL}</span>` : `<span class="wk-face">${WANI}</span>`) : "";
 }
 function wkTap(i) {
   const wk = S.game?.wk;
