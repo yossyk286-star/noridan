@@ -134,6 +134,8 @@ const ICON = {
   rtap: ico("M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM16.5 13.5a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM18.6 13.2l1.4-1.4"),
   bpass: ico("M10 21a6.5 6.5 0 1 0 0-13a6.5 6.5 0 1 0 0 13zM14.6 9.4l2-2M17 5.5l1.5-1.5M19.5 7.5l1.5.5M16.5 3l.5 1.5"),
   blind: ico("M3 12s3.5-6 9-6c1.6 0 3 .5 4.3 1.2M21 12s-3.5 6-9 6c-1.6 0-3-.5-4.3-1.2M4 20L20 4M9.5 14.5a3 3 0 0 1 4.9-4.1"),
+  quiz: ico("M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5v.4M12 16.8h.01M19 3l2 2M21 3l-2 2"),
+  face: ico("M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M8 9.5l2 1M16 9.5l-2 1M8.5 15c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2"),
   hug: ico("M8 7a2.5 2.5 0 1 0 0-.01M16 7a2.5 2.5 0 1 0 0-.01M3 20c.5-4 2.5-7 5-7 1.5 0 2.8.9 4 2.5 1.2-1.6 2.5-2.5 4-2.5 2.5 0 4.5 3 5 7M6 15l6 3 6-3"),
   tickle: ico("M7 11V6a1.5 1.5 0 0 1 3 0v5M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10.5V6a1.5 1.5 0 0 1 3 0v6.5c0 4-2.5 7-6.5 7S4 17 3 14l-1-3a1.5 1.5 0 0 1 2.8-1L7 13M18 4l2-1M19 8h2M18 12l2 1"),
   pocky: ico("M5 19L17 7M7 21L19 9M17 7l2-2a1.4 1.4 0 0 1 2 2l-2 2M5 19l-1.5 1.5"),
@@ -338,6 +340,8 @@ function vHome2() {
       <button class="mode deep-mode" data-act="start" data-m="hug" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.hug}</i><b>ハグタイム当て</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.hug.desc}</span><em class="go">開始</em></button>
       <button class="mode deep-mode" data-act="start" data-m="tickle" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.tickle}</i><b>こしょばし我慢</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.tickle.desc}</span><em class="go">開始</em></button>
       <button class="mode deep-mode" data-act="start" data-m="pocky" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.pocky}</i><b>ポッキーゲーム</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.pocky.desc}</span><em class="go">開始</em></button>`; })() : ""}
+      <button class="mode" data-act="start" data-m="quiz"><i class="mode-ic">${ICON.quiz}</i><b>早押し雑学クイズ</b><span>${HELP.quiz.desc}</span><em class="go">開始</em></button>
+      <button class="mode" data-act="start" data-m="face" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.face}</i><b>テンション伝言</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.face.desc}</span><em class="go">開始</em></button>
       <button class="mode" data-act="start" data-m="pittari" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.target}</i><b>ピッタリ予想</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.pittari.desc}</span><em class="go">開始</em></button>
     </div>
   </section>
@@ -1382,6 +1386,60 @@ function vBlind() {
   }
   return stageWrap(card, controls);
 }
+// 早押し雑学クイズ
+const qzScoreRows = (qz, rv = false) => { const idx = S.members.map((_, i) => i).sort((a, b) => qz.score[b] - qz.score[a]); return rankList(idx.map((i) => ({ i, v: `${qz.score[i]}点`, bad: qz.phase === "rank" && qz.losers.includes(i) })), -1, rv); };
+function vQuiz() {
+  const g = S.game, qz = g.qz, n = S.members.length;
+  if (qz.phase === "intro") return vIntroStage("quiz", { extra: lvBox(S.level === "jigoku" ? "難しい問題・間違えたら-1点" : S.level === "futsu" ? "ふつうの問題" : "かんたんな問題", false), btn: "スタート", act: "qzStart" });
+  if (qz.phase === "batsu") return stageWrap(vCard(), roundEnd("qzAccept", true));
+  const cols = n <= 2 ? 1 : n <= 8 ? 2 : 3;
+  const zones = (live) => `<div class="qz-zones" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${S.members.map((m, i) => `<div class="rf-zone qz-zone ${qz.locked?.includes(i) ? "out" : ""}" ${live && !qz.locked.includes(i) ? `data-qz="${i}"` : ""} style="--mc:${colorOf(i)}"><span><b>${esc(m.name)}</b><i class="rf-zv">${qz.score[i]}点${qz.locked?.includes(i) ? "・×" : ""}</i></span></div>`).join("")}</div>`;
+  let card, controls;
+  if (qz.phase === "ready") {
+    card = `<div class="odai mode-card center board-card" id="card"><p class="prog">第${qz.round}回戦・全${QZ_N}問</p><p class="ng-lead">スマホを真ん中に置いて</p>${zones(false)}<p class="hand-note">自分の名前のエリアに指を構えて。<br>問題が出たら早押し、押した人が4択で答える</p></div>`;
+    controls = `<button class="big" data-act="qzGo">1問目</button>`;
+  } else if (qz.phase === "q") {
+    card = `<div class="odai mode-card center qz-card" id="card"><p class="prog">第${qz.k}問 / ${QZ_N}${qz.locked.length ? `・${mName(qz.miss)}は不正解` : ""}</p><p class="qz-q">${esc(qz.q)}</p>${zones(true)}</div>`;
+    controls = `<button class="ghost" data-act="qzReveal">誰もわからん → 答えを見る</button>`;
+  } else if (qz.phase === "ans") {
+    card = `<div class="odai mode-card center qz-card" id="card"><p class="prog">第${qz.k}問・${mName(qz.buzz)}が答える</p><p class="qz-q">${esc(qz.q)}</p><div class="qz-opts">${qz.opts.map((o) => `<button class="pen-tile qz-opt" style="--mc:${colorOf(qz.buzz)}" data-act="qzAns" data-v="${esc(o)}"><span class="bar"></span><span class="nm">${esc(o)}</span></button>`).join("")}</div></div>`;
+    controls = `<p class="hint">${mName(qz.buzz)}が選んで</p>`;
+  } else if (qz.phase === "res") {
+    card = `<div class="odai mode-card center ${qz.ok ? "lucky" : ""}" id="card"><p class="prog">第${qz.k}問の答え</p><p class="qz-q small">${esc(qz.q)}</p><p class="qz-ans">${esc(qz.ans)}</p><p class="tl-big sp-verdict ${qz.ok ? "q-ok" : "q-ng"}">${qz.ok ? `${mName(qz.buzz)}正解！` : "スルー"}</p></div>`;
+    controls = `<button class="big" data-act="qzAfter">${qz.k < QZ_N ? `次の問題（${qz.k + 1}/${QZ_N}）` : "結果発表"}</button>`;
+  } else {
+    card = `<div class="odai mode-card center board-card batsu" id="card" ${rvCard(n)}><p class="prog">第${qz.round}回戦の結果</p>${qzScoreRows(qz, true)}<p class="ng-lead ${rvLate(n)}">${qz.losers.map(mName).join("・")}が最下位</p></div>`;
+    controls = `<button class="big has-pen" data-act="qzGacha">${qz.losers.map(mName).join("・")}に罰ガチャ</button>`;
+  }
+  return stageWrap(card, controls);
+}
+// テンション伝言（表情当て）
+function vFace() {
+  const g = S.game, fc = g.fc, n = S.members.length;
+  if (fc.phase === "intro") return vIntroStage("face", { extra: lvBox(`1人${FC_PER}問・顔だけで${FC_SEC}秒`, false), btn: "スタート", act: "fcStart" });
+  if (fc.phase === "batsu") return stageWrap(vCard(), roundEnd("fcAccept", true));
+  const prog = `第${fc.round}回戦・${fc.k + 1}/${n * FC_PER}問`;
+  let card, controls;
+  if (fc.phase === "hand") {
+    card = `<div class="odai mode-card center" id="card"><p class="prog">${prog}</p>${bigWho(fc.who, "が演じる")}<p class="hand-note">${mName(fc.who)}だけ長押しでお題を見て。<br>ほかの人は見たらアカン</p>${peekBox(`<p class="fc-t">${esc(fc.t)}</p>`)}</div>`;
+    controls = `<button class="big" data-act="fcAct">覚えた → 演じる（${FC_SEC}秒）</button>`;
+  } else if (fc.phase === "act") {
+    card = `<div class="odai mode-card center" id="card"><p class="prog">${mName(fc.who)}が演じてる</p><p class="tl-count" id="modeTimer">${FC_SEC}</p><p class="ng-lead">顔だけで！</p><p class="hand-note">声・手・身ぶりはナシ。<br>スマホは周りの人が持って見てて</p></div>`;
+    controls = `<button class="ghost" data-act="fcStop">もうわかった → 答える</button>`;
+  } else if (fc.phase === "guess") {
+    card = `<div class="odai mode-card center board-card" id="card"><p class="prog">${prog}</p><p class="ng-lead">${mName(fc.who)}の気持ちは？</p><div class="qz-opts">${fc.opts.map((o) => `<button class="pen-tile qz-opt" style="--mc:${colorOf(fc.who)}" data-act="fcGuess" data-v="${esc(o)}"><span class="bar"></span><span class="nm">${esc(o)}</span></button>`).join("")}</div></div>`;
+    controls = `<p class="hint">周りの人で相談して1つ選んで</p>`;
+  } else if (fc.phase === "res") {
+    card = `<div class="odai mode-card center ${fc.ok ? "lucky" : ""}" id="card"><p class="prog">正解は…</p><p class="qz-ans">${esc(fc.t)}</p><p class="tl-big sp-verdict ${fc.ok ? "q-ok" : "q-ng"}">${fc.ok ? "伝わった！" : "伝わらん！"}</p><p class="hand-note">${fc.ok ? `${mName(fc.who)}に1点` : `「${esc(fc.pick)}」に見えたらしい`}</p></div>`;
+    const last = fc.k + 1 >= n * FC_PER;
+    controls = `<button class="big" data-act="fcAfter">${last ? "結果発表" : (fc.k + 1) % FC_PER === 0 ? `次は${mName((fc.who + 1) % n)}` : `${mName(fc.who)}の2問目`}</button>`;
+  } else {
+    const idx = S.members.map((_, i) => i).sort((a, b) => fc.score[b] - fc.score[a]);
+    card = `<div class="odai mode-card center board-card batsu" id="card" ${rvCard(n)}><p class="prog">第${fc.round}回戦の結果</p>${rankList(idx.map((i) => ({ i, v: `${fc.score[i]}点`, bad: fc.losers.includes(i) })), -1, true)}<p class="ng-lead ${rvLate(n)}">${fc.losers.map(mName).join("・")}が一番伝わらんかった</p></div>`;
+    controls = `<button class="big has-pen" data-act="fcGacha">${fc.losers.map(mName).join("・")}に罰ガチャ</button>`;
+  }
+  return stageWrap(card, controls);
+}
 // ハグタイム当て
 function vHug() {
   const g = S.game, hg = g.hg, sec = hgSec();
@@ -2313,7 +2371,7 @@ const app = document.getElementById("app");
 const overlay = document.getElementById("overlay");
 let lastSoundKey = "";
 // 画面ごとの描き方（新しい遊び方はここと MODE_NAME に足す）
-const VIEWS = { hug: () => vHug(), tickle: () => vTickle(), blind: () => vBlind(), pocky: () => vPocky(), home: () => vHome(), odai: () => vOdai(), sugoroku: () => vSugo(), memory: () => vMemory(), ito: () => vIto(), gesture: () => vGesture(), homeru: () => vHomeru(), ngword: () => vNg(), vote: () => vVote(), wolf: () => vWolf(), pittari: () => vPittari(), tilt: () => vTilt(), shake: () => vShake(), stop: () => vStop(), rtap: () => vRtap(), bpass: () => vBpass(), hilo: () => vHilo(), reflex: () => vReflex(), voice: () => vVoice() };
+const VIEWS = { quiz: () => vQuiz(), face: () => vFace(), hug: () => vHug(), tickle: () => vTickle(), blind: () => vBlind(), pocky: () => vPocky(), home: () => vHome(), odai: () => vOdai(), sugoroku: () => vSugo(), memory: () => vMemory(), ito: () => vIto(), gesture: () => vGesture(), homeru: () => vHomeru(), ngword: () => vNg(), vote: () => vVote(), wolf: () => vWolf(), pittari: () => vPittari(), tilt: () => vTilt(), shake: () => vShake(), stop: () => vStop(), rtap: () => vRtap(), bpass: () => vBpass(), hilo: () => vHilo(), reflex: () => vReflex(), voice: () => vVoice() };
 function render(anim) {
   const sc = S.screen;
   const onStage = isStage(sc);
@@ -2493,6 +2551,8 @@ function cue() {
   if (sc === "memory") { const p = S.game.mm.phase; play(p === "skull" ? "boom" : p === "fail" || p === "low" ? batsuCue() : p === "match" ? "pinpon" : p === "miss" ? "buzzer" : p === "over" ? "fanfare" : "flip"); if (p === "skull") boomFlash(); return; }
   if (["rtap", "bpass", "hilo", "reflex", "voice"].includes(sc)) { if (S.game.phase === "batsu") batsuCue(); return; }
   if (sc === "blind") { const p = S.game.bl.phase; if (p === "batsu") batsuCue(); else if (p === "close" || p === "secret") play("flip"); return; }
+  if (sc === "quiz") { const p = S.game.qz.phase; if (p === "batsu") batsuCue(); else if (p === "q" && !S.game.qz.locked.length) play("jan"); return; }
+  if (sc === "face") { const p = S.game.fc.phase; if (p === "batsu") batsuCue(); else if (p === "hand") play("flip"); return; }
   if (sc === "hug") { const p = S.game.hg.phase; if (p === "batsu") batsuCue(); else if (p === "ready") play("jan"); return; }
   if (sc === "tickle") { const p = S.game.tk.phase; if (p === "batsu") batsuCue(); else if (p === "ready") play("jan"); return; }
   if (sc === "pocky") { const p = S.game.pk.phase; if (p === "batsu") batsuCue(); else if (p === "ready") play("jan"); return; }
@@ -2889,6 +2949,22 @@ function onClick(e) {
     case "blGuess": if (g.bl.phase === "guess") blGuess(i); break;
     case "blGacha": startGacha([g.bl.loser], 1, "blind", g.bl); render(true); break;
     case "blAccept": applyAdds(); g.gacha = []; g.phase = "play"; g.bl.k++; blRound(); render(true); break;
+    // 早押し雑学クイズ
+    case "qzStart": qzRound(); render(true); break;
+    case "qzGo": qzNext(); render(true); break;
+    case "qzAns": qzAnswer(b.dataset.v); break;
+    case "qzReveal": qzReveal(); break;
+    case "qzAfter": qzAfter(); break;
+    case "qzGacha": startGacha(g.qz.losers, 1, "quiz", g.qz); render(true); break;
+    case "qzAccept": applyAdds(); g.gacha = []; g.phase = "play"; qzRound(); render(true); break;
+    // テンション伝言
+    case "fcStart": fcRound(); render(true); break;
+    case "fcAct": g.fc.phase = "act"; render(true); startTimer(FC_SEC, () => { if (S.game?.fc?.phase === "act") { g.fc.phase = "guess"; render(true); } }); break;
+    case "fcStop": if (g.fc.phase === "act") { stopTimer(); g.fc.phase = "guess"; render(true); } break;
+    case "fcGuess": fcGuess(b.dataset.v); break;
+    case "fcAfter": fcAfter(); break;
+    case "fcGacha": startGacha(g.fc.losers, 1, "face", g.fc); render(true); break;
+    case "fcAccept": applyAdds(); g.gacha = []; g.phase = "play"; fcRound(); render(true); break;
     // ハグタイム当て
     case "hgStart": hgRound(); render(true); break;
     case "hgGo": count3(g.hg, () => { hgGo(); render(true); }, 800); render(true); break;
@@ -3075,6 +3151,7 @@ document.addEventListener("keydown", (e) => {
 });
 // 反射神経バトル：押した瞬間に判定
 // 反射神経（みんな同時）：指ごとに自分のエリアで数える。押した瞬間の時刻（e.timeStamp）で測る
+app.addEventListener("pointerdown", (e) => { const z = e.target.closest("[data-qz]"); if (z && S.game?.qz?.phase === "q") { e.preventDefault(); qzBuzz(+z.dataset.qz); } });
 app.addEventListener("pointerdown", (e) => { const z = e.target.closest("[data-zone]"); if (z && S.game?.rf?.phase === "mwait") { e.preventDefault(); rfZoneTap(+z.dataset.zone, e.timeStamp); } });
 app.addEventListener("pointerdown", (e) => { if (e.target.closest('[data-tap="rf"]') && S.game?.rf?.phase === "wait") { e.preventDefault(); rfTap(); } });
 // ピタッとストップ：押した瞬間に止める（click を待つと遅れる）

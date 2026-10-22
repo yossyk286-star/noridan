@@ -28,7 +28,7 @@ export function Lead({ fg, children }: { fg: string; children: React.ReactNode }
   return <Text style={[s.lead, { color: fg }]}>{children}</Text>;
 }
 
-const MODE_TITLE: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票', wolf: 'ワードウルフ', pittari: 'ピッタリ予想', tilt: '傾けたらアウト', shake: '全力シェイク', stop: 'ピタッとストップ', rtap: 'ロシアンタップ', bpass: '爆弾パス', hilo: 'ハイ&ロー', reflex: '反射神経バトル', voice: '声デカ選手権', blind: '目隠し当て', pocky: 'ポッキーゲーム', tickle: 'こしょばし我慢', hug: 'ハグタイム当て' };
+const MODE_TITLE: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票', wolf: 'ワードウルフ', pittari: 'ピッタリ予想', tilt: '傾けたらアウト', shake: '全力シェイク', stop: 'ピタッとストップ', rtap: 'ロシアンタップ', bpass: '爆弾パス', hilo: 'ハイ&ロー', reflex: '反射神経バトル', voice: '声デカ選手権', blind: '目隠し当て', pocky: 'ポッキーゲーム', tickle: 'こしょばし我慢', hug: 'ハグタイム当て', quiz: '早押し雑学クイズ', face: 'テンション伝言' };
 
 /** 始める前の説明（どのモードも同じ形）。children に地獄度の説明や時間の選択を入れる */
 export function IntroCard({ pal, mode, tag, children }: { pal: Pal; mode: Mode; tag?: string; children?: React.ReactNode }) {

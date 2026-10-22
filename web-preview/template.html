@@ -1478,6 +1478,18 @@ body.neon .intro-back { border-color: color-mix(in srgb, var(--nc) 60%, transpar
 .tk-by { margin: 0; font-size: 22px; font-weight: 900; }
 .tk-pass svg { transform: none; }
 .big.hg-stop { min-height: 96px; font-size: 26px; }
+/* 早押し雑学クイズ・テンション伝言 */
+.qz-card { justify-content: flex-start !important; gap: 10px; }
+.qz-q { margin: 4px 0; font-family: var(--display); font-size: clamp(20px, 6.4vw, 28px); line-height: 1.35; }
+.qz-q.small { font-size: 15px; font-family: var(--body); font-weight: 800; opacity: .7; }
+.qz-zones { display: grid; gap: 8px; width: 100%; flex: 1; min-height: 140px; }
+.qz-zone { min-height: 56px; cursor: pointer; }
+.qz-zone.out { opacity: .3; border-style: solid; }
+.qz-opts { display: grid; grid-template-columns: 1fr; gap: 8px; width: 100%; }
+.qz-opt { min-height: 52px; width: 100%; text-align: left; }
+.qz-opt .nm { font-size: 17px; white-space: normal; }
+.qz-ans { margin: 0; font-family: var(--display); font-size: clamp(26px, 8.5vw, 38px); line-height: 1.25; }
+.fc-t { margin: 0; font-family: var(--display); font-size: clamp(22px, 7vw, 32px); line-height: 1.3; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

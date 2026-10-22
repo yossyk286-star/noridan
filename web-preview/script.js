@@ -183,10 +183,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢", hug: "ハグタイム当て" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢", hug: "ハグタイム当て", quiz: "早押し雑学クイズ", face: "テンション伝言" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
@@ -210,6 +210,8 @@ function newGame(mode, again = false) {
   if (mode === "rtap") { S.game.doer = -1; S.game.rt = { phase: "intro", round: 0 }; if (again) rtRound(); render(true); return; }
   if (mode === "bpass") { S.game.doer = -1; S.game.bp = { phase: "intro", round: 0 }; if (again) bpRound(); render(true); return; }
   if (mode === "blind") { S.game.doer = -1; S.game.bl = { phase: "intro", k: 0, hits: Array(n).fill(0), fool: Array(n).fill(0) }; if (again) blRound(); render(true); return; }
+  if (mode === "quiz") { S.game.doer = -1; S.game.qz = { phase: "intro", round: 0, wins: Array(n).fill(0) }; if (again) qzRound(); render(true); return; }
+  if (mode === "face") { S.game.doer = -1; S.game.fc = { phase: "intro", round: 0, hits: Array(n).fill(0) }; if (again) fcRound(); render(true); return; }
   if (mode === "hug") { S.game.doer = -1; S.game.hg = { phase: "intro", k: 0, mate: null, best: Array(n).fill(null) }; if (again) hgRound(); render(true); return; }
   if (mode === "tickle") { S.game.doer = -1; S.game.tk = { phase: "intro", k: 0, got: Array(n).fill(0), safe: Array(n).fill(0), last: null }; if (again) tkRound(); render(true); return; }
   if (mode === "pocky") { S.game.doer = -1; S.game.pk = { phase: "intro", k: 0, mate: null, full: Array(n).fill(0) }; if (again) pkRound(); render(true); return; }
@@ -519,6 +521,8 @@ function titles() {
   if (g.mode === "reflex" && g.rf) { const ok = S.members.map((_, i) => i).filter((i) => g.rf.best[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => g.rf.best[i])); add("反射神経王", ok.filter((i) => g.rf.best[i] === m), `最速 ${m}ミリ秒`); } }
   if (g.mode === "voice" && g.vc) { const b = g.vc.best.map((v) => v ?? 0); const t = top(b, 1); if (t) add("声量おばけ", t, `最大 ${b[t[0]]}`); }
   if (g.mode === "blind" && g.bl) { const t = top(g.bl.hits, 1); if (t) add("触覚の達人", t, `当てた ${g.bl.hits[t[0]]}回`); const f = top(g.bl.fool, 1); if (f) add("気配を消す人", f, `バレへんかった ${g.bl.fool[f[0]]}回`); }
+  if (g.mode === "quiz" && g.qz) { const t = top(g.qz.wins, 1); if (t) add("クイズ王", t, `正解 ${g.qz.wins[t[0]]}問`); }
+  if (g.mode === "face" && g.fc) { const t = top(g.fc.hits, 2); if (t) add("顔芸の天才", t, `伝わった ${g.fc.hits[t[0]]}回`); }
   if (g.mode === "hug" && g.hg) { const ok = S.members.map((_, i) => i).filter((i) => g.hg.best[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => g.hg.best[i])); add("ハグ職人", ok.filter((i) => g.hg.best[i] === m), `ズレ ${m.toFixed(2)}秒`); } }
   if (g.mode === "tickle" && g.tk) { const t = top(g.tk.safe, 1); if (t) add("鉄壁の我慢", t, `耐えた ${g.tk.safe[t[0]]}回`); }
   if (g.mode === "pocky" && g.pk) { const t = top(g.pk.full, 1); if (t) add("ポッキー完走", t, `最後まで ${g.pk.full[t[0]]}回`); }
@@ -1200,6 +1204,85 @@ function bpBoom() {
   play("bigboom"); vib([300, 60, 120, 60, 400]);
   render(true);
   bigBoom(); // 画面ごと吹っ飛ぶ演出
+}
+
+// ---------- 早押し雑学クイズ ----------
+// スマホを真ん中に置いて、全員が自分のエリアで早押し。押した人が4択で答える。正解+1（地獄は不正解-1）。10問で一番低い人が罰
+const QZ_N = 10;
+const QZ_TIER = { yurume: "easy", futsu: "normal", jigoku: "hard" };
+function qzRound() {
+  const g = S.game, qz = g.qz;
+  qz.round++; qz.k = 0; qz.score = Array(S.members.length).fill(0); qz.losers = [];
+  qz.phase = "ready"; g.doer = -1;
+}
+function qzNext() {
+  const qz = S.game.qz, tier = QZ_TIER[S.level] || "normal";
+  const it = draw("quiz_" + tier, DATA.quiz[tier]);
+  qz.q = it.q; qz.ans = it.a[0]; qz.opts = shuffle(it.a);
+  qz.k++; qz.locked = []; qz.buzz = null; qz.pick = null; qz.phase = "q";
+}
+function qzBuzz(i) {
+  const qz = S.game.qz;
+  if (qz.phase !== "q" || qz.locked.includes(i)) return;
+  qz.buzz = i; qz.phase = "ans"; S.game.doer = i;
+  play("pop"); vib(30);
+  render(true);
+}
+function qzAnswer(opt) {
+  const g = S.game, qz = g.qz;
+  if (qz.phase !== "ans") return;
+  qz.pick = opt;
+  if (opt === qz.ans) { qz.score[qz.buzz]++; qz.wins[qz.buzz]++; qz.phase = "res"; qz.ok = true; play("pinpon"); }
+  else {
+    if (S.level === "jigoku") qz.score[qz.buzz]--;
+    qz.locked.push(qz.buzz); play("buzzer"); vib([60, 40, 60]);
+    // まだ押せる人がおったら続き、全員アウトなら答え
+    if (qz.locked.length >= S.members.length) { qz.phase = "res"; qz.ok = false; }
+    else { qz.phase = "q"; qz.miss = qz.buzz; qz.buzz = null; }
+  }
+  g.doer = -1; render(true);
+}
+function qzReveal() { const qz = S.game.qz; qz.phase = "res"; qz.ok = false; qz.buzz = null; render(true); }
+function qzAfter() {
+  const g = S.game, qz = g.qz;
+  if (qz.k < QZ_N) { qzNext(); render(true); return; }
+  const min = Math.min(...qz.score);
+  qz.losers = S.members.map((_, i) => i).filter((i) => qz.score[i] === min);
+  g.turn++;
+  hold("結果は…", 1800, () => { qz.phase = "rank"; });
+  render();
+}
+
+// ---------- テンション伝言（表情当て） ----------
+// 番の人だけお題（気持ち）を見て、10秒間顔だけで演じる。周りが4択で当てる。伝わったら1点、1人2問ずつ。一番少ない人が罰
+const FC_PER = 2, FC_SEC = 10;
+function fcRound() {
+  const g = S.game, fc = g.fc;
+  fc.round++; fc.k = 0; fc.score = Array(S.members.length).fill(0); fc.losers = [];
+  fcPrompt();
+}
+function fcPrompt() {
+  const g = S.game, fc = g.fc, n = S.members.length;
+  fc.who = Math.floor(fc.k / FC_PER) % n; g.doer = fc.who;
+  fc.t = draw("faces", DATA.faces);
+  fc.opts = shuffle([fc.t, ...shuffle(DATA.faces.filter((x) => x !== fc.t)).slice(0, 3)]);
+  fc.pick = null; fc.phase = "hand";
+}
+function fcGuess(opt) {
+  const g = S.game, fc = g.fc;
+  if (fc.phase !== "guess") return;
+  fc.pick = opt; fc.ok = opt === fc.t;
+  if (fc.ok) { fc.score[fc.who]++; fc.hits[fc.who]++; play("pinpon"); } else play("buzzer");
+  fc.phase = "res"; render(true);
+}
+function fcAfter() {
+  const g = S.game, fc = g.fc, n = S.members.length;
+  fc.k++; g.turn++;
+  if (fc.k < n * FC_PER) { fcPrompt(); render(true); return; }
+  const min = Math.min(...fc.score);
+  fc.losers = S.members.map((_, i) => i).filter((i) => fc.score[i] === min);
+  hold("結果は…", 1800, () => { fc.phase = "rank"; });
+  render();
 }
 
 // ---------- 深夜だけの接触系（目隠し当て・ポッキーゲーム） ----------

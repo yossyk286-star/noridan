@@ -1,13 +1,15 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /** 線のアイコン（お試し版と同じ形）。色は color、太さは中で統一 */
-export type IconName = 'gear' | 'flip' | 'split' | 'wolf' | 'target' | 'undo' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug';
+export type IconName = 'gear' | 'flip' | 'split' | 'wolf' | 'target' | 'undo' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face';
 
 const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
   wolf: 'M12 8a3 3 0 1 1-6 0a3 3 0 1 1 6 0zM3.5 19a5.5 5.5 0 0 1 11 0M20 9a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0zM15.5 14.2A4.5 4.5 0 0 1 21 18.5M17.5 3.5v1',
   rtap: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM16.5 13.5a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM18.6 13.2l1.4-1.4',
   bpass: 'M10 21a6.5 6.5 0 1 0 0-13a6.5 6.5 0 1 0 0 13zM14.6 9.4l2-2M17 5.5l1.5-1.5M19.5 7.5l1.5.5M16.5 3l.5 1.5',
   blind: 'M3 12s3.5-6 9-6c1.6 0 3 .5 4.3 1.2M21 12s-3.5 6-9 6c-1.6 0-3-.5-4.3-1.2M4 20L20 4M9.5 14.5a3 3 0 0 1 4.9-4.1',
+  quiz: 'M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5v.4M12 16.8h.01M19 3l2 2M21 3l-2 2',
+  face: 'M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M8 9.5l2 1M16 9.5l-2 1M8.5 15c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2',
   hug: 'M8 7a2.5 2.5 0 1 0 0-.01M16 7a2.5 2.5 0 1 0 0-.01M3 20c.5-4 2.5-7 5-7 1.5 0 2.8.9 4 2.5 1.2-1.6 2.5-2.5 4-2.5 2.5 0 4.5 3 5 7M6 15l6 3 6-3',
   tickle: 'M7 11V6a1.5 1.5 0 0 1 3 0v5M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10.5V6a1.5 1.5 0 0 1 3 0v6.5c0 4-2.5 7-6.5 7S4 17 3 14l-1-3a1.5 1.5 0 0 1 2.8-1L7 13M18 4l2-1M19 8h2M18 12l2 1',
   pocky: 'M5 19L17 7M7 21L19 9M17 7l2-2a1.4 1.4 0 0 1 2 2l-2 2M5 19l-1.5 1.5',
