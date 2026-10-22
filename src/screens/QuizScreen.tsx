@@ -3,7 +3,7 @@ import type React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
-import { IntroCard, LevelBox, ModeCard, Outline, Prog } from '../components/ModeParts';
+import { IntroCard, LevelBox, ModeCard, Outline, Prog, tileColors } from '../components/ModeParts';
 import { shuffle } from '../lib/game';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
@@ -187,8 +187,8 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
           <Text style={[s.tip, { color: fg }]}>{`${members[buzz].name}、下の4つから`}<Text style={s.tipB}>答えを1つ押して</Text></Text>
           <View style={{ gap: 8, width: '100%' }}>
             {opts.map((o) => (
-              <Pressable key={o} onPress={() => answer(o)} style={({ pressed }) => [s.opt, { borderColor: colorOf(buzz), opacity: pressed ? 0.7 : 1 }]}>
-                <Text style={[s.optT, { color: fg }]}>{o}</Text>
+              <Pressable key={o} onPress={() => answer(o)} style={({ pressed }) => [s.opt, { borderColor: colorOf(buzz), backgroundColor: tileColors(fg).bg }, pressed && s.optDown]}>
+                <Text style={[s.optT, { color: tileColors(fg).fg }]}>{o}</Text>
               </Pressable>
             ))}
           </View>
@@ -265,6 +265,7 @@ const s = StyleSheet.create({
   zone: { flex: 1, minHeight: 56, borderWidth: 3, borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   zName: { fontFamily: F.display, fontSize: 20 },
   zPt: { fontSize: 13, fontWeight: '900' },
-  opt: { borderLeftWidth: 6, borderWidth: 1.5, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 14 },
+  opt: { borderWidth: 2, borderBottomWidth: 6, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 14 },
+  optDown: { borderBottomWidth: 3, marginTop: 3 },
   optT: { fontSize: 17, fontWeight: '900' },
 });

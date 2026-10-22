@@ -3,7 +3,7 @@ import type React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
-import { HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Peek, Prog } from '../components/ModeParts';
+import { HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Peek, Prog, tileColors } from '../components/ModeParts';
 import { shuffle } from '../lib/game';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
@@ -134,8 +134,8 @@ export default function FaceScreen({ members, level, night, onQuit, onSettings, 
           <Text style={[s.lead, { color: fg }]}>{`${members[who].name}の気持ちは？`}</Text>
           <View style={{ gap: 8, width: '100%' }}>
             {opts.map((o) => (
-              <Pressable key={o} onPress={() => guess(o)} style={({ pressed }) => [s.opt, { borderColor: colorOf(who), opacity: pressed ? 0.7 : 1 }]}>
-                <Text style={[s.optT, { color: fg }]}>{o}</Text>
+              <Pressable key={o} onPress={() => guess(o)} style={({ pressed }) => [s.opt, { borderColor: colorOf(who), backgroundColor: tileColors(fg).bg }, pressed && s.optDown]}>
+                <Text style={[s.optT, { color: tileColors(fg).fg }]}>{o}</Text>
               </Pressable>
             ))}
           </View>
@@ -188,6 +188,7 @@ const s = StyleSheet.create({
   lead: { fontFamily: F.display, fontSize: 26, lineHeight: 34, textAlign: 'center' },
   verdict: { fontFamily: F.display, fontSize: 36, lineHeight: 44 },
   hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
-  opt: { borderLeftWidth: 6, borderWidth: 1.5, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 14 },
+  opt: { borderWidth: 2, borderBottomWidth: 6, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 14 },
+  optDown: { borderBottomWidth: 3, marginTop: 3 },
   optT: { fontSize: 16, fontWeight: '900' },
 });

@@ -600,11 +600,10 @@ function PenGrid({ pal, members, flow }: { pal: Pal; members: Member[]; flow: Tu
               style={({ pressed }) => [
                 styles.penTile,
                 many && { width: '23.5%', minHeight: 46, paddingVertical: 5 },
-                { backgroundColor: on ? onRed : pal.chip, borderColor: on ? onRed : i === st.doer ? pal.fg : pal.chip },
-                pressed && { transform: [{ scale: 0.96 }] },
+                { backgroundColor: on ? onRed : pal.chip, borderColor: on ? onRed : colorOf(i) },
+                pressed && { borderBottomWidth: 3, marginTop: 3 },
               ]}
             >
-              <View style={[styles.penBar, { backgroundColor: colorOf(i) }]} />
               <Text style={[styles.penName, { color: on ? onText : pal.fg }]} numberOfLines={1}>{m.name}</Text>
               <Text style={[styles.penMeta, { color: on ? onText : pal.fg }]}>
                 {i === st.doer && !many ? 'いまの番' : ''}{st.rev[i] ? ' ↺' : ''}{on ? '' : `  罰${st.pen[i]}`}
@@ -1061,8 +1060,7 @@ const styles = StyleSheet.create({
   penQ: { fontSize: 16, fontWeight: '900' },
   penQSub: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
   penGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  penTile: { width: '31.5%', minHeight: 64, borderRadius: 14, borderWidth: 2, paddingVertical: 8, paddingRight: 8, paddingLeft: 16, justifyContent: 'center', overflow: 'hidden' },
-  penBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 7 },
+  penTile: { width: '31.5%', minHeight: 64, borderRadius: 14, borderWidth: 2, borderBottomWidth: 6, paddingVertical: 8, paddingHorizontal: 10, justifyContent: 'center', overflow: 'hidden' },
   penName: { fontSize: 17, fontWeight: '900' },
   penMeta: { fontSize: 10, fontWeight: '900', opacity: 0.7 },
   stamp: { position: 'absolute', right: 6, top: '50%', marginTop: -18, width: 36, height: 36, borderRadius: 18, borderWidth: 3, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-14deg' }] },

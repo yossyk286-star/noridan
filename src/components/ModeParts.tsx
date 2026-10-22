@@ -130,16 +130,33 @@ export function Roulette({ members, fg, onDone, tick }: { members: Member[]; fg:
 }
 
 /** 名前のタイル（押す用）。count を渡すと右下に小さく出す */
+/** カードの文字色から、人ボタンの中身の色を決める（ゆるめ・普通＝白、地獄＝赤黒にクリーム文字、夜＝うっすら） */
+export function tileColors(fg: string) {
+  if (fg === '#ff2a2a') return { bg: '#241414', fg: '#f7f3ea' };
+  const h = fg.length === 7 ? fg : '#ffffff';
+  const lum = (parseInt(h.slice(1, 3), 16) * 299 + parseInt(h.slice(3, 5), 16) * 587 + parseInt(h.slice(5, 7), 16) * 114) / 1000;
+  return lum < 128 ? { bg: '#ffffff', fg } : { bg: 'rgba(255,255,255,0.07)', fg };
+}
+
+/** 人を選ぶボタン：本人の色の枠と下の厚み＋頭文字の丸。押したら沈む */
 export function NameTiles({ members, list, fg, onPress, count, cols = 3 }: { members: Member[]; list: number[]; fg: string; onPress: (i: number) => void; count?: (i: number) => string; cols?: number }) {
+  const tc = tileColors(fg);
   return (
     <View style={s.tiles}>
-      {list.map((i) => (
-        <Tap key={i} onPress={() => onPress(i)} style={({ pressed }) => [s.tile, { width: `${100 / cols - 2}%` as const, borderColor: alpha(fg.length === 7 ? fg : '#f7f3ea', 0.25), transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
-          <View style={[s.tileBar, { backgroundColor: colorOf(i) }]} />
-          <Text style={[s.tileName, { color: fg }]} numberOfLines={1}>{members[i].name}</Text>
-          {count && <Text style={[s.tileCount, { color: fg }]}>{count(i)}</Text>}
-        </Tap>
-      ))}
+      {list.map((i) => {
+        const ini = initialOf(members, i);
+        return (
+          <Tap key={i} onPress={() => onPress(i)} style={({ pressed }) => [s.tile, { width: `${100 / cols - 2}%` as const, borderColor: colorOf(i), backgroundColor: tc.bg }, pressed && s.tileDown]}>
+            <View style={[s.tileDot, { backgroundColor: colorOf(i) }]}>
+              <Text style={[s.tileIni, iniFit(ini)]} numberOfLines={1}>{ini}</Text>
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[s.tileName, { color: tc.fg }]} numberOfLines={1}>{members[i].name}</Text>
+              {count && <Text style={[s.tileCount, { color: tc.fg }]}>{count(i)}</Text>}
+            </View>
+          </Tap>
+        );
+      })}
     </View>
   );
 }
@@ -226,8 +243,10 @@ const s = StyleSheet.create({
   handName: { fontFamily: F.display, fontSize: 40, maxWidth: '100%' },
   handSub: { fontSize: 18, fontWeight: '900' },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tile: { minHeight: 60, borderRadius: 14, borderWidth: 2, paddingLeft: 16, paddingRight: 10, paddingVertical: 8, justifyContent: 'center', overflow: 'hidden' },
-  tileBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 7 },
+  tile: { minHeight: 58, borderRadius: 14, borderWidth: 2, borderBottomWidth: 6, paddingHorizontal: 8, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  tileDown: { borderBottomWidth: 3, marginTop: 3 },
+  tileDot: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  tileIni: { fontSize: 14, fontWeight: '900', color: '#141210' },
   tileName: { fontSize: 16, fontWeight: '900' },
   tileCount: { fontSize: 10, fontWeight: '900', opacity: 0.7, alignSelf: 'flex-end' },
   wordCell: { width: '48.5%', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12, borderLeftWidth: 5 },

@@ -508,7 +508,7 @@ function vPenGrid() {
       ${S.members.map((m, i) => {
         const on = g.add.has(i);
         return `<button class="pen-tile ${i === g.doer ? "is-doer" : ""}" style="--mc:${colorOf(i)}" data-act="pen" data-i="${i}" aria-pressed="${on}">
-          <span class="bar"></span>
+          <span class="bar">${ini(i)}</span>
           <span class="nm">${esc(m.name)}</span>
           <span class="meta">${i === g.doer ? `<span class="doer-lbl">いまの番</span>` : ""}${g.rev[i] ? " ↺" : ""}<em>罰${g.pen[i]}</em></span>
           ${on ? `<span class="stamp">罰</span>` : ""}
@@ -935,7 +935,7 @@ function vNgControls() {
     case "look": return `<button class="big" data-act="ngNext">${!ng.dealing ? "覚えた、隠す" : ng.viewer + 1 < n ? `覚えた → ${mName(ng.viewer + 1)}に渡す` : "覚えた → スタート"}</button>`;
     case "play": return `
       <div class="pen-grid-wrap"><p class="pen-q">言うてもうたのは？<span>タップでアウト</span></p>
-      <div class="pen-grid ${n > 6 ? "many" : ""}">${S.members.map((m, i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="ngTap" data-i="${i}"><span class="bar"></span><span class="nm">${esc(m.name)}</span><span class="meta"><em>アウト${g.pen[i]}</em></span></button>`).join("")}</div></div>
+      <div class="pen-grid ${n > 6 ? "many" : ""}">${S.members.map((m, i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="ngTap" data-i="${i}"><span class="bar">${ini(i)}</span><span class="nm">${esc(m.name)}</span><span class="meta"><em>アウト${g.pen[i]}</em></span></button>`).join("")}</div></div>
       <div class="sub-acts two"><button data-act="ngPeek">ワードを見直す</button><button data-act="ngTopic">話題を出す</button></div>`;
     case "who": return `${vChipsSimple("誰がワードを見直す？", "ngWho", S.members.map((_, i) => i))}<button class="ghost" data-act="ngBack">やめる</button>`;
     case "confirm": return `<div class="verdict"><button class="vd ok" data-act="ngNo"><b>言うてない</b><small>戻る</small></button><button class="vd ng" data-act="ngYes"><b>アウト！</b><small>罰ガチャ</small></button></div>`;
@@ -991,7 +991,7 @@ function vVoteCard() {
     case "vote": { const v = vt.order[vt.k]; return `<div class="odai ${nc} mode-card" id="card">
       <div class="head"><span class="who" style="--mc:${colorOf(v)}"><i></i><b>${mName(v)}</b><small>の投票</small></span></div>
       <p class="vote-q">${esc(vt.q)}</p>
-      <div class="pen-grid vote-grid ${n > 6 ? "many" : ""}">${vt.cands.filter((i) => i !== v).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="vPick" data-i="${i}"><span class="bar"></span><span class="nm">${mName(i)}</span></button>`).join("")}</div>
+      <div class="pen-grid vote-grid ${n > 6 ? "many" : ""}">${vt.cands.filter((i) => i !== v).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="vPick" data-i="${i}"><span class="bar">${ini(i)}</span><span class="nm">${mName(i)}</span></button>`).join("")}</div>
     </div>`; }
     case "done": return `<div class="odai ${nc} mode-card center" id="card">
       <p class="prog">${esc(vt.q)}</p>
@@ -1105,7 +1105,7 @@ function vWfCard() {
     case "vote": { const v = wf.order[wf.k]; return `<div class="odai mode-card" id="card">
       <div class="head"><span class="who" style="--mc:${colorOf(v)}"><i></i><b>${mName(v)}</b><small>の投票</small></span></div>
       <p class="vote-q">ウルフやと思うのは？</p>
-      <div class="pen-grid vote-grid ${n > 6 ? "many" : ""}">${S.members.map((_, i) => i).filter((i) => i !== v).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="wfPick" data-i="${i}"><span class="bar"></span><span class="nm">${mName(i)}</span></button>`).join("")}${wfPeaceOk(wf, n) ? `<button class="pen-tile none" style="--mc:#8d857a" data-act="wfPick" data-i="-1"><span class="bar"></span><span class="nm">ウルフはおらん</span></button>` : ""}</div>
+      <div class="pen-grid vote-grid ${n > 6 ? "many" : ""}">${S.members.map((_, i) => i).filter((i) => i !== v).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="wfPick" data-i="${i}"><span class="bar">${ini(i)}</span><span class="nm">${mName(i)}</span></button>`).join("")}${wfPeaceOk(wf, n) ? `<button class="pen-tile none" style="--mc:#8d857a" data-act="wfPick" data-i="-1"><span class="bar"></span><span class="nm">ウルフはおらん</span></button>` : ""}</div>
     </div>`; }
     case "done": return `<div class="odai mode-card center" id="card">
       <p class="ng-lead">全員投票した！</p>
@@ -1409,7 +1409,7 @@ function vBlind() {
     controls = `<p class="hint">シーッ…</p>`;
   } else if (bl.phase === "guess") {
     const c = nightPool().filter((i) => i !== bl.who);
-    card = `<div class="odai mode-card center board-card deep" id="card"><p class="prog">${mName(bl.who)}、目を開けて</p><p class="ng-lead">誰に触られた？</p><div class="pen-grid bl-grid">${c.map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="blGuess" data-i="${i}"><span class="bar"></span><span class="nm">${mName(i)}</span></button>`).join("")}</div></div>`;
+    card = `<div class="odai mode-card center board-card deep" id="card"><p class="prog">${mName(bl.who)}、目を開けて</p><p class="ng-lead">誰に触られた？</p><div class="pen-grid bl-grid">${c.map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="blGuess" data-i="${i}"><span class="bar">${ini(i)}</span><span class="nm">${mName(i)}</span></button>`).join("")}</div></div>`;
     controls = `<p class="hint">当てたら${"触った人"}、外したら${mName(bl.who)}が罰</p>`;
   } else {
     card = `<div class="odai mode-card center ${bl.ok ? "lucky" : "batsu"}" id="card"><p class="prog">正解は…</p>${bigWho(bl.toucher, `が「${esc(bl.touch)}」`)}<p class="tl-big sp-verdict ${bl.ok ? "q-ok" : "q-ng"}">${bl.ok ? "当たり！" : "ハズレ！"}</p><p class="hand-note">${bl.ok ? `バレたので${mName(bl.toucher)}が罰` : `${mName(bl.guess)}やと思った${mName(bl.who)}が罰`}</p></div>`;
@@ -2071,7 +2071,7 @@ function vItCard() {
       return `<div class="odai ${nc} mode-card" id="card">
         <div class="head"><span class="who"><b>小さい順に並べる</b></span><span class="meta"><i class="tag">${esc(it.topic.t)}</i></span></div>
         <ol class="it-line">${it.order.map((i, k) => `<li style="--mc:${colorOf(i)}"><em>${k + 1}</em><span>${mName(i)}</span></li>`).join("")}${left.length ? `<li class="empty"><em>${it.order.length + 1}</em><span>${it.order.length ? "次に小さい人をタップ" : "一番小さい人をタップ"}</span></li>` : ""}</ol>
-        <div class="pen-grid vote-grid">${left.map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="itPut" data-i="${i}"><span class="bar"></span><span class="nm">${mName(i)}</span></button>`).join("")}</div>
+        <div class="pen-grid vote-grid">${left.map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="itPut" data-i="${i}"><span class="bar">${ini(i)}</span><span class="nm">${mName(i)}</span></button>`).join("")}</div>
       </div>`;
     }
     case "reveal": {
@@ -2181,7 +2181,7 @@ function vGsControls() {
     case "roul": return gs.picked != null ? `<button class="big" data-act="gsBegin">${mName(gs.picked)}から始める</button>` : `<button class="big" disabled>ルーレット中…</button>`;
     case "hand": return `<button class="big" data-act="gsGo">スタート（${gs.sec}秒）</button>`;
     case "act": return `<div class="pen-grid-wrap"><p class="pen-q">当てたのは？<span>タップで1点</span></p>
-      <div class="pen-grid ${S.members.length > 7 ? "many" : ""}">${others(gs.actor).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="gsHit" data-i="${i}"><span class="bar"></span><span class="nm">${mName(i)}</span><span class="meta"><em>${gs.score[i]}点</em></span></button>`).join("")}</div></div>
+      <div class="pen-grid ${S.members.length > 7 ? "many" : ""}">${others(gs.actor).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="gsHit" data-i="${i}"><span class="bar">${ini(i)}</span><span class="nm">${mName(i)}</span><span class="meta"><em>${gs.score[i]}点</em></span></button>`).join("")}</div></div>
       <button class="ghost" data-act="gsPass">パス（次のお題）</button>`;
     case "timeup": return `<button class="big has-pen" data-act="gsTurnGacha">${gsTurnLosers().who.map(mName).join("・")}に罰ガチャ</button>`;
     case "over": return `<button class="big" data-act="end">結果発表</button>`;

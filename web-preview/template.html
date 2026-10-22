@@ -1148,7 +1148,7 @@ body.stage[data-level="jigoku"] { --acc: var(--blood); --card-edge: var(--blood)
 .sub-acts.two button { padding: 12px 6px; font-weight: 900; white-space: nowrap; }
 .vote-q { margin: 0; font-family: var(--display); font-size: clamp(18px, 5.6vw, 23px); line-height: 1.4; line-break: strict; }
 body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat(2, minmax(0,1fr)); }
-.vote-grid .pen-tile { min-height: 62px; background: color-mix(in srgb, currentColor 7%, transparent); border-color: color-mix(in srgb, currentColor 22%, transparent); color: inherit; }
+.vote-grid .pen-tile { min-height: 62px; }
 .vbars { list-style: none; margin: auto 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .vbars li { position: relative; display: grid; grid-template-columns: minmax(0, 6.5em) minmax(0,1fr) 2em; align-items: center; gap: 10px; }
 .vbars .nm { font-weight: 900; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1536,8 +1536,6 @@ body[data-level="yurume"] .qz-tip b, body[data-level="futsu"] .qz-tip b { color:
 .qz-who b { font-family: var(--display); font-weight: 400; font-size: 30px; padding: 0 6px; border-bottom: 4px solid var(--mc); }
 .qz-zone .rf-zv { color: inherit !important; opacity: .7; font-size: 13px; }
 .qz-zone b { color: inherit !important; text-shadow: none !important; }
-.qz-opt { background: color-mix(in srgb, var(--card-fg) 6%, transparent) !important; border: 1.5px solid color-mix(in srgb, var(--card-fg) 22%, transparent) !important; color: var(--card-fg) !important; }
-.qz-opt .nm { color: inherit !important; }
 /* 王様ゲーム */
 .kg-big { margin: 0; font-family: var(--display); font-size: 72px; line-height: 1; }
 .kg-big small { font-size: 26px; margin-left: 4px; }
@@ -1585,6 +1583,29 @@ body[data-level="yurume"] .qz-tip b, body[data-level="futsu"] .qz-tip b { color:
 .wk-hole.hit::after { content: "+1"; position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 28px; color: #1f9d55; animation: wkHit .2s ease-out; }
 @keyframes wkUp { from { transform: translateY(70%); } to { transform: none; } }
 @keyframes wkHit { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.3) translateY(-20%); opacity: 0; } }
+
+/* 人を選ぶボタン（B3）：本人の色の枠と下の厚み＋頭文字の丸。中身の色はカード（地獄度）に合わせる */
+.pen-tile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center; justify-content: stretch; align-items: center; column-gap: 9px; row-gap: 1px; padding: 6px 10px; border: 2px solid var(--mc); border-bottom-width: 6px; background: color-mix(in srgb, var(--mc) 9%, #1d1a17); color: var(--paper); transition: transform .08s, border-bottom-width .08s, margin-top .08s, background .15s; }
+.pen-tile > :not(.bar):not(.stamp) { grid-column: 2; }
+.pen-tile:active { transform: none; border-bottom-width: 3px; margin-top: 3px; }
+.pen-tile .bar { position: static; grid-row: 1 / span 2; align-self: center; justify-content: center; align-content: center; width: 30px; height: 30px; border-radius: 50%; background: var(--mc); color: #141210; display: grid; place-items: center; font-size: 14px; font-weight: 900; line-height: 1; }
+.pen-tile .bar .i2 { font-size: 10px; letter-spacing: -.04em; }
+.pen-tile .bar:empty { display: none; }
+.pen-tile .nm:last-child { grid-row: 1 / span 2; }
+.pen-tile .bar:empty ~ * { grid-column: 1 / -1; }
+.pen-tile.is-doer { box-shadow: 0 0 0 2px var(--fg); }
+.odai .pen-tile { background: var(--tile-bg, color-mix(in srgb, var(--card-fg) 7%, var(--card-bg))); color: var(--tile-fg, var(--card-fg)); }
+body:not([data-level="jigoku"]) .odai { --tile-bg: #fff; }
+body[data-level="jigoku"] .odai { --tile-fg: #f7f3ea; }
+.odai.yoru, .odai.deep, .odai.event, .odai.bombc, .odai.batsu, .odai.bp-burnt { --tile-bg: initial; --tile-fg: initial; }
+.odai .pen-tile[aria-pressed="true"], body[data-level="jigoku"] .odai .pen-tile[aria-pressed="true"] { background: var(--mc); border-color: color-mix(in srgb, var(--mc) 60%, #000); color: #141210; border-bottom-width: 3px; margin-top: 3px; }
+.odai .pen-tile[aria-pressed="true"] .bar { background: #fff; }
+.pen-tile.none { border-style: dashed; border-bottom-style: solid; }
+.qz-opt { min-height: 54px; }
+/* 罰をつける人（3列で狭い）は丸を出さずに枠と厚みだけ */
+.pen-grid-wrap .pen-tile .bar { display: none; }
+.pen-grid-wrap .pen-tile > * { grid-column: 1 / -1; }
+.pen-grid-wrap .pen-tile .nm:last-child, .pen-grid-wrap .pen-tile .nm { grid-row: auto; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
