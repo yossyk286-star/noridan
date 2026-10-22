@@ -65,7 +65,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
   });
   const hurry = useHurry(clock.left, phase === 'act');
   useEffect(() => {
-    load<number>('nd_gs_sec', 60).then(setSec);
+    load<number>('nd_gs_sec', 60).then((v) => SECS.includes(v) && setSec(v));
   }, []);
 
   const go = () => {

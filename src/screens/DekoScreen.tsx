@@ -5,6 +5,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Prog } from '../components/ModeParts';
+import { shuffle } from '../lib/game';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
 import { useHold, useReveal } from '../components/Reveal';
@@ -22,7 +23,6 @@ type Phase = 'intro' | 'hand' | 'count' | 'play' | 'turn' | 'tally' | 'rank' | '
 type Word = { c: string; w: string };
 const SEC: Record<Level, number> = { yurume: 90, futsu: 60, jigoku: 45 };
 const ALL: Word[] = Object.entries((dekoJson as { cats: Record<string, string[]> }).cats).flatMap(([c, ws]) => ws.map((w) => ({ c, w })));
-const shuffle = <T,>(a: T[]) => a.map((v) => [Math.random(), v] as const).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
 const DEG = 180 / Math.PI;
 
 /**

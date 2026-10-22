@@ -178,7 +178,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       st.add = new Map();
       finishCard();
     },
-    /** できんかった（番の人に罰） */
+    /** できへんかった（番の人に罰） */
     fail() {
       st.add = new Map([[st.doer, 1]]);
       finishCard();

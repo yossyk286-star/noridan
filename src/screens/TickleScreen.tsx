@@ -7,7 +7,7 @@ import { HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Prog } from '../
 import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
 import { useCountdown } from '../lib/useCountdown';
-import { sexPrefer } from '../lib/game';
+import { sexPrefer, pick, shuffle } from '../lib/game';
 import { play } from '../lib/sound';
 import { Vibration } from '../lib/vibe';
 import type { Stats } from '../lib/titles';
@@ -18,8 +18,6 @@ type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void
 type Phase = 'intro' | 'ready' | 'play' | 'safe' | 'lose' | 'batsu';
 const SEC = 10;
 const PARTS = ['脇腹', '首すじ', '足の裏', '膝の裏', '脇の下', '耳のうしろ', 'おなか', '二の腕の内側'];
-const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
-const shuffle = <T,>(a: T[]) => a.map((v) => [Math.random(), v] as const).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
 const DEEP = { bg: '#120c1d', edge: C.deep };
 
 /**

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { IntroCard, LevelBox, ModeCard, Outline, Prog } from '../components/ModeParts';
+import { shuffle } from '../lib/game';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
 import { useHold, useReveal } from '../components/Reveal';
@@ -20,7 +21,6 @@ type Phase = 'intro' | 'ready' | 'q' | 'ans' | 'wrong' | 'res' | 'tally' | 'rank
 type Item = { q: string; a: string[] };
 const N = 10;
 const TIER: Record<Level, 'easy' | 'normal' | 'hard'> = { yurume: 'easy', futsu: 'normal', jigoku: 'hard' };
-const shuffle = <T,>(a: T[]) => a.map((v) => [Math.random(), v] as const).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
 
 /**
  * 早押し雑学クイズ：スマホを真ん中に置いて、全員が自分のエリアで早押し。押した人が4択で答える。

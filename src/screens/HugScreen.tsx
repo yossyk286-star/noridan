@@ -7,7 +7,7 @@ import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../component
 import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
 import { useHold } from '../components/Reveal';
-import { sexPrefer } from '../lib/game';
+import { sexPrefer, pick } from '../lib/game';
 import { play } from '../lib/sound';
 import type { Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, colorOf } from '../theme';
@@ -17,7 +17,6 @@ type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void
 type Phase = 'intro' | 'ready' | 'count' | 'hug' | 'res' | 'batsu';
 const SEC: Record<Level, number> = { yurume: 5, futsu: 10, jigoku: 15 };
 const TOL: Record<Level, number> = { yurume: 1.5, futsu: 1, jigoku: 0.5 };
-const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 const DEEP = { bg: '#120c1d', edge: C.deep };
 
 /**

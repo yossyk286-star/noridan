@@ -9,7 +9,7 @@ import { IntroCard, LevelBox, ModeCard } from '../components/ModeParts';
 import { HELP } from '../lib/help';
 import { Skull } from '../components/Fx';
 import GameMenu from '../components/GameMenu';
-import { Decks, PERSONAL, makeCard } from '../lib/game';
+import { Decks, PERSONAL, makeCard, shuffle } from '../lib/game';
 import { play } from '../lib/sound';
 import { newStats, type Stats, type Why } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
@@ -30,14 +30,6 @@ const PAIRS = 7;
 const SKULLS = 2;
 
 
-const shuffle = <T,>(a: T[]): T[] => {
-  const b = a.slice();
-  for (let i = b.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [b[i], b[j]] = [b[j], b[i]];
-  }
-  return b;
-};
 const plain = (segs: Segment[]) => segs.map((x) => x.text).join('');
 
 /** 神経衰弱：お題のマークが描かれたカードを揃えて、答えたら+1点。最後に点数が一番低い人が罰 */

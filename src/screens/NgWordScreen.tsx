@@ -73,7 +73,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    load<number>('nd_ng_min', 10).then(setMinutes);
+    load<number>('nd_ng_min', 10).then((v) => MINUTES.includes(v) && setMinutes(v));
   }, []);
   useEffect(() => {
     if (phase !== 'play' || !endAt.current) return;

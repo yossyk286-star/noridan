@@ -96,7 +96,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
 
   useEffect(() => {
     load('nd_wf_min', 3).then((m) => MINUTES.includes(m) && setMinutes(m));
-    load('nd_wf_n', 0).then((v) => setCount(v));
+    load<unknown>('nd_wf_n', 0).then((v) => setCount([0, 1, 2, 3].includes(v as number) ? (v as number) : 0));
     load('nd_wf_peace', true).then((v) => setPeace(!!v));
   }, []);
 

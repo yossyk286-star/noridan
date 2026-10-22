@@ -1538,6 +1538,53 @@ body[data-level="yurume"] .qz-tip b, body[data-level="futsu"] .qz-tip b { color:
 .qz-zone b { color: inherit !important; text-shadow: none !important; }
 .qz-opt { background: color-mix(in srgb, var(--card-fg) 6%, transparent) !important; border: 1.5px solid color-mix(in srgb, var(--card-fg) 22%, transparent) !important; color: var(--card-fg) !important; }
 .qz-opt .nm { color: inherit !important; }
+/* 王様ゲーム */
+.kg-big { margin: 0; font-family: var(--display); font-size: 72px; line-height: 1; }
+.kg-big small { font-size: 26px; margin-left: 4px; }
+.kg-big.king { color: #e8b52a; text-shadow: 0 3px 0 #8a5a00; }
+.kg-call { margin: 0; font-family: var(--display); font-size: clamp(34px, 11vw, 48px); line-height: 1.25; }
+.kg-king { margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 18px; font-weight: 900; }
+.kg-king .crown { width: 34px; height: 24px; }
+.kg-king b { font-family: var(--display); font-weight: 400; font-size: 30px; }
+.kg-cmd { margin: 0; font-family: var(--display); font-size: clamp(22px, 7vw, 30px); line-height: 1.4; }
+.kg-cmd small { font-family: var(--body); font-size: 13px; font-weight: 800; opacity: .7; }
+.kg-no { display: inline-block; min-width: 1.4em; padding: 0 .2em; border-radius: 8px; background: #e8202a; color: #fff; font-family: var(--display); font-weight: 400; }
+.kg-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.kg-list li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; border-left: 6px solid var(--mc); background: color-mix(in srgb, var(--card-fg) 6%, transparent); }
+.kg-list b { font-family: var(--display); font-weight: 400; font-size: 24px; min-width: 2.6em; }
+.kg-list span { font-size: 20px; font-weight: 900; }
+.kg-refuse { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.kg-refuse button { padding: 8px 12px; border-radius: 999px; border: 1.5px solid var(--mc); font-weight: 900; font-size: 14px; color: var(--card-fg); }
+.kg-refuse button[aria-pressed="true"] { background: #e8202a; border-color: #e8202a; color: #fff; }
+/* お絵かき伝言 */
+.dr-card { justify-content: flex-start !important; gap: 8px; }
+.dr-src { margin: 0; font-size: 16px; font-weight: 800; }
+.dr-src b { font-family: var(--display); font-weight: 400; font-size: 24px; }
+.dr-canvas { width: 100%; flex: 1; min-height: 220px; border-radius: 12px; background: #fff; touch-action: none; box-shadow: inset 0 0 0 2px rgba(0,0,0,.15); }
+.dr-time { margin: 0; font-size: 14px; font-weight: 900; }
+.dr-time b { font-family: var(--display); font-weight: 400; font-size: 22px; }
+.dr-img { width: 100%; flex: 1; min-height: 0; object-fit: contain; border-radius: 12px; background: #fff; }
+.dr-in { width: 100%; box-sizing: border-box; padding: 14px; border-radius: 12px; border: 2px solid color-mix(in srgb, var(--card-fg) 30%, transparent); background: transparent; color: var(--card-fg); font-size: 20px; font-weight: 900; text-align: center; }
+.dr-reveal { overflow-y: auto; }
+.dr-chain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.dr-chain li { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dr-chain img { width: 70%; border-radius: 10px; background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.12); }
+.dr-chain b { font-family: var(--display); font-weight: 400; font-size: 26px; }
+.dr-by { font-size: 12px; font-weight: 900; padding: 2px 10px; border-radius: 999px; background: color-mix(in srgb, var(--mc, #8d857a) 25%, transparent); }
+/* ワニワニタップ */
+.wk-card { justify-content: flex-start !important; gap: 10px; }
+.wk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; flex: 1; }
+.wk-hole { position: relative; border-radius: 18px; aspect-ratio: 1; align-self: center; background: radial-gradient(ellipse 40% 14% at 50% 82%, #1e140d 0 96%, transparent 100%), linear-gradient(#7cc04f, #5a9a36); overflow: hidden; touch-action: none; }
+.wk-face { position: absolute; left: 20%; right: 20%; bottom: 16%; top: 12%; border-radius: 50% 50% 40% 40%; background: #ffd23f; border: 3px solid #141210; display: block; animation: wkUp .12s ease-out; }
+.wk-face i { position: absolute; top: 34%; width: 12%; height: 16%; border-radius: 50%; background: #141210; }
+.wk-face i:first-child { left: 28%; } .wk-face i:nth-child(2) { right: 28%; }
+.wk-face b { position: absolute; left: 32%; right: 32%; top: 60%; height: 14%; border-radius: 0 0 99px 99px; background: #e8202a; }
+.wk-hole.bad .wk-face { background: transparent; border: 0; }
+.wk-hole.bad .wk-face { left: 18%; right: 18%; top: 16%; bottom: 10%; }
+.wk-hole.bad .wk-face .skull { width: 100%; height: 100%; animation: none; }
+.wk-hole.hit::after { content: "+1"; position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 28px; color: #1f9d55; animation: wkHit .2s ease-out; }
+@keyframes wkUp { from { transform: translateY(70%); } to { transform: none; } }
+@keyframes wkHit { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.3) translateY(-20%); opacity: 0; } }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

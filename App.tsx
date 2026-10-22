@@ -32,6 +32,9 @@ import QuizScreen from './src/screens/QuizScreen';
 import FaceScreen from './src/screens/FaceScreen';
 import DekoScreen from './src/screens/DekoScreen';
 import DoubtScreen from './src/screens/DoubtScreen';
+import KingScreen from './src/screens/KingScreen';
+import DrawScreen from './src/screens/DrawScreen';
+import WhackScreen from './src/screens/WhackScreen';
 import { cleanMembers, load, save } from './src/lib/storage';
 import { play, setSoundEnabled, setVolume } from './src/lib/sound';
 import { setVibeEnabled, Vibration } from './src/lib/vibe';
@@ -53,7 +56,7 @@ import type { Level, Member, Mode, Night } from './src/types';
 const STAGES: Record<Mode, ComponentType<any>> = {
   odai: OdaiScreen, sugoroku: SugorokuScreen, memory: MemoryScreen, ito: ItoScreen, gesture: GestureScreen, homeru: HomeruScreen,
   ngword: NgWordScreen, vote: VoteScreen, wolf: WolfScreen, pittari: PittariScreen, tilt: TiltScreen, shake: ShakeScreen, stop: StopScreen,
-  rtap: RtapScreen, bpass: BpassScreen, hilo: HiloScreen, reflex: ReflexScreen, voice: VoiceScreen, blind: BlindScreen, pocky: PockyScreen, tickle: TickleScreen, hug: HugScreen, quiz: QuizScreen, face: FaceScreen, deko: DekoScreen, doubt: DoubtScreen,
+  rtap: RtapScreen, bpass: BpassScreen, hilo: HiloScreen, reflex: ReflexScreen, voice: VoiceScreen, blind: BlindScreen, pocky: PockyScreen, tickle: TickleScreen, hug: HugScreen, quiz: QuizScreen, face: FaceScreen, deko: DekoScreen, doubt: DoubtScreen, king: KingScreen, draw: DrawScreen, whack: WhackScreen,
 };
 const isStage = (name: string): name is Mode => name in STAGES;
 
@@ -93,21 +96,21 @@ export default function App() {
       setLevel(lv === 'yurume' || lv === 'jigoku' ? lv : 'futsu');
       const nv = await load<unknown>('nd_night', false);
       setNight(nv === true ? 'yoru' : nv === 'yoru' || nv === 'shinya' ? nv : false);
-      const sv = await load<boolean>('nd_sound', true);
+      const sv = (await load<unknown>('nd_sound', true)) !== false;
       setSound(sv);
       setSoundEnabled(sv);
       const vl = await load<number>('nd_vol', 3);
       const v3 = [1, 2, 3].includes(vl) ? vl : 3;
       setVol(v3);
       setVolume(v3);
-      const vb = await load<boolean>('nd_vibe', true);
+      const vb = (await load<unknown>('nd_vibe', true)) !== false;
       setVibe(vb);
       setVibeEnabled(vb);
       if (!(await load<boolean>('nd_tut', false))) setTut(true); // 初回だけ遊び方
       const gs = await load<unknown>('nd_groups', []);
       setGroups((Array.isArray(gs) ? gs : []).map(cleanMembers).filter((g): g is Member[] => !!g).slice(0, 3));
-      setDual(await load<boolean>('nd_dual', false));
-      setVoice(await load<boolean>('nd_voice', false));
+      setDual((await load<unknown>('nd_dual', false)) === true);
+      setVoice((await load<unknown>('nd_voice', false)) === true);
     })();
   }, []);
 

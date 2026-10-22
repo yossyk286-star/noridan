@@ -28,7 +28,7 @@ export const CHANCE = { event: 0.14, double: 0.2, minna: 0.25, bomb: 0.12, yoru:
 
 const rnd = (n: number) => Math.floor(Math.random() * n);
 export const pick = <T,>(a: T[]): T => a[rnd(a.length)];
-const shuffle = <T,>(a: T[]): T[] => {
+export const shuffle = <T,>(a: T[]): T[] => {
   const b = a.slice();
   for (let i = b.length - 1; i > 0; i--) {
     const j = rnd(i + 1);

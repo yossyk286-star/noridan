@@ -714,7 +714,7 @@ export function Controls({
           )}
           {verdict ? (
             <>
-              {/* 1人用のお題は「やった／できんかった」の2択（札のスワイプでもOK） */}
+              {/* 1人用のお題は「やった／できへんかった」の2択（札のスワイプでもOK） */}
               <View style={styles.choices}>
                 <Verdict pal={pal} ng title="アウト" sub={`${members[st.doer].name}に罰`} onPress={flow.fail} />
                 <Verdict pal={pal} title="セーフ！" sub={`→ ${nextLabel}`} onPress={flow.clear} />
@@ -744,7 +744,7 @@ export function Controls({
   }
 }
 
-/** やった／できんかった ボタン */
+/** やった／できへんかった ボタン */
 function Verdict({ pal, title, sub, ng, onPress }: { pal: Pal; title: string; sub: string; ng?: boolean; onPress: () => void }) {
   const jigoku = !!pal.jigoku;
   // 地獄度は両方赤になって見分けにくいので、セーフは枠だけにする
@@ -794,12 +794,12 @@ export function cardTag(c: Card): string {
 
 /** 初めて出てきた仕組みだけ、札の下にひとこと説明（1回見たら二度と出えへん） */
 const COACH: Record<string, string> = {
-  double: '倍プッシュ：できたら誰かに罰、できんかったら罰2回',
+  double: '倍プッシュ：できたら誰かに罰、できへんかったら罰2回',
   bomb: '時限爆弾：仕掛け人だけがNG行動を知ってる。やった人は後で全員罰',
   rule: 'このルールは上に出しとく。破った人が出たら「違反者に罰」',
   event: '緊急指令：アウトの人を下で選ぶ',
   contest: '負けた人を下で選んでから「次へ」',
-  swipe: 'できたらセーフ、できんかったらアウト。札を左右にスワイプでもOK',
+  swipe: 'できたらセーフ、できへんかったらアウト。札を左右にスワイプでもOK',
   notme: '当てはまらん時は、罰なしで誰かに回せる',
   pass: '夜のお題は「無理！」で罰なしパスできる',
   revenge: 'リベンジ権 ↺：このお題を1回だけ誰かに押し付けられる',

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Peek, Prog } from '../components/ModeParts';
+import { shuffle } from '../lib/game';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { useHold } from '../components/Reveal';
 import { HELP } from '../lib/help';
@@ -16,7 +17,6 @@ import doubtJson from '../data/doubt.json';
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
 type Phase = 'intro' | 'hand' | 'talk' | 'vote' | 'reveal' | 'batsu';
 const TOPICS: string[] = (doubtJson as { list: string[] }).list;
-const shuffle = <T,>(a: T[]) => a.map((v) => [Math.random(), v] as const).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
 
 /**
  * ダウト：番の人だけお題と「本当／嘘」を見て、それっぽく話す。ほかの人がそれぞれ本当か嘘か投票。

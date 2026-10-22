@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Peek, Prog } from '../components/ModeParts';
+import { shuffle } from '../lib/game';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
 import { useHold, useReveal } from '../components/Reveal';
@@ -20,7 +21,6 @@ type Phase = 'intro' | 'hand' | 'act' | 'guess' | 'res' | 'tally' | 'rank' | 'ba
 const PER = 2;
 const SEC = 10;
 const FACES: string[] = (facesJson as { list: string[] }).list;
-const shuffle = <T,>(a: T[]) => a.map((v) => [Math.random(), v] as const).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
 
 /**
  * テンション伝言（表情当て）：番の人だけお題（気持ち）を見て、10秒間顔だけで演じる。周りが相談して4択で当てる。

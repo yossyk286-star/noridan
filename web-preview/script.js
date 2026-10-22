@@ -5,6 +5,8 @@ const GOAL = DATA.board.length - 1;
 const CHANCE = { event: 0.14, double: 0.2, minna: 0.25, bomb: 0.12, yoru: 0.35, lucky: 0.15 };
 
 // ---------- storage (best effort) ----------
+/** 保存値が選択肢の中にあればそれ、なければ既定値（壊れた保存データ対策） */
+const oneOf = (v, list, d) => (list.includes(v) ? v : d);
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
@@ -36,14 +38,14 @@ const S = {
   night: (() => { const v = store.get("nd_night", false); return v === true ? "yoru" : v === "yoru" || v === "shinya" ? v : false; })(), // false | "yoru" | "shinya"
   nightAsk: false,  // false | "yoru" | "shinya"（確認画面）
   whisper: Math.random() < 0.35,
-  seen: store.get("nd_seen", {}) || {}, // 初登場のひとこと説明を見たかどうか
+  seen: ((v) => (v && typeof v === "object" ? v : {}))(store.get("nd_seen", {})), // 初登場のひとこと説明を見たかどうか
   rules: false,     // ルール早見表 // 昼間でもたまにヒントを出す（起動ごとに固定）
-  sound: store.get("nd_sound", true),
+  sound: store.get("nd_sound", true) !== false,
   vol: [1, 2, 3].includes(store.get("nd_vol", 3)) ? store.get("nd_vol", 3) : 3, // 音量 1=小 2=中 3=大
-  vibe: store.get("nd_vibe", true),    // バイブ
+  vibe: store.get("nd_vibe", true) !== false,    // バイブ
   modeTab: store.get("nd_tab", null),  // 遊び方一覧のタブ
-  dual: store.get("nd_dual", false),   // 向かい合わせ表示
-  voice: store.get("nd_voice", false), // お題の読み上げ
+  dual: store.get("nd_dual", false) === true,   // 向かい合わせ表示
+  voice: store.get("nd_voice", false) === true, // お題の読み上げ
   step: 1,          // ホーム: 1=メンバー 2=モード選択
   sheet: false,     // 設定シート
   tut: store.get("nd_tut", false) ? null : 0, // 初回だけ遊び方
@@ -184,10 +186,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢", hug: "ハグタイム当て", quiz: "早押し雑学クイズ", face: "テンション伝言", deko: "おでこ当て", doubt: "ダウト" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢", hug: "ハグタイム当て", quiz: "早押し雑学クイズ", face: "テンション伝言", deko: "おでこ当て", doubt: "ダウト", king: "王様ゲーム", draw: "お絵かき伝言", whack: "ワニワニタップ" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face", "deko", "doubt"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face", "deko", "doubt", "draw", "whack"].includes(g.mode) ? "回戦" : g.mode === "king" ? "回" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   // よく遊ぶモードを数える（もう一回は数えへん）
   if (!again) { const pl = (() => { const v = store.get("nd_plays", {}); return v && typeof v === "object" ? v : {}; })(); pl[mode] = (pl[mode] || 0) + 1; store.set("nd_plays", pl); }
@@ -206,13 +208,16 @@ function newGame(mode, again = false) {
   };
   S.ruleSheet = null;
   S.screen = mode;
-  if (mode === "ngword") { S.game.doer = -1; S.game.ng = { phase: "setup", minutes: store.get("nd_ng_min", 10), words: [], viewer: 0, dealing: false, out: null, res: null, left: 0, endAt: 0, topic: null }; render(true); return; }
+  if (mode === "ngword") { S.game.doer = -1; S.game.ng = { phase: "setup", minutes: oneOf(store.get("nd_ng_min", 10), [3, 5, 10, 15, 0], 10), words: [], viewer: 0, dealing: false, out: null, res: null, left: 0, endAt: 0, topic: null }; render(true); return; }
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "intro", round: 0 }; if (again) startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
-  if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: store.get("nd_wf_min", 3), count: store.get("nd_wf_n", 0), peace: store.get("nd_wf_peace", true), wolves: [] }; render(true); return; }
+  if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: oneOf(store.get("nd_wf_min", 3), WF_MIN, 3), count: oneOf(store.get("nd_wf_n", 0), [0, 1, 2, 3], 0), peace: store.get("nd_wf_peace", true) !== false, wolves: [] }; render(true); return; }
   if (mode === "rtap") { S.game.doer = -1; S.game.rt = { phase: "intro", round: 0 }; if (again) rtRound(); render(true); return; }
   if (mode === "bpass") { S.game.doer = -1; S.game.bp = { phase: "intro", round: 0 }; if (again) bpRound(); render(true); return; }
   if (mode === "blind") { S.game.doer = -1; S.game.bl = { phase: "intro", k: 0, hits: Array(n).fill(0), fool: Array(n).fill(0) }; if (again) blRound(); render(true); return; }
+  if (mode === "king") { S.game.doer = -1; S.game.kg = { phase: "intro", round: 0, kings: Array(n).fill(0) }; if (again) kgRound(); render(true); return; }
+  if (mode === "draw") { S.game.doer = -1; S.game.dr = { phase: "intro", round: 0 }; if (again) drRound(); render(true); return; }
+  if (mode === "whack") { S.game.doer = -1; S.game.wk = { phase: "intro", round: 0, best: Array(n).fill(0) }; if (again) wkRound(); render(true); return; }
   if (mode === "deko") { S.game.doer = -1; S.game.dk = { phase: "intro", round: 0, best: Array(n).fill(0) }; if (again) dkRound(); render(true); return; }
   if (mode === "doubt") { S.game.doer = -1; S.game.du = { phase: "intro", round: 0, fooled: Array(n).fill(0), seen: Array(n).fill(0) }; if (again) duRound(); render(true); return; }
   if (mode === "quiz") { S.game.doer = -1; S.game.qz = { phase: "intro", round: 0, wins: Array(n).fill(0) }; if (again) qzRound(); render(true); return; }
@@ -228,7 +233,7 @@ function newGame(mode, again = false) {
   if (mode === "tilt") { S.game.doer = -1; S.game.tl = { phase: "intro", k: 0, pair: false, mate: null, max: Array(n).fill(null), tries: Array(n).fill(0), outs: Array(n).fill(0) }; render(true); return; }
   if (mode === "pittari") { S.game.doer = -1; S.game.pt = { phase: "intro", round: 0 }; if (again) ptRound(); render(true); return; }
   if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
-  if (mode === "gesture") { S.game.doer = 0; S.game.gs = { phase: "intro", sec: store.get("nd_gs_sec", 60), score: Array(n).fill(0), actor: 0, acted: 0, word: null, got: 0, endAt: 0 }; render(true); return; }
+  if (mode === "gesture") { S.game.doer = 0; S.game.gs = { phase: "intro", sec: oneOf(store.get("nd_gs_sec", 60), [30, 60, 90], 60), score: Array(n).fill(0), actor: 0, acted: 0, word: null, got: 0, endAt: 0 }; render(true); return; }
   if (mode === "homeru") { S.game.doer = 0; S.game.hm = { phase: "intro", sec: 30, praiser: 0, target: 1, theme: null, endAt: 0, loser: null }; render(true); return; }
   S.game.intro = !again; // 始める前の説明（「もう一回」の時は出さへん）
   if (mode === "odai") startOdaiTurn();
@@ -526,6 +531,8 @@ function titles() {
   if (g.mode === "reflex" && g.rf) { const ok = S.members.map((_, i) => i).filter((i) => g.rf.best[i] != null); if (ok.length > 1) { const m = Math.min(...ok.map((i) => g.rf.best[i])); add("反射神経王", ok.filter((i) => g.rf.best[i] === m), `最速 ${m}ミリ秒`); } }
   if (g.mode === "voice" && g.vc) { const b = g.vc.best.map((v) => v ?? 0); const t = top(b, 1); if (t) add("声量おばけ", t, `最大 ${b[t[0]]}`); }
   if (g.mode === "blind" && g.bl) { const t = top(g.bl.hits, 1); if (t) add("触覚の達人", t, `当てた ${g.bl.hits[t[0]]}回`); const f = top(g.bl.fool, 1); if (f) add("気配を消す人", f, `バレへんかった ${g.bl.fool[f[0]]}回`); }
+  if (g.mode === "king" && g.kg) { const t = top(g.kg.kings, 2); if (t) add("天下人", t, `王様 ${g.kg.kings[t[0]]}回`); }
+  if (g.mode === "whack" && g.wk) { const t = top(g.wk.best, 1); if (t) add("モグラ叩き名人", t, `最高 ${g.wk.best[t[0]]}点`); }
   if (g.mode === "deko" && g.dk) { const t = top(g.dk.best, 1); if (t) add("おでこの天才", t, `1回で ${g.dk.best[t[0]]}問正解`); }
   if (g.mode === "doubt" && g.du) { const t = top(g.du.fooled, 1); if (t) add("嘘つき名人", t, `騙した ${g.du.fooled[t[0]]}回`); const s = top(g.du.seen, 2); if (s) add("名探偵", s, `見破った ${g.du.seen[s[0]]}回`); }
   if (g.mode === "quiz" && g.qz) { const t = top(g.qz.wins, 1); if (t) add("クイズ王", t, `正解 ${g.qz.wins[t[0]]}問`); }
@@ -1211,6 +1218,142 @@ function bpBoom() {
   play("bigboom"); vib([300, 60, 120, 60, 400]);
   render(true);
   bigBoom(); // 画面ごと吹っ飛ぶ演出
+}
+
+// ---------- 王様ゲーム ----------
+// 1人ずつ長押しで番号を見る（1人だけ王様）。王様だーれだ！→ 命令（アプリのおすすめ or 自分で）→ 番号を公開 → できへんかったら罰
+function kgRound() {
+  const g = S.game, kg = g.kg, n = S.members.length;
+  kg.round++;
+  const order = shuffle(S.members.map((_, i) => i));
+  kg.king = order[0]; kg.num = Array(n).fill(0); order.slice(1).forEach((i, k) => (kg.num[i] = k + 1));
+  kg.k = 0; kg.cmd = null; kg.refuse = []; g.doer = 0; kg.phase = "deal";
+}
+const kgWho = (kg, no) => kg.num.findIndex((v, i) => v === no && i !== kg.king);
+// 命令を選ぶ：夜モードなら夜・深夜の命令も。深夜の触れ合う系は下ネタNGの人を選ばへん＆なるべく男女
+function kgPick() {
+  const kg = S.game.kg, n = S.members.length, nums = S.members.map((_, i) => i).filter((i) => i !== kg.king);
+  const r = Math.random();
+  let kind = S.night === "shinya" ? (r < 0.5 ? "shinya" : r < 0.75 ? "yoru" : "normal") : S.night === "yoru" ? (r < 0.35 ? "yoru" : "normal") : "normal";
+  let pool = nums;
+  if (kind !== "normal") { pool = nums.filter(okForYoru); if (pool.length < 2) kind = "normal", pool = nums; }
+  const two = pool.length >= 2;
+  const list = DATA.king[kind].filter((t) => two || !t.includes("{B}"));
+  const tpl = draw("king_" + kind + (two ? "" : "1"), list);
+  const a = pick(pool);
+  const b = two ? (kind === "shinya" ? pick(sexPrefer(a, pool.filter((i) => i !== a))) : pick(pool.filter((i) => i !== a))) : -1;
+  kg.cmd = { tpl, kind, A: kg.num[a], B: b >= 0 ? kg.num[b] : null };
+}
+const kgText = (cmd) => esc(cmd.tpl).replaceAll("{A}", `<b class="kg-no">${cmd.A}</b>`).replaceAll("{B}", `<b class="kg-no">${cmd.B}</b>`);
+
+// ---------- お絵かき伝言 ----------
+// お題 → 絵 → 言葉 → 絵 … を1人ずつリレー。最後にお題から順番に見せて、ズレた人を選んで罰
+const DR_SEC = { yurume: 60, futsu: 40, jigoku: 25 };
+const drSec = () => DR_SEC[S.level] || 40;
+function drRound() {
+  const g = S.game, dr = g.dr, n = S.members.length;
+  dr.round++;
+  const s0 = (dr.round - 1) % n;
+  dr.order = S.members.map((_, k) => (s0 + k) % n);
+  if (n % 2) dr.order.push(dr.order[1]); // 奇数人数やと最後が絵で終わるので、2番目の人がもう一回だけ言葉で答える
+  dr.word = draw("deko", Object.values(DATA.deko).flat());
+  dr.chain = []; dr.step = 0; dr.culprit = null;
+  g.doer = dr.order[0]; dr.phase = "hand";
+}
+const drKind = (step) => (step % 2 === 0 ? "pic" : "guess"); // 0番目の人は絵、次は言葉…
+function drSubmit(val) {
+  const g = S.game, dr = g.dr, n = dr.order.length;
+  stopTimer();
+  dr.chain.push({ by: dr.order[dr.step], type: drKind(dr.step), val });
+  dr.step++;
+  if (dr.step >= n) { dr.phase = "reveal"; dr.show = 0; g.doer = -1; g.turn++; play("fanfare"); }
+  else { g.doer = dr.order[dr.step]; dr.phase = "hand"; }
+  render(true);
+}
+const drNorm = (t) => String(t || "").replace(/[\s　・ー〜~、。!！?？]/g, "").toLowerCase();
+// キャンバス：描いた線を覚えて、完成で画像にする
+let drPen = null;
+function drSetup() {
+  const cv = document.getElementById("drCanvas");
+  if (!cv || cv.dataset.on) return;
+  cv.dataset.on = "1";
+  const r = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  cv.width = w * r; cv.height = h * r;
+  const c = cv.getContext("2d");
+  c.scale(r, r); c.fillStyle = "#fff"; c.fillRect(0, 0, w, h);
+  c.lineCap = "round"; c.lineJoin = "round"; c.lineWidth = 4; c.strokeStyle = "#141210";
+  const pos = (e) => { const b = cv.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+  cv.addEventListener("pointerdown", (e) => { e.preventDefault(); cv.setPointerCapture(e.pointerId); drPen = pos(e); c.beginPath(); c.moveTo(...drPen); c.lineTo(drPen[0] + 0.1, drPen[1]); c.stroke(); });
+  cv.addEventListener("pointermove", (e) => { if (!drPen) return; const p = pos(e); c.beginPath(); c.moveTo(...drPen); c.lineTo(...p); c.stroke(); drPen = p; });
+  const up = () => { drPen = null; };
+  cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+  cv.drColor = (col, wd) => { c.strokeStyle = col; c.lineWidth = wd; };
+  cv.drClear = () => { c.fillStyle = "#fff"; c.fillRect(0, 0, w, h); };
+}
+function drFinishPic() { const cv = document.getElementById("drCanvas"); drSubmit(cv ? cv.toDataURL("image/jpeg", 0.7) : ""); }
+
+// ---------- ワニワニタップ ----------
+// 1人15秒。穴から出てくる顔をタップで1点、ドクロを押したら0点で即終了。一番低い人が罰
+const WK_SEC = 15;
+const WK_LV = { yurume: { every: 650, life: 950, skull: 0.12 }, futsu: { every: 520, life: 780, skull: 0.18 }, jigoku: { every: 400, life: 620, skull: 0.26 } };
+function wkRound() {
+  const g = S.game, wk = g.wk;
+  wk.round++; wk.k = 0; wk.score = Array(S.members.length).fill(0); wk.skull = []; wk.losers = [];
+  wkTurn();
+}
+function wkTurn() { const g = S.game, wk = g.wk; wk.who = wk.k % S.members.length; g.doer = wk.who; wk.phase = "hand"; }
+function wkGo() {
+  const g = S.game, wk = g.wk, lv = WK_LV[S.level] || WK_LV.futsu;
+  wk.phase = "play"; wk.holes = Array(9).fill(null); wk.cur = 0; play("coin");
+  render(true);
+  const alive = () => S.game?.wk === wk && wk.phase === "play";
+  const spawn = () => {
+    if (!alive()) return;
+    const empty = wk.holes.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
+    if (empty.length) {
+      const i = pick(empty), skull = Math.random() < lv.skull, id = Math.random();
+      wk.holes[i] = { skull, id };
+      wkPaint(i);
+      setTimeout(() => { if (alive() && wk.holes[i]?.id === id) { wk.holes[i] = null; wkPaint(i); } }, lv.life * (0.8 + Math.random() * 0.4));
+    }
+    wk.spawnT = setTimeout(spawn, lv.every * (0.7 + Math.random() * 0.6));
+  };
+  wk.spawnT = setTimeout(spawn, 300);
+  startTimer(WK_SEC, () => { if (alive()) wkEnd(false); });
+}
+function wkPaint(i) {
+  const el = document.querySelector(`[data-wk="${i}"]`); if (!el) return;
+  const h = S.game.wk.holes[i];
+  el.classList.toggle("up", !!h); el.classList.toggle("bad", !!h?.skull);
+  el.innerHTML = h ? (h.skull ? `<span class="wk-face">${SKULL}</span>` : `<span class="wk-face"><i></i><i></i><b></b></span>`) : "";
+}
+function wkTap(i) {
+  const wk = S.game?.wk;
+  if (!wk || wk.phase !== "play") return;
+  const h = wk.holes[i]; if (!h) return;
+  if (h.skull) { wkEnd(true); return; }
+  wk.holes[i] = null; wk.score[wk.who]++;
+  const el = document.querySelector(`[data-wk="${i}"]`); if (el) { el.classList.add("hit"); setTimeout(() => el.classList.remove("hit"), 200); }
+  wkPaint(i);
+  const sc = document.getElementById("wkScore"); if (sc) sc.textContent = wk.score[wk.who];
+  play("pop"); vib(10);
+}
+function wkEnd(skull) {
+  const g = S.game, wk = g.wk;
+  stopTimer(); clearTimeout(wk.spawnT);
+  if (skull) { wk.score[wk.who] = 0; wk.skull.push(wk.who); play("boom"); boomFlash(); } else play("timeup");
+  wk.best[wk.who] = Math.max(wk.best[wk.who], wk.score[wk.who]);
+  wk.phase = "turn"; g.turn++;
+  render(true);
+}
+function wkAfter() {
+  const wk = S.game.wk;
+  wk.k++;
+  if (wk.k < S.members.length) { wkTurn(); render(true); return; }
+  const min = Math.min(...wk.score);
+  wk.losers = S.members.map((_, i) => i).filter((i) => wk.score[i] === min);
+  hold("結果は…", 1800, () => { wk.phase = "rank"; });
+  render();
 }
 
 // ---------- おでこ当て ----------

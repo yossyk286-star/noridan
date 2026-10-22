@@ -8,7 +8,7 @@ import { HandWho, IntroCard, LevelBox, ModeCard, NameTiles, Note, Outline, Prog,
 import { HELP } from '../lib/help';
 import { useHold } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
-import { Decks } from '../lib/game';
+import { Decks, shuffle } from '../lib/game';
 import { play } from '../lib/sound';
 import { usePrefs } from '../lib/prefs';
 import { speak } from '../lib/speech';
@@ -31,14 +31,6 @@ type Phase = 'intro' | 'hand' | 'look' | 'talk' | 'who' | 'order' | 'reveal' | '
 const TOPICS = itoJson as unknown as Record<string, Topic[]>;
 
 
-const shuffle = <T,>(a: T[]): T[] => {
-  const b = a.slice();
-  for (let i = b.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [b[i], b[j]] = [b[j], b[i]];
-  }
-  return b;
-};
 
 /** 価値観ナンバー：こっそり配られた数字をお題で表現して、全員で小さい順に並べる。順番が逆になってた2人が罰 */
 export default function ItoScreen({ members, level, night, onQuit, onSettings, onFinish }: Props) {

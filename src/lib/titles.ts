@@ -24,6 +24,8 @@ export type Stats = {
   dekoBest?: number[]; // おでこ当ての1回での最多正解
   doubtFooled?: number[]; // ダウトで騙した回数
   doubtSeen?: number[]; // ダウトで見破った回数
+  kingCount?: number[]; // 王様になった回数
+  whackBest?: number[]; // ワニワニタップの最高点
   hugBest?: (number | null)[]; // ハグタイム当ての一番小さいズレ（秒）
   stopExact?: number[]; // ピタッとストップでピッタリ止めた回数
   shakeBest?: (number | null)[]; // 全力シェイクの自己ベスト
@@ -31,7 +33,7 @@ export type Stats = {
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
-export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt';
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt' | 'king' | 'draw' | 'whack';
 /** 罰の理由の名前（src/data/why.json。Web版と共通） */
 export const WHY_LABEL = whyJson as Record<Why, string>;
 export function whyText(st: Stats | undefined, i: number) {
@@ -118,6 +120,10 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
   if (df) add('嘘つき名人', df, `騙した ${st.doubtFooled![df[0]]}回`);
   const ds = st.doubtSeen ? top(st.doubtSeen, 2) : null;
   if (ds) add('名探偵', ds, `見破った ${st.doubtSeen![ds[0]]}回`);
+  const kc = st.kingCount ? top(st.kingCount, 2) : null;
+  if (kc) add('天下人', kc, `王様 ${st.kingCount![kc[0]]}回`);
+  const wb = st.whackBest ? top(st.whackBest, 1) : null;
+  if (wb) add('モグラ叩き名人', wb, `最高 ${st.whackBest![wb[0]]}点`);
   if (st.hugBest) {
     const hb = st.hugBest;
     const ok = hb.map((_, i) => i).filter((i) => hb[i] != null);

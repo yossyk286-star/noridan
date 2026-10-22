@@ -328,6 +328,7 @@ function StepHead({ num, title, sub }: { num: string; title: string; sub?: strin
 type Cat = 'basic' | 'phone' | 'talk' | 'brain' | 'deep';
 const MODE_LIST: { m: Mode; ic: IconName; cat: Cat; t: string; min?: number; ok?: number }[] = [
   { m: 'odai', ic: 'cards', cat: 'basic', t: '好きなだけ' },
+  { m: 'king', ic: 'king', cat: 'basic', t: '1回2分', min: 3 },
   { m: 'sugoroku', ic: 'dice', cat: 'basic', t: '15〜30分' },
   { m: 'memory', ic: 'grid', cat: 'basic', t: '10分' },
   { m: 'tilt', ic: 'tilt', cat: 'phone', t: '1人30秒' },
@@ -338,11 +339,13 @@ const MODE_LIST: { m: Mode; ic: IconName; cat: Cat; t: string; min?: number; ok?
   { m: 'rtap', ic: 'rtap', cat: 'phone', t: '1回戦2分' },
   { m: 'bpass', ic: 'bpass', cat: 'phone', t: '1回戦2分' },
   { m: 'deko', ic: 'deko', cat: 'phone', t: '1人60秒' },
+  { m: 'whack', ic: 'whack', cat: 'phone', t: '1人15秒' },
   { m: 'ngword', ic: 'mute', cat: 'talk', t: '10分〜' },
   { m: 'doubt', ic: 'doubt', cat: 'talk', t: '1人2分', min: 3 },
   { m: 'homeru', ic: 'heart', cat: 'talk', t: '1回2分' },
   { m: 'gesture', ic: 'hand', cat: 'talk', t: '1人60秒', min: 3 },
   { m: 'face', ic: 'face', cat: 'talk', t: '1回戦5分', min: 3 },
+  { m: 'draw', ic: 'draw', cat: 'talk', t: '1周5分', min: 3 },
   { m: 'wolf', ic: 'wolf', cat: 'talk', t: '1回戦5分', min: 3 },
   { m: 'quiz', ic: 'quiz', cat: 'brain', t: '10問5分' },
   { m: 'ito', ic: 'num', cat: 'brain', t: '1問3分' },

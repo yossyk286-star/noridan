@@ -6,7 +6,7 @@ import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Prog } from '../components/ModeParts';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
-import { sexPrefer } from '../lib/game';
+import { sexPrefer, pick } from '../lib/game';
 import { play } from '../lib/sound';
 import { Vibration } from '../lib/vibe';
 import type { Stats } from '../lib/titles';
@@ -16,7 +16,6 @@ import type { Level, Member, Night } from '../types';
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
 type Phase = 'intro' | 'ready' | 'count' | 'play' | 'safe' | 'lose' | 'batsu';
 type End = 'who' | 'mate' | 'broke' | 'full';
-const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 const DEEP = { bg: '#120c1d', edge: C.deep };
 
 /**

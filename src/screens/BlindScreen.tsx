@@ -8,7 +8,7 @@ import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
 import { useHold } from '../components/Reveal';
 import { useCountdown } from '../lib/useCountdown';
-import { sexPrefer } from '../lib/game';
+import { sexPrefer, pick } from '../lib/game';
 import { play } from '../lib/sound';
 import type { Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, colorOf } from '../theme';
@@ -19,7 +19,6 @@ type Phase = 'intro' | 'close' | 'secret' | 'touch' | 'guess' | 'reveal' | 'bats
 /** 触る時間（秒） */
 export const BL_SEC = 5;
 const TOUCH = ['両手で手を握る', '手のひらを合わせる', '頭をなでる', 'ほっぺを指でつつく', '肩をもむ', '手の甲をなでる', '腕をつかむ', '耳たぶをつまむ', '背中をトントンする', '指を絡める', '肩に頭を乗せる', '首の後ろに息をかける'];
-const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 const DEEP = { bg: '#120c1d', edge: C.deep };
 
 /**
