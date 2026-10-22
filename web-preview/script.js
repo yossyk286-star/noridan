@@ -1293,7 +1293,7 @@ function drSetup() {
 function drFinishPic() { const cv = document.getElementById("drCanvas"); drSubmit(cv ? cv.toDataURL("image/jpeg", 0.7) : ""); }
 
 // ---------- ワニワニタップ ----------
-// 1人15秒。穴から出てくる顔をタップで1点、ドクロを押したら0点で即終了。一番低い人が罰
+// 1人15秒。穴から出てくるモグラをタップで1点、ドクロを押したらマイナス1点。一番低い人が罰
 const WK_SEC = 15;
 const WK_LV = { yurume: { every: 650, life: 950, skull: 0.12 }, futsu: { every: 520, life: 780, skull: 0.18 }, jigoku: { every: 400, life: 620, skull: 0.26 } };
 function wkRound() {
@@ -1325,7 +1325,7 @@ function wkPaint(i) {
   const el = document.querySelector(`[data-wk="${i}"]`); if (!el) return;
   const h = S.game.wk.holes[i];
   el.classList.toggle("up", !!h); el.classList.toggle("bad", !!h?.skull);
-  el.innerHTML = h ? (h.skull ? `<span class="wk-face">${SKULL}</span>` : `<span class="wk-face"><i></i><i></i><b></b></span>`) : "";
+  el.innerHTML = h ? (h.skull ? `<span class="wk-face">${SKULL}</span>` : `<span class="wk-face">${MOLE}</span>`) : "";
 }
 function wkTap(i) {
   const wk = S.game?.wk;

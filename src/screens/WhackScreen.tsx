@@ -6,7 +6,7 @@ import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Prog, Note } from '../components/ModeParts';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
-import { Skull } from '../components/Fx';
+import { Mole, Skull } from '../components/Fx';
 import { useHold, useReveal } from '../components/Reveal';
 import { HELP } from '../lib/help';
 import { useCountdown } from '../lib/useCountdown';
@@ -22,7 +22,7 @@ type Hole = { skull: boolean; id: number } | null;
 const SEC = 15;
 const LV: Record<Level, { every: number; life: number; skull: number }> = { yurume: { every: 650, life: 950, skull: 0.12 }, futsu: { every: 520, life: 780, skull: 0.18 }, jigoku: { every: 400, life: 620, skull: 0.26 } };
 
-/** ワニワニタップ：1人15秒。穴から出てくる顔をタップで1点、ドクロは押すたびにマイナス1点。一番低い人（同点は全員）が罰 */
+/** ワニワニタップ：1人15秒。穴から出てくるモグラをタップで1点、ドクロは押すたびにマイナス1点。一番低い人（同点は全員）が罰 */
 export default function WhackScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
   useKeepAwake();
   const n = members.length;
@@ -161,7 +161,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round}回戦・${k + 1}/${n}人目`}</Prog>
           <HandWho members={members} i={who} sub="の番" fg={fg} />
-          <Note fg={fg}>{'出てきた顔をタップで1点。\nドクロを押したらマイナス1点'}</Note>
+          <Note fg={fg}>{'出てきたモグラをタップで1点。\nドクロを押したらマイナス1点'}</Note>
           <Text style={[s.lim, { color: fg }]}>{SEC}秒</Text>
         </ModeCard>
       );
@@ -180,17 +180,16 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
                 <View style={s.hole} />
                 {h && (h.skull ? <View style={s.skull}><Skull /></View> : (
                   <View style={s.face}>
-                    <View style={[s.eye, { left: '28%' }]} />
-                    <View style={[s.eye, { right: '28%' }]} />
-                    <View style={s.mouth} />
+                    <Mole />
                   </View>
                 ))}
+                <View style={s.lip} pointerEvents="none" />
               </Pressable>
             ))}
           </View>
         </ModeCard>
       );
-      controls = <Text style={[s.hint, { color: pal.muted }]}>顔だけタップ！ドクロはアカン</Text>;
+      controls = <Text style={[s.hint, { color: pal.muted }]}>モグラだけタップ！ドクロはアカン</Text>;
       break;
     case 'turn': {
       const sk = skulls[who];
@@ -239,9 +238,8 @@ const s = StyleSheet.create({
   grid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignContent: 'space-around' },
   cell: { width: '31%', aspectRatio: 1, alignItems: 'center', justifyContent: 'flex-end', borderRadius: 18, overflow: 'hidden', backgroundColor: '#6aad42' },
   hole: { position: 'absolute', bottom: '8%', width: '80%', height: '26%', borderRadius: 999, backgroundColor: '#1e140d' },
-  face: { width: '60%', height: '72%', marginBottom: '16%', borderRadius: 999, backgroundColor: '#ffd23f', borderWidth: 3, borderColor: '#141210' },
-  eye: { position: 'absolute', top: '34%', width: '12%', height: '16%', borderRadius: 99, backgroundColor: '#141210' },
-  mouth: { position: 'absolute', left: '32%', right: '32%', top: '60%', height: '14%', borderBottomLeftRadius: 99, borderBottomRightRadius: 99, backgroundColor: '#e8202a' },
+  face: { position: 'absolute', left: '12%', right: '12%', top: '2%', bottom: '17%' },
+  lip: { position: 'absolute', left: '10%', right: '10%', bottom: '4%', height: '14%', borderBottomLeftRadius: 999, borderBottomRightRadius: 999, backgroundColor: '#3a2616' },
   skull: { width: '74%', height: '74%', marginBottom: '8%', alignItems: 'center', justifyContent: 'center' },
   hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
   verdict: { fontFamily: F.display, fontSize: 44, lineHeight: 52 },

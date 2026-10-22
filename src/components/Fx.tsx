@@ -347,6 +347,26 @@ export function TwinSkulls() {
 }
 
 /** 罰が一番多い人の王冠 */
+/** ワニワニのモグラ（穴から上半身だけ出てる） */
+export function Mole() {
+  return (
+    <Svg width="100%" height="100%" viewBox="0 0 100 100">
+      <Path d="M16 100V50a34 34 0 0 1 68 0v50z" fill="#8a5a3b" stroke="#141210" strokeWidth={4} />
+      <Ellipse cx={50} cy={66} rx={25} ry={21} fill="#d9ab84" />
+      <Circle cx={37} cy={45} r={4.5} fill="#141210" />
+      <Circle cx={63} cy={45} r={4.5} fill="#141210" />
+      <Circle cx={38.5} cy={43.5} r={1.4} fill="#fff" />
+      <Circle cx={64.5} cy={43.5} r={1.4} fill="#fff" />
+      <Path d="M28 60h-14M28 65l-13 4M72 60h14M72 65l13 4" stroke="#141210" strokeWidth={2} strokeLinecap="round" />
+      <Rect x={45} y={66} width={10} height={9} rx={1.5} fill="#fff" stroke="#141210" strokeWidth={2} />
+      <Path d="M50 66v9" stroke="#141210" strokeWidth={1.6} />
+      <Ellipse cx={50} cy={59} rx={9} ry={6.5} fill="#ff7aa2" stroke="#141210" strokeWidth={2.5} />
+      <Ellipse cx={26} cy={90} rx={10} ry={7} fill="#f0b896" stroke="#141210" strokeWidth={2.5} />
+      <Ellipse cx={74} cy={90} rx={10} ry={7} fill="#f0b896" stroke="#141210" strokeWidth={2.5} />
+    </Svg>
+  );
+}
+
 export function Crown() {
   return (
     <View pointerEvents="none" style={fx.crown}>

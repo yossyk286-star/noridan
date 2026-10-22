@@ -170,6 +170,7 @@ const BOMB_ART = `<svg class="bomb-art" viewBox="0 0 96 96" aria-hidden="true">
 </svg>`;
 
 const MOON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+const MOLE = `<svg class="mole" viewBox="0 0 100 100" aria-hidden="true"><path d="M16 100V50a34 34 0 0 1 68 0v50z" fill="#8a5a3b" stroke="#141210" stroke-width="4"/><ellipse cx="50" cy="66" rx="25" ry="21" fill="#d9ab84"/><circle cx="37" cy="45" r="4.5" fill="#141210"/><circle cx="63" cy="45" r="4.5" fill="#141210"/><circle cx="38.5" cy="43.5" r="1.4" fill="#fff"/><circle cx="64.5" cy="43.5" r="1.4" fill="#fff"/><path d="M28 60h-14M28 65l-13 4M72 60h14M72 65l13 4" stroke="#141210" stroke-width="2" stroke-linecap="round"/><rect x="45" y="66" width="10" height="9" rx="1.5" fill="#fff" stroke="#141210" stroke-width="2"/><path d="M50 66v9" stroke="#141210" stroke-width="1.6"/><ellipse cx="50" cy="59" rx="9" ry="6.5" fill="#ff7aa2" stroke="#141210" stroke-width="2.5"/><ellipse cx="26" cy="90" rx="10" ry="7" fill="#f0b896" stroke="#141210" stroke-width="2.5"/><ellipse cx="74" cy="90" rx="10" ry="7" fill="#f0b896" stroke="#141210" stroke-width="2.5"/></svg>`;
 const SKULL = `<svg class="skull" viewBox="0 0 100 100" aria-hidden="true">
   <path d="M50 6C25 6 10 23 10 45c0 14 8 23 17 27v11c0 4 3 7 7 7h32c4 0 7-3 7-7V72c9-4 17-13 17-27C90 23 75 6 50 6z" fill="#f7f3ea" stroke="#141210" stroke-width="3"/>
   <ellipse class="eye" cx="33" cy="47" rx="11" ry="12" fill="#e8202a"/>
@@ -1476,11 +1477,11 @@ function vWhack() {
   if (wk.phase === "batsu") return stageWrap(vCard(), roundEnd("wkAccept", true));
   let card, controls;
   if (wk.phase === "hand") {
-    card = `<div class="odai mode-card center" id="card"><p class="prog">第${wk.round}回戦・${wk.k + 1}/${n}人目</p>${bigWho(wk.who, "の番")}<p class="hand-note">出てきた顔をタップで1点。<br><b>ドクロを押したらマイナス1点</b></p><p class="tl-lim">${WK_SEC}秒</p></div>`;
+    card = `<div class="odai mode-card center" id="card"><p class="prog">第${wk.round}回戦・${wk.k + 1}/${n}人目</p>${bigWho(wk.who, "の番")}<p class="hand-note">出てきたモグラをタップで1点。<br><b>ドクロを押したらマイナス1点</b></p><p class="tl-lim">${WK_SEC}秒</p></div>`;
     controls = `<button class="big" data-act="wkGo">スタート</button>`;
   } else if (wk.phase === "play") {
     card = `<div class="odai mode-card center wk-card" id="card"><p class="dk-time"><b id="modeTimer">${WK_SEC}</b>秒・<span id="wkScore">${wk.score[wk.who]}</span>点 <span id="wkSkull" class="wk-sk" ${wk.skull[wk.who] ? "" : "hidden"}>ドクロ ${wk.skull[wk.who]}</span></p><div class="wk-grid">${Array.from({ length: 9 }, (_, i) => `<div class="wk-hole" data-wk="${i}"></div>`).join("")}</div></div>`;
-    controls = `<p class="hint">顔だけタップ！ドクロはアカン</p>`;
+    controls = `<p class="hint">モグラだけタップ！ドクロはアカン</p>`;
   } else if (wk.phase === "turn") {
     const sk = wk.skull[wk.who];
     card = `<div class="odai mode-card center ${sk ? "batsu" : ""}" id="card"><p class="prog">${mName(wk.who)}の結果</p><p class="sp-num sp-res">${wk.score[wk.who]}<small>点</small></p>${sk ? `<p class="tl-big q-ng wk-skn">ドクロ ${sk}回</p><p class="hand-note">${sk}点マイナス</p>` : `<p class="hand-note">ドクロはセーフ！</p>`}</div>`;

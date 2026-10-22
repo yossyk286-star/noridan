@@ -1574,18 +1574,17 @@ body[data-level="yurume"] .qz-tip b, body[data-level="futsu"] .qz-tip b { color:
 .wk-card { justify-content: flex-start !important; gap: 10px; }
 .wk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; flex: 1; }
 .wk-hole { position: relative; border-radius: 18px; aspect-ratio: 1; align-self: center; background: radial-gradient(ellipse 40% 14% at 50% 82%, #1e140d 0 96%, transparent 100%), linear-gradient(#7cc04f, #5a9a36); overflow: hidden; touch-action: none; }
-.wk-face { position: absolute; left: 20%; right: 20%; bottom: 16%; top: 12%; border-radius: 50% 50% 40% 40%; background: #ffd23f; border: 3px solid #141210; display: block; animation: wkUp .12s ease-out; }
-.wk-face i { position: absolute; top: 34%; width: 12%; height: 16%; border-radius: 50%; background: #141210; }
-.wk-face i:first-child { left: 28%; } .wk-face i:nth-child(2) { right: 28%; }
-.wk-face b { position: absolute; left: 32%; right: 32%; top: 60%; height: 14%; border-radius: 0 0 99px 99px; background: #e8202a; }
+.wk-face { position: absolute; left: 12%; right: 12%; bottom: 17%; top: 2%; display: block; animation: wkUp .12s ease-out; }
+.wk-face .mole { display: block; width: 100%; height: 100%; }
+.wk-hole::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: 4%; height: 14%; border-radius: 0 0 50% 50% / 0 0 100% 100%; background: #3a2616; z-index: 1; pointer-events: none; }
 .wk-hole.bad .wk-face { background: transparent; border: 0; }
-.wk-hole.bad .wk-face { left: 18%; right: 18%; top: 16%; bottom: 10%; }
+.wk-hole.bad .wk-face { left: 18%; right: 18%; top: 14%; bottom: 14%; }
 .wk-hole.bad .wk-face .skull { width: 100%; height: 100%; animation: none; }
 .wk-skn { font-size: clamp(30px, 10vw, 44px); white-space: nowrap; }
 .wk-sk { color: #e8202a; font-weight: 900; margin-left: 6px; }
 .wk-hole.ouch { animation: wkOuch .26s ease-out; }
 @keyframes wkOuch { 0%, 100% { transform: none; } 30% { transform: translateX(-5px) rotate(-4deg); } 60% { transform: translateX(5px) rotate(4deg); } }
-.wk-hole.hit::after { content: "+1"; position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 28px; color: #1f9d55; animation: wkHit .2s ease-out; }
+.wk-hole.hit::before { content: "+1"; position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 28px; color: #1f9d55; animation: wkHit .2s ease-out; z-index: 2; }
 @keyframes wkUp { from { transform: translateY(70%); } to { transform: none; } }
 @keyframes wkHit { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.3) translateY(-20%); opacity: 0; } }
 
