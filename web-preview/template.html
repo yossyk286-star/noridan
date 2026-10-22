@@ -1349,6 +1349,7 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 /* 罰が一番多い人の王冠・罰が増えた時に跳ねる */
 .av { position: relative; }
 .av .crown { position: absolute; top: -13px; left: 50%; width: 22px; height: 15px; transform: translateX(-50%) rotate(-8deg); filter: drop-shadow(0 2px 0 rgba(0,0,0,.35)); animation: crownIn .5s cubic-bezier(.3,1.7,.5,1) both; z-index: 2; }
+.av .crown.still { animation: none; }
 @keyframes crownIn { from { transform: translateX(-50%) translateY(-10px) scale(0) rotate(-40deg); } }
 .av.bump { animation: avBump .6s cubic-bezier(.3,1.8,.5,1) both; }
 .av.bump .cnt { animation: cntPop .6s cubic-bezier(.3,1.8,.5,1) both; }

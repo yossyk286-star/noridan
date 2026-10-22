@@ -1349,6 +1349,7 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 /* 罰が一番多い人の王冠・罰が増えた時に跳ねる */
 .av { position: relative; }
 .av .crown { position: absolute; top: -13px; left: 50%; width: 22px; height: 15px; transform: translateX(-50%) rotate(-8deg); filter: drop-shadow(0 2px 0 rgba(0,0,0,.35)); animation: crownIn .5s cubic-bezier(.3,1.7,.5,1) both; z-index: 2; }
+.av .crown.still { animation: none; }
 @keyframes crownIn { from { transform: translateX(-50%) translateY(-10px) scale(0) rotate(-40deg); } }
 .av.bump { animation: avBump .6s cubic-bezier(.3,1.8,.5,1) both; }
 .av.bump .cnt { animation: cntPop .6s cubic-bezier(.3,1.8,.5,1) both; }
@@ -1809,7 +1810,7 @@ const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・�
 function newGame(mode, again = false) {
   // よく遊ぶモードを数える（もう一回は数えへん）
   if (!again) { const pl = (() => { const v = store.get("nd_plays", {}); return v && typeof v === "object" ? v : {}; })(); pl[mode] = (pl[mode] || 0) + 1; store.set("nd_plays", pl); }
-  S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
+  S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null; S.prevKings = null;
   const n = S.members.length;
   S.game = {
     mode, turn: 0, cur: 0, doer: 0,
@@ -4394,12 +4395,15 @@ function vBar() {
   const prev = S.prevPen && S.prevPen.length === n ? S.prevPen : g.pen;
   const bump = (i) => g.pen[i] > prev[i];
   S.prevPen = [...g.pen];
+  // 王冠は新しくついた時だけポンと出す（ボタンを押すたびに描き直しても跳ねへんように）
+  const prevKings = S.prevKings || [];
+  S.prevKings = kings.slice();
   const hidden = n - shown.length;
   const rv = (i) => g.rev[i] && (g.mode === "odai" || g.mode === "sugoroku");
   return `<div class="bar">
     <div class="score" aria-label="罰スコア">${shown.map((i) => `
       <span class="av ${i === g.doer ? "is-turn" : ""} ${bump(i) ? "bump" : ""}" style="--mc:${colorOf(i)}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
-        ${kings.includes(i) ? CROWN : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
+        ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
     <button class="bar-res" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>結果</span></button>
     <button class="icon-btn bar-btn" data-act="flip" aria-pressed="${S.flip}" aria-label="上下反転">${ICON.flip}</button>

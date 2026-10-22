@@ -664,12 +664,15 @@ function vBar() {
   const prev = S.prevPen && S.prevPen.length === n ? S.prevPen : g.pen;
   const bump = (i) => g.pen[i] > prev[i];
   S.prevPen = [...g.pen];
+  // 王冠は新しくついた時だけポンと出す（ボタンを押すたびに描き直しても跳ねへんように）
+  const prevKings = S.prevKings || [];
+  S.prevKings = kings.slice();
   const hidden = n - shown.length;
   const rv = (i) => g.rev[i] && (g.mode === "odai" || g.mode === "sugoroku");
   return `<div class="bar">
     <div class="score" aria-label="罰スコア">${shown.map((i) => `
       <span class="av ${i === g.doer ? "is-turn" : ""} ${bump(i) ? "bump" : ""}" style="--mc:${colorOf(i)}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
-        ${kings.includes(i) ? CROWN : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
+        ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
     <button class="bar-res" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>結果</span></button>
     <button class="icon-btn bar-btn" data-act="flip" aria-pressed="${S.flip}" aria-label="上下反転">${ICON.flip}</button>

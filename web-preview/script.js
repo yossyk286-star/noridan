@@ -193,7 +193,7 @@ const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・�
 function newGame(mode, again = false) {
   // よく遊ぶモードを数える（もう一回は数えへん）
   if (!again) { const pl = (() => { const v = store.get("nd_plays", {}); return v && typeof v === "object" ? v : {}; })(); pl[mode] = (pl[mode] || 0) + 1; store.set("nd_plays", pl); }
-  S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
+  S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null; S.prevKings = null;
   const n = S.members.length;
   S.game = {
     mode, turn: 0, cur: 0, doer: 0,
