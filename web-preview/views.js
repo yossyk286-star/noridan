@@ -1457,7 +1457,7 @@ function vDoubt() {
     card = `<div class="odai mode-card center board-card" id="card"><p class="prog">「${esc(du.topic)}」</p><p class="ng-lead">本当？嘘？</p><ul class="du-votes">${voters.map((i) => `<li style="--mc:${colorOf(i)}"><span class="nm">${mName(i)}</span><button data-act="duPick" data-i="${i}" data-v="T" aria-pressed="${du.votes[i] === "T"}">本当</button><button data-act="duPick" data-i="${i}" data-v="L" aria-pressed="${du.votes[i] === "L"}" class="l">嘘</button></li>`).join("")}</ul></div>`;
     controls = `<button class="big" data-act="duOpen" ${done ? "" : "disabled"}>${done ? "開票" : `あと${voters.filter((i) => !du.votes[i]).length}人`}</button>`;
   } else {
-    card = `<div class="odai mode-card center ${du.caught ? "batsu" : "lucky"}" id="card"><p class="prog">「${esc(du.topic)}」は…</p><p class="tl-big sp-verdict ${du.lie ? "q-ng" : "q-ok"}">${du.lie ? "嘘！" : "本当！"}</p><p class="ng-lead">${du.caught ? "見破られた！" : "騙された！"}</p><p class="hand-note">${du.caught ? `${mName(du.who)}が罰` : `外した${du.losers.map(mName).join("・")}が罰`}</p></div>`;
+    card = `<div class="odai mode-card center ${du.caught ? "batsu" : "lucky"}" id="card"><p class="prog">「${esc(du.topic)}」は…</p><p class="tl-big sp-verdict ${du.lie ? "q-ng" : "q-ok"}">${du.lie ? "嘘！" : "本当！"}</p><p class="ng-lead">${du.caught ? "見破られた！" : "騙された！"}</p><p class="hand-note">${du.caught ? `見破られた${mName(du.who)}${du.wrong.length ? `と、外した${du.wrong.map(mName).join("・")}` : ""}が罰` : `外した${du.losers.map(mName).join("・")}が罰`}</p></div>`;
     controls = `<button class="big has-pen" data-act="duGacha">${du.losers.map(mName).join("・")}に罰ガチャ</button>`;
   }
   return stageWrap(card, controls);

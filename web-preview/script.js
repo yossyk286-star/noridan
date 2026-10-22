@@ -1272,7 +1272,7 @@ function dkAfter() {
 }
 
 // ---------- ダウト ----------
-// 番の人だけお題と「本当／嘘」を見て話す。ほかの人が本当か嘘か投票。半分以上当てたら話した人、当てたのが半分未満なら外した人が罰
+// 番の人だけお題と「本当／嘘」を見て話す。ほかの人が本当か嘘か投票。外した人はいつも罰、半分以上が当てたら話した人も罰
 function duRound() { const du = S.game.du; du.round++; du.k = 0; duTurn(); }
 function duTurn() {
   const g = S.game, du = g.du;
@@ -1285,7 +1285,9 @@ function duOpen() {
   const voters = S.members.map((_, i) => i).filter((i) => i !== du.who);
   const right = voters.filter((i) => (du.votes[i] === "L") === du.lie);
   du.caught = right.length * 2 >= voters.length;
-  du.losers = du.caught ? [du.who] : voters.filter((i) => !right.includes(i));
+  const wrong = voters.filter((i) => !right.includes(i));
+  du.wrong = wrong;
+  du.losers = du.caught ? [du.who, ...wrong] : wrong; // 見破られたら話した人＋外した人、騙されたら外した人
   if (du.caught) right.forEach((i) => du.seen[i]++); else du.fooled[du.who]++;
   g.turn++;
   hold("正解は…", 1800, () => { du.phase = "reveal"; play(du.caught ? "buzzer" : "pinpon"); });

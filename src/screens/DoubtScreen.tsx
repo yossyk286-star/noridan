@@ -20,7 +20,7 @@ const shuffle = <T,>(a: T[]) => a.map((v) => [Math.random(), v] as const).sort((
 
 /**
  * ダウト：番の人だけお題と「本当／嘘」を見て、それっぽく話す。ほかの人がそれぞれ本当か嘘か投票。
- * 半分以上が当てたら見破られたので話した人、当てたのが半分未満なら騙されたので外した人全員が罰
+ * 外した人はいつも罰。半分以上が当てたら見破られたので話した人も罰
  */
 export default function DoubtScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
   useKeepAwake();
@@ -36,6 +36,7 @@ export default function DoubtScreen({ members, level, night, onQuit, onSettings,
   const [votes, setVotes] = useState<Record<number, 'T' | 'L'>>({});
   const [losers, setLosers] = useState<number[]>([]);
   const [caught, setCaught] = useState(false);
+  const [wrongs, setWrongs] = useState<number[]>([]);
   const [turns, setTurns] = useState(0);
   const fooled = useRef<number[]>(Array(n).fill(0)).current;
   const seen = useRef<number[]>(Array(n).fill(0)).current;
@@ -64,7 +65,9 @@ export default function DoubtScreen({ members, level, night, onQuit, onSettings,
     const right = voters.filter((i) => (votes[i] === 'L') === lie);
     const c = right.length * 2 >= voters.length;
     setCaught(c);
-    setLosers(c ? [who] : voters.filter((i) => !right.includes(i)));
+    const wrong = voters.filter((i) => !right.includes(i));
+    setWrongs(wrong);
+    setLosers(c ? [who, ...wrong] : wrong); // 見破られたら話した人＋外した人、騙されたら外した人
     if (c) right.forEach((i) => seen[i]++);
     else fooled[who]++;
     setTurns((t) => t + 1);
@@ -149,7 +152,7 @@ export default function DoubtScreen({ members, level, night, onQuit, onSettings,
           <Prog fg={caught ? '#f7f3ea' : fg}>{`「${topic}」は…`}</Prog>
           <Text style={[s.verdict, { color: lie ? '#ff2a2a' : '#1f9d55' }]}>{lie ? '嘘！' : '本当！'}</Text>
           <Text style={[s.lead, { color: caught ? '#f7f3ea' : fg }]}>{caught ? '見破られた！' : '騙された！'}</Text>
-          <Note fg={caught ? '#f7f3ea' : fg}>{caught ? `${members[who].name}が罰` : `外した${losers.map((i) => members[i].name).join('・')}が罰`}</Note>
+          <Note fg={caught ? '#f7f3ea' : fg}>{caught ? `見破られた${members[who].name}${wrongs.length ? `と、外した${wrongs.map((i) => members[i].name).join('・')}` : ''}が罰` : `外した${losers.map((i) => members[i].name).join('・')}が罰`}</Note>
         </ModeCard>
       );
       controls = <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers); setPhase('batsu'); }} />;
