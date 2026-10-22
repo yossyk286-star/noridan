@@ -1298,7 +1298,7 @@ const WK_SEC = 15;
 const WK_LV = { yurume: { every: 650, life: 950, skull: 0.12 }, futsu: { every: 520, life: 780, skull: 0.18 }, jigoku: { every: 400, life: 620, skull: 0.26 } };
 function wkRound() {
   const g = S.game, wk = g.wk;
-  wk.round++; wk.k = 0; wk.score = Array(S.members.length).fill(0); wk.skull = []; wk.losers = [];
+  wk.round++; wk.k = 0; wk.score = Array(S.members.length).fill(0); wk.skull = Array(S.members.length).fill(0); wk.losers = [];
   wkTurn();
 }
 function wkTurn() { const g = S.game, wk = g.wk; wk.who = wk.k % S.members.length; g.doer = wk.who; wk.phase = "hand"; }
@@ -1319,7 +1319,7 @@ function wkGo() {
     wk.spawnT = setTimeout(spawn, lv.every * (0.7 + Math.random() * 0.6));
   };
   wk.spawnT = setTimeout(spawn, 300);
-  startTimer(WK_SEC, () => { if (alive()) wkEnd(false); });
+  startTimer(WK_SEC, () => { if (alive()) wkEnd(); });
 }
 function wkPaint(i) {
   const el = document.querySelector(`[data-wk="${i}"]`); if (!el) return;
@@ -1331,17 +1331,23 @@ function wkTap(i) {
   const wk = S.game?.wk;
   if (!wk || wk.phase !== "play") return;
   const h = wk.holes[i]; if (!h) return;
-  if (h.skull) { wkEnd(true); return; }
+  if (h.skull) { // ドクロは押すたびに罰が1つたまる（終わりにはならへん）
+    wk.holes[i] = null; wk.skull[wk.who]++; wkPaint(i);
+    const el = document.querySelector(`[data-wk="${i}"]`); if (el) { el.classList.add("ouch"); setTimeout(() => el.classList.remove("ouch"), 260); }
+    const sk = document.getElementById("wkSkull"); if (sk) { sk.textContent = `ドクロ ${wk.skull[wk.who]}`; sk.hidden = false; }
+    quakeFx(); play("buzzer"); // フチが赤く光るだけ（爆発は大げさなので）
+    return;
+  }
   wk.holes[i] = null; wk.score[wk.who]++;
   const el = document.querySelector(`[data-wk="${i}"]`); if (el) { el.classList.add("hit"); setTimeout(() => el.classList.remove("hit"), 200); }
   wkPaint(i);
   const sc = document.getElementById("wkScore"); if (sc) sc.textContent = wk.score[wk.who];
   play("pop"); vib(10);
 }
-function wkEnd(skull) {
+function wkEnd() {
   const g = S.game, wk = g.wk;
   stopTimer(); clearTimeout(wk.spawnT);
-  if (skull) { wk.score[wk.who] = 0; wk.skull.push(wk.who); play("boom"); boomFlash(); } else play("timeup");
+  play("timeup");
   wk.best[wk.who] = Math.max(wk.best[wk.who], wk.score[wk.who]);
   wk.phase = "turn"; g.turn++;
   render(true);
@@ -1352,6 +1358,7 @@ function wkAfter() {
   if (wk.k < S.members.length) { wkTurn(); render(true); return; }
   const min = Math.min(...wk.score);
   wk.losers = S.members.map((_, i) => i).filter((i) => wk.score[i] === min);
+  wk.pens = S.members.map((_, i) => wk.skull[i] + (wk.losers.includes(i) ? 1 : 0)); // 罰の数＝ドクロの数＋最下位は1つ
   hold("結果は…", 1800, () => { wk.phase = "rank"; });
   render();
 }

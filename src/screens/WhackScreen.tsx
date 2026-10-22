@@ -22,7 +22,7 @@ type Hole = { skull: boolean; id: number } | null;
 const SEC = 15;
 const LV: Record<Level, { every: number; life: number; skull: number }> = { yurume: { every: 650, life: 950, skull: 0.12 }, futsu: { every: 520, life: 780, skull: 0.18 }, jigoku: { every: 400, life: 620, skull: 0.26 } };
 
-/** ワニワニタップ：1人15秒。穴から出てくる顔をタップで1点、ドクロを押したら0点で即終了。一番低い人が罰（同点は全員） */
+/** ワニワニタップ：1人15秒。穴から出てくる顔をタップで1点、ドクロは押すたびに罰が1つたまる。罰＝ドクロの数＋最下位（同点は全員）は1つ */
 export default function WhackScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
   useKeepAwake();
   const n = members.length;
@@ -35,7 +35,8 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
   const [k, setK] = useState(0);
   const [holes, setHoles] = useState<Hole[]>(() => Array(9).fill(null));
   const [score, setScore] = useState<number[]>(() => Array(n).fill(0));
-  const [skulls, setSkulls] = useState<number[]>([]);
+  const [skulls, setSkulls] = useState<number[]>(() => Array(n).fill(0));
+  const [pens, setPens] = useState<number[]>(() => Array(n).fill(0));
   const [losers, setLosers] = useState<number[]>([]);
   const [turns, setTurns] = useState(0);
   const best = useRef<number[]>(Array(n).fill(0)).current;
@@ -48,7 +49,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
     timers.current = [];
   };
   const who = k % n;
-  const clock = useCountdown(() => end(false));
+  const clock = useCountdown(() => end());
   useEffect(() => {
     if (skipIntro) newRound();
     return clear;
@@ -61,7 +62,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
   const newRound = () => {
     setRound((r) => r + 1);
     setScore(Array(n).fill(0));
-    setSkulls([]);
+    setSkulls(Array(n).fill(0));
     setLosers([]);
     setK(0);
     setPhase('hand');
@@ -97,25 +98,28 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
     if (phaseRef.current !== 'play') return;
     const h = holesRef.current[i];
     if (!h) return;
-    if (h.skull) return end(true);
     const h2 = holesRef.current.slice();
+    if (h.skull) {
+      // ドクロは押すたびに罰が1つたまる（終わりにはならへん）
+      h2[i] = null;
+      setH(h2);
+      setSkulls((x) => x.map((v, j) => (j === who ? v + 1 : v)));
+      play('buzzer');
+      Vibration.vibrate([0, 80, 40, 120]);
+      return;
+    }
     h2[i] = null;
     setH(h2);
     setScore((s0) => s0.map((v, j) => (j === who ? v + 1 : v)));
     play('pop');
     Haptics.selectionAsync().catch(() => {});
   };
-  const end = (skull: boolean) => {
+  const end = () => {
     if (phaseRef.current !== 'play') return;
     phaseRef.current = 'turn';
     clock.stop();
     clear();
-    if (skull) {
-      setScore((s0) => s0.map((v, j) => (j === who ? 0 : v)));
-      setSkulls((x) => [...x, who]);
-      play('boom');
-      Vibration.vibrate([0, 120, 60, 200]);
-    } else play('timeup');
+    play('timeup');
     setTurns((t) => t + 1);
     setPhase('turn');
   };
@@ -127,7 +131,9 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
       return;
     }
     const min = Math.min(...score);
-    setLosers(members.map((_, i) => i).filter((i) => score[i] === min));
+    const lo = members.map((_, i) => i).filter((i) => score[i] === min);
+    setLosers(lo);
+    setPens(members.map((_, i) => skulls[i] + (lo.includes(i) ? 1 : 0)));
     setPhase('tally');
     H.hold('結果は…', 1800, () => { setPhase('rank'); RV.start(n); });
   };
@@ -156,7 +162,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round}回戦・${k + 1}/${n}人目`}</Prog>
           <HandWho members={members} i={who} sub="の番" fg={fg} />
-          <Note fg={fg}>{'出てきた顔をタップで1点。\nドクロを押したら0点で即終了'}</Note>
+          <Note fg={fg}>{'出てきた顔をタップで1点。\nドクロを押すたびに罰が1つたまる'}</Note>
           <Text style={[s.lim, { color: fg }]}>{SEC}秒</Text>
         </ModeCard>
       );
@@ -165,7 +171,10 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
     case 'play':
       card = (
         <ModeCard pal={pal}>
-          <Text style={[s.time, { color: fg }]}>{`${clock.left}秒・${score[who]}点`}</Text>
+          <Text style={[s.time, { color: fg }]}>
+            {`${clock.left}秒・${score[who]}点`}
+            {skulls[who] > 0 && <Text style={{ color: '#e8202a' }}>{`  ドクロ ${skulls[who]}`}</Text>}
+          </Text>
           <View style={s.grid}>
             {holes.map((h, i) => (
               <Pressable key={i} onPressIn={() => tap(i)} style={s.cell}>
@@ -185,26 +194,29 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
       controls = <Text style={[s.hint, { color: pal.muted }]}>顔だけタップ！ドクロはアカン</Text>;
       break;
     case 'turn': {
-      const sk = skulls.includes(who);
+      const sk = skulls[who];
       card = (
         <ModeCard pal={pal} center bg={sk ? '#1a0606' : undefined} edge={sk ? '#e8202a' : undefined}>
           <Prog fg={sk ? '#f7f3ea' : fg}>{`${members[who].name}の結果`}</Prog>
-          {sk && <Text style={[s.verdict, { color: '#ff2a2a' }]}>ドクロ！</Text>}
-          <Text style={[s.num, { color: sk ? '#ff3b3b' : fg }]}>{score[who]}<Text style={s.unit}> 点</Text></Text>
+          <Text style={[s.num, { color: sk ? '#f7f3ea' : fg }]}>{score[who]}<Text style={s.unit}> 点</Text></Text>
+          {sk ? <Text style={[s.verdict, { color: '#ff2a2a' }]}>{`ドクロ ${sk}回`}</Text> : <Note fg={fg}>ドクロはセーフ！</Note>}
+          {sk > 0 && <Note fg="#f7f3ea">{`罰が${sk}つたまった`}</Note>}
         </ModeCard>
       );
       controls = <BigButton pal={pal} label={k + 1 < n ? `次は${members[(who + 1) % n].name}` : '結果発表'} onPress={after} />;
       break;
     }
     case 'tally':
-    case 'rank':
+    case 'rank': {
+      const hit = members.map((_, i) => i).filter((i) => pens[i] > 0);
       card = (
         <ModeCard pal={pal} bg="#1a0606" edge="#e8202a">
-          <ScoreRank members={members} score={score} losers={losers} rv={RV} fg="#f7f3ea" title={`第${round}回戦の結果`} foot={`${losers.map((i) => members[i].name).join('・')}が最下位`} />
+          <ScoreRank members={members} score={score} losers={hit} rv={RV} fg="#f7f3ea" title={`第${round}回戦の結果`} foot={`${losers.map((i) => members[i].name).join('・')}が最下位で罰1つ${skulls.some((v) => v) ? '＋ドクロの数だけ罰' : ''}`} />
         </ModeCard>
       );
-      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers); setPhase('batsu'); }} />;
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${hit.map((i) => `${members[i].name}${pens[i] > 1 ? `×${pens[i]}` : ''}`).join('・')}に罰ガチャ`} onPress={() => { P.draw(hit, (i) => pens[i]); setPhase('batsu'); }} />;
       break;
+    }
     case 'batsu':
       card = (
         <DeckStack pal={pal} minHeight={0}>

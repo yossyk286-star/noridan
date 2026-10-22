@@ -21,8 +21,10 @@ export function usePenalty(members: Member[], level: Level, night: Night, why: W
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
   const [gacha, setGacha] = useState<GachaItem[]>([]);
   const stats = useRef<Stats>(newStats(n)).current;
-  const draw = (losers: number[], x = 1) => {
-    const items = losers.map((i) => ({ i, n: x, ...decks.batsu(members, i, x) }));
+  /** x は全員同じ数か、人ごとの数（i => 数） */
+  const draw = (losers: number[], x: number | ((i: number) => number) = 1) => {
+    const cnt = (i: number) => (typeof x === 'number' ? x : x(i));
+    const items = losers.map((i) => ({ i, n: cnt(i), ...decks.batsu(members, i, cnt(i)) }));
     setGacha(items);
     batsuCue(items, members);
   };

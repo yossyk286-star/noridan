@@ -1581,6 +1581,10 @@ body[data-level="yurume"] .qz-tip b, body[data-level="futsu"] .qz-tip b { color:
 .wk-hole.bad .wk-face { background: transparent; border: 0; }
 .wk-hole.bad .wk-face { left: 18%; right: 18%; top: 16%; bottom: 10%; }
 .wk-hole.bad .wk-face .skull { width: 100%; height: 100%; animation: none; }
+.wk-skn { font-size: clamp(30px, 10vw, 44px); white-space: nowrap; }
+.wk-sk { color: #e8202a; font-weight: 900; margin-left: 6px; }
+.wk-hole.ouch { animation: wkOuch .26s ease-out; }
+@keyframes wkOuch { 0%, 100% { transform: none; } 30% { transform: translateX(-5px) rotate(-4deg); } 60% { transform: translateX(5px) rotate(4deg); } }
 .wk-hole.hit::after { content: "+1"; position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 28px; color: #1f9d55; animation: wkHit .2s ease-out; }
 @keyframes wkUp { from { transform: translateY(70%); } to { transform: none; } }
 @keyframes wkHit { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.3) translateY(-20%); opacity: 0; } }

@@ -1476,19 +1476,20 @@ function vWhack() {
   if (wk.phase === "batsu") return stageWrap(vCard(), roundEnd("wkAccept", true));
   let card, controls;
   if (wk.phase === "hand") {
-    card = `<div class="odai mode-card center" id="card"><p class="prog">第${wk.round}回戦・${wk.k + 1}/${n}人目</p>${bigWho(wk.who, "の番")}<p class="hand-note">出てきた顔をタップで1点。<br><b>ドクロを押したら0点</b>で即終了</p><p class="tl-lim">${WK_SEC}秒</p></div>`;
+    card = `<div class="odai mode-card center" id="card"><p class="prog">第${wk.round}回戦・${wk.k + 1}/${n}人目</p>${bigWho(wk.who, "の番")}<p class="hand-note">出てきた顔をタップで1点。<br><b>ドクロを押すたびに罰が1つ</b>たまる</p><p class="tl-lim">${WK_SEC}秒</p></div>`;
     controls = `<button class="big" data-act="wkGo">スタート</button>`;
   } else if (wk.phase === "play") {
-    card = `<div class="odai mode-card center wk-card" id="card"><p class="dk-time"><b id="modeTimer">${WK_SEC}</b>秒・<span id="wkScore">${wk.score[wk.who]}</span>点</p><div class="wk-grid">${Array.from({ length: 9 }, (_, i) => `<div class="wk-hole" data-wk="${i}"></div>`).join("")}</div></div>`;
+    card = `<div class="odai mode-card center wk-card" id="card"><p class="dk-time"><b id="modeTimer">${WK_SEC}</b>秒・<span id="wkScore">${wk.score[wk.who]}</span>点 <span id="wkSkull" class="wk-sk" ${wk.skull[wk.who] ? "" : "hidden"}>ドクロ ${wk.skull[wk.who]}</span></p><div class="wk-grid">${Array.from({ length: 9 }, (_, i) => `<div class="wk-hole" data-wk="${i}"></div>`).join("")}</div></div>`;
     controls = `<p class="hint">顔だけタップ！ドクロはアカン</p>`;
   } else if (wk.phase === "turn") {
-    const sk = wk.skull.includes(wk.who);
-    card = `<div class="odai mode-card center ${sk ? "batsu" : ""}" id="card"><p class="prog">${mName(wk.who)}の結果</p>${sk ? `<p class="tl-big q-ng">ドクロ！</p>` : ""}<p class="sp-num sp-res ${sk ? "over" : ""}">${wk.score[wk.who]}<small>点</small></p></div>`;
+    const sk = wk.skull[wk.who];
+    card = `<div class="odai mode-card center ${sk ? "batsu" : ""}" id="card"><p class="prog">${mName(wk.who)}の結果</p><p class="sp-num sp-res">${wk.score[wk.who]}<small>点</small></p>${sk ? `<p class="tl-big q-ng wk-skn">ドクロ ${sk}回</p><p class="hand-note">罰が${sk}つたまった</p>` : `<p class="hand-note">ドクロはセーフ！</p>`}</div>`;
     controls = `<button class="big" data-act="wkAfter">${wk.k + 1 < n ? `次は${mName((wk.who + 1) % n)}` : "結果発表"}</button>`;
   } else {
     const idx = S.members.map((_, i) => i).sort((a, b) => wk.score[b] - wk.score[a]);
-    card = `<div class="odai mode-card center board-card batsu" id="card" ${rvCard(n)}><p class="prog">第${wk.round}回戦の結果</p>${rankList(idx.map((i) => ({ i, v: `${wk.score[i]}点`, sub: wk.skull.includes(i) ? "ドクロ" : "", bad: wk.losers.includes(i) })), -1, true)}<p class="ng-lead ${rvLate(n)}">${wk.losers.map(mName).join("・")}が最下位</p></div>`;
-    controls = `<button class="big has-pen" data-act="wkGacha">${wk.losers.map(mName).join("・")}に罰ガチャ</button>`;
+    card = `<div class="odai mode-card center board-card batsu" id="card" ${rvCard(n)}><p class="prog">第${wk.round}回戦の結果</p>${rankList(idx.map((i) => ({ i, v: `${wk.score[i]}点`, sub: wk.skull[i] ? `ドクロ${wk.skull[i]}` : "", bad: wk.pens[i] > 0 })), -1, true)}<p class="ng-lead ${rvLate(n)}">${wk.losers.map(mName).join("・")}が最下位で罰1つ${wk.skull.some((v) => v) ? "＋ドクロの数だけ罰" : ""}</p></div>`;
+    const who = S.members.map((_, i) => i).filter((i) => wk.pens[i] > 0);
+    controls = `<button class="big has-pen" data-act="wkGacha">${who.map((i) => `${mName(i)}${wk.pens[i] > 1 ? `×${wk.pens[i]}` : ""}`).join("・")}に罰ガチャ</button>`;
   }
   return stageWrap(card, controls);
 }
@@ -3142,7 +3143,7 @@ function onClick(e) {
     case "wkStart": wkRound(); render(true); break;
     case "wkGo": wkGo(); break;
     case "wkAfter": wkAfter(); break;
-    case "wkGacha": startGacha(g.wk.losers, 1, "whack", g.wk); render(true); break;
+    case "wkGacha": { const wk = g.wk, who = S.members.map((_, i) => i).filter((i) => wk.pens[i] > 0); startGacha(who, 1, "whack", wk); g.add = new Map(who.map((i) => [i, wk.pens[i]])); g.gacha = who.map((i) => ({ i, n: wk.pens[i], ...drawBatsu(i, wk.pens[i]) })); render(true); break; }
     case "wkAccept": applyAdds(); g.gacha = []; g.phase = "play"; wkRound(); render(true); break;
     // おでこ当て
     case "dkStart": tiltAsk().finally(() => { dkRound(); render(true); }); break;
