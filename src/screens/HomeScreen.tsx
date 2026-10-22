@@ -9,6 +9,9 @@ import { useSeen } from '../lib/coach';
 import { HELP } from '../lib/help';
 import { play } from '../lib/sound';
 import type { Level, Member, Mode, Night } from '../types';
+import type { IconName } from '../components/Icon';
+import { load, save } from '../lib/storage';
+import { MODE_TITLE } from '../components/ModeParts';
 
 type Props = {
   members: Member[];
@@ -280,40 +283,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       </View>
 
       <StepHead num="③" title="遊び方" />
-      <ModeCard icon="cards" title="アホお題" desc={HELP.odai.desc} onPress={() => onStart('odai')} />
-      <ModeCard icon="dice" title="すごろく" desc={HELP.sugoroku.desc} onPress={() => onStart('sugoroku')} />
-      <ModeCard icon="grid" title="神経衰弱" desc={HELP.memory.desc} onPress={() => onStart('memory')} />
-      <ModeCard icon="num" title="価値観ナンバー" desc={HELP.ito.desc} onPress={() => onStart('ito')} />
-      <ModeCard icon="hand" title="早押しジェスチャー" desc={members.length < 3 ? '3人から遊べる' : HELP.gesture.desc} disabled={members.length < 3} onPress={() => onStart('gesture')} />
-      <ModeCard icon="heart" title="褒め殺し" desc={HELP.homeru.desc} onPress={() => onStart('homeru')} />
-      <ModeCard icon="mute" title="NGワード" desc={HELP.ngword.desc} onPress={() => onStart('ngword')} />
-      <ModeCard icon="vote" title="ぶっちゃけ投票" desc={members.length < 3 ? '3人から遊べる' : HELP.vote.desc} disabled={members.length < 3} onPress={() => onStart('vote')} />
-      <ModeCard icon="wolf" title="ワードウルフ" desc={members.length < 3 ? '3人から遊べる' : HELP.wolf.desc} disabled={members.length < 3} onPress={() => onStart('wolf')} />
-      <ModeCard icon="target" title="ピッタリ予想" desc={members.length < 3 ? '3人から遊べる' : HELP.pittari.desc} disabled={members.length < 3} onPress={() => onStart('pittari')} />
-      <ModeCard icon="tilt" title="傾けたらアウト" desc={HELP.tilt.desc} onPress={() => onStart('tilt')} />
-      <ModeCard icon="shake" title="全力シェイク" desc={HELP.shake.desc} onPress={() => onStart('shake')} />
-      <ModeCard icon="stop" title="ピタッとストップ" desc={HELP.stop.desc} onPress={() => onStart('stop')} />
-      <ModeCard icon="rtap" title="ロシアンタップ" desc={HELP.rtap.desc} onPress={() => onStart('rtap')} />
-      <ModeCard icon="bpass" title="爆弾パス" desc={HELP.bpass.desc} onPress={() => onStart('bpass')} />
-      <ModeCard icon="hilo" title="ハイ&ロー" desc={HELP.hilo.desc} onPress={() => onStart('hilo')} />
-      <ModeCard icon="reflex" title="反射神経バトル" desc={HELP.reflex.desc} onPress={() => onStart('reflex')} />
-      <ModeCard icon="voice" title="声デカ選手権" desc={HELP.voice.desc} onPress={() => onStart('voice')} />
-      <ModeCard icon="deko" title="おでこ当て" desc={HELP.deko.desc} onPress={() => onStart('deko')} />
-      <ModeCard icon="doubt" title="ダウト" desc={members.length < 3 ? '3人から遊べる' : HELP.doubt.desc} disabled={members.length < 3} onPress={() => onStart('doubt')} />
-      <ModeCard icon="quiz" title="早押し雑学クイズ" desc={HELP.quiz.desc} onPress={() => onStart('quiz')} />
-      <ModeCard icon="face" title="テンション伝言" desc={members.length < 3 ? '3人から遊べる' : HELP.face.desc} disabled={members.length < 3} onPress={() => onStart('face')} />
-      {/* 深夜だけの接触系。下ネタNGの人は入らへん */}
-      {night === 'shinya' && (() => {
-        const ok = members.filter((m) => !m.ng).length;
-        return (
-          <>
-            <ModeCard icon="blind" title="目隠し当て" desc={ok < 3 ? '下ネタOKの人が3人から遊べる' : HELP.blind.desc} disabled={ok < 3} onPress={() => onStart('blind')} />
-            <ModeCard icon="hug" title="ハグタイム当て" desc={ok < 2 ? '下ネタOKの人が2人から遊べる' : HELP.hug.desc} disabled={ok < 2} onPress={() => onStart('hug')} />
-            <ModeCard icon="tickle" title="こしょばし我慢" desc={ok < 2 ? '下ネタOKの人が2人から遊べる' : HELP.tickle.desc} disabled={ok < 2} onPress={() => onStart('tickle')} />
-            <ModeCard icon="pocky" title="ポッキーゲーム" desc={ok < 2 ? '下ネタOKの人が2人から遊べる' : HELP.pocky.desc} disabled={ok < 2} onPress={() => onStart('pocky')} />
-          </>
-        );
-      })()}
+      <ModeTabs members={members} night={night} onStart={onStart} />
 
       {night && (
         <View style={{ gap: 10 }}>
@@ -354,20 +324,89 @@ function StepHead({ num, title, sub }: { num: string; title: string; sub?: strin
   );
 }
 
-function ModeCard({ icon, title, desc, onPress, disabled }: { icon: 'cards' | 'dice' | 'grid' | 'num' | 'hand' | 'heart' | 'mute' | 'vote' | 'wolf' | 'target' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt'; title: string; desc: string; onPress: () => void; disabled?: boolean }) {
+// 遊び方の一覧（タブで分ける）。cat: basic=定番 / phone=スマホで勝負 / talk=話す・ノリ / brain=頭を使う / deep=深夜。min=最低人数、ok=下ネタOKの人の最低人数、t=目安時間
+type Cat = 'basic' | 'phone' | 'talk' | 'brain' | 'deep';
+const MODE_LIST: { m: Mode; ic: IconName; cat: Cat; t: string; min?: number; ok?: number }[] = [
+  { m: 'odai', ic: 'cards', cat: 'basic', t: '好きなだけ' },
+  { m: 'sugoroku', ic: 'dice', cat: 'basic', t: '15〜30分' },
+  { m: 'memory', ic: 'grid', cat: 'basic', t: '10分' },
+  { m: 'tilt', ic: 'tilt', cat: 'phone', t: '1人30秒' },
+  { m: 'shake', ic: 'shake', cat: 'phone', t: '1人15秒' },
+  { m: 'stop', ic: 'stop', cat: 'phone', t: '1人20秒' },
+  { m: 'reflex', ic: 'reflex', cat: 'phone', t: '1回戦3分' },
+  { m: 'voice', ic: 'voice', cat: 'phone', t: '1回戦3分' },
+  { m: 'rtap', ic: 'rtap', cat: 'phone', t: '1回戦2分' },
+  { m: 'bpass', ic: 'bpass', cat: 'phone', t: '1回戦2分' },
+  { m: 'deko', ic: 'deko', cat: 'phone', t: '1人60秒' },
+  { m: 'ngword', ic: 'mute', cat: 'talk', t: '10分〜' },
+  { m: 'doubt', ic: 'doubt', cat: 'talk', t: '1人2分', min: 3 },
+  { m: 'homeru', ic: 'heart', cat: 'talk', t: '1回2分' },
+  { m: 'gesture', ic: 'hand', cat: 'talk', t: '1人60秒', min: 3 },
+  { m: 'face', ic: 'face', cat: 'talk', t: '1回戦5分', min: 3 },
+  { m: 'wolf', ic: 'wolf', cat: 'talk', t: '1回戦5分', min: 3 },
+  { m: 'quiz', ic: 'quiz', cat: 'brain', t: '10問5分' },
+  { m: 'ito', ic: 'num', cat: 'brain', t: '1問3分' },
+  { m: 'hilo', ic: 'hilo', cat: 'brain', t: '1回戦2分' },
+  { m: 'pittari', ic: 'target', cat: 'brain', t: '1問3分', min: 3 },
+  { m: 'vote', ic: 'vote', cat: 'brain', t: '1問2分', min: 3 },
+  { m: 'blind', ic: 'blind', cat: 'deep', t: '1回1分', ok: 3 },
+  { m: 'pocky', ic: 'pocky', cat: 'deep', t: '1回1分', ok: 2 },
+  { m: 'tickle', ic: 'tickle', cat: 'deep', t: '1回30秒', ok: 2 },
+  { m: 'hug', ic: 'hug', cat: 'deep', t: '1回30秒', ok: 2 },
+];
+const TABS: [string, string][] = [['fav', '★ よく遊ぶ'], ['all', 'すべて'], ['basic', '定番'], ['phone', 'スマホで勝負'], ['talk', '話す・ノリ'], ['brain', '頭を使う'], ['deep', '深夜']];
+
+/** 遊んだ回数を数える（「よく遊ぶ」タブ用）。App がゲームを始める時に呼ぶ */
+export async function countPlay(m: Mode) {
+  const v = await load<Record<string, number>>('nd_plays', {});
+  const pl = v && typeof v === 'object' ? v : {};
+  pl[m] = (pl[m] ?? 0) + 1;
+  save('nd_plays', pl);
+}
+
+function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night; onStart: (m: Mode) => void }) {
+  const [plays, setPlays] = useState<Record<string, number>>({});
+  const [tab, setTab] = useState<string | null>(null);
+  useEffect(() => {
+    load<Record<string, number>>('nd_plays', {}).then((v) => setPlays(v && typeof v === 'object' ? v : {}));
+    load<string | null>('nd_tab', null).then((v) => setTab(v));
+  }, []);
+  const deep = night === 'shinya';
+  const list = MODE_LIST.filter((x) => x.cat !== 'deep' || deep);
+  const favs = list.filter((x) => (plays[x.m] ?? 0) > 0).sort((a, b) => plays[b.m] - plays[a.m]).slice(0, 6);
+  const tabs = TABS.filter(([k]) => (k !== 'deep' || deep) && (k !== 'fav' || favs.length));
+  const cur = tabs.some(([k]) => k === tab) ? tab! : favs.length ? 'fav' : 'all';
+  const shown = cur === 'fav' ? favs : cur === 'all' ? list : list.filter((x) => x.cat === cur);
+  const okN = members.filter((m) => !m.ng).length;
   return (
-    <Tap onPress={onPress} disabled={disabled} style={({ pressed }) => [s.mode, { opacity: disabled ? 0.45 : 1, transform: [{ translateY: pressed ? 4 : 0 }] }]}>
-      <View style={s.modeIc}>
-        <Icon name={icon} color={C.ink} size={24} />
+    <View style={{ gap: 10 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
+        {tabs.map(([k, t]) => {
+          const on = k === cur;
+          const isDeep = k === 'deep';
+          return (
+            <Tap key={k} onPress={() => { setTab(k); save('nd_tab', k); }} accessibilityState={{ selected: on }} style={[s.tab, isDeep && { borderWidth: 1.5, borderColor: C.deep }, on && { backgroundColor: isDeep ? C.deep : C.yuru }]}>
+              <Text style={[s.tabText, isDeep && { color: C.deep }, on && { color: isDeep ? '#fff' : C.ink }]}>{t}</Text>
+            </Tap>
+          );
+        })}
+      </ScrollView>
+      <View style={s.grid}>
+        {shown.map((x) => {
+          const why = x.min && members.length < x.min ? `${x.min}人から遊べる` : x.ok && okN < x.ok ? `下ネタOKの人が${x.ok}人から` : '';
+          return (
+            <Tap key={x.m} onPress={() => onStart(x.m)} disabled={!!why} style={({ pressed }) => [s.card2, x.cat === 'deep' && { borderWidth: 2, borderColor: C.deep }, { opacity: why ? 0.45 : 1, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+              <View style={s.cardTop}>
+                <View style={s.modeIc2}><Icon name={x.ic} color={C.ink} size={20} /></View>
+                <Text style={s.time}>{x.t}</Text>
+              </View>
+              <Text style={s.cardTitle}>{MODE_TITLE[x.m]}</Text>
+              <Text style={s.cardDesc}>{why || HELP[x.m].desc}</Text>
+            </Tap>
+          );
+        })}
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={s.modeTitle}>{title}</Text>
-        <Text style={s.modeDesc}>{desc}</Text>
-      </View>
-      <View style={s.go}>
-        <Text style={s.goText}>開始</Text>
-      </View>
-    </Tap>
+    </View>
   );
 }
 
@@ -417,6 +456,15 @@ function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () 
 }
 
 const s = StyleSheet.create({
+  tab: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.08)' },
+  tabText: { color: C.muted, fontWeight: '900', fontSize: 13 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
+  card2: { width: '48.5%', minHeight: 120, padding: 12, borderRadius: 16, backgroundColor: C.paper, gap: 4, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  modeIc2: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(20,18,16,0.08)' },
+  time: { fontSize: 10, fontWeight: '900', color: '#8d857a', backgroundColor: 'rgba(20,18,16,0.06)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999, overflow: 'hidden' },
+  cardTitle: { fontSize: 17, fontWeight: '900', color: C.ink },
+  cardDesc: { fontSize: 11, lineHeight: 16, color: '#5d564c' },
   guide: { gap: 6, padding: 14, borderRadius: 14, backgroundColor: 'rgba(255,210,63,0.1)', borderWidth: 1, borderColor: 'rgba(255,210,63,0.4)' },
   guideHead: { color: C.yuru, fontWeight: '900', fontSize: 14 },
   guideText: { color: C.paper, fontSize: 13, lineHeight: 20, fontWeight: '700' },

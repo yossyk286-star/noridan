@@ -4,7 +4,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
 
-import HomeScreen from './src/screens/HomeScreen';
+import HomeScreen, { countPlay } from './src/screens/HomeScreen';
 import OdaiScreen from './src/screens/OdaiScreen';
 import SugorokuScreen from './src/screens/SugorokuScreen';
 import ResultScreen from './src/screens/ResultScreen';
@@ -162,6 +162,7 @@ export default function App() {
   const start = (mode: Mode, again = false) => {
     if (screen.name === 'home') rememberGroup();
     resetStreak(); // 連続罰はゲームごとに数え直し
+    if (!again) countPlay(mode); // 「よく遊ぶ」タブ用
     cancelFx();
     setScreen({ name: mode, key: Date.now(), again });
   };

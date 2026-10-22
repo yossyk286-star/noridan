@@ -41,6 +41,7 @@ const S = {
   sound: store.get("nd_sound", true),
   vol: [1, 2, 3].includes(store.get("nd_vol", 3)) ? store.get("nd_vol", 3) : 3, // 音量 1=小 2=中 3=大
   vibe: store.get("nd_vibe", true),    // バイブ
+  modeTab: store.get("nd_tab", null),  // 遊び方一覧のタブ
   dual: store.get("nd_dual", false),   // 向かい合わせ表示
   voice: store.get("nd_voice", false), // お題の読み上げ
   step: 1,          // ホーム: 1=メンバー 2=モード選択
@@ -188,6 +189,8 @@ const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
 const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face", "deko", "doubt"].includes(g.mode) ? "回戦" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
+  // よく遊ぶモードを数える（もう一回は数えへん）
+  if (!again) { const pl = (() => { const v = store.get("nd_plays", {}); return v && typeof v === "object" ? v : {}; })(); pl[mode] = (pl[mode] || 0) + 1; store.set("nd_plays", pl); }
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null;
   const n = S.members.length;
   S.game = {

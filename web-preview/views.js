@@ -295,6 +295,54 @@ function vHome1() {
   </div>`;
 }
 
+// ---------- 遊び方の一覧（タブで分ける） ----------
+// cat: 定番 / phone=スマホで勝負 / talk=話す・ノリ / brain=頭を使う / deep=深夜。min=最低人数、ok=下ネタOKの人の最低人数（深夜）、t=目安時間
+const MODE_LIST = [
+  { m: "odai", ic: "cards", cat: "basic", t: "好きなだけ" },
+  { m: "sugoroku", ic: "dice", cat: "basic", t: "15〜30分" },
+  { m: "memory", ic: "grid", cat: "basic", t: "10分" },
+  { m: "tilt", ic: "tilt", cat: "phone", t: "1人30秒" },
+  { m: "shake", ic: "shake", cat: "phone", t: "1人15秒" },
+  { m: "stop", ic: "stop", cat: "phone", t: "1人20秒" },
+  { m: "reflex", ic: "reflex", cat: "phone", t: "1回戦3分" },
+  { m: "voice", ic: "voice", cat: "phone", t: "1回戦3分" },
+  { m: "rtap", ic: "rtap", cat: "phone", t: "1回戦2分" },
+  { m: "bpass", ic: "bpass", cat: "phone", t: "1回戦2分" },
+  { m: "deko", ic: "deko", cat: "phone", t: "1人60秒" },
+  { m: "ngword", ic: "mute", cat: "talk", t: "10分〜" },
+  { m: "doubt", ic: "doubt", cat: "talk", t: "1人2分", min: 3 },
+  { m: "homeru", ic: "heart", cat: "talk", t: "1回2分" },
+  { m: "gesture", ic: "hand", cat: "talk", t: "1人60秒", min: 3 },
+  { m: "face", ic: "face", cat: "talk", t: "1回戦5分", min: 3 },
+  { m: "wolf", ic: "wolf", cat: "talk", t: "1回戦5分", min: 3 },
+  { m: "quiz", ic: "quiz", cat: "brain", t: "10問5分" },
+  { m: "ito", ic: "num", cat: "brain", t: "1問3分" },
+  { m: "hilo", ic: "hilo", cat: "brain", t: "1回戦2分" },
+  { m: "pittari", ic: "target", cat: "brain", t: "1問3分", min: 3 },
+  { m: "vote", ic: "vote", cat: "brain", t: "1問2分", min: 3 },
+  { m: "blind", ic: "blind", cat: "deep", t: "1回1分", ok: 3 },
+  { m: "pocky", ic: "pocky", cat: "deep", t: "1回1分", ok: 2 },
+  { m: "tickle", ic: "tickle", cat: "deep", t: "1回30秒", ok: 2 },
+  { m: "hug", ic: "hug", cat: "deep", t: "1回30秒", ok: 2 },
+];
+const MODE_TABS = [["fav", "よく遊ぶ"], ["all", "すべて"], ["basic", "定番"], ["phone", "スマホで勝負"], ["talk", "話す・ノリ"], ["brain", "頭を使う"], ["deep", "深夜"]];
+const modePlays = () => { const v = store.get("nd_plays", {}); return v && typeof v === "object" ? v : {}; };
+function vModeTabs() {
+  const deep = S.night === "shinya", plays = modePlays();
+  const list = MODE_LIST.filter((x) => x.cat !== "deep" || deep);
+  const favs = list.filter((x) => plays[x.m] > 0).sort((a, b) => plays[b.m] - plays[a.m]).slice(0, 6);
+  const tabs = MODE_TABS.filter(([k]) => (k !== "deep" || deep) && (k !== "fav" || favs.length));
+  let tab = tabs.some(([k]) => k === S.modeTab) ? S.modeTab : favs.length ? "fav" : "all";
+  const shown = tab === "fav" ? favs : tab === "all" ? list : list.filter((x) => x.cat === tab);
+  const okN = S.members.filter((m) => !m.ng).length;
+  const card = (x) => {
+    const why = x.min && S.members.length < x.min ? `${x.min}人から遊べる` : x.ok && okN < x.ok ? `下ネタOKの人が${x.ok}人から` : "";
+    return `<button class="mode-card2 ${x.cat === "deep" ? "deep-mode" : ""}" data-act="start" data-m="${x.m}" ${why ? "disabled" : ""}><span class="mc-top"><i class="mode-ic">${ICON[x.ic] || ""}</i><em>${x.t}</em></span><b>${esc(MODE_NAME[x.m])}</b><span class="mc-desc">${why || HELP[x.m].desc}</span></button>`;
+  };
+  return `<div class="mode-tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" class="${k === "deep" ? "deep" : ""}" data-act="modeTab" data-v="${k}" aria-selected="${k === tab}">${k === "fav" ? "★ " : ""}${t}</button>`).join("")}</div>
+    <div class="mode-grid">${shown.map(card).join("")}</div>`;
+}
+
 function vHome2() {
   return `
   <div class="home-top">
@@ -320,34 +368,7 @@ function vHome2() {
   </section>
   <section style="display:flex;flex-direction:column;gap:10px">
     <p class="step-h"><span class="num">③</span>遊び方</p>
-    <div class="modes">
-      <button class="mode" data-act="start" data-m="odai"><i class="mode-ic">${ICON.cards}</i><b>アホお題</b><span>${HELP.odai.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="sugoroku"><i class="mode-ic">${ICON.dice}</i><b>すごろく</b><span>${HELP.sugoroku.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="memory"><i class="mode-ic">${ICON.grid}</i><b>神経衰弱</b><span>${HELP.memory.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="ito"><i class="mode-ic">${ICON.num}</i><b>価値観ナンバー</b><span>${HELP.ito.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="gesture" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.hand}</i><b>早押しジェスチャー</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.gesture.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="homeru"><i class="mode-ic">${ICON.heart}</i><b>褒め殺し</b><span>${HELP.homeru.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="ngword"><i class="mode-ic">${ICON.mute}</i><b>NGワード</b><span>${HELP.ngword.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="vote" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.vote}</i><b>ぶっちゃけ投票</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.vote.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="wolf" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.wolf}</i><b>ワードウルフ</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.wolf.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="tilt"><i class="mode-ic">${ICON.tilt}</i><b>傾けたらアウト</b><span>${HELP.tilt.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="shake"><i class="mode-ic">${ICON.shake}</i><b>全力シェイク</b><span>${HELP.shake.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="stop"><i class="mode-ic">${ICON.stop}</i><b>ピタッとストップ</b><span>${HELP.stop.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="rtap"><i class="mode-ic">${ICON.rtap}</i><b>ロシアンタップ</b><span>${HELP.rtap.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="bpass"><i class="mode-ic">${ICON.bpass}</i><b>爆弾パス</b><span>${HELP.bpass.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="hilo"><i class="mode-ic">${ICON.hilo}</i><b>ハイ&amp;ロー</b><span>${HELP.hilo.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="reflex"><i class="mode-ic">${ICON.reflex}</i><b>反射神経バトル</b><span>${HELP.reflex.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="voice"><i class="mode-ic">${ICON.voice}</i><b>声デカ選手権</b><span>${HELP.voice.desc}</span><em class="go">開始</em></button>
-      ${S.night === "shinya" ? (() => { const ok = S.members.filter((m) => !m.ng).length; return `<button class="mode deep-mode" data-act="start" data-m="blind" ${ok < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.blind}</i><b>目隠し当て</b><span>${ok < 3 ? "下ネタOKの人が3人から遊べる" : HELP.blind.desc}</span><em class="go">開始</em></button>
-      <button class="mode deep-mode" data-act="start" data-m="hug" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.hug}</i><b>ハグタイム当て</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.hug.desc}</span><em class="go">開始</em></button>
-      <button class="mode deep-mode" data-act="start" data-m="tickle" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.tickle}</i><b>こしょばし我慢</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.tickle.desc}</span><em class="go">開始</em></button>
-      <button class="mode deep-mode" data-act="start" data-m="pocky" ${ok < 2 ? "disabled" : ""}><i class="mode-ic">${ICON.pocky}</i><b>ポッキーゲーム</b><span>${ok < 2 ? "下ネタOKの人が2人から遊べる" : HELP.pocky.desc}</span><em class="go">開始</em></button>`; })() : ""}
-      <button class="mode" data-act="start" data-m="deko"><i class="mode-ic">${ICON.deko}</i><b>おでこ当て</b><span>${HELP.deko.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="doubt" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.doubt}</i><b>ダウト</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.doubt.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="quiz"><i class="mode-ic">${ICON.quiz}</i><b>早押し雑学クイズ</b><span>${HELP.quiz.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="face" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.face}</i><b>テンション伝言</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.face.desc}</span><em class="go">開始</em></button>
-      <button class="mode" data-act="start" data-m="pittari" ${S.members.length < 3 ? "disabled" : ""}><i class="mode-ic">${ICON.target}</i><b>ピッタリ予想</b><span>${S.members.length < 3 ? "3人から遊べる" : HELP.pittari.desc}</span><em class="go">開始</em></button>
-    </div>
+    ${vModeTabs()}
   </section>
   ${S.night ? `<section class="night-switch">
     <p class="h2">夜の深さ</p>
@@ -2745,6 +2766,7 @@ function onClick(e) {
   switch (act) {
     // home
     case "del": S.members.splice(i, 1); S.addMsg = ""; saveMembers(); render(); break;
+    case "modeTab": S.modeTab = b.dataset.v; store.set("nd_tab", S.modeTab); render(); document.querySelector(".mode-tabs [aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "center" }); break;
     case "lv": S.level = b.dataset.v; store.set("nd_level", S.level); render(); break;
     case "step1": S.step = 1; render(); break;
     case "members": stopTimer(); S.screen = "home"; S.step = 1; render(); window.scrollTo(0, 0); break;
