@@ -1323,12 +1323,17 @@ function qzAnswer(opt) {
   if (opt === qz.ans) { qz.score[qz.buzz]++; qz.wins[qz.buzz]++; qz.phase = "res"; qz.ok = true; play("pinpon"); }
   else {
     if (S.level === "jigoku") qz.score[qz.buzz]--;
-    qz.locked.push(qz.buzz); play("buzzer"); vib([60, 40, 60]);
-    // まだ押せる人がおったら続き、全員アウトなら答え
-    if (qz.locked.length >= S.members.length) { qz.phase = "res"; qz.ok = false; }
-    else { qz.phase = "q"; qz.miss = qz.buzz; qz.buzz = null; }
+    qz.locked.push(qz.buzz); qz.miss = qz.buzz; play("buzzer"); vib([60, 40, 60]);
+    // 「不正解」の画面をはさむ。まだ押せる人がおったら続き、全員アウトなら答え
+    qz.phase = "wrong";
   }
   g.doer = -1; render(true);
+}
+function qzWrongNext() {
+  const qz = S.game.qz;
+  if (qz.locked.length >= S.members.length) { qz.phase = "res"; qz.ok = false; qz.buzz = null; }
+  else { qz.phase = "q"; qz.buzz = null; }
+  render(true);
 }
 function qzReveal() { const qz = S.game.qz; qz.phase = "res"; qz.ok = false; qz.buzz = null; render(true); }
 function qzAfter() {

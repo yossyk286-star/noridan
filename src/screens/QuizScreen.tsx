@@ -16,7 +16,7 @@ import type { Level, Member, Night } from '../types';
 import quizJson from '../data/quiz.json';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
-type Phase = 'intro' | 'ready' | 'q' | 'ans' | 'res' | 'tally' | 'rank' | 'batsu';
+type Phase = 'intro' | 'ready' | 'q' | 'ans' | 'wrong' | 'res' | 'tally' | 'rank' | 'batsu';
 type Item = { q: string; a: string[] };
 const N = 10;
 const TIER: Record<Level, 'easy' | 'normal' | 'hard'> = { yurume: 'easy', futsu: 'normal', jigoku: 'hard' };
@@ -43,6 +43,7 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
   const [buzz, setBuzz] = useState(-1);
   const [miss, setMiss] = useState(-1);
   const [ok, setOk] = useState(false);
+  const [pick, setPick] = useState('');
   const [losers, setLosers] = useState<number[]>([]);
   const [turns, setTurns] = useState(0);
   const wins = useRef<number[]>(Array(n).fill(0)).current;
@@ -83,6 +84,7 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
   const answer = (o: string) => {
+    setPick(o);
     if (o === item.a[0]) {
       setScore((s0) => s0.map((v, j) => (j === buzz ? v + 1 : v)));
       wins[buzz]++;
@@ -93,16 +95,16 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
     }
     if (level === 'jigoku') setScore((s0) => s0.map((v, j) => (j === buzz ? v - 1 : v)));
     play('buzzer');
-    const nl = [...locked, buzz];
-    setLocked(nl);
-    if (nl.length >= n) {
+    setLocked([...locked, buzz]);
+    setMiss(buzz);
+    setPhase('wrong'); // 「不正解」の画面をはさむ
+  };
+  const afterWrong = () => {
+    setBuzz(-1);
+    if (locked.length >= n) {
       setOk(false);
       setPhase('res');
-    } else {
-      setMiss(buzz);
-      setBuzz(-1);
-      setPhase('q');
-    }
+    } else setPhase('q');
   };
   const after = () => {
     if (k < N) return next();
@@ -155,8 +157,8 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
         <ModeCard pal={pal}>
           <Prog fg={fg}>{`第${round}回戦・全${N}問`}</Prog>
           <Text style={[s.q, { color: fg }]}>スマホを真ん中に置いて</Text>
+          <Text style={[s.how, { color: fg }]}>{`1. 問題が出たら、答えがわかった人は自分の名前のマスを押す\n2. 一番早く押した人が4つの答えから1つ選ぶ\n3. 正解で+1点。間違えたらその問題は×で、ほかの人がまた押せる${level === 'jigoku' ? '（地獄は-1点）' : ''}`}</Text>
           {zones(false)}
-          <Text style={[s.note, { color: fg }]}>自分の名前のエリアに指を構えて。問題が出たら早押し、押した人が4択で答える</Text>
         </ModeCard>
       );
       controls = <BigButton pal={pal} label="1問目" onPress={next} />;
@@ -164,8 +166,12 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
     case 'q':
       card = (
         <ModeCard pal={pal}>
-          <Prog fg={fg}>{`第${k}問 / ${N}${miss >= 0 ? `・${members[miss].name}は不正解` : ''}`}</Prog>
+          <Prog fg={fg}>{`第${k}問 / ${N}`}</Prog>
           <Text style={[s.q, { color: fg }]}>{item.q}</Text>
+          <Text style={[s.tip, { color: fg }]}>
+            {locked.length ? `${locked.map((i) => members[i].name).join('・')}は×。` : ''}
+            <Text style={s.tipB}>{locked.length ? 'ほかの人、わかったら押して！' : 'わかった人は自分の名前を押して！'}</Text>
+          </Text>
           {zones(true)}
         </ModeCard>
       );
@@ -174,8 +180,11 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
     case 'ans':
       card = (
         <ModeCard pal={pal}>
-          <Prog fg={fg}>{`第${k}問・${members[buzz].name}が答える`}</Prog>
+          <Text style={[s.who, { color: fg }]}>
+            <Text style={[s.whoName, { color: colorOf(buzz) }]}>{members[buzz].name}</Text>が答える！
+          </Text>
           <Text style={[s.q, { color: fg }]}>{item.q}</Text>
+          <Text style={[s.tip, { color: fg }]}>{`${members[buzz].name}、下の4つから`}<Text style={s.tipB}>答えを1つ押して</Text></Text>
           <View style={{ gap: 8, width: '100%' }}>
             {opts.map((o) => (
               <Pressable key={o} onPress={() => answer(o)} style={({ pressed }) => [s.opt, { borderColor: colorOf(buzz), opacity: pressed ? 0.7 : 1 }]}>
@@ -185,15 +194,28 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
           </View>
         </ModeCard>
       );
-      controls = <Text style={[s.hint, { color: pal.muted }]}>{`${members[buzz].name}が選んで`}</Text>;
+      controls = <Text style={[s.hint, { color: pal.muted }]}>ほかの人は口出し禁止</Text>;
       break;
+    case 'wrong': {
+      const left = n - locked.length;
+      card = (
+        <ModeCard pal={pal} center bg="#1a0606" edge="#e8202a">
+          <Text style={[s.verdict, { color: '#ff2a2a' }]}>ブッブー！</Text>
+          <Text style={[s.q, { color: '#f7f3ea' }]}>{`${members[miss].name}は不正解`}</Text>
+          <Text style={[s.note, { color: '#f7f3ea' }]}>{`「${pick}」は違う${level === 'jigoku' ? '（-1点）' : ''}\n${left ? `この問題はまだ${left}人が押せる` : '全員×なので答えを見る'}`}</Text>
+        </ModeCard>
+      );
+      controls = <BigButton pal={pal} label={left ? '続ける（ほかの人が押せる）' : '答えを見る'} onPress={afterWrong} />;
+      break;
+    }
     case 'res':
       card = (
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${k}問の答え`}</Prog>
           <Text style={[s.small, { color: fg }]}>{item.q}</Text>
+          <Text style={[s.small, { color: fg }]}>正解は</Text>
           <Text style={[s.ans, { color: fg }]}>{item.a[0]}</Text>
-          <Text style={[s.verdict, { color: ok ? '#1f9d55' : '#ff2a2a' }]}>{ok ? `${members[buzz].name}正解！` : 'スルー'}</Text>
+          <Text style={[s.verdict, { color: ok ? '#1f9d55' : '#ff2a2a' }]}>{ok ? `${members[buzz].name}正解！+1点` : '誰も正解できず'}</Text>
         </ModeCard>
       );
       controls = <BigButton pal={pal} label={k < N ? `次の問題（${k + 1}/${N}）` : '結果発表'} onPress={after} />;
@@ -233,6 +255,11 @@ const s = StyleSheet.create({
   verdict: { fontFamily: F.display, fontSize: 30, lineHeight: 38 },
   note: { fontSize: 12, fontWeight: '700', opacity: 0.7, textAlign: 'center', marginTop: 6 },
   hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  how: { fontSize: 13, lineHeight: 21, fontWeight: '700', alignSelf: 'stretch' },
+  tip: { fontSize: 14, lineHeight: 21, textAlign: 'center', fontWeight: '700' },
+  tipB: { color: '#e8202a', fontWeight: '900' },
+  who: { fontSize: 20, fontWeight: '900', textAlign: 'center' },
+  whoName: { fontFamily: F.display, fontSize: 30 },
   zones: { flex: 1, width: '100%', gap: 8 },
   zRow: { flex: 1, flexDirection: 'row', gap: 8 },
   zone: { flex: 1, minHeight: 56, borderWidth: 3, borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

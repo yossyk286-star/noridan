@@ -1472,16 +1472,20 @@ function vQuiz() {
   const zones = (live) => `<div class="qz-zones" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${S.members.map((m, i) => `<div class="rf-zone qz-zone ${qz.locked?.includes(i) ? "out" : ""}" ${live && !qz.locked.includes(i) ? `data-qz="${i}"` : ""} style="--mc:${colorOf(i)}"><span><b>${esc(m.name)}</b><i class="rf-zv">${qz.score[i]}点${qz.locked?.includes(i) ? "・×" : ""}</i></span></div>`).join("")}</div>`;
   let card, controls;
   if (qz.phase === "ready") {
-    card = `<div class="odai mode-card center board-card" id="card"><p class="prog">第${qz.round}回戦・全${QZ_N}問</p><p class="ng-lead">スマホを真ん中に置いて</p>${zones(false)}<p class="hand-note">自分の名前のエリアに指を構えて。<br>問題が出たら早押し、押した人が4択で答える</p></div>`;
+    card = `<div class="odai mode-card center board-card" id="card"><p class="prog">第${qz.round}回戦・全${QZ_N}問</p><p class="ng-lead">スマホを真ん中に置いて</p><ol class="qz-how"><li>問題が出たら、答えがわかった人は<b>自分の名前のマス</b>を押す</li><li>一番早く押した人が<b>4つの答えから1つ選ぶ</b></li><li>正解で<b>+1点</b>。間違えたらその問題は×で、ほかの人がまた押せる${S.level === "jigoku" ? "（地獄は-1点）" : ""}</li></ol>${zones(false)}</div>`;
     controls = `<button class="big" data-act="qzGo">1問目</button>`;
   } else if (qz.phase === "q") {
-    card = `<div class="odai mode-card center qz-card" id="card"><p class="prog">第${qz.k}問 / ${QZ_N}${qz.locked.length ? `・${mName(qz.miss)}は不正解` : ""}</p><p class="qz-q">${esc(qz.q)}</p>${zones(true)}</div>`;
+    card = `<div class="odai mode-card center qz-card" id="card"><p class="prog">第${qz.k}問 / ${QZ_N}</p><p class="qz-q">${esc(qz.q)}</p><p class="qz-tip">${qz.locked.length ? `${qz.locked.map(mName).join("・")}は×。<b>ほかの人、わかったら押して！</b>` : "<b>わかった人は自分の名前を押して！</b>"}</p>${zones(true)}</div>`;
     controls = `<button class="ghost" data-act="qzReveal">誰もわからん → 答えを見る</button>`;
   } else if (qz.phase === "ans") {
-    card = `<div class="odai mode-card center qz-card" id="card"><p class="prog">第${qz.k}問・${mName(qz.buzz)}が答える</p><p class="qz-q">${esc(qz.q)}</p><div class="qz-opts">${qz.opts.map((o) => `<button class="pen-tile qz-opt" style="--mc:${colorOf(qz.buzz)}" data-act="qzAns" data-v="${esc(o)}"><span class="bar"></span><span class="nm">${esc(o)}</span></button>`).join("")}</div></div>`;
-    controls = `<p class="hint">${mName(qz.buzz)}が選んで</p>`;
+    card = `<div class="odai mode-card center qz-card" id="card"><p class="qz-who" style="--mc:${colorOf(qz.buzz)}"><b>${mName(qz.buzz)}</b>が答える！</p><p class="qz-q">${esc(qz.q)}</p><p class="qz-tip">${mName(qz.buzz)}、下の4つから<b>答えを1つ押して</b></p><div class="qz-opts">${qz.opts.map((o) => `<button class="pen-tile qz-opt" style="--mc:${colorOf(qz.buzz)}" data-act="qzAns" data-v="${esc(o)}"><span class="bar"></span><span class="nm">${esc(o)}</span></button>`).join("")}</div></div>`;
+    controls = `<p class="hint">ほかの人は口出し禁止</p>`;
+  } else if (qz.phase === "wrong") {
+    const left = S.members.length - qz.locked.length;
+    card = `<div class="odai mode-card center batsu" id="card"><p class="tl-big sp-verdict q-ng">ブッブー！</p><p class="ng-lead">${mName(qz.miss)}は不正解</p><p class="hand-note">「${esc(qz.pick)}」は違う${S.level === "jigoku" ? "（-1点）" : ""}<br>${left ? `この問題はまだ${left}人が押せる` : "全員×なので答えを見る"}</p></div>`;
+    controls = `<button class="big" data-act="qzWrongNext">${left ? "続ける（ほかの人が押せる）" : "答えを見る"}</button>`;
   } else if (qz.phase === "res") {
-    card = `<div class="odai mode-card center ${qz.ok ? "lucky" : ""}" id="card"><p class="prog">第${qz.k}問の答え</p><p class="qz-q small">${esc(qz.q)}</p><p class="qz-ans">${esc(qz.ans)}</p><p class="tl-big sp-verdict ${qz.ok ? "q-ok" : "q-ng"}">${qz.ok ? `${mName(qz.buzz)}正解！` : "スルー"}</p></div>`;
+    card = `<div class="odai mode-card center ${qz.ok ? "lucky" : ""}" id="card"><p class="prog">第${qz.k}問の答え</p><p class="qz-q small">${esc(qz.q)}</p><p class="bl-l">正解は</p><p class="qz-ans">${esc(qz.ans)}</p><p class="tl-big sp-verdict ${qz.ok ? "q-ok" : "q-ng"}">${qz.ok ? `${mName(qz.buzz)}正解！+1点` : "誰も正解できず"}</p></div>`;
     controls = `<button class="big" data-act="qzAfter">${qz.k < QZ_N ? `次の問題（${qz.k + 1}/${QZ_N}）` : "結果発表"}</button>`;
   } else {
     card = `<div class="odai mode-card center board-card batsu" id="card" ${rvCard(n)}><p class="prog">第${qz.round}回戦の結果</p>${qzScoreRows(qz, true)}<p class="ng-lead ${rvLate(n)}">${qz.losers.map(mName).join("・")}が最下位</p></div>`;
@@ -3048,6 +3052,7 @@ function onClick(e) {
     case "qzGo": qzNext(); render(true); break;
     case "qzAns": qzAnswer(b.dataset.v); break;
     case "qzReveal": qzReveal(); break;
+    case "qzWrongNext": qzWrongNext(); break;
     case "qzAfter": qzAfter(); break;
     case "qzGacha": startGacha(g.qz.losers, 1, "quiz", g.qz); render(true); break;
     case "qzAccept": applyAdds(); g.gacha = []; g.phase = "play"; qzRound(); render(true); break;
