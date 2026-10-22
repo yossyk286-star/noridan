@@ -22,7 +22,7 @@ type Hole = { skull: boolean; id: number } | null;
 const SEC = 15;
 const LV: Record<Level, { every: number; life: number; skull: number }> = { yurume: { every: 650, life: 950, skull: 0.12 }, futsu: { every: 520, life: 780, skull: 0.18 }, jigoku: { every: 400, life: 620, skull: 0.26 } };
 
-/** ワニワニタップ：1人15秒。穴から出てくる顔をタップで1点、ドクロは押すたびに罰が1つたまる。罰＝ドクロの数＋最下位（同点は全員）は1つ */
+/** ワニワニタップ：1人15秒。穴から出てくる顔をタップで1点、ドクロは押すたびにマイナス1点。一番低い人（同点は全員）が罰 */
 export default function WhackScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
   useKeepAwake();
   const n = members.length;
@@ -36,7 +36,6 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
   const [holes, setHoles] = useState<Hole[]>(() => Array(9).fill(null));
   const [score, setScore] = useState<number[]>(() => Array(n).fill(0));
   const [skulls, setSkulls] = useState<number[]>(() => Array(n).fill(0));
-  const [pens, setPens] = useState<number[]>(() => Array(n).fill(0));
   const [losers, setLosers] = useState<number[]>([]);
   const [turns, setTurns] = useState(0);
   const best = useRef<number[]>(Array(n).fill(0)).current;
@@ -100,10 +99,11 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
     if (!h) return;
     const h2 = holesRef.current.slice();
     if (h.skull) {
-      // ドクロは押すたびに罰が1つたまる（終わりにはならへん）
+      // ドクロは押すたびにマイナス1点（終わりにはならへん）
       h2[i] = null;
       setH(h2);
       setSkulls((x) => x.map((v, j) => (j === who ? v + 1 : v)));
+      setScore((s0) => s0.map((v, j) => (j === who ? v - 1 : v)));
       play('buzzer');
       Vibration.vibrate([0, 80, 40, 120]);
       return;
@@ -133,7 +133,6 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
     const min = Math.min(...score);
     const lo = members.map((_, i) => i).filter((i) => score[i] === min);
     setLosers(lo);
-    setPens(members.map((_, i) => skulls[i] + (lo.includes(i) ? 1 : 0)));
     setPhase('tally');
     H.hold('結果は…', 1800, () => { setPhase('rank'); RV.start(n); });
   };
@@ -162,7 +161,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round}回戦・${k + 1}/${n}人目`}</Prog>
           <HandWho members={members} i={who} sub="の番" fg={fg} />
-          <Note fg={fg}>{'出てきた顔をタップで1点。\nドクロを押すたびに罰が1つたまる'}</Note>
+          <Note fg={fg}>{'出てきた顔をタップで1点。\nドクロを押したらマイナス1点'}</Note>
           <Text style={[s.lim, { color: fg }]}>{SEC}秒</Text>
         </ModeCard>
       );
@@ -200,23 +199,21 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
           <Prog fg={sk ? '#f7f3ea' : fg}>{`${members[who].name}の結果`}</Prog>
           <Text style={[s.num, { color: sk ? '#f7f3ea' : fg }]}>{score[who]}<Text style={s.unit}> 点</Text></Text>
           {sk ? <Text style={[s.verdict, { color: '#ff2a2a' }]}>{`ドクロ ${sk}回`}</Text> : <Note fg={fg}>ドクロはセーフ！</Note>}
-          {sk > 0 && <Note fg="#f7f3ea">{`罰が${sk}つたまった`}</Note>}
+          {sk > 0 && <Note fg="#f7f3ea">{`${sk}点マイナス`}</Note>}
         </ModeCard>
       );
       controls = <BigButton pal={pal} label={k + 1 < n ? `次は${members[(who + 1) % n].name}` : '結果発表'} onPress={after} />;
       break;
     }
     case 'tally':
-    case 'rank': {
-      const hit = members.map((_, i) => i).filter((i) => pens[i] > 0);
+    case 'rank':
       card = (
         <ModeCard pal={pal} bg="#1a0606" edge="#e8202a">
-          <ScoreRank members={members} score={score} losers={hit} rv={RV} fg="#f7f3ea" title={`第${round}回戦の結果`} foot={`${losers.map((i) => members[i].name).join('・')}が最下位で罰1つ${skulls.some((v) => v) ? '＋ドクロの数だけ罰' : ''}`} />
+          <ScoreRank members={members} score={score} losers={losers} rv={RV} fg="#f7f3ea" title={`第${round}回戦の結果`} foot={`${losers.map((i) => members[i].name).join('・')}が最下位`} />
         </ModeCard>
       );
-      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${hit.map((i) => `${members[i].name}${pens[i] > 1 ? `×${pens[i]}` : ''}`).join('・')}に罰ガチャ`} onPress={() => { P.draw(hit, (i) => pens[i]); setPhase('batsu'); }} />;
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers); setPhase('batsu'); }} />;
       break;
-    }
     case 'batsu':
       card = (
         <DeckStack pal={pal} minHeight={0}>

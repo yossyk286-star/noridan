@@ -1331,8 +1331,9 @@ function wkTap(i) {
   const wk = S.game?.wk;
   if (!wk || wk.phase !== "play") return;
   const h = wk.holes[i]; if (!h) return;
-  if (h.skull) { // ドクロは押すたびに罰が1つたまる（終わりにはならへん）
-    wk.holes[i] = null; wk.skull[wk.who]++; wkPaint(i);
+  if (h.skull) { // ドクロは押すたびにマイナス1点（終わりにはならへん）
+    wk.holes[i] = null; wk.skull[wk.who]++; wk.score[wk.who]--; wkPaint(i);
+    const sc = document.getElementById("wkScore"); if (sc) sc.textContent = wk.score[wk.who];
     const el = document.querySelector(`[data-wk="${i}"]`); if (el) { el.classList.add("ouch"); setTimeout(() => el.classList.remove("ouch"), 260); }
     const sk = document.getElementById("wkSkull"); if (sk) { sk.textContent = `ドクロ ${wk.skull[wk.who]}`; sk.hidden = false; }
     quakeFx(); play("buzzer"); // フチが赤く光るだけ（爆発は大げさなので）
@@ -1358,7 +1359,6 @@ function wkAfter() {
   if (wk.k < S.members.length) { wkTurn(); render(true); return; }
   const min = Math.min(...wk.score);
   wk.losers = S.members.map((_, i) => i).filter((i) => wk.score[i] === min);
-  wk.pens = S.members.map((_, i) => wk.skull[i] + (wk.losers.includes(i) ? 1 : 0)); // 罰の数＝ドクロの数＋最下位は1つ
   hold("結果は…", 1800, () => { wk.phase = "rank"; });
   render();
 }
