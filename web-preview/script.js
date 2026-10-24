@@ -835,7 +835,7 @@ function tiltBegin() {
   S.game.doer = tl.who;
   tl.phase = "hand"; tl.angle = 0; tl.peak = 0; tl.outAt = 0; tl.manual = false;
 }
-// 3・2・1のカウントダウン（傾けたらアウト・全力シェイク・ピタッとストップ共通）。st.n を減らして描き直し、0で go
+// 3・2・1のカウントダウン（タイマーでいきなり始まるモード共通。画面は views.js の countCard）。st.n を減らして描き直し、0で go
 function count3(st, go, ms) {
   st.phase = "count"; st.n = 3;
   const step = () => {

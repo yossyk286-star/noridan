@@ -3,7 +3,8 @@ import type React from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
-import { HandWho, IntroCard, LevelBox, ModeCard, NameTiles, Note, Prog } from '../components/ModeParts';
+import { CountCard, CountHint, HandWho, IntroCard, LevelBox, ModeCard, NameTiles, Note, Prog } from '../components/ModeParts';
+import { useReady } from '../lib/useReady';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
 import { useHold } from '../components/Reveal';
@@ -79,6 +80,7 @@ export default function BlindScreen({ members, level, night, onQuit, onSettings,
 
   const pal = STAGE[level];
   const fg = pal.cardFg;
+  const ready = useReady();
   let card: React.ReactNode = null;
   let controls: React.ReactNode = null;
   switch (phase) {
@@ -112,7 +114,7 @@ export default function BlindScreen({ members, level, night, onQuit, onSettings,
           <Note fg="#fff">{`${BL_SEC}秒間、そっと。声・笑い声でバレんように\nほかの人もシーッ`}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label={`触り始める（${BL_SEC}秒）`} onPress={() => { setPhase('touch'); clock.start(BL_SEC); }} />;
+      controls = <BigButton pal={pal} label={`3・2・1で触り始める（${BL_SEC}秒）`} onPress={() => ready.run(() => { setPhase('touch'); clock.start(BL_SEC); play('coin'); })} />;
       break;
     case 'touch':
       card = (
@@ -153,6 +155,10 @@ export default function BlindScreen({ members, level, night, onQuit, onSettings,
       );
       controls = <RoundEnd pal={pal} next={P.lucky ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={() => { P.apply(); round(k + 1); }} onEnd={() => finish(P.apply())} />;
       break;
+  }
+  if (ready.count) {
+    card = <CountCard pal={pal} n={ready.count} fg="#fff" {...DEEP} prog={`${members[toucher].name}、そーっと構えて…`} note={`0になったら${BL_SEC}秒間「${touch}」`} />;
+    controls = <CountHint pal={pal}>シーッ…</CountHint>;
   }
   const hv = H.view(pal);
   if (hv) { card = hv.card; controls = hv.controls; }

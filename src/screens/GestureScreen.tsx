@@ -7,7 +7,8 @@ import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Tap } from '../components/Tap';
 import { BigButton, DeckStack, Frame, GachaCard, RulesSheet, ScoreBar } from '../components/Stage';
-import { HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, Roulette } from '../components/ModeParts';
+import { CountCard, CountHint, HandWho, IntroCard, Lead, LevelBox, ModeCard, NameTiles, Note, Outline, Prog, Roulette } from '../components/ModeParts';
+import { useReady } from '../lib/useReady';
 import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
@@ -37,6 +38,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
   useKeepAwake();
   const pal = STAGE[level];
   const fg = pal.cardFg;
+  const ready = useReady();
   const n = members.length;
   const decks = useRef(new Decks()).current;
   decks.night = night;
@@ -162,7 +164,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
           <Note fg={fg}>{`スマホを${members[actor].name}に渡して。\nお題は${members[actor].name}だけが見る`}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label={`スタート（${sec}秒）`} onPress={go} />;
+      controls = <BigButton pal={pal} label={`3・2・1でスタート（${sec}秒）`} onPress={() => ready.run(go)} />;
       break;
     case 'act':
       card = (
@@ -231,6 +233,10 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
       );
       controls = <BigButton pal={pal} label={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'} → ${acted + 1 >= n ? '点数を見る' : `次は${members[(actor + 1) % n].name}が演じる`}`} onPress={accept} />;
       break;
+  }
+  if (ready.count) {
+    card = <CountCard pal={pal} n={ready.count} fg={fg} prog={`${members[actor].name}、構えて…`} note="0になったらお題が出る" />;
+    controls = <CountHint pal={pal}>まだお題は出えへんで</CountHint>;
   }
 
   return (

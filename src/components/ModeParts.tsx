@@ -24,6 +24,19 @@ export function Prog({ fg, children }: { fg: string; children: React.ReactNode }
 export function Note({ fg, children }: { fg: string; children: React.ReactNode }) {
   return <Text style={[s.note, { color: fg }]}>{children}</Text>;
 }
+/** 3・2・1のカウント中の札（useReady とセット。どのモードも同じ見た目） */
+export function CountCard({ pal, n, fg, prog, note, bg, edge }: { pal: Pal; n: number; fg: string; prog: string; note?: string; bg?: string; edge?: string }) {
+  return (
+    <ModeCard pal={pal} center bg={bg} edge={edge}>
+      <Prog fg={fg}>{prog}</Prog>
+      <Text style={[s.count, { color: fg }]}>{n}</Text>
+      {note ? <Note fg={fg}>{note}</Note> : null}
+    </ModeCard>
+  );
+}
+export function CountHint({ pal, children }: { pal: Pal; children: React.ReactNode }) {
+  return <Text style={[s.countHint, { color: pal.muted }]}>{children}</Text>;
+}
 export function Lead({ fg, children }: { fg: string; children: React.ReactNode }) {
   return <Text style={[s.lead, { color: fg }]}>{children}</Text>;
 }
@@ -238,6 +251,8 @@ const s = StyleSheet.create({
   prog: { fontSize: 13, fontWeight: '900', letterSpacing: 1, opacity: 0.65, textAlign: 'center' },
   note: { fontSize: 13, fontWeight: '700', opacity: 0.7, lineHeight: 20, textAlign: 'center' },
   lead: { fontFamily: F.display, fontSize: 26, lineHeight: 36, textAlign: 'center' },
+  count: { fontFamily: F.display, fontSize: 130, lineHeight: 140 },
+  countHint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
   handDot: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   handDotText: { fontFamily: F.display, fontSize: 32, color: '#141210' },
   handName: { fontFamily: F.display, fontSize: 40, maxWidth: '100%' },

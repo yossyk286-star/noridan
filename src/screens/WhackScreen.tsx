@@ -3,7 +3,8 @@ import type React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
-import { HandWho, IntroCard, LevelBox, ModeCard, Prog, Note } from '../components/ModeParts';
+import { CountCard, CountHint, HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
+import { useReady } from '../lib/useReady';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
 import { Skull, Wani } from '../components/Fx';
@@ -49,6 +50,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
   };
   const who = k % n;
   const clock = useCountdown(() => end());
+  const ready = useReady();
   useEffect(() => {
     if (skipIntro) newRound();
     return clear;
@@ -165,7 +167,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
           <Text style={[s.lim, { color: fg }]}>{SEC}秒</Text>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={go} />;
+      controls = <BigButton pal={pal} label="3・2・1でスタート" onPress={() => ready.run(go)} />;
       break;
     case 'play':
       card = (
@@ -237,6 +239,10 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
       );
       controls = <RoundEnd pal={pal} next={P.lucky ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={() => { P.apply(); newRound(); }} onEnd={() => finish(P.apply())} />;
       break;
+  }
+  if (ready.count) {
+    card = <CountCard pal={pal} n={ready.count} fg={fg} prog={`${members[who].name}、構えて…`} note="0になったらワニが出てくる" />;
+    controls = <CountHint pal={pal}>まだ出てこおへんで</CountHint>;
   }
   const hv = H.view(pal);
   if (hv) { card = hv.card; controls = hv.controls; }

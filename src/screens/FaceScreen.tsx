@@ -3,7 +3,8 @@ import type React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
-import { HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Peek, Prog, tileColors } from '../components/ModeParts';
+import { CountCard, CountHint, HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Peek, Prog, tileColors } from '../components/ModeParts';
+import { useReady } from '../lib/useReady';
 import { shuffle } from '../lib/game';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
@@ -90,6 +91,7 @@ export default function FaceScreen({ members, level, night, onQuit, onSettings, 
 
   const pal = STAGE[level];
   const fg = pal.cardFg;
+  const ready = useReady();
   const prog = `第${round}回戦・${k + 1}/${n * PER}問`;
   const ok = pick === t;
   let card: React.ReactNode = null;
@@ -114,7 +116,7 @@ export default function FaceScreen({ members, level, night, onQuit, onSettings, 
           </Peek>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label={`覚えた → 演じる（${SEC}秒）`} onPress={() => { setPhase('act'); clock.start(SEC); }} />;
+      controls = <BigButton pal={pal} label={`覚えた → 3・2・1で演じる（${SEC}秒）`} onPress={() => ready.run(() => { setPhase('act'); clock.start(SEC); play('coin'); })} />;
       break;
     case 'act':
       card = (
@@ -171,6 +173,10 @@ export default function FaceScreen({ members, level, night, onQuit, onSettings, 
       );
       controls = <RoundEnd pal={pal} next={P.lucky ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={() => { P.apply(); newRound(); }} onEnd={() => finish(P.apply())} />;
       break;
+  }
+  if (ready.count) {
+    card = <CountCard pal={pal} n={ready.count} fg={fg} prog={`${members[who].name}、顔をつくって…`} note={`0になったら${SEC}秒、顔だけで演じる`} />;
+    controls = <CountHint pal={pal}>まだやで…</CountHint>;
   }
   const hv = H.view(pal);
   if (hv) { card = hv.card; controls = hv.controls; }

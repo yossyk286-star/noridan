@@ -3,7 +3,8 @@ import type React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
-import { HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Prog } from '../components/ModeParts';
+import { CountCard, CountHint, HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Prog } from '../components/ModeParts';
+import { useReady } from '../lib/useReady';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
 import { useCountdown } from '../lib/useCountdown';
@@ -83,6 +84,7 @@ export default function TickleScreen({ members, level, night, onQuit, onSettings
   const pal = STAGE[level];
   const fg = pal.cardFg;
   const byNames = by.map((i) => members[i].name).join('と');
+  const ready = useReady();
   let card: React.ReactNode = null;
   let controls: React.ReactNode = null;
   switch (phase) {
@@ -110,7 +112,7 @@ export default function TickleScreen({ members, level, night, onQuit, onSettings
       controls = (
         <View style={s.row}>
           <Outline label="パス" fg={pal.fg} onPress={() => { last.current = who; round(k + 1); }} style={{ flex: 0, paddingHorizontal: 18 }} />
-          <View style={{ flex: 1 }}><BigButton pal={pal} label={`スタート（${SEC}秒）`} onPress={() => { setPhase('play'); play('coin'); clock.start(SEC); }} /></View>
+          <View style={{ flex: 1 }}><BigButton pal={pal} label={`3・2・1でスタート（${SEC}秒）`} onPress={() => ready.run(() => { setPhase('play'); play('coin'); clock.start(SEC); })} /></View>
         </View>
       );
       break;
@@ -152,6 +154,10 @@ export default function TickleScreen({ members, level, night, onQuit, onSettings
       );
       controls = <RoundEnd pal={pal} next={P.lucky ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={() => { P.apply(); round(k + 1); }} onEnd={() => finish(P.apply())} />;
       break;
+  }
+  if (ready.count) {
+    card = <CountCard pal={pal} n={ready.count} fg="#fff" {...DEEP} prog={`${byNames}、構えて…`} note={`${members[who].name}、覚悟して`} />;
+    controls = <CountHint pal={pal}>まだくすぐったらアカン</CountHint>;
   }
   return (
     <StageShell

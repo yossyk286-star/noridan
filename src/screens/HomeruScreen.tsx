@@ -7,7 +7,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, Frame, GachaCard, RuleBanner, RuleSheet, RulesSheet, ScoreBar } from '../components/Stage';
-import { IntroCard, Lead, ModeCard, Outline, Prog, Roulette } from '../components/ModeParts';
+import { CountCard, CountHint, IntroCard, Lead, ModeCard, Outline, Prog, Roulette } from '../components/ModeParts';
+import { useReady } from '../lib/useReady';
 import { HELP } from '../lib/help';
 import GameMenu from '../components/GameMenu';
 import { Decks, PERSONAL, othersOf, pick } from '../lib/game';
@@ -130,6 +131,7 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
   const fg = night2 && phase !== 'batsu' && phase !== 'intro' ? '#f1e8ff' : pal.cardFg;
   const bg = night2 && phase !== 'batsu' && phase !== 'intro' ? '#1c1328' : undefined;
   const edge = night2 === 'shinya' ? C.deep : night2 ? C.night : undefined;
+  const ready = useReady();
   const person = (i: number, label: string) => (
     <View style={s.person}>
       <View style={[s.dot, { backgroundColor: colorOf(i) }]}>
@@ -180,7 +182,7 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
               <Outline label="相手を変える" fg={pal.fg} onPress={() => { const pool = othersOf(members, praiser).filter((x) => x !== target); if (pool.length) setTarget(pick(pool)); }} />
               <Outline label="テーマを変える" fg={pal.fg} onPress={() => setTheme(decks.homeru(night, okNight(praiser, target)))} />
             </View>
-            <BigButton pal={pal} label={`スタート（${SEC}秒）`} onPress={() => { setPhase('go'); clock.start(SEC); play('coin'); }} />
+            <BigButton pal={pal} label={`3・2・1でスタート（${SEC}秒）`} onPress={() => ready.run(() => { setPhase('go'); clock.start(SEC); play('coin'); })} />
           </View>
         ) : (
           <View style={{ gap: 8 }}>
@@ -203,6 +205,10 @@ export default function HomeruScreen({ members, level, night, onQuit, onSettings
       );
       controls = <BigButton pal={pal} label={`${gacha.every((x) => x.lucky) ? 'ラッキー！' : '受け入れた'} → 次は${members[(praiser + 1) % n].name}が褒める`} onPress={accept} />;
       break;
+  }
+  if (ready.count) {
+    card = <CountCard pal={pal} n={ready.count} fg={fg} bg={bg} edge={edge} prog={`${members[praiser].name}、息を吸って…`} note={`${members[target].name}は真顔で構えて`} />;
+    controls = <CountHint pal={pal}>まだやで…</CountHint>;
   }
 
   return (

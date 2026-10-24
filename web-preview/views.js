@@ -1336,6 +1336,9 @@ function startGacha(losers, n, reason, st) {
   g.doer = -1; g.phase = "batsu"; st.phase = "batsu";
 }
 const stageWrap = (card, controls) => `<div id="stage" class="${S.flip ? "flipped" : ""}">${vBar()}<div class="deck">${card}</div>${controls}</div>`;
+// 3・2・1のカウント中の画面（count3 とセット。どのモードも同じ見た目）
+const countCard = (n, prog, note = "", cls = "") => `<div class="odai mode-card center ${cls}" id="card"><p class="prog">${prog}</p><p class="tl-count">${n}</p>${note ? `<p class="hand-note">${note}</p>` : ""}</div>`;
+const countStage = (n, prog, note, hint = "まだやで…", cls = "") => stageWrap(countCard(n, prog, note, cls), `<p class="hint">${hint}</p>`);
 // 順位表（反射神経・声デカ）：rows = [{i, v(表示), bad, sub}]
 function rankList(rows, hi = -1, rv = false) {
   return `<ol class="sk-board sp-board">${rows.map((r, k) => `<li class="${rv ? "rv-item" : ""} ${r.bad ? "lose" : ""} ${r.i === hi ? "me" : ""} ${r.wait ? "wait" : ""}" style="--mc:${colorOf(r.i)}${rv ? `;--d:${rvD(k)}s` : ""}"><span class="sk-rk">${r.wait ? "-" : r.rk ?? k + 1}</span><span class="sk-nm">${esc(S.members[r.i].name)}</span><span class="sp-v">${r.sub || ""}</span><b>${r.v}</b></li>`).join("")}</ol>`;
@@ -1364,10 +1367,11 @@ function vBpass() {
   const g = S.game, bp = g.bp;
   if (bp.phase === "intro") return vIntroStage("bpass", { extra: `${lvBox(`爆発まで${BP_SEC[S.level][0]}〜${BP_SEC[S.level][1]}秒のどこか`, false)}<div class="sk-safe" role="note"><b>⚠ スマホは手渡しで</b><span>投げたらアカン。落とさんように両手で渡す</span></div>`, btn: "スタート", act: "bpStart" });
   if (bp.phase === "batsu") return stageWrap(vCard(), roundEnd("bpAccept", true));
+  if (bp.phase === "count") return countStage(bp.n, `${mName(bp.holder)}から、構えて…`, "0になったらお題が出る");
   let card, controls;
   if (bp.phase === "ready") {
     card = `<div class="odai mode-card center board-card bp-card" id="card"><p class="prog">第${bp.round}回戦</p><p class="bp-topic-l"><span>お題</span></p><p class="bp-topic bp-hidden">？？？</p><p class="hand-note">1つ言えたら「パス」を押して次の人（${mName((bp.holder + 1) % S.members.length)}の方）へ手渡し。<br>お題はスタートを押したら出る（先に考えるのはナシ）。毎回変わって、だんだん難しくなる</p>${bigWho(bp.holder, "から")}</div>`;
-    controls = `<button class="big" data-act="bpGo">スタート</button>`;
+    controls = `<button class="big" data-act="bpGo">3・2・1でスタート</button>`;
   } else if (bp.phase === "play") {
     card = `<div class="odai mode-card center board-card bp-card bp-play" id="card"><p class="bp-topic-l"><span>お題</span><span class="bp-tier ${bp.tier}">${BP_TIER_LABEL[bp.tier] || ""}</span></p><p class="bp-topic">${esc(bp.topic)}</p><div class="bp-bomb" aria-hidden="true">💣</div>${bigWho(bp.holder, "が持ってる")}<p class="hand-note">${bp.passes}回パス</p></div>`;
     controls = `<button class="big bp-pass" data-act="bpPass">言えた！パス → ${mName((bp.holder + 1) % S.members.length)}</button>`;
@@ -1407,7 +1411,10 @@ function vBlind() {
     controls = `<button class="big" data-act="blClosed">${mName(bl.who)}が目をつぶった</button>`;
   } else if (bl.phase === "secret") {
     card = `<div class="odai mode-card center deep" id="card"><p class="prog">${mName(bl.who)}は見たらアカン</p><p class="bl-l">触る人</p>${bigWho(bl.toucher)}<p class="bl-l">やること</p><p class="bl-touch">${esc(bl.touch)}</p><p class="hand-note">${BL_SEC}秒間、そっと。声・笑い声でバレんように<br>ほかの人もシーッ</p></div>`;
-    controls = `<button class="big" data-act="blTouch">触り始める（${BL_SEC}秒）</button>`;
+    controls = `<button class="big" data-act="blTouch">3・2・1で触り始める（${BL_SEC}秒）</button>`;
+  } else if (bl.phase === "count") {
+    card = countCard(bl.n, `${mName(bl.toucher)}、そーっと構えて…`, `0になったら${BL_SEC}秒間「${esc(bl.touch)}」`, "deep");
+    controls = `<p class="hint">シーッ…</p>`;
   } else if (bl.phase === "touch") {
     card = `<div class="odai mode-card center deep" id="card"><p class="prog">${mName(bl.toucher)}が「${esc(bl.touch)}」</p><p class="tl-count" id="modeTimer">${BL_SEC}</p><p class="hand-note">${mName(bl.who)}はまだ目をつぶったまま。<br>ブザーが鳴ったら目を開けて</p></div>`;
     controls = `<p class="hint">シーッ…</p>`;
@@ -1475,10 +1482,11 @@ function vWhack() {
   const g = S.game, wk = g.wk, n = S.members.length;
   if (wk.phase === "intro") return vIntroStage("whack", { extra: lvBox(S.level === "jigoku" ? "速い・ドクロ多め" : S.level === "futsu" ? "ふつうの速さ" : "ゆっくり・ドクロ少なめ", false), btn: "スタート", act: "wkStart" });
   if (wk.phase === "batsu") return stageWrap(vCard(), roundEnd("wkAccept", true));
+  if (wk.phase === "count") return countStage(wk.n, `${mName(wk.who)}、構えて…`, "0になったらワニが出てくる", "まだ出てこおへんで");
   let card, controls;
   if (wk.phase === "hand") {
     card = `<div class="odai mode-card center" id="card"><p class="prog">第${wk.round}回戦・${wk.k + 1}/${n}人目</p>${bigWho(wk.who, "の番")}<p class="hand-note">出てきたワニをタップで1点。<br><b>ドクロを押したらマイナス1点</b></p><p class="tl-lim">${WK_SEC}秒</p></div>`;
-    controls = `<button class="big" data-act="wkGo">スタート</button>`;
+    controls = `<button class="big" data-act="wkGo">3・2・1でスタート</button>`;
   } else if (wk.phase === "play") {
     card = `<div class="odai mode-card center wk-card" id="card"><div class="wk-hud"><div class="wk-pill wk-time"><span class="wk-lbl">のこり</span><b id="modeTimer">${WK_SEC}</b><i class="wk-tbar"><i style="animation-duration:${WK_SEC}s"></i></i></div><div class="wk-pill wk-pt" style="--mc:${colorOf(wk.who)}"><span class="wk-lbl">${mName(wk.who)}</span><b id="wkScore">${wk.score[wk.who]}</b><small>点</small></div><div class="wk-pill wk-skp" id="wkSkull" ${wk.skull[wk.who] ? "" : "hidden"}>${SKULL}<b>${wk.skull[wk.who]}</b></div></div><div class="wk-board"><div class="wk-grid">${Array.from({ length: 9 }, (_, i) => `<div class="wk-hole" data-wk="${i}"></div>`).join("")}</div></div></div>`;
     controls = `<p class="hint">ワニだけタップ！ドクロはアカン</p>`;
@@ -1506,7 +1514,7 @@ function vDeko() {
     card = `<div class="odai mode-card center" id="card"><p class="prog">第${dk.round}回戦・${dk.k + 1}/${n}人目</p>${bigWho(dk.who, "の番")}<p class="hand-note">スマホを縦にして<b>おでこに当てる</b>（画面は外向き、自分は見たらアカン）。<br>当てたら<b>下に傾けて正解</b>、わからんかったら<b>上に傾けてパス</b></p><p class="tl-lim">${dkSec()}秒</p></div>`;
     controls = `<button class="big" data-act="dkReady">おでこに当てた → 3・2・1</button>`;
   } else if (dk.phase === "count") {
-    card = `<div class="odai mode-card center" id="card"><p class="prog">${mName(dk.who)}、構えて…</p><p class="tl-count">${dk.n}</p></div>`;
+    card = countCard(dk.n, `${mName(dk.who)}、構えて…`);
     controls = `<p class="hint">0の瞬間の向きがまっすぐ</p>`;
   } else if (dk.phase === "play") {
     card = `<div class="odai mode-card center dk-play ${dk.flash || ""}" id="card"><p class="dk-time"><b id="modeTimer">${dkSec()}</b>秒・<span>${dk.score[dk.who]}問正解</span></p><p class="dk-cat">${esc(dk.cur.c)}</p><p class="dk-word" style="${wordSize(dk.cur.w, 64)}">${dk.flash === "ok" ? "正解！" : dk.flash === "pass" ? "パス" : esc(dk.cur.w)}</p><p class="hand-note">${dk.manual ? "周りの人が下のボタンを押して" : "下に傾けたら正解・上に傾けたらパス"}</p></div>`;
@@ -1584,7 +1592,10 @@ function vFace() {
   let card, controls;
   if (fc.phase === "hand") {
     card = `<div class="odai mode-card center" id="card"><p class="prog">${prog}</p>${bigWho(fc.who, "が演じる")}<p class="hand-note">${mName(fc.who)}だけ長押しでお題を見て。<br>ほかの人は見たらアカン</p>${peekBox(`<p class="fc-t">${esc(fc.t)}</p>`)}</div>`;
-    controls = `<button class="big" data-act="fcAct">覚えた → 演じる（${FC_SEC}秒）</button>`;
+    controls = `<button class="big" data-act="fcAct">覚えた → 3・2・1で演じる（${FC_SEC}秒）</button>`;
+  } else if (fc.phase === "count") {
+    card = countCard(fc.n, `${mName(fc.who)}、顔をつくって…`, `0になったら${FC_SEC}秒、顔だけで演じる`);
+    controls = `<p class="hint">まだやで…</p>`;
   } else if (fc.phase === "act") {
     card = `<div class="odai mode-card center" id="card"><p class="prog">${mName(fc.who)}が演じてる</p><p class="tl-count" id="modeTimer">${FC_SEC}</p><p class="ng-lead">顔だけで！</p><p class="hand-note">声・手・身ぶりはナシ。<br>スマホは周りの人が持って見てて</p></div>`;
     controls = `<button class="ghost" data-act="fcStop">もうわかった → 答える</button>`;
@@ -1613,7 +1624,7 @@ function vHug() {
     card = `<div class="odai mode-card center deep" id="card"><p class="prog">第${hg.k + 1}回戦</p>${duo}<p class="tl-lim">${sec}秒<small>ちょうどで離れる</small></p><p class="hand-note">3・2・1でハグ。目をつぶって心の中で数える。<br>2人で「今や」と思ったら離れる。<br>スマホは周りの人が持ってな</p></div>`;
     controls = `<button class="big" data-act="hgGo">3・2・1でハグ</button>`;
   } else if (hg.phase === "count") {
-    card = `<div class="odai mode-card center deep" id="card"><p class="prog">くっついて…</p><p class="tl-count">${hg.n}</p></div>`;
+    card = countCard(hg.n, "くっついて…", "", "deep");
     controls = `<p class="hint">0でハグ開始</p>`;
   } else if (hg.phase === "hug" || hg.phase === "judge") {
     card = `<div class="odai mode-card center deep hg-play" id="card"><p class="tl-big pk-go">ハグ中…</p>${duo}<p class="ng-lead">目標 ${sec}秒</p><p class="hand-note">時間は出えへん。周りの人は、2人が離れた瞬間に押して</p></div>`;
@@ -1633,7 +1644,10 @@ function vTickle() {
   let card, controls;
   if (tk.phase === "ready") {
     card = `<div class="odai mode-card center deep" id="card"><p class="prog">第${tk.k + 1}回戦${tk.swap ? "・逆転ラウンド" : ""}</p><p class="bl-l">くすぐられる人</p>${bigWho(tk.who)}<p class="bl-l">くすぐる人</p><p class="tk-by">${byNames}</p><p class="bl-l">場所</p><p class="bl-touch">${esc(tk.part)}</p><p class="hand-note">${TK_SEC}秒、声を出して笑ったらアウト。<br>出た場所以外はアカン</p></div>`;
-    controls = `<div class="intro-acts"><button class="intro-back tk-pass" data-act="tkPass" aria-label="パス（罰なし）">${ICON.next}<span>パス</span></button><button class="big" data-act="tkGo">スタート（${TK_SEC}秒）</button></div>`;
+    controls = `<div class="intro-acts"><button class="intro-back tk-pass" data-act="tkPass" aria-label="パス（罰なし）">${ICON.next}<span>パス</span></button><button class="big" data-act="tkGo">3・2・1でスタート（${TK_SEC}秒）</button></div>`;
+  } else if (tk.phase === "count") {
+    card = countCard(tk.n, `${byNames}、構えて…`, `${mName(tk.who)}、覚悟して`, "deep");
+    controls = `<p class="hint">まだくすぐったらアカン</p>`;
   } else if (tk.phase === "play") {
     card = `<div class="odai mode-card center deep" id="card"><p class="prog">${byNames} → ${mName(tk.who)}の${esc(tk.part)}</p><p class="tl-count" id="modeTimer">${TK_SEC}</p><p class="ng-lead">笑うな…！</p></div>`;
     controls = `<button class="big has-pen" data-act="tkLaugh">笑った！アウト</button>`;
@@ -1657,7 +1671,7 @@ function vPocky() {
     card = `<div class="odai mode-card center deep" id="card"><p class="prog">第${pk.k + 1}回戦</p>${duo}<p class="hand-note">ポッキーの<b>両端をくわえて</b>向かい合う。<br>3・2・1で交互に食べ進める。<br><b>先に離した方が罰</b>、折れたら2人とも罰</p></div>`;
     controls = `<button class="big" data-act="pkGo">3・2・1でスタート</button>`;
   } else if (pk.phase === "count") {
-    card = `<div class="odai mode-card center deep" id="card"><p class="prog">くわえて…</p><p class="tl-count">${pk.n}</p></div>`;
+    card = countCard(pk.n, "くわえて…", "", "deep");
     controls = `<p class="hint">まだ食べたらアカン</p>`;
   } else if (pk.phase === "play") {
     card = `<div class="odai mode-card center deep pk-play" id="card"><p class="tl-big pk-go">食べ進めろ！</p>${duo}<p class="hand-note">どうなった？（周りの人が押して）</p></div>`;
@@ -1744,7 +1758,7 @@ function vVoice() {
     card = `<div class="odai mode-card center" id="card"><p class="prog">第${vc.round}回戦・${vc.k + 1}/${n}人目</p>${bigWho(vc.who, "の番")}<p class="hand-note">スマホに向かって${VC_SEC}秒間、全力で叫ぶ。<br>なんでもOK（「ノリダーン！」とか）</p></div>`;
     controls = `<button class="big" data-act="vcGo">叫ぶ！スタート</button>`;
   } else if (vc.phase === "count") {
-    card = `<div class="odai mode-card center" id="card"><p class="prog">${mName(vc.who)}、息を吸って…</p><p class="tl-count">${vc.n}</p><p class="hand-note">0になったら${VC_SEC}秒間叫ぶ</p></div>`;
+    card = countCard(vc.n, `${mName(vc.who)}、息を吸って…`, `0になったら${VC_SEC}秒間叫ぶ`);
     controls = `<p class="hint">スマホを口の前に</p>`;
   } else if (vc.phase === "play") {
     card = `<div class="odai mode-card center tl-play" id="card"><div class="tl-clock" id="tlClock"><p class="tl-sec"><b id="tlSec">${VC_SEC}</b><span id="tlFrac">.0</span><small>秒</small></p><div class="tl-pips">${Array.from({ length: VC_SEC }, (_, i) => `<i class="tl-pip${i < VC_SEC - 1 ? " on" : " now"}"></i>`).join("")}</div></div><div class="tl-mid"><div class="vc-meter" id="vcMeter"><i></i></div><p class="sk-cnt"><b id="vcPeak">0</b><small>最大</small></p><p class="hand-note">${mName(vc.who)}、叫べ！</p></div></div>`;
@@ -2148,6 +2162,7 @@ function vGsCard() {
   const g = S.game, gs = g.gs, n = S.members.length;
   switch (gs.phase) {
     case "roul": return vRoulette("最初に演じる人は…", gs.picked, "から演じる！");
+    case "count": return countCard(gs.n, `${mName(gs.actor)}、構えて…`, "0になったらお題が出る");
     case "hand": return `<div class="odai mode-card center" id="card">
       <p class="prog">演じる人 ${gs.acted + 1} / ${n}</p>
       ${bigWho(gs.actor, "が演じる番")}
@@ -2183,7 +2198,8 @@ function vGsControls() {
   const g = S.game, gs = g.gs;
   switch (gs.phase) {
     case "roul": return gs.picked != null ? `<button class="big" data-act="gsBegin">${mName(gs.picked)}から始める</button>` : `<button class="big" disabled>ルーレット中…</button>`;
-    case "hand": return `<button class="big" data-act="gsGo">スタート（${gs.sec}秒）</button>`;
+    case "hand": return `<button class="big" data-act="gsGo">3・2・1でスタート（${gs.sec}秒）</button>`;
+    case "count": return `<p class="hint">まだお題は出えへんで</p>`;
     case "act": return `<div class="pen-grid-wrap"><p class="pen-q">当てたのは？<span>タップで1点</span></p>
       <div class="pen-grid ${S.members.length > 7 ? "many" : ""}">${others(gs.actor).map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="gsHit" data-i="${i}"><span class="bar">${ini(i)}</span><span class="nm">${mName(i)}</span><span class="meta"><em>${gs.score[i]}点</em></span></button>`).join("")}</div></div>
       <button class="ghost" data-act="gsPass">パス（次のお題）</button>`;
@@ -2210,6 +2226,7 @@ function vHmCard() {
   const nc = hm.night === "shinya" ? "deep" : hm.night ? "yoru" : "";
   switch (hm.phase) {
     case "roul": return vRoulette("最初に褒める人は…", hm.picked, "から褒める！");
+    case "count": return countCard(hm.n, `${mName(hm.praiser)}、息を吸って…`, `${mName(hm.target)}は真顔で構えて`, nc);
     case "ready": case "go": return `<div class="odai ${nc} mode-card center" id="card">
       ${hm.phase === "go" ? `<p class="gs-timer" id="modeTimer">${Math.max(0, Math.ceil((hm.endAt - Date.now()) / 1000))}</p>` : `<p class="prog">第${g.turn + 1}戦</p>`}
       <div class="hm-vs">
@@ -2228,7 +2245,8 @@ function vHmControls() {
   const g = S.game, hm = g.hm;
   switch (hm.phase) {
     case "roul": return hm.picked != null ? `<button class="big" data-act="hmBegin">${mName(hm.picked)}から始める</button>` : `<button class="big" disabled>ルーレット中…</button>`;
-    case "ready": return `<div class="sub-acts two"><button data-act="hmShuffle">相手を変える</button><button data-act="hmTheme">テーマを変える</button></div><button class="big" data-act="hmGo">スタート（${hm.sec}秒）</button>`;
+    case "ready": return `<div class="sub-acts two"><button data-act="hmShuffle">相手を変える</button><button data-act="hmTheme">テーマを変える</button></div><button class="big" data-act="hmGo">3・2・1でスタート（${hm.sec}秒）</button>`;
+    case "count": return `<p class="hint">まだやで…</p>`;
     case "go": return `<div class="verdict">
       <button class="vd ng" data-act="hmLaugh"><b>笑った・照れた</b><small>${mName(hm.target)}に罰</small></button>
       <button class="vd ok" data-act="hmGiveUp"><b>褒めるの限界</b><small>${mName(hm.praiser)}に罰</small></button>
@@ -2977,7 +2995,7 @@ function onClick(e) {
     case "gsSec": g.gs.sec = +b.dataset.v; store.set("nd_gs_sec", g.gs.sec); render(); break;
     case "gsRoul": g.gs.phase = "roul"; g.gs.picked = null; render(true); spinRoulette((i) => { g.gs.picked = i; g.gs.actor = i; g.doer = g.cur = i; play("coin"); render(true); }); break;
     case "gsBegin": g.gs.phase = "hand"; render(true); break;
-    case "gsGo": gsStart(); render(true); break;
+    case "gsGo": count3(g.gs, () => { gsStart(); render(true); }, 800); render(true); break;
     case "gsHit": gsHit(i); play("pinpon"); vib(30); render(true); break;
     case "gsPass": g.gs.word = gsWord(); play("tick"); render(true); break;
     case "gsNext": gsNextActor(); render(true); break;
@@ -3000,7 +3018,7 @@ function onClick(e) {
     case "hmBegin": hmRound(); render(true); break;
     case "hmShuffle": { const t = g.hm.target, pool = others(g.hm.praiser).filter((x) => x !== t); if (pool.length) g.hm.target = pick(pool); render(true); break; }
     case "hmTheme": g.hm.theme = draw("hm_" + (g.hm.night || "normal"), DATA.homeru[g.hm.night || "normal"]); render(true); break;
-    case "hmGo": g.hm.phase = "go"; g.hm.endAt = startTimer(g.hm.sec, () => { hmLose(g.hm.praiser); render(true); }); render(true); break;
+    case "hmGo": count3(g.hm, () => { g.hm.phase = "go"; g.hm.endAt = startTimer(g.hm.sec, () => { hmLose(g.hm.praiser); render(true); }); play("coin"); render(true); }, 800); render(true); break;
     case "hmLaugh": hmLose(g.hm.target); render(true); break;
     case "hmGiveUp": hmLose(g.hm.praiser); render(true); break;
     case "hmAccept": applyAdds(); g.gacha = []; g.phase = "play"; tickRule(); g.hm.praiser = (g.hm.praiser + 1) % S.members.length; hmRound(); render(true); break;
@@ -3106,7 +3124,7 @@ function onClick(e) {
     case "rtAccept": applyAdds(); g.gacha = []; g.phase = "play"; rtRound(); render(true); break;
     // 爆弾パス
     case "bpStart": bpRound(); render(true); break;
-    case "bpGo": bpGo(); break;
+    case "bpGo": count3(g.bp, bpGo, 800); render(true); break;
     case "bpPass": bpPass(); break;
     case "bpGacha": startGacha([g.bp.loser], 1, "bpass", g.bp); render(true); break;
     case "bpAccept": applyAdds(); g.gacha = []; g.phase = "play"; bpRound(); render(true); break;
@@ -3114,7 +3132,7 @@ function onClick(e) {
     // 目隠し当て
     case "blStart": blRound(); render(true); break;
     case "blClosed": g.bl.phase = "secret"; render(true); break;
-    case "blTouch": g.bl.phase = "touch"; render(true); startTimer(BL_SEC, () => { if (S.game?.bl?.phase === "touch") { g.bl.phase = "guess"; render(true); } }); break;
+    case "blTouch": count3(g.bl, () => { g.bl.phase = "touch"; play("coin"); render(true); startTimer(BL_SEC, () => { if (S.game?.bl?.phase === "touch") { g.bl.phase = "guess"; render(true); } }); }, 800); render(true); break;
     case "blGuess": if (g.bl.phase === "guess") blGuess(i); break;
     case "blGacha": startGacha([g.bl.loser], 1, "blind", g.bl); render(true); break;
     case "blAccept": applyAdds(); g.gacha = []; g.phase = "play"; g.bl.k++; blRound(); render(true); break;
@@ -3141,7 +3159,7 @@ function onClick(e) {
     case "drAccept": applyAdds(); g.gacha = []; g.phase = "play"; drRound(); render(true); break;
     // ワニワニタップ
     case "wkStart": wkRound(); render(true); break;
-    case "wkGo": wkGo(); break;
+    case "wkGo": count3(g.wk, wkGo, 800); render(true); break;
     case "wkAfter": wkAfter(); break;
     case "wkGacha": startGacha(g.wk.losers, 1, "whack", g.wk); render(true); break;
     case "wkAccept": applyAdds(); g.gacha = []; g.phase = "play"; wkRound(); render(true); break;
@@ -3171,7 +3189,7 @@ function onClick(e) {
     case "qzAccept": applyAdds(); g.gacha = []; g.phase = "play"; qzRound(); render(true); break;
     // テンション伝言
     case "fcStart": fcRound(); render(true); break;
-    case "fcAct": g.fc.phase = "act"; render(true); startTimer(FC_SEC, () => { if (S.game?.fc?.phase === "act") { g.fc.phase = "guess"; render(true); } }); break;
+    case "fcAct": count3(g.fc, () => { g.fc.phase = "act"; play("coin"); render(true); startTimer(FC_SEC, () => { if (S.game?.fc?.phase === "act") { g.fc.phase = "guess"; render(true); } }); }, 800); render(true); break;
     case "fcStop": if (g.fc.phase === "act") { stopTimer(); g.fc.phase = "guess"; render(true); } break;
     case "fcGuess": fcGuess(b.dataset.v); break;
     case "fcAfter": fcAfter(); break;
@@ -3187,7 +3205,7 @@ function onClick(e) {
     // こしょばし我慢
     case "tkStart": tkRound(); render(true); break;
     case "tkPass": g.tk.last = g.tk.who; g.tk.k++; tkRound(); render(true); break;
-    case "tkGo": g.tk.phase = "play"; play("coin"); render(true); startTimer(TK_SEC, () => { if (S.game?.tk?.phase === "play") { tkEnd(false); render(true); } }); break;
+    case "tkGo": count3(g.tk, () => { g.tk.phase = "play"; play("coin"); render(true); startTimer(TK_SEC, () => { if (S.game?.tk?.phase === "play") { tkEnd(false); render(true); } }); }, 800); render(true); break;
     case "tkLaugh": if (g.tk.phase === "play") { tkEnd(true); render(true); } break;
     case "tkGacha": startGacha([g.tk.who], 1, "tickle", g.tk); render(true); break;
     case "tkNext": g.tk.k++; tkRound(); render(true); break;

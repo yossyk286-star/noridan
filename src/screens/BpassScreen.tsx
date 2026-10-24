@@ -3,7 +3,8 @@ import type React from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
-import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
+import { CountCard, CountHint, HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
+import { useReady } from '../lib/useReady';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
 import { play } from '../lib/sound';
@@ -123,6 +124,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
 
   const pal = STAGE[level];
   const fg = pal.cardFg;
+  const ready = useReady();
   const next = members[(holder + 1) % n].name;
   let card: React.ReactNode = null;
   let controls: React.ReactNode = null;
@@ -149,7 +151,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
           <HandWho members={members} i={holder} sub="から" fg={fg} />
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={go} />;
+      controls = <BigButton pal={pal} label="3・2・1でスタート" onPress={() => ready.run(go)} />;
       break;
     case 'play':
       card = (
@@ -184,6 +186,10 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
       );
       controls = <RoundEnd pal={pal} next={P.lucky ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={() => { P.apply(); newRound(round + 1); }} onEnd={() => finish(P.apply())} />;
       break;
+  }
+  if (ready.count) {
+    card = <CountCard pal={pal} n={ready.count} fg={fg} prog={`${members[holder].name}から、構えて…`} note="0になったらお題が出る" />;
+    controls = <CountHint pal={pal}>まだやで…</CountHint>;
   }
   return (
     <StageShell
