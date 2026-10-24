@@ -30,6 +30,8 @@
   --card-edge: transparent;
   --pc: var(--yuru); /* current player color */
 }
+/* スマホで続けてタップした時のダブルタップズームを止める（ピンチ拡大はできる）。個別に touch-action を決めてる所はそっちが勝つ */
+* { touch-action: manipulation; }
 html, body { height: 100%; }
 html { height: 100%; background: var(--ink); }
 body {
