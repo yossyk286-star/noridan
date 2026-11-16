@@ -1,13 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { iniFit, initialOf } from '../lib/game';
 import { Tap } from '../components/Tap';
 import { Animated, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { C, F, LEVEL_LABEL, LEVEL_SUB, colorOf } from '../theme';
 import { Icon } from '../components/Icon';
 import { ALLOW_SHINYA } from '../lib/game';
-import { useSeen } from '../lib/coach';
 import { HELP } from '../lib/help';
-import { play } from '../lib/sound';
 import type { Level, Member, Mode, Night } from '../types';
 import type { IconName } from '../components/Icon';
 import { load, save } from '../lib/storage';
@@ -27,37 +25,23 @@ type Props = {
   groups?: Member[][];
   /** 2=モード選択から始める（ゲームから戻ってきた時） */
   initialStep?: 1 | 2;
+  /** 設定の「夜モードをオンにする」が押されたら増える（確認画面を出す合図） */
+  nightAskReq?: number;
 };
 
 const LEVELS: Level[] = ['yurume', 'futsu', 'jigoku'];
 const MAX = 12;
-const TAPS = 3;
 
 export default function HomeScreen(props: Props) {
-  const { night, onNight } = props;
+  const { night, onNight, isExample, onMembers, nightAskReq } = props;
   const [step, setStep] = useState<1 | 2>(props.initialStep ?? 1);
-  /** 確認画面：夜モード（1回目）か深夜モード（夜モード中にもう一回） */
+  /** 確認画面：夜モード（設定から）か深夜モード（夜モード中に「深夜」を選んだ時） */
   const [asking, setAsking] = useState<false | 'yoru' | 'shinya'>(false);
-  const [tease, setTease] = useState(0);
-  const taps = useRef<number[]>([]);
-
-  /** 隠しコマンド：ロゴを素早く3回タップ。1回タップするごとにロゴが震えて光る */
-  const tapLogo = () => {
-    const now = Date.now();
-    taps.current = taps.current.filter((x) => now - x < 2500).concat(now);
-    const n = taps.current.length;
-    if (n < TAPS) {
-      setTease((t) => t + 1);
-      play('tick');
-    }
-    if (n >= TAPS) {
-      taps.current = [];
-      if (!night) setAsking('yoru');
-      else if (night === 'yoru' && ALLOW_SHINYA) setAsking('shinya');
-      else return; // もう一番奥
-      play('warn');
-    }
-  };
+  /** メンバーをいじったら「前回のメンバー」の大きいボタンは引っ込める */
+  const [edited, setEdited] = useState(false);
+  useEffect(() => {
+    if (nightAskReq) setAsking('yoru');
+  }, [nightAskReq]);
 
   if (asking)
     return (
@@ -71,7 +55,15 @@ export default function HomeScreen(props: Props) {
       />
     );
   return step === 1 ? (
-    <StepMembers {...props} night={night} tease={tease} onLogo={tapLogo} onNext={() => setStep(2)} />
+    <StepMembers
+      {...props}
+      restored={!isExample && !edited}
+      onMembers={(m) => {
+        setEdited(true);
+        onMembers(m);
+      }}
+      onNext={() => setStep(2)}
+    />
   ) : (
     <StepMode {...props} onBack={() => setStep(1)} onAskDeep={() => setAsking('shinya')} />
   );
@@ -103,12 +95,14 @@ function Gear({ onPress }: { onPress: () => void }) {
   );
 }
 
-function StepMembers({ members, isExample, night, groups, tease, onMembers, onSettings, onLogo, onNext }: Props & { tease: number; onLogo: () => void; onNext: () => void }) {
+function StepMembers({ members, isExample, night, groups, restored, onMembers, onSettings, onNext }: Props & { restored: boolean; onNext: () => void }) {
   const [name, setName] = useState('');
   const input = useRef<TextInput>(null);
   const [addMsg, setAddMsg] = useState('');
+  const [open, setOpen] = useState<number | null>(null);
   const ok = members.length >= 2;
   const others = (groups ?? []).filter((g) => g.map((m) => m.name).join() !== members.map((m) => m.name).join());
+  const last = restored && ok; // 前回のメンバーがそのまま残ってる
 
   /** 名前を入れてEnterでどんどん追加 */
   const add = () => {
@@ -132,39 +126,41 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
       return sex === v ? rest : { ...rest, sex: v };
     }));
   const logoColor = night === 'shinya' ? C.deep : night ? C.night : C.yuru;
-  // ロゴをタップするたびに一瞬光る
-  const [glow, setGlow] = useState(false);
-  useEffect(() => {
-    if (!tease) return;
-    setGlow(true);
-    const t = setTimeout(() => setGlow(false), 420);
-    return () => clearTimeout(t);
-  }, [tease]);
+  const sel = open !== null && members[open] ? open : null;
 
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={s.wrap} keyboardShouldPersistTaps="handled">
         <View style={s.top}>
           <View style={{ flex: 1 }}>
-            <Tap onPress={onLogo} accessibilityLabel="ノリダン" haptic={false} scaleTo={0.98}>
-              <Wiggle trigger={tease}>
-                {night ? (
-                  <Neon color={glow ? C.deep : logoColor} style={s.logo}>ノリダン</Neon>
-                ) : (
-                  <Text style={[s.logo, { color: logoColor }, glow && { textShadowColor: C.night, textShadowRadius: 22, textShadowOffset: { width: 0, height: 0 } }]} numberOfLines={1} adjustsFontSizeToFit>ノリダン</Text>
-                )}
-              </Wiggle>
-            </Tap>
+            {night ? (
+              <Neon color={logoColor} style={s.logo}>ノリダン</Neon>
+            ) : (
+              <Text style={[s.logo, { color: logoColor }]} numberOfLines={1} adjustsFontSizeToFit>ノリダン</Text>
+            )}
             <Text style={[s.catch, night && { color: logoColor, textShadowColor: logoColor, textShadowRadius: 8 }]}>{night === 'shinya' ? '深夜モード 発動中' : night ? '夜モード 発動中' : 'ノリで断れない飲み会ゲーム'}</Text>
-            <Whisper night={night} />
           </View>
           <Gear onPress={onSettings} />
         </View>
-        <Steps n={1} label="メンバー" />
-        <MembersGuide />
+
+        {last && (
+          <>
+            <Tap style={s.lastGroup} onPress={onNext} accessibilityLabel="前回のメンバーでこのまま遊ぶ">
+              <Text style={s.lastHead}>前回のメンバー</Text>
+              <View style={s.lastRow}>
+                {members.slice(0, 6).map((m, i) => (
+                  <View key={i} style={s.lastDot}><Dot i={i} name={initialOf(members, i)} size={30} /></View>
+                ))}
+                <Text style={s.lastNames} numberOfLines={1}>{members.map((m) => m.name).join('・')}</Text>
+              </View>
+              <Text style={s.lastGo}>このまま遊ぶ ▶</Text>
+            </Tap>
+            <Text style={s.h2}>それか、メンバーを変える</Text>
+          </>
+        )}
 
         <View style={s.memHead}>
-          <StepHead num="①" title="メンバー" sub={`${members.length}人`} />
+          <StepHead title="メンバー" sub={`${members.length}人`} />
           {isExample && (
             <Tap onPress={() => onMembers([])} hitSlop={8}>
               <Text style={s.textBtn}>例を全部消す</Text>
@@ -178,7 +174,7 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
             value={name}
             onChangeText={(t) => { setName(t); if (addMsg) setAddMsg(""); }}
             maxLength={10}
-            placeholder="名前を入れて＋（続けて入れられる）"
+            placeholder="名前を入れて Enter"
             placeholderTextColor={C.muted}
             returnKeyType="done"
             blurOnSubmit={false}
@@ -192,34 +188,46 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
 
         {isExample && <Text style={s.note}>↓は例。自分らの名前に入れ替えてな</Text>}
 
-        {members.map((m, i) => (
-          <View key={`${m.name}-${i}`} style={s.mem}>
-            <Dot i={i} name={initialOf(members, i)} />
-            <Text style={[s.memName, { flex: 1 }]} numberOfLines={1}>{m.name}</Text>
-            <View style={s.sex} accessibilityLabel={`${m.name}の性別`}>
+        <View style={s.chips}>
+          {members.map((m, i) => (
+            <View key={`${m.name}-${i}`} style={[s.chip, sel === i && { borderColor: colorOf(i) }]}>
+              <Tap onPress={() => setOpen(sel === i ? null : i)} accessibilityLabel={`${m.name}の男女を選ぶ`} accessibilityState={{ expanded: sel === i }} style={s.chipName}>
+                <Dot i={i} name={initialOf(members, i)} size={30} />
+                <Text style={s.chipText} numberOfLines={1}>{m.name}</Text>
+                {!!m.sex && <Text style={s.chipSub}>{m.sex === 'm' ? '男' : '女'}</Text>}
+                {night && m.ng && <Text style={[s.chipSub, { color: C.night }]}>NG</Text>}
+              </Tap>
+              <Tap onPress={() => { setOpen(null); onMembers(members.filter((_, j) => j !== i)); }} accessibilityLabel={`${m.name}を外す`} style={s.x}>
+                <Icon name="close" color={C.muted} size={15} />
+              </Tap>
+            </View>
+          ))}
+        </View>
+        {sel !== null && (
+          <View style={[s.detail, { borderColor: colorOf(sel) }]}>
+            <Text style={[s.memName, { flex: 1 }]} numberOfLines={1}>{members[sel].name}</Text>
+            <View style={s.sex} accessibilityLabel={`${members[sel].name}の性別`}>
               {(['m', 'f'] as const).map((v, k) => {
-                const on = m.sex === v;
+                const on = members[sel].sex === v;
                 return (
-                  <Tap key={v} onPress={() => setSex(i, v)} accessibilityState={{ selected: on }} style={[s.sexBtn, k > 0 && s.sexSep, on && { backgroundColor: v === 'm' ? '#3ec7ff' : '#ff5aa5' }]}>
+                  <Tap key={v} onPress={() => setSex(sel, v)} accessibilityState={{ selected: on }} style={[s.sexBtn, k > 0 && s.sexSep, on && { backgroundColor: v === 'm' ? '#3ec7ff' : '#ff5aa5' }]}>
                     <Text style={[s.sexText, on && { color: C.ink }]}>{v === 'm' ? '男' : '女'}</Text>
                   </Tap>
                 );
               })}
             </View>
             {night && (
-              <Tap onPress={() => toggleNg(i)} accessibilityState={{ selected: !!m.ng }} style={[s.ng, m.ng && s.ngOn]}>
-                <Text style={[s.ngText, m.ng && { color: C.ink }]}>{m.ng ? '下ネタNG' : '下ネタOK'}</Text>
+              <Tap onPress={() => toggleNg(sel)} accessibilityState={{ selected: !!members[sel].ng }} style={[s.ng, members[sel].ng && s.ngOn]}>
+                <Text style={[s.ngText, members[sel].ng && { color: C.ink }]}>{members[sel].ng ? '下ネタNG' : '下ネタOK'}</Text>
               </Tap>
             )}
-            <Tap onPress={() => onMembers(members.filter((_, j) => j !== i))} accessibilityLabel={`${m.name}を外す`} style={s.x}>
-              <Icon name="close" color={C.muted} size={18} />
-            </Tap>
           </View>
-        ))}
+        )}
+        <Text style={s.note}>{`名前を押すと 男/女${night ? '・下ネタNG' : ''} を選べる（深夜のペアゲームだけで使う。入れんでもOK）`}</Text>
 
         {others.length > 0 && (
           <View style={{ gap: 8, marginTop: 6 }}>
-            <Text style={s.h2}>前回のメンバー</Text>
+            <Text style={s.h2}>ほかのメンバー</Text>
             {others.map((g, k) => (
               <Tap key={k} style={s.group} onPress={() => onMembers(g.map((m) => ({ ...m })))}>
                 <Icon name="users" color={C.muted} size={20} />
@@ -241,26 +249,22 @@ function StepMembers({ members, isExample, night, groups, tease, onMembers, onSe
 function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings, onBack, onAskDeep }: Props & { onBack: () => void; onAskDeep: () => void }) {
   return (
     <ScrollView contentContainerStyle={s.wrap}>
-      <View style={s.top}>
+      <View style={[s.top, { alignItems: 'center' }]}>
         <Tap onPress={onBack} style={s.iconBtn} accessibilityLabel="メンバーに戻る">
           <Icon name="back" color={C.paper} />
         </Tap>
-        <Steps n={2} label="モード" />
+        <Tap onPress={onBack} style={s.memPill} accessibilityLabel="メンバーを変える">
+          {members.slice(0, 6).map((m, i) => (
+            <Dot key={i} i={i} name={initialOf(members, i)} size={28} />
+          ))}
+          <Text style={s.memPillText}>{members.length}人</Text>
+          <Text style={s.memPillSub}>変える</Text>
+        </Tap>
         <Gear onPress={onSettings} />
       </View>
 
-      <View style={s.mchips}>
-        {members.map((m, i) => (
-          <View key={i} style={s.mchip}>
-            <Dot i={i} name={initialOf(members, i)} size={26} />
-            <Text style={s.mchipText}>{m.name}</Text>
-          </View>
-        ))}
-      </View>
-      <ModeGuide />
-
-      <StepHead num="②" title="地獄度" sub="お題・罰の攻め具合" />
-      <View style={s.row}>
+      {/* 地獄度：細い切り替えスイッチ（お題・罰の攻め具合） */}
+      <View style={s.seg} accessibilityLabel="地獄度（お題・罰の攻め具合）">
         {LEVELS.map((l) => {
           const on = level === l;
           const look = l === 'yurume' ? { bg: C.yuru, fg: C.ink } : l === 'futsu' ? { bg: C.futsu, fg: C.ink } : { bg: '#000', fg: C.blood };
@@ -269,20 +273,27 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
               key={l}
               onPress={() => onLevel(l)}
               accessibilityState={{ selected: on }}
-              style={[
-                s.lv,
-                { backgroundColor: look.bg, opacity: on ? 1 : 0.5, transform: [{ translateY: on ? -3 : 0 }] },
-                l === 'jigoku' && { borderWidth: 2, borderColor: C.blood },
-              ]}
+              style={[s.segBtn, on && { backgroundColor: look.bg }, on && l === 'jigoku' && { borderWidth: 2, borderColor: C.blood }]}
             >
-              <Text style={[s.lvText, { color: look.fg }]}>{LEVEL_LABEL[l]}</Text>
-              <Text style={[s.lvSub, { color: look.fg }]}>{LEVEL_SUB[l]}</Text>
+              <Text style={[s.segText, on && { color: look.fg }]}>{LEVEL_LABEL[l]}</Text>
+              <Text style={[s.segSub, on && { color: look.fg }]}>{LEVEL_SUB[l]}</Text>
             </Tap>
           );
         })}
       </View>
 
-      <StepHead num="③" title="遊び方" />
+      {/* 迷ったらこれ */}
+      <Tap style={s.hero} onPress={() => onStart('odai')} accessibilityLabel={`迷ったらこれ：${MODE_TITLE.odai}`}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={s.heroHead}>迷ったらこれ</Text>
+          <Text style={s.heroTitle}>{MODE_TITLE.odai}</Text>
+          <Text style={s.heroDesc}>{HELP.odai.desc}</Text>
+        </View>
+        <View style={s.heroGo}>
+          <Text style={s.heroGoText}>▶</Text>
+        </View>
+      </Tap>
+
       <ModeTabs members={members} night={night} onStart={onStart} />
 
       {night && (
@@ -313,11 +324,10 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
   );
 }
 
-/** 準備画面の番号つき見出し（① メンバー → ② 地獄度 → ③ 遊び方） */
-function StepHead({ num, title, sub }: { num: string; title: string; sub?: string }) {
+/** 準備画面の見出し */
+function StepHead({ title, sub }: { title: string; sub?: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-      <Text style={s.stepNum}>{num}</Text>
       <Text style={s.stepTitle}>{title}</Text>
       {!!sub && <Text style={s.stepSub}>{sub}</Text>}
     </View>
@@ -387,24 +397,30 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
         {tabs.map(([k, t]) => {
           const on = k === cur;
           const isDeep = k === 'deep';
+          const n = k === 'fav' ? favs.length : k === 'all' ? list.length : list.filter((x) => x.cat === k).length;
           return (
             <Tap key={k} onPress={() => { setTab(k); save('nd_tab', k); }} accessibilityState={{ selected: on }} style={[s.tab, isDeep && { borderWidth: 1.5, borderColor: C.deep }, on && { backgroundColor: isDeep ? C.deep : C.yuru }]}>
-              <Text style={[s.tabText, isDeep && { color: C.deep }, on && { color: isDeep ? '#fff' : C.ink }]}>{t}</Text>
+              <Text style={[s.tabText, isDeep && { color: C.deep }, on && { color: isDeep ? '#fff' : C.ink }]}>
+                {t}
+                <Text style={s.tabCount}>{` ${n}`}</Text>
+              </Text>
             </Tap>
           );
         })}
       </ScrollView>
-      <View style={s.grid}>
+      <View style={{ gap: 8 }}>
         {shown.map((x) => {
           const why = x.min && members.length < x.min ? `${x.min}人から遊べる` : x.ok && okN < x.ok ? `下ネタOKの人が${x.ok}人から` : '';
           return (
-            <Tap key={x.m} onPress={() => onStart(x.m)} disabled={!!why} style={({ pressed }) => [s.card2, x.cat === 'deep' && { borderWidth: 2, borderColor: C.deep }, { opacity: why ? 0.45 : 1, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
-              <View style={s.cardTop}>
-                <View style={s.modeIc2}><Icon name={x.ic} color={C.ink} size={20} /></View>
-                <Text style={s.time}>{x.t}</Text>
+            <Tap key={x.m} onPress={() => onStart(x.m)} disabled={!!why} style={({ pressed }) => [s.rowItem, { opacity: why ? 0.45 : 1, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
+              <View style={[s.rowIc, { backgroundColor: CAT_COLOR[x.cat] }]}>
+                <Icon name={x.ic} color={x.cat === 'deep' ? '#fff' : C.ink} size={22} />
               </View>
-              <Text style={s.cardTitle}>{MODE_TITLE[x.m]}</Text>
-              <Text lineBreakStrategyIOS="standard" style={s.cardDesc}>{why || HELP[x.m].desc}</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={s.rowTitle} numberOfLines={1}>{MODE_TITLE[x.m]}</Text>
+                <Text style={s.rowDesc} numberOfLines={1}>{why || HELP[x.m].desc}</Text>
+              </View>
+              <Text style={s.rowMeta}>{`${x.t}\n${x.ok ? `OK${x.ok}人〜` : `${x.min ?? 2}人〜`}`}</Text>
             </Tap>
           );
         })}
@@ -412,6 +428,9 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
     </View>
   );
 }
+
+/** 遊び方の種類ごとのアイコンの色（定番=黄・スマホ=水色・話す=ピンク・頭=緑・深夜=濃いピンク） */
+const CAT_COLOR: Record<Cat, string> = { basic: C.yuru, phone: '#4dd4ff', talk: C.futsu, brain: '#7cf06b', deep: C.deep };
 
 function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () => void; onCancel: () => void }) {
   if (kind === 'shinya')
@@ -438,7 +457,7 @@ function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () 
     );
   return (
     <ScrollView contentContainerStyle={s.wrap}>
-      <Text style={[s.h2, { color: C.night, marginTop: 24 }]}>隠しコマンド発動</Text>
+      <Text style={[s.h2, { color: C.night, marginTop: 24 }]}>20歳以上だけ</Text>
       <Neon color={C.night} style={s.nightTitle}>夜モード</Neon>
       <Text style={s.nightLead}>恋愛・下ネタ寄りのお題が混ざるモード。夜はしゃべるだけ、深夜はハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</Text>
       <View style={{ gap: 8 }}>
@@ -459,6 +478,37 @@ function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () 
 }
 
 const s = StyleSheet.create({
+  tabCount: { fontSize: 12, opacity: 0.6 },
+  rowItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.06)' },
+  rowIc: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { color: C.paper, fontSize: 16, fontWeight: '900' },
+  rowDesc: { color: C.muted, fontSize: 12.5, marginTop: 2 },
+  rowMeta: { color: C.muted, fontSize: 12, fontWeight: '700', lineHeight: 18, textAlign: 'right' },
+  memPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingLeft: 6, paddingRight: 12, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.08)' },
+  memPillText: { color: C.paper, fontWeight: '900', fontSize: 14, marginLeft: 4 },
+  memPillSub: { color: C.muted, fontWeight: '700', fontSize: 12, marginLeft: 'auto' },
+  seg: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.08)' },
+  segBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
+  segText: { color: C.muted, fontWeight: '900', fontSize: 15 },
+  segSub: { color: C.muted, fontWeight: '700', fontSize: 12, opacity: 0.8 },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 22, backgroundColor: C.yuru, shadowColor: '#b8901a', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  heroHead: { color: C.ink, fontSize: 12, fontWeight: '900', letterSpacing: 1 },
+  heroTitle: { color: C.ink, fontFamily: F.display, fontSize: 28, lineHeight: 34 },
+  heroDesc: { color: C.ink, fontSize: 13, fontWeight: '700' },
+  heroGo: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center' },
+  heroGoText: { color: C.yuru, fontSize: 22 },
+  lastGroup: { gap: 8, padding: 16, borderRadius: 20, backgroundColor: C.yuru, shadowColor: '#b8901a', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  lastHead: { color: C.ink, fontSize: 12, fontWeight: '900', letterSpacing: 1 },
+  lastRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  lastDot: { borderRadius: 17, borderWidth: 2, borderColor: C.ink },
+  lastNames: { flex: 1, color: C.ink, fontWeight: '900', fontSize: 16, marginLeft: 6 },
+  lastGo: { alignSelf: 'flex-end', color: C.ink, fontFamily: F.display, fontSize: 18 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { flexDirection: 'row', alignItems: 'center', borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.08)', borderWidth: 1.5, borderColor: 'transparent' },
+  chipName: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 5, paddingLeft: 5, paddingRight: 2 },
+  chipText: { color: C.paper, fontWeight: '900', fontSize: 16, maxWidth: 160 },
+  chipSub: { color: C.muted, fontWeight: '900', fontSize: 12 },
+  detail: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, paddingLeft: 14, borderRadius: 14, borderWidth: 1.5 },
   tab: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.08)' },
   tabText: { color: C.muted, fontWeight: '900', fontSize: 13 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
@@ -475,7 +525,7 @@ const s = StyleSheet.create({
   guideBtnText: { color: C.ink, fontSize: 12, fontWeight: '900' },
   wrap: { padding: 16, paddingBottom: 40, gap: 14, maxWidth: 560, width: '100%', alignSelf: 'center' },
   top: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
-  logo: { fontFamily: F.display, fontSize: 84, lineHeight: 92 },
+  logo: { fontFamily: F.display, fontSize: 60, lineHeight: 68 },
   catch: { color: C.muted, fontWeight: '900', fontSize: 13, letterSpacing: 1, marginTop: 4 },
   iconBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(247,243,234,0.08)', alignItems: 'center', justifyContent: 'center' },
   iconText: { color: C.paper, fontSize: 22, fontWeight: '900' },
@@ -492,11 +542,11 @@ const s = StyleSheet.create({
   dot: { alignItems: 'center', justifyContent: 'center' },
   dotText: { color: C.ink, fontWeight: '900' },
   memName: { color: C.paper, fontSize: 17, fontWeight: '700' },
-  x: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  x: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   xText: { color: C.muted, fontSize: 20 },
   ng: { borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 999, paddingVertical: 6, paddingHorizontal: 10 },
   sex: { flexDirection: 'row', borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 999, overflow: 'hidden' },
-  sexBtn: { width: 30, height: 28, alignItems: 'center', justifyContent: 'center' },
+  sexBtn: { width: 44, height: 34, alignItems: 'center', justifyContent: 'center' },
   sexSep: { borderLeftWidth: 1, borderLeftColor: 'rgba(247,243,234,0.16)' },
   sexText: { color: C.muted, fontSize: 12, fontWeight: '900' },
   ngOn: { backgroundColor: C.night, borderColor: C.night },
@@ -569,92 +619,5 @@ function Neon({ color, style, children }: { color: string; style: object; childr
     >
       {children}
     </Animated.Text>
-  );
-}
-
-/** 昼間でもたまにヒントを出す（起動ごとに固定） */
-const WHISPER_DAY = Math.random() < 0.35;
-
-/** 隠しモードのヒント（ささやき）。夜モード前は「ロゴに秘密がある」、夜モード中は「まだ奥がある」 */
-function Whisper({ night }: { night: Night }) {
-  const v = useRef(new Animated.Value(0)).current;
-  const h = new Date().getHours();
-  const late = h >= 21 || h < 5;
-  const text =
-    night === 'yoru' && ALLOW_SHINYA ? 'まだ奥がある…ロゴをもう一回'
-    : !night && late ? '夜が更けてきた…ロゴ、連打してみ？'
-    : !night && WHISPER_DAY ? 'ロゴには秘密があるらしい'
-    : '';
-  useEffect(() => {
-    if (!text) return;
-    const loop = Animated.sequence([
-      Animated.delay(600),
-      Animated.timing(v, { toValue: 0.85, duration: 800, useNativeDriver: true }),
-      Animated.loop(Animated.sequence([
-        Animated.timing(v, { toValue: 0.5, duration: 1600, useNativeDriver: true }),
-        Animated.timing(v, { toValue: 0.95, duration: 1600, useNativeDriver: true }),
-      ])),
-    ]);
-    loop.start();
-    return () => loop.stop();
-  }, [text]);
-  if (!text) return null;
-  const col = night === 'yoru' ? C.deep : C.night;
-  return (
-    <Animated.View style={[s.whisper, { opacity: v }]}>
-      <Icon name="moon" color={col} size={14} />
-      <Text style={[s.whisperText, { color: col }]}>{text}</Text>
-    </Animated.View>
-  );
-}
-
-/** ロゴ連打で震える */
-function Wiggle({ trigger, children }: { trigger: number; children: ReactNode }) {
-  const v = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!trigger) return;
-    v.setValue(0);
-    Animated.sequence([
-      Animated.timing(v, { toValue: 1, duration: 50, useNativeDriver: true }),
-      Animated.timing(v, { toValue: -1, duration: 70, useNativeDriver: true }),
-      Animated.timing(v, { toValue: 1, duration: 70, useNativeDriver: true }),
-      Animated.timing(v, { toValue: 0, duration: 50, useNativeDriver: true }),
-    ]).start();
-  }, [trigger]);
-  const rotate = v.interpolate({ inputRange: [-1, 1], outputRange: ['-2deg', '2deg'] });
-  const translateX = v.interpolate({ inputRange: [-1, 1], outputRange: [-3, 3] });
-  return <Animated.View style={{ transform: [{ rotate }, { translateX }] }}>{children}</Animated.View>;
-}
-
-/** メンバー登録の初回だけ出す説明（「わかった」で二度と出えへん） */
-function MembersGuide() {
-  const { seen, markSeen } = useSeen();
-  if (seen.members) return null;
-  return (
-    <View style={s.guide}>
-      <Text style={s.guideHead}>遊ぶ人の名前を入れよう</Text>
-      <Text style={s.guideText}>1. 名前を入れて「＋」を押す（12人まで）</Text>
-      <Text style={s.guideText}>2. 2人以上入れたら「遊ぶ」を押す</Text>
-      <Tap onPress={() => markSeen('members')} style={s.guideBtn}>
-        <Text style={s.guideBtnText}>わかった</Text>
-      </Tap>
-    </View>
-  );
-}
-
-/** モード選択の初回だけ出す説明 */
-function ModeGuide() {
-  const { seen, markSeen } = useSeen();
-  if (seen.mode) return null;
-  return (
-    <View style={s.guide}>
-      <Text style={s.guideHead}>遊び方を選ぼう</Text>
-      <Text style={s.guideText}>1. 地獄度はお題の攻め具合。迷ったら「普通」</Text>
-      <Text style={s.guideText}>2. 遊び方を押したら、まず説明が出る</Text>
-      <Text style={s.guideText}>3. やめたい時は「⋯」→結果発表</Text>
-      <Tap onPress={() => markSeen('mode')} style={s.guideBtn}>
-        <Text style={s.guideBtnText}>わかった</Text>
-      </Tap>
-    </View>
   );
 }

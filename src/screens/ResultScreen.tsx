@@ -13,7 +13,7 @@ import { speak } from '../lib/speech';
 import { titles, whyText, type Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, colorOf } from '../theme';
 import type { Level, Member, Mode, Night } from '../types';
-import { ALLOW_SHINYA, iniFit, initialOf } from '../lib/game';
+import { iniFit, initialOf } from '../lib/game';
 
 type Props = {
   members: Member[];
@@ -132,6 +132,23 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
           </>
         )}
       </View>
+      <View style={[{ gap: 10 }, !landed && { opacity: 0 }]} pointerEvents={landed ? 'auto' : 'none'}>
+        <Tap style={({ pressed }) => [s.againBig, pressed && { transform: [{ translateY: 4 }] }]} onPress={onAgain}>
+          <Text style={s.againText}>もう一回</Text>
+          <Text style={s.againSub}>同じメンバー・同じ遊び方</Text>
+        </Tap>
+        <View style={s.row}>
+          <Tap style={[s.ghost, { flexDirection: 'row', justifyContent: 'center', gap: 6 }]} onPress={onHome}>
+            <Icon name="back" color={C.paper} size={18} />
+            <Text style={s.ghostText}>別の遊び方</Text>
+          </Tap>
+          <Tap style={[s.ghost, { flexDirection: 'row', justifyContent: 'center', gap: 6 }]} onPress={share}>
+            <Icon name="share" color={C.paper} size={18} />
+            <Text style={s.ghostText}>画像でシェア</Text>
+          </Tap>
+        </View>
+        {!!msg && <Text style={s.sub}>{msg}</Text>}
+      </View>
       <View style={[{ gap: 18 }, !landed && { opacity: 0 }]} pointerEvents={landed ? 'auto' : 'none'}>
 
       {ts.length > 0 && (
@@ -198,21 +215,6 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       <View style={s.tipRow}>
         <Icon name="moon" color={C.muted} size={14} />
         <Text style={s.tip}>{tip}</Text>
-      </View>
-      <Tap style={({ pressed }) => [s.share, pressed && { transform: [{ translateY: 4 }] }]} onPress={share}>
-        <Icon name="share" color="#fff" />
-        <Text style={s.shareText}>画像で保存・シェア</Text>
-      </Tap>
-      {!!msg && <Text style={s.sub}>{msg}</Text>}
-
-      <View style={s.row}>
-        <Tap style={[s.ghost, { flexDirection: 'row', justifyContent: 'center', gap: 6 }]} onPress={onHome}>
-          <Icon name="back" color={C.paper} size={18} />
-          <Text style={s.ghostText}>遊び方を選ぶ</Text>
-        </Tap>
-        <Tap style={s.again} onPress={onAgain}>
-          <Text style={s.againText}>もう一回</Text>
-        </Tap>
       </View>
       {onMembers && (
         <Tap onPress={onMembers} style={{ alignSelf: 'center', padding: 6 }}>
@@ -416,11 +418,9 @@ const st = StyleSheet.create({
   footText: { color: C.muted, fontSize: 12, fontWeight: '900' },
 });
 
-/** 結果画面のひとこと。夜モードに入ってない人には噂として隠しモードをにおわせる */
-const TIPS = ['罰ガチャの天使はだいたい7回に1回', 'リベンジ権は罰を食らった人だけのご褒美', '倍プッシュは勝てば誰かに罰、負けたら罰2倍', '設定の「向かい合わせ表示」で机の真ん中に置ける'];
-function resultTip(night: Night) {
-  if (!night && Math.random() < 0.6) return '噂：ロゴを3回連打すると、何かが起きるらしい';
-  if (night === 'yoru' && ALLOW_SHINYA && Math.random() < 0.6) return '噂：夜の、さらに奥があるらしい';
+/** 結果画面のひとこと（豆知識） */
+const TIPS = ['罰ガチャの天使はだいたい7回に1回', 'リベンジ権は罰を食らった人だけのご褒美', '倍プッシュは勝てば誰かに罰、負けたら罰2倍', '⋯の「向かい合わせ表示」で机の真ん中に置ける', '20歳以上だけなら、設定から夜モードをオンにできる'];
+function resultTip(_night: Night) {
   return '豆知識：' + TIPS[Math.floor(Math.random() * TIPS.length)];
 }
 
@@ -456,7 +456,6 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, borderRadius: 16, backgroundColor: '#ff6f6f',
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4,
   },
-  shareText: { color: '#fff', fontWeight: '900', fontSize: 16 },
   head: { fontFamily: F.display, fontSize: 52, lineHeight: 60, color: C.blood, marginTop: 12 },
   sub: { color: C.muted, fontWeight: '700' },
   mvp: {
@@ -483,6 +482,7 @@ const s = StyleSheet.create({
   titleDesc: { color: C.muted, fontSize: 12, fontWeight: '700' },
   ghost: { flex: 1, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', padding: 16, alignItems: 'center' },
   ghostText: { color: C.paper, fontWeight: '900' },
-  again: { flex: 1, borderRadius: 14, backgroundColor: C.paper, padding: 16, alignItems: 'center' },
+  againBig: { borderRadius: 16, backgroundColor: C.yuru, paddingVertical: 16, alignItems: 'center', shadowColor: '#b8901a', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  againSub: { color: C.ink, fontSize: 13, fontWeight: '900', opacity: 0.75, marginTop: 2 },
   againText: { fontFamily: F.display, fontSize: 20, color: C.ink },
 });

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Tap } from './Tap';
 import { ALLOW_SHINYA } from '../lib/game';
@@ -19,13 +20,15 @@ type Props = {
   onDual: (on: boolean) => void;
   onVoice: (on: boolean) => void;
   onNight: (n: Night) => void;
-  onTutorial: () => void;
+  /** ホーム画面の時だけ：夜モードの確認画面を出す */
+  onNightAsk?: () => void;
   onClose: () => void;
 };
 
-/** 歯車から開く設定。夜モードはONの時だけ出る（隠しコマンドなので存在は書かない） */
-export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, voice, night, onSound, onDual, onVoice, onNight, onTutorial, onClose }: Props) {
+/** 歯車から開く設定。夜モード（20歳以上）もここからオンにする */
+export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
   const { resetSeen } = useSeen();
+  const [privacy, setPrivacy] = useState(false);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={s.back} onPress={onClose}>
@@ -47,9 +50,28 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
             <Toggle label="バイブ" sub="罰・爆発・ボタンでブルッ" on={vibe} onPress={() => onVibe(!vibe)} />
             <Toggle label="お題の読み上げ" sub="札が出たら声で読む（爆弾の中身は読まへん）" on={voice} onPress={() => onVoice(!voice)} />
             <Toggle label="向かい合わせ表示" sub="机の真ん中に置いて両側から読める" on={dual} onPress={() => onDual(!dual)} />
+            {!night && (
+              <View style={[s.nightBox, { borderColor: 'rgba(182,156,255,0.6)' }]}>
+                <View style={s.nightHeadRow}>
+                  <Text style={s.nightHead}>夜モード</Text>
+                  <Text style={s.age}>20歳以上</Text>
+                </View>
+                <Text style={s.note}>恋愛・下ネタ寄りのお題が混ざる。全員が20歳以上で、全員OKの時だけ。</Text>
+                {onNightAsk ? (
+                  <Tap style={s.ghost} onPress={onNightAsk}>
+                    <Text style={s.ghostText}>夜モードをオンにする</Text>
+                  </Tap>
+                ) : (
+                  <Text style={s.note}>ゲームが終わってから、最初の画面の設定でオンにできる</Text>
+                )}
+              </View>
+            )}
             {night && (
               <View style={s.nightBox}>
-                <Text style={s.nightHead}>夜モード</Text>
+                <View style={s.nightHeadRow}>
+                  <Text style={s.nightHead}>夜モード</Text>
+                  <Text style={s.age}>20歳以上</Text>
+                </View>
                 {ALLOW_SHINYA && (
                   <View style={s.row}>
                     {(['yoru', 'shinya'] as const).map((v) => {
@@ -79,21 +101,52 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
               style={s.ghost}
               onPress={() => {
                 resetSeen();
-                onTutorial();
+                onClose();
               }}
             >
-              <Text style={s.ghostText}>遊び方をもう一回見る</Text>
-              <Text style={s.ghostSub}>最初の説明と、各画面のひとこと説明がまた出る</Text>
+              <Text style={s.ghostText}>ひとこと説明をもう一回出す</Text>
+              <Text style={s.ghostSub}>ゲーム中に出る「わかった」の説明がまた出る</Text>
             </Tap>
             <Tap style={s.ghost} onPress={onClose}>
               <Text style={s.ghostText}>閉じる</Text>
             </Tap>
+            <Tap onPress={() => setPrivacy(true)} hitSlop={8}>
+              <Text style={s.foot}>プライバシーポリシー・お酒は20歳から。飲めへん人はソフドリでOK</Text>
+            </Tap>
           </ScrollView>
         </Pressable>
       </Pressable>
+      <Modal visible={privacy} transparent animationType="slide" onRequestClose={() => setPrivacy(false)}>
+        <Pressable style={s.back} onPress={() => setPrivacy(false)}>
+          <Pressable style={s.sheet} onPress={() => {}}>
+            <ScrollView contentContainerStyle={{ gap: 10 }}>
+              <Text style={s.title}>プライバシーポリシー</Text>
+              {PRIVACY.map(([h, t]) => (
+                <View key={h} style={{ gap: 2 }}>
+                  <Text style={s.toggleText}>{h}</Text>
+                  <Text style={s.note}>{t}</Text>
+                </View>
+              ))}
+              <Tap style={s.ghost} onPress={() => setPrivacy(false)}>
+                <Text style={s.ghostText}>閉じる</Text>
+              </Tap>
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Modal>
   );
 }
+
+/** プライバシーポリシー（Web版の /privacy.html と同じ中身） */
+const PRIVACY: [string, string][] = [
+  ['集める情報', 'ノリダンは、個人を特定できる情報を集めません。アカウント登録もありません。'],
+  ['端末の中だけに保存するもの', '入力したメンバーの名前・性別・「下ネタNG」の設定、効果音などの設定、よく遊ぶモードの回数。端末の中にだけ保存して、外には送りません。アプリを消すと一緒に消えます。'],
+  ['マイク・モーションセンサー', '「声デカ選手権」はマイクで声の大きさだけを測ります。録音・保存・送信はしません。「傾けたらアウト」「全力シェイク」「おでこ当て」は端末の傾きや動きを使います。これも保存・送信はしません。'],
+  ['結果画像の共有', '「画像でシェア」は、作った画像を端末の共有機能に渡すだけです。どこに送るかは使う人が選びます。'],
+  ['広告・解析', '広告や利用状況の解析ツールは使っていません。'],
+  ['お酒について', 'お酒は20歳になってから。飲めない人はソフトドリンクで遊べます。無理に飲ませないでください。'],
+];
 
 function Toggle({ label, sub, on, onPress }: { label: string; sub: string; on: boolean; onPress: () => void }) {
   return (
@@ -124,6 +177,9 @@ const s = StyleSheet.create({
   stateOn: { backgroundColor: C.yuru, color: C.ink },
   nightBox: { borderWidth: 1, borderColor: C.night, borderRadius: 12, padding: 14, gap: 10 },
   nightHead: { color: C.night, fontSize: 12, fontWeight: '900', letterSpacing: 3 },
+  nightHeadRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  age: { color: C.ink, backgroundColor: C.night, fontSize: 12, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
+  foot: { color: C.muted, fontSize: 12, fontWeight: '700', textAlign: 'center', textDecorationLine: 'underline' },
   row: { flexDirection: 'row', gap: 8 },
   lv: { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   lvText: { color: C.paper, fontWeight: '900', fontSize: 16 },

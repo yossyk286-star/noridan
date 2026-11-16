@@ -44,7 +44,6 @@ import { PrefsContext } from './src/lib/prefs';
 import { speak, stopSpeak } from './src/lib/speech';
 import type { Stats } from './src/lib/titles';
 import SettingsSheet from './src/components/SettingsSheet';
-import Tutorial from './src/components/Tutorial';
 import { C, NEON_BG, STAGE } from './src/theme';
 import type { Level, Member, Mode, Night } from './src/types';
 
@@ -81,7 +80,7 @@ export default function App() {
   const [voice, setVoice] = useState(false);
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
   const [sheet, setSheet] = useState(false);
-  const [tut, setTut] = useState(false);
+  const [nightAskReq, setNightAskReq] = useState(0);
   const [groups, setGroups] = useState<Member[][]>([]);
   const [stageBg, setStageBg] = useState<string | null>(null);
 
@@ -106,7 +105,6 @@ export default function App() {
       const vb = (await load<unknown>('nd_vibe', true)) !== false;
       setVibe(vb);
       setVibeEnabled(vb);
-      if (!(await load<boolean>('nd_tut', false))) setTut(true); // 初回だけ遊び方
       const gs = await load<unknown>('nd_groups', []);
       setGroups((Array.isArray(gs) ? gs : []).map(cleanMembers).filter((g): g is Member[] => !!g).slice(0, 3));
       setDual((await load<unknown>('nd_dual', false)) === true);
@@ -174,10 +172,6 @@ export default function App() {
     stopSpeak();
     setScreen({ name: 'home', step: 2 });
   };
-  const tutDone = () => {
-    setTut(false);
-    save('nd_tut', true);
-  };
 
   // 画面が変わったらスッとスライドして入ってくる（進む時は右から、戻る時は左から）
   const ORDER = (name: string) => (name === 'home' ? 0 : name === 'result' ? 3 : 2);
@@ -218,6 +212,7 @@ export default function App() {
               onStart={start}
               onSettings={() => setSheet(true)}
               groups={groups}
+              nightAskReq={nightAskReq}
             />
           )}
           {screen.name !== 'home' && screen.name !== 'result' && (() => {
@@ -256,13 +251,9 @@ export default function App() {
           onDual={updateDual}
           onVoice={updateVoice}
           onNight={updateNight}
-          onTutorial={() => {
-            setSheet(false);
-            setTut(true);
-          }}
+          onNightAsk={screen.name === 'home' ? () => { setSheet(false); setNightAskReq((n) => n + 1); } : undefined}
           onClose={() => setSheet(false)}
         />
-        <Tutorial visible={tut} onDone={tutDone} />
       </SafeAreaView>
     </SafeAreaProvider>
     </PrefsContext.Provider>
