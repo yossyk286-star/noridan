@@ -14,6 +14,8 @@ type Props = {
   onVol: (v: number) => void;
   onVibe: (on: boolean) => void;
   dual: boolean;
+  handoff: boolean;
+  onHandoff: (on: boolean) => void;
   voice: boolean;
   night: Night;
   onSound: (on: boolean) => void;
@@ -26,7 +28,7 @@ type Props = {
 };
 
 /** 歯車から開く設定。夜モード（20歳以上）もここからオンにする */
-export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
+export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
   const { resetSeen } = useSeen();
   const [privacy, setPrivacy] = useState(false);
   return (
@@ -49,6 +51,7 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
             )}
             <Toggle label="バイブ" sub="罰・爆発・ボタンでブルッ" on={vibe} onPress={() => onVibe(!vibe)} />
             <Toggle label="お題の読み上げ" sub="札が出たら声で読む（爆弾の中身は読まへん）" on={voice} onPress={() => onVoice(!voice)} />
+            <Toggle label="番の交代画面" sub="アホお題で「つぎは○○」を1枚はさむ" on={handoff} onPress={() => onHandoff(!handoff)} />
             <Toggle label="向かい合わせ表示" sub="机の真ん中に置いて両側から読める" on={dual} onPress={() => onDual(!dual)} />
             {!night && (
               <View style={[s.nightBox, { borderColor: 'rgba(182,156,255,0.6)' }]}>

@@ -5,7 +5,8 @@ import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
 import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, BigButton } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
-import { IntroCard, LevelBox } from '../components/ModeParts';
+import { Handoff, IntroCard, LevelBox } from '../components/ModeParts';
+import { usePrefs } from '../lib/prefs';
 import { HELP } from '../lib/help';
 import { Flash } from '../components/Fx';
 import { CHANCE, Decks } from '../lib/game';
@@ -41,12 +42,16 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
   const [intro, setIntro] = useState(!skipIntro);
+  const prefs = usePrefs();
+  /** 番の交代画面（「つぎは○○」）を出してる間 */
+  const [handoff, setHandoff] = useState(false);
   /** ルール違反のシート（誰を選ぶか → 罰ガチャの結果） */
   const [ruleSheet, setRuleSheet] = useState<'pick' | GachaItem | null>(null);
 
   /** ターン開始：たまに割り込み、たまにダブルアップ */
   const startTurn = (who: number, t: number) => {
     flow.st.cur = who;
+    setHandoff(prefs.handoff !== false && members.length >= 2);
     if (t > 2 && Math.random() < CHANCE.event) {
       const ev = decks.event(members, who);
       if (ev.rule) flow.addRule(ev.rule);
@@ -82,7 +87,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
   // 夜お題の間だけ照明が落ちてネオン看板に
   const neon = !!st.card.yoru && st.phase !== 'batsu';
   const pal = neon ? neonPal(st.card.kind.includes('深夜') ? C.deep : C.night) : basePal;
-  useEffect(() => onBg?.(neon ? NEON_BG : null), [neon]);
+  useEffect(() => onBg?.(handoff && !intro ? colorOf(cur) : neon ? NEON_BG : null), [neon, handoff, intro, cur]);
   const art = st.phase === 'bombSet' || st.phase === 'bombPeek' ? 'bomb' : st.phase === 'offer' ? 'coin' : undefined;
   // 始める前の説明（「もう一回」の時は出さへん）
   if (intro)
@@ -100,6 +105,14 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
         <Frame color={C.muted} />
         <GameMenu visible={menu} meta={'アホお題・' + LEVEL_LABEL[level]} rulesSub="アホお題の遊び方" flipped={false} onFlip={() => {}} onRules={() => setRules(true)} onEnd={onQuit} onSettings={onSettings} onQuit={onQuit} onClose={() => setMenu(false)} />
         <RulesSheet visible={rules} night={!!night} custom={HELP.odai.rules} onClose={() => setRules(false)} />
+      </View>
+    );
+
+  // 番の交代画面（設定でオフにできる）
+  if (handoff)
+    return (
+      <View style={{ flex: 1, backgroundColor: colorOf(cur) }}>
+        <Handoff members={members} i={cur} left={`アホお題・${LEVEL_LABEL[level]}`} right={`${turn}枚目`} label="タップでお題を見る" onGo={() => setHandoff(false)} />
       </View>
     );
 

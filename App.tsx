@@ -78,6 +78,7 @@ export default function App() {
   const [vibe, setVibe] = useState(true);
   const [dual, setDual] = useState(false);
   const [voice, setVoice] = useState(false);
+  const [handoff, setHandoff] = useState(true); // お題の前に「つぎは○○」をはさむ
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
   const [sheet, setSheet] = useState(false);
   const [nightAskReq, setNightAskReq] = useState(0);
@@ -109,6 +110,7 @@ export default function App() {
       setGroups((Array.isArray(gs) ? gs : []).map(cleanMembers).filter((g): g is Member[] => !!g).slice(0, 3));
       setDual((await load<unknown>('nd_dual', false)) === true);
       setVoice((await load<unknown>('nd_voice', false)) === true);
+      setHandoff((await load<unknown>('nd_handoff', true)) !== false);
     })();
   }, []);
 
@@ -147,6 +149,10 @@ export default function App() {
     save('nd_voice', on);
     if (on) speak('読み上げオン');
     else stopSpeak();
+  };
+  const updateHandoff = (on: boolean) => {
+    setHandoff(on);
+    save('nd_handoff', on);
   };
   const updateNight = (n: Night) => {
     setNight(n);
@@ -194,7 +200,7 @@ export default function App() {
   }, [onStage]);
 
   return (
-    <PrefsContext.Provider value={{ dual, voice, setDual: updateDual }}>
+    <PrefsContext.Provider value={{ dual, voice, handoff, setDual: updateDual }}>
     <SafeAreaProvider>
       <SafeAreaView style={[s.root, { backgroundColor: bg }]}>
         <StatusBar style="light" />
@@ -245,6 +251,8 @@ export default function App() {
           onVol={updateVol}
           onVibe={updateVibe}
           dual={dual}
+          handoff={handoff}
+          onHandoff={updateHandoff}
           voice={voice}
           night={night}
           onSound={updateSound}

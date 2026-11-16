@@ -1738,6 +1738,20 @@ body[data-level="jigoku"] .odai { --tile-fg: #f7f3ea; }
 .koma .k-tx b { font-weight: 900; font-size: clamp(17px, 2.7vh, 23px); line-height: 1.3; }
 .koma .k-tx small { font-size: clamp(12px, 1.7vh, 14px); font-weight: 700; opacity: .62; line-height: 1.4; }
 .koma-more { align-self: flex-end; font-size: 13px; font-weight: 900; opacity: .7; text-decoration: underline; text-underline-offset: 3px; padding: 6px 2px; }
+
+/* 番の交代画面 */
+.handoff { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; padding: max(20px, env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom)); background: var(--mc); color: #141210; text-align: center; animation: hoIn .28s ease-out; }
+@keyframes hoIn { from { opacity: 0; transform: scale(1.04); } }
+.ho-top { display: flex; justify-content: space-between; font-weight: 900; font-size: 14px; opacity: .75; }
+.ho-mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 0; }
+.ho-next { font-weight: 900; font-size: 22px; letter-spacing: .2em; }
+.ho-dot { width: min(150px, 20vh); height: min(150px, 20vh); border-radius: 50%; background: #141210; color: var(--mc); display: grid; place-items: center; font-family: "Dela Gothic One", sans-serif; font-size: min(78px, 10vh); }
+.ho-name { font-family: "Dela Gothic One", sans-serif; font-weight: 400; font-size: clamp(48px, 10vh, 84px); line-height: 1.1; max-width: 100%; overflow-wrap: anywhere; }
+.ho-pass { font-weight: 900; font-size: 18px; background: rgba(20,18,16,.12); padding: 8px 18px; border-radius: 999px; }
+.ho-btn { background: #141210; color: #fff8e7; border-radius: 20px; padding: 18px; font-family: "Dela Gothic One", sans-serif; font-size: 22px; }
+.ho-after { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; font-weight: 900; font-size: 14px; flex-wrap: wrap; }
+.ho-after small { opacity: .6; font-size: 14px; }
+.ho-av { width: 26px; height: 26px; border-radius: 50%; background: var(--mc); box-shadow: 0 0 0 2px #141210; display: inline-grid; place-items: center; font-size: 12px; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
@@ -1797,7 +1811,8 @@ const S = {
   vol: [1, 2, 3].includes(store.get("nd_vol", 3)) ? store.get("nd_vol", 3) : 3, // 音量 1=小 2=中 3=大
   vibe: store.get("nd_vibe", true) !== false,    // バイブ
   modeTab: store.get("nd_tab", null),  // 遊び方一覧のタブ
-  dual: store.get("nd_dual", false) === true,   // 向かい合わせ表示
+  dual: store.get("nd_dual", false) === true,
+  handoff: store.get("nd_handoff", true) !== false, // お題の前に「つぎは○○」の交代画面をはさむ   // 向かい合わせ表示
   voice: store.get("nd_voice", false) === true, // お題の読み上げ
   step: 1,          // ホーム: 1=メンバー 2=モード選択
   sheet: false,     // 設定シート
@@ -2011,6 +2026,7 @@ function startOdaiTurn() {
   const g = S.game;
   g.turn++;
   g.doer = g.cur;
+  g.handoff = S.handoff && S.members.length >= 2;
   if (g.turn > 2 && Math.random() < CHANCE.event) {
     const e = drawEvent(g.cur);
     if (e.rule) addRule(e.rule);
@@ -4311,6 +4327,7 @@ function vSheet() {
       ${S.sound ? `<div class="vol-row" role="group" aria-label="音量"><span>音量</span>${[[1, "小"], [2, "中"], [3, "大"]].map(([v, t]) => `<button data-act="vol" data-v="${v}" aria-pressed="${S.vol === v}">${t}</button>`).join("")}</div>` : ""}
       <button class="toggle" data-act="vibe" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="voice" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="handoff" aria-pressed="${S.handoff}"><span>番の交代画面<small>アホお題で「つぎは○○」を1枚はさむ</small></span><b>${S.handoff ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="dual" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
       ${!S.night ? `<div class="night-box off">
         <p class="h2">夜モード<span class="age">20歳以上</span></p>
@@ -4718,6 +4735,7 @@ function vNextUp() {
 function vOdai() {
   const g = S.game;
   if (g.intro) return vIntroStage("odai", { extra: lvBox("", false), btn: `${mName(0)}からスタート`, act: "introGo" });
+  if (g.handoff) return vHandoff(g.cur, `${MODE_NAME.odai}・${LV[S.level]}`, `${g.turn}枚目`, "タップでお題を見る");
   return `<div id="stage" class="${S.flip ? "flipped" : ""}">
     ${vBar()}
     ${vRule()}
@@ -4725,6 +4743,18 @@ function vOdai() {
     ${vCoach()}
     ${vControls()}
   </div>`;
+}
+
+// 番の交代画面：画面ぜんぶをその人の色にして「スマホ渡してな」。タップでお題へ
+function vHandoff(i, left, right, btn) {
+  const n = S.members.length;
+  const after = [1, 2].slice(0, n - 1).map((k) => (i + k) % n);
+  return `<button class="handoff" data-act="handoffGo" style="--mc:${colorOf(i)}">
+    <span class="ho-top"><span>${left}</span><span>${right}</span></span>
+    <span class="ho-mid"><span class="ho-next">つぎは</span><span class="ho-dot">${ini(i)}</span><b class="ho-name">${mName(i)}</b><span class="ho-pass">📱 スマホ渡してな</span></span>
+    <span class="ho-btn">${btn}</span>
+    <span class="ho-after"><small>そのあと</small>${after.map((j) => `<span class="ho-av" style="--mc:${colorOf(j)}">${ini(j)}</span>${mName(j)}`).join(`<small>→</small>`)}</span>
+  </button>`;
 }
 
 // ---------- NGワード（画面） ----------
@@ -6932,6 +6962,8 @@ function onClick(e) {
     case "itNew": itRound(); render(true); break;
 
     case "introGo": g.intro = false; render(true); break;
+    case "handoffGo": if (S.game) S.game.handoff = false; play("pop"); render(true); break;
+    case "handoff": S.handoff = !S.handoff; store.set("nd_handoff", S.handoff); render(); break;
     case "vBegin": startVoteRound(); render(true); break;
 
     // 神経衰弱

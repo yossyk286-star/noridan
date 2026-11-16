@@ -403,6 +403,7 @@ function vSheet() {
       ${S.sound ? `<div class="vol-row" role="group" aria-label="音量"><span>音量</span>${[[1, "小"], [2, "中"], [3, "大"]].map(([v, t]) => `<button data-act="vol" data-v="${v}" aria-pressed="${S.vol === v}">${t}</button>`).join("")}</div>` : ""}
       <button class="toggle" data-act="vibe" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="voice" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="handoff" aria-pressed="${S.handoff}"><span>番の交代画面<small>アホお題で「つぎは○○」を1枚はさむ</small></span><b>${S.handoff ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="dual" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
       ${!S.night ? `<div class="night-box off">
         <p class="h2">夜モード<span class="age">20歳以上</span></p>
@@ -810,6 +811,7 @@ function vNextUp() {
 function vOdai() {
   const g = S.game;
   if (g.intro) return vIntroStage("odai", { extra: lvBox("", false), btn: `${mName(0)}からスタート`, act: "introGo" });
+  if (g.handoff) return vHandoff(g.cur, `${MODE_NAME.odai}・${LV[S.level]}`, `${g.turn}枚目`, "タップでお題を見る");
   return `<div id="stage" class="${S.flip ? "flipped" : ""}">
     ${vBar()}
     ${vRule()}
@@ -817,6 +819,18 @@ function vOdai() {
     ${vCoach()}
     ${vControls()}
   </div>`;
+}
+
+// 番の交代画面：画面ぜんぶをその人の色にして「スマホ渡してな」。タップでお題へ
+function vHandoff(i, left, right, btn) {
+  const n = S.members.length;
+  const after = [1, 2].slice(0, n - 1).map((k) => (i + k) % n);
+  return `<button class="handoff" data-act="handoffGo" style="--mc:${colorOf(i)}">
+    <span class="ho-top"><span>${left}</span><span>${right}</span></span>
+    <span class="ho-mid"><span class="ho-next">つぎは</span><span class="ho-dot">${ini(i)}</span><b class="ho-name">${mName(i)}</b><span class="ho-pass">📱 スマホ渡してな</span></span>
+    <span class="ho-btn">${btn}</span>
+    <span class="ho-after"><small>そのあと</small>${after.map((j) => `<span class="ho-av" style="--mc:${colorOf(j)}">${ini(j)}</span>${mName(j)}`).join(`<small>→</small>`)}</span>
+  </button>`;
 }
 
 // ---------- NGワード（画面） ----------
@@ -3024,6 +3038,8 @@ function onClick(e) {
     case "itNew": itRound(); render(true); break;
 
     case "introGo": g.intro = false; render(true); break;
+    case "handoffGo": if (S.game) S.game.handoff = false; play("pop"); render(true); break;
+    case "handoff": S.handoff = !S.handoff; store.set("nd_handoff", S.handoff); render(); break;
     case "vBegin": startVoteRound(); render(true); break;
 
     // 神経衰弱

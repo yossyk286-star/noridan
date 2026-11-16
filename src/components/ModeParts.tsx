@@ -103,6 +103,44 @@ export function HandWho({ members, i, sub, fg }: { members: Member[]; i: number;
   );
 }
 
+/** 番の交代画面：画面ぜんぶをその人の色にして「スマホ渡してな」。タップで札へ */
+export function Handoff({ members, i, left, right, label, onGo }: { members: Member[]; i: number; left: string; right: string; label: string; onGo: () => void }) {
+  const n = members.length;
+  const after = [1, 2].slice(0, n - 1).map((k) => (i + k) % n);
+  const ink = '#141210';
+  return (
+    <Pressable onPress={() => { play('pop'); onGo(); }} style={[s.ho, { backgroundColor: colorOf(i) }]} accessibilityRole="button" accessibilityLabel={`つぎは${members[i].name}。${label}`}>
+      <View style={s.hoTop}>
+        <Text style={s.hoTopText}>{left}</Text>
+        <Text style={s.hoTopText}>{right}</Text>
+      </View>
+      <View style={s.hoMid}>
+        <Text style={s.hoNext}>つぎは</Text>
+        <View style={[s.hoDot, { backgroundColor: ink }]}>
+          <Text style={[s.hoDotText, { color: colorOf(i) }]}>{initialOf(members, i)}</Text>
+        </View>
+        <Text style={s.hoName} numberOfLines={1} adjustsFontSizeToFit>{members[i].name}</Text>
+        <Text style={s.hoPass}>📱 スマホ渡してな</Text>
+      </View>
+      <View style={s.hoBtn}>
+        <Text style={s.hoBtnText}>{label}</Text>
+      </View>
+      <View style={s.hoAfter}>
+        <Text style={[s.hoAfterText, { opacity: 0.6 }]}>そのあと</Text>
+        {after.map((j, k) => (
+          <View key={j} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            {k > 0 && <Text style={[s.hoAfterText, { opacity: 0.6 }]}>→</Text>}
+            <View style={[s.hoAv, { backgroundColor: colorOf(j) }]}>
+              <Text style={s.hoAvText}>{initialOf(members, j)}</Text>
+            </View>
+            <Text style={s.hoAfterText}>{members[j].name}</Text>
+          </View>
+        ))}
+      </View>
+    </Pressable>
+  );
+}
+
 /** 最初の人を決めるルーレット。名前を順に光らせて、だんだん遅くなって1人に止まる */
 export function Roulette({ members, fg, onDone, tick }: { members: Member[]; fg: string; onDone: (i: number) => void; tick?: () => void }) {
   const n = members.length;
@@ -283,6 +321,21 @@ const s = StyleSheet.create({
   word: { fontFamily: F.display, fontSize: 22 },
   introTitle: { fontFamily: F.display, fontSize: 22 },
   introTag: { fontSize: 12, fontWeight: '900', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
+  ho: { ...StyleSheet.absoluteFillObject, zIndex: 30, paddingHorizontal: 22, paddingTop: 20, paddingBottom: 24 },
+  hoTop: { flexDirection: 'row', justifyContent: 'space-between' },
+  hoTopText: { fontWeight: '900', fontSize: 14, color: '#141210', opacity: 0.75 },
+  hoMid: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
+  hoNext: { fontWeight: '900', fontSize: 22, letterSpacing: 4, color: '#141210' },
+  hoDot: { width: 140, height: 140, borderRadius: 70, alignItems: 'center', justifyContent: 'center' },
+  hoDotText: { fontFamily: F.display, fontSize: 70 },
+  hoName: { fontFamily: F.display, fontSize: 76, lineHeight: 90, color: '#141210', maxWidth: '100%' },
+  hoPass: { fontWeight: '900', fontSize: 18, color: '#141210', backgroundColor: 'rgba(20,18,16,0.12)', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 999, overflow: 'hidden' },
+  hoBtn: { backgroundColor: '#141210', borderRadius: 20, paddingVertical: 18, alignItems: 'center' },
+  hoBtnText: { fontFamily: F.display, fontSize: 22, color: '#fff8e7' },
+  hoAfter: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 16, flexWrap: 'wrap' },
+  hoAfterText: { fontWeight: '900', fontSize: 14, color: '#141210' },
+  hoAv: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#141210' },
+  hoAvText: { fontWeight: '900', fontSize: 12, color: '#141210' },
   komaRow: { flexDirection: 'row', gap: 14, alignItems: 'center', borderRadius: 18, paddingVertical: 10, paddingHorizontal: 12 },
   komaIc: { width: 58, height: 58, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   komaNo: { position: 'absolute', left: -7, top: -7, width: 24, height: 24, borderRadius: 12, overflow: 'hidden', backgroundColor: '#141210', color: '#fff8e7', fontFamily: F.display, fontSize: 13, lineHeight: 24, textAlign: 'center' },

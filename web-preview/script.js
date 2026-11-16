@@ -46,7 +46,8 @@ const S = {
   vol: [1, 2, 3].includes(store.get("nd_vol", 3)) ? store.get("nd_vol", 3) : 3, // 音量 1=小 2=中 3=大
   vibe: store.get("nd_vibe", true) !== false,    // バイブ
   modeTab: store.get("nd_tab", null),  // 遊び方一覧のタブ
-  dual: store.get("nd_dual", false) === true,   // 向かい合わせ表示
+  dual: store.get("nd_dual", false) === true,
+  handoff: store.get("nd_handoff", true) !== false, // お題の前に「つぎは○○」の交代画面をはさむ   // 向かい合わせ表示
   voice: store.get("nd_voice", false) === true, // お題の読み上げ
   step: 1,          // ホーム: 1=メンバー 2=モード選択
   sheet: false,     // 設定シート
@@ -260,6 +261,7 @@ function startOdaiTurn() {
   const g = S.game;
   g.turn++;
   g.doer = g.cur;
+  g.handoff = S.handoff && S.members.length >= 2;
   if (g.turn > 2 && Math.random() < CHANCE.event) {
     const e = drawEvent(g.cur);
     if (e.rule) addRule(e.rule);
