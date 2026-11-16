@@ -758,7 +758,7 @@ function vCoach() {
 }
 // ルール早見表（⋯メニューから）
 function vRules() {
-  const md = S.game?.mode || "odai";
+  const md = S.rulesMode || S.game?.mode || "odai";
   const items = [...(HELP[md] || HELP.odai).rules];
   if (S.night && md !== "vote") items.push(["夜モード", "夜・深夜のお題や罰も混ざる。下ネタNGの人には振られへん。夜お題は「無理！」で罰なしパス"]);
   return `
@@ -2097,8 +2097,9 @@ function vIntroStage(mode, { tag = "", extra = "", btn, act, disabled = false })
     <div class="deck"><div class="odai mode-card mid" id="card">
       <div class="head"><span class="who"><b>${MODE_NAME[mode]}</b></span><span class="meta"><i class="tag">${tag || `${S.members.length}人`}</i></span></div>
       <div class="mid-body">
-        <ul class="how ic">${h.how.map(([ic, t]) => `<li><span class="ic">${ICON[ic] || ""}</span><span>${t}</span></li>`).join("")}</ul>
+        <ol class="koma">${h.how.map(([ic, big, sub], i) => `<li class="k${i + 1}"><span class="k-ic">${ICON[ic] || ""}<b>${i + 1}</b></span><span class="k-tx"><b>${big}</b>${sub ? `<small>${sub}</small>` : ""}</span></li>`).join("")}</ol>
         ${extra}
+        <button class="koma-more" data-act="rules" data-m="${mode}">細かいルール ›</button>
       </div>
     </div></div>
     <div class="intro-acts"><button class="intro-back" data-act="home" aria-label="遊び方を選び直す">${ICON.back}<span>戻る</span></button><button class="big" data-act="${act}" ${disabled ? "disabled" : ""}>${btn}</button></div>
@@ -2901,8 +2902,8 @@ function onClick(e) {
     case "next": finishCard(); break;
     case "coachReset": S.seen = {}; store.set("nd_seen", {}); S.sheet = false; render(); break;
     case "coachOk": S.seen[b.dataset.k] = 1; store.set("nd_seen", S.seen); render(); break;
-    case "rules": S.menu = false; S.rules = true; render(); break;
-    case "rulesClose": S.rules = false; render(); break;
+    case "rules": S.menu = false; S.rules = true; S.rulesMode = b.dataset.m || null; render(); break;
+    case "rulesClose": S.rules = false; S.rulesMode = null; render(); break;
     case "ruleOpen": S.ruleK = +b.dataset.k; S.ruleSheet = "pick"; render(); break;
     case "ruleClose": S.ruleSheet = null; render(); break;
     case "ruleTo": {

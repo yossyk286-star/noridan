@@ -2,7 +2,7 @@ import helpJson from '../data/help.json';
 import type { Mode } from '../types';
 
 /** 説明の中身（Web版と同じ help.json から）。<b>…</b> は太字 */
-type ModeHelp = { desc: string; how: [string, string][]; rules: [string, string][] };
+type ModeHelp = { desc: string; how: [string, string, string][]; rules: [string, string][] };
 export const HELP = helpJson as unknown as Record<Mode, ModeHelp>;
 
 /** 「<b>太字</b>」を部品に分ける */

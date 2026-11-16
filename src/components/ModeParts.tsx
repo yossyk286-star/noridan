@@ -8,7 +8,8 @@ import { Tap } from './Tap';
 import { F, alpha, colorOf } from '../theme';
 import type { STAGE } from '../theme';
 import type { Level, Member, Mode } from '../types';
-import { HELP, boldParts } from '../lib/help';
+import { HELP } from '../lib/help';
+import { RulesSheet } from './Stage';
 import { Icon, type IconName } from './Icon';
 
 type Pal = (typeof STAGE)[Level];
@@ -43,30 +44,38 @@ export function Lead({ fg, children }: { fg: string; children: React.ReactNode }
 
 export const MODE_TITLE: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票', wolf: 'ワードウルフ', pittari: 'ピッタリ予想', tilt: '傾けたらアウト', shake: '全力シェイク', stop: 'ピタッとストップ', rtap: 'ロシアンタップ', bpass: '爆弾パス', hilo: 'ハイ&ロー', reflex: '反射神経バトル', voice: '声デカ選手権', blind: '目隠し当て', pocky: 'ポッキーゲーム', tickle: 'こしょばし我慢', hug: 'ハグタイム当て', quiz: '早押し雑学クイズ', face: 'テンション伝言', deko: 'おでこ当て', doubt: 'ダウト', king: '王様ゲーム', draw: 'お絵かき伝言', whack: 'ワニワニタップ' };
 
+/** 3コマの色：準備→本番→罰 */
+const KOMA = ['#ffd23f', '#ff5d8f', '#ff2a2a'];
+
 /** 始める前の説明（どのモードも同じ形）。children に地獄度の説明や時間の選択を入れる */
 export function IntroCard({ pal, mode, tag, children }: { pal: Pal; mode: Mode; tag?: string; children?: React.ReactNode }) {
   const fg = pal.cardFg;
+  const [rules, setRules] = useState(false);
   return (
     <ModeCard pal={pal}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text style={[s.introTitle, { color: fg }]}>{MODE_TITLE[mode]}</Text>
         {!!tag && <Text style={[s.introTag, { color: fg, borderColor: alpha('#888888', 0.5) }]}>{tag}</Text>}
       </View>
-      <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
-        {HELP[mode].how.map(([ic, t], k) => (
-          <View key={k} style={s.howRow}>
-            <View style={s.howIc}>
-              <Icon name={ic as IconName} color={pal.cardEdge} size={24} />
+      <View style={{ flex: 1, justifyContent: 'center', gap: 10 }}>
+        {HELP[mode].how.map(([ic, big, sub], k) => (
+          <View key={k} style={[s.komaRow, { backgroundColor: alpha('#888888', 0.1) }]}>
+            <View style={[s.komaIc, { backgroundColor: KOMA[k] }]}>
+              <Icon name={ic as IconName} color="#141210" size={30} />
+              <Text style={s.komaNo}>{k + 1}</Text>
             </View>
-            <Text lineBreakStrategyIOS="standard" style={[s.howText, { color: fg }]}>
-              {boldParts(t).map((x, j) => (
-                <Text key={j} style={x.b ? s.howBold : undefined}>{x.t}</Text>
-              ))}
-            </Text>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text lineBreakStrategyIOS="standard" style={[s.komaBig, { color: fg }]}>{big}</Text>
+              {!!sub && <Text lineBreakStrategyIOS="standard" style={[s.komaSub, { color: fg }]}>{sub}</Text>}
+            </View>
           </View>
         ))}
         {children}
+        <Pressable onPress={() => setRules(true)} hitSlop={8} style={{ alignSelf: 'flex-end' }}>
+          <Text style={[s.komaMore, { color: fg }]}>細かいルール ›</Text>
+        </Pressable>
       </View>
+      <RulesSheet visible={rules} custom={HELP[mode].rules} onClose={() => setRules(false)} />
     </ModeCard>
   );
 }
@@ -274,10 +283,12 @@ const s = StyleSheet.create({
   word: { fontFamily: F.display, fontSize: 22 },
   introTitle: { fontFamily: F.display, fontSize: 22 },
   introTag: { fontSize: 12, fontWeight: '900', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
-  howRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  howIc: { width: 30, height: 27, alignItems: 'center', justifyContent: 'center' },
-  howText: { flex: 1, fontSize: 18, lineHeight: 27, fontWeight: '700' },
-  howBold: { fontWeight: '900' },
+  komaRow: { flexDirection: 'row', gap: 14, alignItems: 'center', borderRadius: 18, paddingVertical: 10, paddingHorizontal: 12 },
+  komaIc: { width: 58, height: 58, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  komaNo: { position: 'absolute', left: -7, top: -7, width: 24, height: 24, borderRadius: 12, overflow: 'hidden', backgroundColor: '#141210', color: '#fff8e7', fontFamily: F.display, fontSize: 13, lineHeight: 24, textAlign: 'center' },
+  komaBig: { fontSize: 19, lineHeight: 26, fontWeight: '900' },
+  komaSub: { fontSize: 13, lineHeight: 18, fontWeight: '700', opacity: 0.62 },
+  komaMore: { fontSize: 13, fontWeight: '900', opacity: 0.7, textDecorationLine: 'underline', paddingVertical: 4 },
   lvBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, gap: 2 },
   lvText: { fontSize: 14, fontWeight: '900' },
   lvNote: { fontSize: 12, fontWeight: '700', opacity: 0.75 },
