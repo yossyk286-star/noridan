@@ -404,7 +404,7 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
                 <Text style={s.time}>{x.t}</Text>
               </View>
               <Text style={s.cardTitle}>{MODE_TITLE[x.m]}</Text>
-              <Text style={s.cardDesc}>{why || HELP[x.m].desc}</Text>
+              <Text lineBreakStrategyIOS="standard" style={s.cardDesc}>{why || HELP[x.m].desc}</Text>
             </Tap>
           );
         })}

@@ -22,7 +22,7 @@ export function Prog({ fg, children }: { fg: string; children: React.ReactNode }
   return <Text style={[s.prog, { color: fg }]}>{children}</Text>;
 }
 export function Note({ fg, children }: { fg: string; children: React.ReactNode }) {
-  return <Text style={[s.note, { color: fg }]}>{children}</Text>;
+  return <Text lineBreakStrategyIOS="standard" style={[s.note, { color: fg }]}>{children}</Text>;
 }
 /** 3・2・1のカウント中の札（useReady とセット。どのモードも同じ見た目） */
 export function CountCard({ pal, n, fg, prog, note, bg, edge }: { pal: Pal; n: number; fg: string; prog: string; note?: string; bg?: string; edge?: string }) {
@@ -35,10 +35,10 @@ export function CountCard({ pal, n, fg, prog, note, bg, edge }: { pal: Pal; n: n
   );
 }
 export function CountHint({ pal, children }: { pal: Pal; children: React.ReactNode }) {
-  return <Text style={[s.countHint, { color: pal.muted }]}>{children}</Text>;
+  return <Text lineBreakStrategyIOS="standard" style={[s.countHint, { color: pal.muted }]}>{children}</Text>;
 }
 export function Lead({ fg, children }: { fg: string; children: React.ReactNode }) {
-  return <Text style={[s.lead, { color: fg }]}>{children}</Text>;
+  return <Text lineBreakStrategyIOS="standard" style={[s.lead, { color: fg }]}>{children}</Text>;
 }
 
 export const MODE_TITLE: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票', wolf: 'ワードウルフ', pittari: 'ピッタリ予想', tilt: '傾けたらアウト', shake: '全力シェイク', stop: 'ピタッとストップ', rtap: 'ロシアンタップ', bpass: '爆弾パス', hilo: 'ハイ&ロー', reflex: '反射神経バトル', voice: '声デカ選手権', blind: '目隠し当て', pocky: 'ポッキーゲーム', tickle: 'こしょばし我慢', hug: 'ハグタイム当て', quiz: '早押し雑学クイズ', face: 'テンション伝言', deko: 'おでこ当て', doubt: 'ダウト', king: '王様ゲーム', draw: 'お絵かき伝言', whack: 'ワニワニタップ' };
@@ -58,7 +58,7 @@ export function IntroCard({ pal, mode, tag, children }: { pal: Pal; mode: Mode; 
             <View style={s.howIc}>
               <Icon name={ic as IconName} color={pal.cardEdge} size={24} />
             </View>
-            <Text style={[s.howText, { color: fg }]}>
+            <Text lineBreakStrategyIOS="standard" style={[s.howText, { color: fg }]}>
               {boldParts(t).map((x, j) => (
                 <Text key={j} style={x.b ? s.howBold : undefined}>{x.t}</Text>
               ))}

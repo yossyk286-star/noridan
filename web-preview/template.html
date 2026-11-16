@@ -34,6 +34,7 @@
 * { touch-action: manipulation; }
 html, body { height: 100%; }
 html { height: 100%; background: var(--ink); }
+html { word-break: keep-all; overflow-wrap: anywhere; } /* 日本語は文節（jaWrap が入れた区切り）でだけ折り返す */
 body {
   margin: 0; min-height: 100%; min-height: 100dvh;
   background: var(--bg); color: var(--fg);

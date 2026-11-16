@@ -2590,16 +2590,31 @@ function render(anim) {
   S.navKey = key;
   if (S.hold && S.hold.sc !== sc) { clearTimeout(S.holdT); S.hold = null; }
   app.innerHTML = onStage && S.hold ? vHold() : (VIEWS[sc] || vResult)();
+  jaWrap(app);
   rvSetup(anim);
   drSetup();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
   overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
+  jaWrap(overlay);
   if (onStage) { fixHeight(); fitCard(); }
   if (anim) { window.scrollTo(0, 0); cue(); if (S.gIntro) { clearTimeout(S.speakT); S.speakT = setTimeout(speakNow, GACHA_T * 1000); } else speakNow(); postFx(); }
   if (!onStage && sc !== "result") stopSpeak();
   syncWake();
   const f = document.getElementById("addForm");
   if (f) f.addEventListener("submit", onAdd);
+}
+// 日本語の文を文節の切れ目にだけ折り返し位置（ゼロ幅スペース）を入れる。「王/様」「罰ガ/チャ」みたいな泣き別れを防ぐ。
+// CSS の word-break: keep-all とセット。短い文字・入力欄・絵は触らへん
+const JA_RE = /[\u3040-\u30ff\u4e00-\u9fff]/;
+function jaWrap(root) {
+  if (!root || !window.BUDOUX) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.nodeValue.length < 7 || !JA_RE.test(n.nodeValue) || n.nodeValue.includes("\u200b") || n.parentElement?.closest("textarea,script,style,svg,.no-bx") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+  const list = []; let n;
+  while ((n = w.nextNode())) list.push(n);
+  for (const t of list) {
+    const parts = window.BUDOUX.parse(t.nodeValue).reduce((a, p) => { if (a.length && /^(へん|ど[、。]?$)/.test(p)) a[a.length - 1] += p; else a.push(p); return a; }, []); // 関西弁の「〜へん」は前とくっつける
+    if (parts.length > 1) t.nodeValue = parts.join("\u200b");
+  }
 }
 // 1人ずつ出す演出の準備：ボタンも全部出てから押せるように。描き直しの時（anim なし）は最初から全部出しとく
 function rvSetup(anim) {
