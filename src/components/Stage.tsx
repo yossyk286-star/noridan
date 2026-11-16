@@ -8,6 +8,7 @@ import { usePrefs } from '../lib/prefs';
 import { useSeen } from '../lib/coach';
 import { CARD_LOOK, F, STAGE, alpha, colorOf } from '../theme';
 import type { Bomb, Card, GachaItem, Level, Member, Rule, Segment } from '../types';
+import type { BatsuPick } from '../lib/game';
 import { Angel, BombArt, Capsule, Coin, Crown, Fuse, GACHA_MS, GachaMachine, Skull, TwinSkulls } from './Fx';
 import { Icon } from './Icon';
 import { HELP } from '../lib/help';
@@ -475,6 +476,34 @@ export function GachaCard({ members, items }: { pal: Pal; members: Member[]; ite
         ))}
       </View>
     </Animated.View>
+  );
+}
+/** 1位の特権：罰を2つ並べて、1位が最下位にやらせる方を選ぶ */
+export function PickCard({ members, pick, onPick }: { pal: Pal; members: Member[]; pick: BatsuPick; onPick: (k: number) => void }) {
+  const look = BATSU_LOOK;
+  const who = pick.losers.map((i) => members[i].name).join('・');
+  return (
+    <View style={[styles.card, { backgroundColor: look.bg, borderColor: look.edge, borderWidth: 3 }]}>
+      <Text style={[styles.kind, { color: look.fg }]}>1位の特権</Text>
+      <View style={{ flex: 1, justifyContent: 'center', gap: 14 }}>
+      <Text style={[styles.pickLead, { color: look.fg }]}>
+        <Text style={styles.pickWinner}>{members[pick.winner].name}</Text>が1位！{'\n'}{who}にやらせる罰を選んでな
+      </Text>
+      <View style={{ gap: 12 }}>
+        {pick.opts.map((items, k) => {
+          const g = items[0];
+          return (
+            <Tap key={k} onPress={() => onPick(k)} accessibilityLabel={`罰${k ? 'B' : 'A'}を選ぶ`} style={({ pressed }) => [styles.pickOpt, g.night === 'shinya' ? { borderColor: '#c86bff' } : g.night ? { borderColor: '#ff6fae' } : null, pressed && { opacity: 0.75, transform: [{ translateY: 2 }] }]}>
+              <View style={styles.pickAB}><Text style={styles.pickABText}>{k ? 'B' : 'A'}</Text></View>
+              <View style={{ flex: 1 }}>
+                <SegText segments={g.n > 1 ? doubleSegments(g.segments, g.n) : g.segments} style={[styles.pickText, { color: look.fg }]} />
+              </View>
+            </Tap>
+          );
+        })}
+      </View>
+      </View>
+    </View>
   );
 }
 function GachaRow({ name, color, item, delay, fg, mark }: { name: string; color: string; item: GachaItem; delay: number; fg: string; mark: boolean }) {
@@ -1056,6 +1085,12 @@ const styles = StyleSheet.create({
   gachaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   gachaWho: { fontSize: 12, fontWeight: '900', letterSpacing: 1, opacity: 0.7 },
   gachaText: { fontFamily: F.display, fontSize: 22, lineHeight: 32 },
+  pickLead: { textAlign: 'center', fontSize: 17, lineHeight: 26, fontWeight: '700' },
+  pickWinner: { fontSize: 22, fontWeight: '900', color: '#ffd23f' },
+  pickOpt: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16, borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', backgroundColor: 'rgba(255,255,255,0.08)' },
+  pickAB: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#e8202a', alignItems: 'center', justifyContent: 'center' },
+  pickABText: { color: '#fff', fontWeight: '900', fontSize: 16 },
+  pickText: { fontFamily: F.display, fontSize: 18, lineHeight: 26 },
   penQRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   penQ: { fontSize: 16, fontWeight: '900' },
   penQSub: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },

@@ -589,6 +589,7 @@ function cardClass(c) {
 }
 function vCard() {
   const g = S.game, anim = S.anim ? (g.card?.alert ? "shake" : "in") : "";
+  if (g.phase === "batsu" && g.pick) return vPick();
   if (g.phase === "batsu") {
     const allLucky = g.gacha.every((x) => x.lucky);
     const mixed = !allLucky && g.gacha.some((x) => x.lucky);
@@ -618,6 +619,15 @@ function vCard() {
     ${art}
     ${dual ? `<p class="txt mirror" aria-hidden="true" style="font-size:${fitSize(c.html, g.mode === "sugoroku", 0.74)}"><span>${c.html}</span></p><hr class="dual-line">` : ""}
     <p class="txt" style="font-size:${fitSize(c.html, g.mode === "sugoroku", dual ? 0.74 : 1)}"><span>${c.html}</span></p>
+  </div>`;
+}
+// 1位の特権：罰を2つ並べて、1位が最下位にやらせる方を選ぶ
+function vPick() {
+  const p = S.game.pick, who = p.losers.map(mName).join("・");
+  return `<div class="odai batsu pick-card ${S.anim ? "in" : ""}" id="card">
+    <div class="head"><span>1位の特権</span></div>
+    <p class="pick-lead"><b>${mName(p.winner)}</b>が1位！<br>${who}にやらせる罰を選んでな</p>
+    <div class="pick-opts">${p.opts.map((o, k) => `<button class="pick-opt ${o.night ? "night " + o.night : ""}" data-act="pickBatsu" data-k="${k}"><small>${k ? "B" : "A"}</small><span>${p.n > 1 ? doubleHtml(o.htmls[0], p.n) : o.htmls[0]}</span></button>`).join("")}</div>
   </div>`;
 }
 // お題の長さで文字サイズを決める（短いほど大きく）
@@ -1213,6 +1223,7 @@ function vWolf() {
 
 // 1回戦が終わった時：もう1回戦か、ここで結果発表か（罰ガチャのあとは「受け入れて」）
 function roundEnd(nextAct, batsu = false) {
+  if (batsu && S.game.pick) return `<p class="hint">選んだ方が罰になる</p>`;
   const g = S.game, lucky = batsu && g.gacha.every((x) => x.lucky), unit = g.mode === "king" ? "回" : "回戦";
   return `<div class="row2 round-end"><button class="ghost" data-act="end">${ICON.flag}<span>結果発表へ</span></button><button class="big" data-act="${nextAct}">${batsu ? `<small>${lucky ? "ラッキー！" : "受け入れて"}</small>` : ""}もう1${unit}</button></div>`;
 }
@@ -1329,10 +1340,10 @@ function vStop() {
 
 // ---------- 新しい5つ（ロシアンタップ・爆弾パス・ハイ&ロー・反射神経バトル・声デカ選手権） ----------
 // 罰ガチャまでの共通の流れ：losers に罰ガチャ → 受け入れたら「もう1回戦／結果発表へ」
-function startGacha(losers, n, reason, st) {
+function startGacha(losers, n, reason, st, winner = -1) {
   const g = S.game;
   g.add = new Map(losers.map((t) => [t, n])); g.addReason = reason;
-  g.gacha = losers.map((t) => ({ i: t, n, ...drawBatsu(t, n) }));
+  makeGacha(losers, n, winner);
   g.doer = -1; g.phase = "batsu"; st.phase = "batsu";
 }
 const stageWrap = (card, controls) => `<div id="stage" class="${S.flip ? "flipped" : ""}">${vBar()}<div class="deck">${card}</div>${controls}</div>`;
@@ -1446,8 +1457,8 @@ function vKing() {
     controls = `<div class="sub-acts two"><button data-act="kgReroll">別の命令</button><button data-act="kgFree">${kg.cmd ? "自分で考える" : "おすすめを出す"}</button></div><button class="big" data-act="kgOpen">番号を公開</button>`;
   } else {
     const nos = kg.cmd ? [kg.cmd.A, kg.cmd.B].filter((x) => x != null) : S.members.map((_, i) => kg.num[i]).filter((x) => x > 0).sort((a, b) => a - b);
-    card = `<div class="odai mode-card center board-card" id="card"><p class="prog">${kg.cmd ? kgText(kg.cmd) : "番号の答え"}</p><ul class="kg-list">${nos.map((no) => { const w = kgWho(kg, no); return `<li style="--mc:${colorOf(w)}"><b>${no}番</b><span>${mName(w)}</span></li>`; }).join("")}</ul><p class="hand-note">命令を実行！できへんかった人は下で選んで罰ガチャ</p><div class="kg-refuse">${(kg.cmd ? nos.map((no) => kgWho(kg, no)) : S.members.map((_, i) => i).filter((i) => i !== kg.king)).map((w) => `<button data-act="kgRefuse" data-i="${w}" aria-pressed="${kg.refuse.includes(w)}" style="--mc:${colorOf(w)}">${mName(w)}</button>`).join("")}</div></div>`;
-    controls = kg.refuse.length ? `<button class="big has-pen" data-act="kgGacha">できへんかった${kg.refuse.map(mName).join("・")}に罰ガチャ</button>` : roundEnd("kgNextRound");
+    card = `<div class="odai mode-card center board-card" id="card"><p class="prog">${kg.cmd ? kgText(kg.cmd) : "番号の答え"}</p><ul class="kg-list">${nos.map((no) => { const w = kgWho(kg, no); return `<li style="--mc:${colorOf(w)}"><b>${no}番</b><span>${mName(w)}</span></li>`; }).join("")}</ul><p class="hand-note">命令を実行！できへんかった人は下で選んで罰ガチャ<b>2倍</b></p><div class="kg-refuse">${(kg.cmd ? nos.map((no) => kgWho(kg, no)) : S.members.map((_, i) => i).filter((i) => i !== kg.king)).map((w) => `<button data-act="kgRefuse" data-i="${w}" aria-pressed="${kg.refuse.includes(w)}" style="--mc:${colorOf(w)}">${mName(w)}</button>`).join("")}</div></div>`;
+    controls = kg.refuse.length ? `<button class="big has-pen" data-act="kgGacha">できへんかった${kg.refuse.map(mName).join("・")}に罰ガチャ×2</button>` : roundEnd("kgNextRound");
   }
   return stageWrap(card, controls);
 }
@@ -2872,6 +2883,7 @@ function onClick(e) {
   const act = b.dataset.act, g = S.game, i = +b.dataset.i;
   rememberStep(act);
   switch (act) {
+    case "pickBatsu": choosePick(+b.dataset.k); play("buzzer"); vib([60, 30, 120]); render(); break;
     // home
     case "del": S.members.splice(i, 1); S.addMsg = ""; saveMembers(); render(); break;
     case "modeTab": S.modeTab = b.dataset.v; store.set("nd_tab", S.modeTab); render(); document.querySelector(".mode-tabs [aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "center" }); break;
@@ -3144,7 +3156,7 @@ function onClick(e) {
     case "kgFree": if (g.kg.cmd) g.kg.cmd = null; else kgPick(); render(); break;
     case "kgOpen": g.kg.phase = "open"; g.turn++; play("pop"); render(true); break;
     case "kgRefuse": { const r = g.kg.refuse, k = r.indexOf(i); if (k >= 0) r.splice(k, 1); else r.push(i); render(); break; }
-    case "kgGacha": startGacha(g.kg.refuse, 1, "king", g.kg); render(true); break;
+    case "kgGacha": startGacha(g.kg.refuse, 2, "king", g.kg); render(true); break;
     case "kgNextRound": kgRound(); render(true); break;
     case "kgAccept": applyAdds(); g.gacha = []; g.phase = "play"; kgRound(); render(true); break;
     // お絵かき伝言
@@ -3161,14 +3173,14 @@ function onClick(e) {
     case "wkStart": wkRound(); render(true); break;
     case "wkGo": count3(g.wk, wkGo, 800); render(true); break;
     case "wkAfter": wkAfter(); break;
-    case "wkGacha": startGacha(g.wk.losers, 1, "whack", g.wk); render(true); break;
+    case "wkGacha": startGacha(g.wk.losers, 1, "whack", g.wk, soleBest(S.members.map((_, i) => i), (i) => g.wk.score[i])); render(true); break;
     case "wkAccept": applyAdds(); g.gacha = []; g.phase = "play"; wkRound(); render(true); break;
     // おでこ当て
     case "dkStart": tiltAsk().finally(() => { dkRound(); render(true); }); break;
     case "dkReady": count3(g.dk, dkGo, 800); render(true); break;
     case "dkHit": dkHit(b.dataset.v === "1"); break;
     case "dkAfter": dkAfter(); break;
-    case "dkGacha": startGacha(g.dk.losers, 1, "deko", g.dk); render(true); break;
+    case "dkGacha": startGacha(g.dk.losers, 1, "deko", g.dk, soleBest(S.members.map((_, i) => i), (i) => g.dk.score[i])); render(true); break;
     case "dkAccept": applyAdds(); g.gacha = []; g.phase = "play"; dkRound(); render(true); break;
     // ダウト
     case "duStart": duRound(); render(true); break;
@@ -3185,7 +3197,7 @@ function onClick(e) {
     case "qzReveal": qzReveal(); break;
     case "qzWrongNext": qzWrongNext(); break;
     case "qzAfter": qzAfter(); break;
-    case "qzGacha": startGacha(g.qz.losers, 1, "quiz", g.qz); render(true); break;
+    case "qzGacha": startGacha(g.qz.losers, 1, "quiz", g.qz, soleBest(S.members.map((_, i) => i), (i) => g.qz.score[i])); render(true); break;
     case "qzAccept": applyAdds(); g.gacha = []; g.phase = "play"; qzRound(); render(true); break;
     // テンション伝言
     case "fcStart": fcRound(); render(true); break;
@@ -3193,7 +3205,7 @@ function onClick(e) {
     case "fcStop": if (g.fc.phase === "act") { stopTimer(); g.fc.phase = "guess"; render(true); } break;
     case "fcGuess": fcGuess(b.dataset.v); break;
     case "fcAfter": fcAfter(); break;
-    case "fcGacha": startGacha(g.fc.losers, 1, "face", g.fc); render(true); break;
+    case "fcGacha": startGacha(g.fc.losers, 1, "face", g.fc, soleBest(S.members.map((_, i) => i), (i) => g.fc.score[i])); render(true); break;
     case "fcAccept": applyAdds(); g.gacha = []; g.phase = "play"; fcRound(); render(true); break;
     // ハグタイム当て
     case "hgStart": hgRound(); render(true); break;
@@ -3228,14 +3240,14 @@ function onClick(e) {
     case "rfMNext": g.rf.h++; g.rf.phase = "mhand"; render(true); break;
     case "rfGo": rfGo(); break;
     case "rfNext": g.rf.k++; rfBegin(); render(true); break;
-    case "rfGacha": startGacha(g.rf.losers, 1, "reflex", g.rf); render(true); break;
+    case "rfGacha": startGacha(g.rf.losers, 1, "reflex", g.rf, soleBest(S.members.map((_, i) => i), (i) => (g.rf.res[i] && !g.rf.res[i].fly && g.rf.res[i].ms < RF_LATE ? -g.rf.res[i].ms : null))); render(true); break;
     case "rfAccept": applyAdds(); g.gacha = []; g.phase = "play"; rfRound(); render(true); break;
     // 声デカ選手権
     case "vcStart": vcAsk().then((ok) => { g.vc.noMic = !ok; vcRound(); render(true); }); break;
     case "vcGo": vcCount(); render(true); break;
     case "vcNext": g.vc.k++; vcBegin(); render(true); break;
     case "vcPick": g.vc.res = S.members.map((_, j) => (j === i ? 0 : 1)); g.vc.k = S.members.length - 1; g.turn++; vcRank(); render(true); break;
-    case "vcGacha": startGacha(g.vc.losers, S.level === "jigoku" ? 2 : 1, "voice", g.vc); render(true); break;
+    case "vcGacha": startGacha(g.vc.losers, S.level === "jigoku" ? 2 : 1, "voice", g.vc, soleBest(S.members.map((_, i) => i), (i) => g.vc.res[i])); render(true); break;
     case "vcAccept": applyAdds(); g.gacha = []; g.phase = "play"; vcRound(); render(true); break;
 
     // ため・1人ずつの演出をタップで飛ばす
@@ -3251,7 +3263,7 @@ function onClick(e) {
     case "spGacha": {
       const sp = g.sp, n = sp.exactAny ? 2 : 1;
       g.add = new Map(sp.losers.map((t) => [t, n])); g.addReason = "stop";
-      g.gacha = sp.losers.map((t) => ({ i: t, n, ...drawBatsu(t, n) }));
+      makeGacha(sp.losers, n, soleBest(S.members.map((_, i) => i), (i) => (sp.res[i].over ? null : -sp.res[i].diff)));
       g.doer = -1; g.phase = "batsu"; sp.phase = "batsu"; render(true); break;
     }
     case "spAccept": applyAdds(); g.gacha = []; g.phase = "play"; spRound(); render(true); break;
@@ -3264,7 +3276,7 @@ function onClick(e) {
     case "skGacha": {
       const sk = g.sk, n = S.level === "jigoku" ? 2 : 1;
       g.add = new Map(sk.losers.map((t) => [t, n])); g.addReason = "shake";
-      g.gacha = sk.losers.map((t) => ({ i: t, n, ...drawBatsu(t, n) }));
+      makeGacha(sk.losers, n, soleBest(S.members.map((_, i) => i), (i) => sk.cnt[i]));
       g.doer = -1; g.phase = "batsu"; sk.phase = "batsu"; render(true); break;
     }
     case "skAccept": applyAdds(); g.gacha = []; g.phase = "play"; skRound(); render(true); break;
@@ -3288,7 +3300,7 @@ function onClick(e) {
     case "ptGacha": {
       const pt = g.pt, x = pt.exact.length ? 2 : 1;
       g.add = new Map(pt.losers.map((t) => [t, x])); g.addReason = "pit";
-      g.gacha = pt.losers.map((t) => ({ i: t, n: x, ...drawBatsu(t, x) }));
+      makeGacha(pt.losers, x, soleBest(pt.order, (i) => -Math.abs(pt.guess[i] - pt.answer)));
       g.phase = "batsu"; pt.phase = "batsu"; render(true); break;
     }
     case "ptNext": applyAdds(); g.gacha = []; g.phase = "play"; ptRound(); render(true); break;

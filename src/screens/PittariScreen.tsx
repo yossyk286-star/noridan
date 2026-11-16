@@ -9,7 +9,8 @@ import { Tap } from '../components/Tap';
 import { HELP } from '../lib/help';
 import { useHold } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
-import { Decks, fill } from '../lib/game';
+import { pickView } from '../components/StageShell';
+import { Decks, fill, soleBest, type BatsuPick } from '../lib/game';
 import { play } from '../lib/sound';
 import { usePrefs } from '../lib/prefs';
 import { speak } from '../lib/speech';
@@ -55,6 +56,7 @@ export default function PittariScreen({ members, level, night, onQuit, onSetting
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
   const [done, setDone] = useState(0);
   const [gacha, setGacha] = useState<GachaItem[]>([]);
+  const [pick, setPick] = useState<BatsuPick | null>(null);
   const stats = useRef<Stats>(newStats(n)).current;
   const [menu, setMenu] = useState(false);
   const [rules, setRules] = useState(false);
@@ -113,11 +115,20 @@ export default function PittariScreen({ members, level, night, onQuit, onSetting
     });
   };
   const doGacha = () => {
-    const items = losers.map((i) => ({ i, n: times, ...decks.batsu(members, i, times) }));
-    setGacha(items);
+    // 1位が1人に決まってたら、罰を2つから1位に選ばせる
+    const r = decks.gachaOrPick(members, losers, () => times, soleBest(round.order, (i) => (round.guess[i] == null || round.answer == null ? null : -Math.abs(round.guess[i]! - round.answer))));
     setPhase('batsu');
-    batsuCue(items, members);
+    if ('pick' in r) { setPick(r.pick); setGacha([]); return; }
+    setGacha(r.items);
+    batsuCue(r.items, members);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+  };
+  const choosePick = (k: number) => {
+    if (!pick) return;
+    const items = pick.opts[k];
+    setPick(null);
+    setGacha(items);
+    batsuCue(items, members);
   };
   const accept = () => {
     const np = pen.slice();
@@ -282,6 +293,8 @@ export default function PittariScreen({ members, level, night, onQuit, onSetting
   }
 
   // ため（ドラムロール）の間は結果を出さへん
+  const pv = phase === 'batsu' ? pickView(pal, members, pick, choosePick) : null;
+  if (pv) { card = pv.card; controls = pv.controls; }
   const hv = H.view(pal);
   if (hv) { card = hv.card; controls = hv.controls; }
   return (

@@ -4,7 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
-import { StageShell, usePenalty } from '../components/StageShell';
+import { soleBest } from '../lib/game';
+import { StageShell, pickView, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
 import { RevealItem, useHold, useReveal } from '../components/Reveal';
 import { load, save } from '../lib/storage';
@@ -361,7 +362,7 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
         </ModeCard>
         </Pressable>
       );
-      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers); setPhase('batsu'); }} />;
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers, 1, soleBest(members.map((_, i) => i), (i) => (res[i] && !res[i]!.fly && (res[i]!.ms as number) < LATE ? -(res[i]!.ms as number) : null))); setPhase('batsu'); }} />;
       break;
     case 'batsu':
       card = (
@@ -373,6 +374,8 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
       break;
   }
   // ため（ドラムロール）の間は「結果は…」を出す
+  const pv = phase === 'batsu' ? pickView(pal, members, P.pick, P.choose) : null;
+  if (pv) { card = pv.card; controls = pv.controls; }
   const hv = H.view(pal);
   if (hv) { card = hv.card; controls = hv.controls; }
   return (

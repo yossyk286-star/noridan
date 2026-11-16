@@ -5,8 +5,8 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Prog } from '../components/ModeParts';
-import { shuffle } from '../lib/game';
-import { StageShell, usePenalty } from '../components/StageShell';
+import { shuffle, soleBest } from '../lib/game';
+import { StageShell, pickView, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
 import { useHold, useReveal } from '../components/Reveal';
 import { HELP } from '../lib/help';
@@ -238,7 +238,7 @@ export default function DekoScreen({ members, level, night, onQuit, onSettings, 
           <ScoreRank members={members} score={score} losers={losers} rv={RV} fg="#f7f3ea" title={`第${round}回戦の結果`} foot={`${losers.map((i) => members[i].name).join('・')}が最下位`} />
         </ModeCard>
       );
-      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers); setPhase('batsu'); }} />;
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers, 1, soleBest(members.map((_, i) => i), (i) => score[i])); setPhase('batsu'); }} />;
       break;
     case 'batsu':
       card = (
@@ -249,6 +249,8 @@ export default function DekoScreen({ members, level, night, onQuit, onSettings, 
       controls = <RoundEnd pal={pal} next={P.lucky ? 'ラッキー！もう1回戦' : '受け入れてもう1回戦'} onNext={() => { P.apply(); newRound(); }} onEnd={() => finish(P.apply())} />;
       break;
   }
+  const pv = phase === 'batsu' ? pickView(pal, members, P.pick, P.choose) : null;
+  if (pv) { card = pv.card; controls = pv.controls; }
   const hv = H.view(pal);
   if (hv) { card = hv.card; controls = hv.controls; }
   return (

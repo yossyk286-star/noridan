@@ -9,7 +9,8 @@ import { Tap } from '../components/Tap';
 import { HELP } from '../lib/help';
 import { RevealItem, useHold, useReveal } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
-import { Decks } from '../lib/game';
+import { pickView } from '../components/StageShell';
+import { Decks, soleBest, type BatsuPick } from '../lib/game';
 import { play } from '../lib/sound';
 import { load, save } from '../lib/storage';
 import { newStats, type Stats } from '../lib/titles';
@@ -68,6 +69,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
   const [turns, setTurns] = useState(0);
   const [gacha, setGacha] = useState<GachaItem[]>([]);
+  const [pick, setPick] = useState<BatsuPick | null>(null);
   const stats = useRef<Stats>(newStats(n)).current;
   const exact = useRef<number[]>(Array(n).fill(0)).current;
   const [menu, setMenu] = useState(false);
@@ -212,9 +214,18 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   };
   const doGacha = () => {
     const x = exactAny ? 2 : 1;
-    const items = losers.map((i) => ({ i, n: x, ...decks.batsu(members, i, x) }));
-    setGacha(items);
+    // 1位が1人に決まってたら、罰を2つから1位に選ばせる
+    const r = decks.gachaOrPick(members, losers, () => x, soleBest(members.map((_, i) => i), (i) => (res[i] && !res[i]!.over ? -res[i]!.diff : null)));
     setPhase('batsu');
+    if ('pick' in r) { setPick(r.pick); setGacha([]); return; }
+    setGacha(r.items);
+    batsuCue(r.items, members);
+  };
+  const choosePick = (k: number) => {
+    if (!pick) return;
+    const items = pick.opts[k];
+    setPick(null);
+    setGacha(items);
     batsuCue(items, members);
   };
   /** 罰ガチャの結果を罰に足した新しい罰の数 */
@@ -422,6 +433,8 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   }
 
   // ため（ドラムロール）の間は「結果は…」を出す
+  const pv = phase === 'batsu' ? pickView(pal, members, pick, choosePick) : null;
+  if (pv) { card = pv.card; controls = pv.controls; }
   const hv = H.view(pal);
   if (hv) { card = hv.card; controls = hv.controls; }
   return (

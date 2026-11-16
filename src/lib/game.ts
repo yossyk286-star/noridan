@@ -11,7 +11,7 @@ import homeruJson from '../data/homeru.json';
 import wolfJson from '../data/wolf.json';
 import pittariJson from '../data/pittari.json';
 import { LEVEL_LABEL } from '../theme';
-import type { Card, Cell, GameEvent, Level, Member, Night, Rule, Segment } from '../types';
+import type { Card, Cell, GameEvent, GachaItem, Level, Member, Night, Rule, Segment } from '../types';
 
 export const BOARD = boardJson as Cell[];
 export const GOAL = BOARD.length - 1;
@@ -47,6 +47,18 @@ export function sexPrefer(members: Member[], p: number, list: number[]) {
   if (opp.length) return opp;
   const any = list.filter((i) => !members[i].sex);
   return any.length ? any : list;
+}
+
+/** 1位の特権：opts[k] がそのまま罰ガチャの中身になる */
+export type BatsuPick = { winner: number; losers: number[]; opts: GachaItem[][] };
+
+/** 一番の人が1人だけならその人、同点なら -1。score(i) が大きいほど上、null は数えへん */
+export function soleBest(idx: number[], score: (i: number) => number | null | undefined): number {
+  const s = idx.map((i) => [i, score(i)] as const).filter((x): x is readonly [number, number] => x[1] != null);
+  if (!s.length) return -1;
+  const top = Math.max(...s.map((x) => x[1]));
+  const w = s.filter((x) => x[1] === top);
+  return w.length === 1 ? w[0][0] : -1;
 }
 
 export function fill(tpl: string, members: Member[], p: number, opts: { noNg?: boolean; shinya?: boolean } = {}): Segment[] {
@@ -323,13 +335,13 @@ export class Decks {
 
   /** 罰ガチャの中身。夜・深夜は罰も過激に（下ネタNGの人には普通の罰） */
   /** 罰ガチャの中身。夜・深夜は罰も過激に（下ネタNGの人には普通の罰）。n が2以上（罰2倍）の時は、2倍にしても意味が通る罰だけ */
-  batsu(members: Member[], p: number, n = 1): { segments: Segment[]; lucky: boolean; night?: 'yoru' | 'shinya' } {
+  batsu(members: Member[], p: number, n = 1, noLucky = false): { segments: Segment[]; lucky: boolean; night?: 'yoru' | 'shinya'; tpl?: string; fo?: { noNg?: boolean; shinya?: boolean } } {
     const pickFrom = (key: string, list: string[]) => {
       if (n < 2) return this.str(key, list, members.length);
       const pool = list.filter(canDouble);
       return pool.length ? this.str(key + '_x2', pool, members.length) : this.str(key, list, members.length);
     };
-    if (Math.random() < CHANCE.lucky) return { segments: fill(this.str('lucky', batsu.lucky, members.length)!, members, p), lucky: true };
+    if (!noLucky && Math.random() < CHANCE.lucky) return { segments: fill(this.str('lucky', batsu.lucky, members.length)!, members, p), lucky: true };
     let list: 'bad' | 'yoru' | 'shinya' = 'bad';
     if (this.night && !members[p].ng) {
       const r = Math.random();
@@ -339,9 +351,36 @@ export class Decks {
       const tpl = pickFrom('batsu_' + list, batsu[list]);
       // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらんかったら普通の罰
       const okX = members.some((m, j) => j !== p && !m.ng);
-      if (tpl && (!tpl.includes('{X}') || okX)) return { segments: fill(tpl, members, p, { noNg: true, shinya: this.night === 'shinya' }), lucky: false, night: list };
+      const fo = { noNg: true, shinya: this.night === 'shinya' };
+      if (tpl && (!tpl.includes('{X}') || okX)) return { segments: fill(tpl, members, p, fo), lucky: false, night: list, tpl, fo };
     }
-    return { segments: fill(pickFrom('batsu', batsu.bad)!, members, p), lucky: false };
+    const tpl = pickFrom('batsu', batsu.bad)!;
+    return { segments: fill(tpl, members, p), lucky: false, tpl, fo: {} };
+  }
+
+  /**
+   * 1位の特権：1位が1人に決まってたら、罰を2つ出して「最下位にやらせる方」を1位が選ぶ。
+   * 天使が出た時・1位が決まらん時は、いつもの罰ガチャ（items）を返す
+   */
+  gachaOrPick(members: Member[], losers: number[], cnt: (i: number) => number, winner = -1): { items: GachaItem[] } | { pick: BatsuPick } {
+    const items = () => ({ items: losers.map((i) => ({ i, n: cnt(i), ...this.batsu(members, i, cnt(i)) })) });
+    if (winner < 0 || !losers.length || losers.includes(winner) || Math.random() < CHANCE.lucky) return items();
+    // 下ネタNGの人が混ざってたら、その人に合わせて引く（夜の罰がその人に行かんように）
+    const ref = losers.find((i) => members[i].ng) ?? losers[0];
+    const n = cnt(ref);
+    const opts: ReturnType<Decks['batsu']>[] = [];
+    for (let k = 0; k < 8 && opts.length < 2; k++) {
+      const r = this.batsu(members, ref, n, true);
+      if (!opts.some((o) => o.tpl === r.tpl)) opts.push(r);
+    }
+    if (opts.length < 2) return items();
+    return {
+      pick: {
+        winner,
+        losers,
+        opts: opts.map((o) => losers.map((i) => ({ i, n: cnt(i), lucky: false, night: o.night, segments: i === ref || !o.tpl ? o.segments : fill(o.tpl, members, i, o.fo) }))),
+      },
+    };
   }
 
 

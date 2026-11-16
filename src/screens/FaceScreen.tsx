@@ -5,8 +5,8 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { CountCard, CountHint, HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Peek, Prog, tileColors } from '../components/ModeParts';
 import { useReady } from '../lib/useReady';
-import { shuffle } from '../lib/game';
-import { StageShell, usePenalty } from '../components/StageShell';
+import { shuffle, soleBest } from '../lib/game';
+import { StageShell, pickView, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
 import { useHold, useReveal } from '../components/Reveal';
 import { HELP } from '../lib/help';
@@ -163,7 +163,7 @@ export default function FaceScreen({ members, level, night, onQuit, onSettings, 
           <ScoreRank members={members} score={score} losers={losers} rv={RV} fg="#f7f3ea" title={`第${round}回戦の結果`} foot={`${losers.map((i) => members[i].name).join('・')}が一番伝わらんかった`} />
         </ModeCard>
       );
-      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers); setPhase('batsu'); }} />;
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers, 1, soleBest(members.map((_, i) => i), (i) => score[i])); setPhase('batsu'); }} />;
       break;
     case 'batsu':
       card = (
@@ -178,6 +178,8 @@ export default function FaceScreen({ members, level, night, onQuit, onSettings, 
     card = <CountCard pal={pal} n={ready.count} fg={fg} prog={`${members[who].name}、顔をつくって…`} note={`0になったら${SEC}秒、顔だけで演じる`} />;
     controls = <CountHint pal={pal}>まだやで…</CountHint>;
   }
+  const pv = phase === 'batsu' ? pickView(pal, members, P.pick, P.choose) : null;
+  if (pv) { card = pv.card; controls = pv.controls; }
   const hv = H.view(pal);
   if (hv) { card = hv.card; controls = hv.controls; }
   return (

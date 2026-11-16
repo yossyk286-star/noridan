@@ -5,7 +5,8 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { CountCard, CountHint, HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { useReady } from '../lib/useReady';
-import { StageShell, usePenalty } from '../components/StageShell';
+import { soleBest } from '../lib/game';
+import { StageShell, pickView, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
 import { Skull, Wani } from '../components/Fx';
 import { useHold, useReveal } from '../components/Reveal';
@@ -229,7 +230,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
           <ScoreRank members={members} score={score} losers={losers} rv={RV} fg="#f7f3ea" title={`第${round}回戦の結果`} foot={`${losers.map((i) => members[i].name).join('・')}が最下位`} />
         </ModeCard>
       );
-      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers); setPhase('batsu'); }} />;
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers, 1, soleBest(members.map((_, i) => i), (i) => score[i])); setPhase('batsu'); }} />;
       break;
     case 'batsu':
       card = (
@@ -244,6 +245,8 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
     card = <CountCard pal={pal} n={ready.count} fg={fg} prog={`${members[who].name}、構えて…`} note="0になったらワニが出てくる" />;
     controls = <CountHint pal={pal}>まだ出てこおへんで</CountHint>;
   }
+  const pv = phase === 'batsu' ? pickView(pal, members, P.pick, P.choose) : null;
+  if (pv) { card = pv.card; controls = pv.controls; }
   const hv = H.view(pal);
   if (hv) { card = hv.card; controls = hv.controls; }
   return (

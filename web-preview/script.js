@@ -319,8 +319,8 @@ function drawBatsuFrom(key, list, n) {
   const pool = list.filter(canDouble);
   return pool.length ? draw(key + "_x2", pool) : draw(key, list);
 }
-function drawBatsu(i, n = 1) {
-  if (Math.random() < CHANCE.lucky) return { lucky: true, html: fill(draw("lucky", DATA.batsu.lucky), i) };
+function drawBatsu(i, n = 1, noLucky = false) {
+  if (!noLucky && Math.random() < CHANCE.lucky) return { lucky: true, html: fill(draw("lucky", DATA.batsu.lucky), i) };
   let list = "bad";
   if (S.night && !S.members[i].ng) {
     const r = Math.random();
@@ -329,9 +329,44 @@ function drawBatsu(i, n = 1) {
   if (list !== "bad") {
     const tpl = drawBatsuFrom("batsu_" + list, DATA.batsu[list], n);
     // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらんかったら普通の罰
-    if (tpl && (!tpl.includes("{X}") || others(i).some(okForYoru))) return { lucky: false, night: list, html: fill(tpl, i, { noNg: true }) };
+    if (tpl && (!tpl.includes("{X}") || others(i).some(okForYoru))) return { lucky: false, night: list, tpl, fo: { noNg: true }, html: fill(tpl, i, { noNg: true }) };
   }
-  return { lucky: false, html: fill(drawBatsuFrom("batsu", DATA.batsu.bad, n), i) };
+  const tpl = drawBatsuFrom("batsu", DATA.batsu.bad, n);
+  return { lucky: false, tpl, fo: {}, html: fill(tpl, i) };
+}
+// 1位の特権：1位が1人に決まってる時は、罰を2つ見せて「最下位にやらせる方」を1位が選ぶ（天使が出たらいつも通りセーフ）
+// 一番の人が1人だけならその人、同点なら -1。score(i) が大きいほど上、null は数えへん
+function soleBest(idx, score) {
+  const s = idx.map((i) => [i, score(i)]).filter(([, v]) => v != null);
+  if (!s.length) return -1;
+  const top = Math.max(...s.map(([, v]) => v)), w = s.filter(([, v]) => v === top);
+  return w.length === 1 ? w[0][0] : -1;
+}
+function makeGacha(losers, n, winner = -1) {
+  const g = S.game;
+  g.pick = null;
+  if (winner >= 0 && losers.length && !losers.includes(winner) && Math.random() >= CHANCE.lucky) {
+    // 下ネタNGの人が混ざってたら、その人に合わせて引く（夜の罰がその人に行かんように）
+    const ref = losers.find((t) => S.members[t].ng) ?? losers[0];
+    const opts = [];
+    for (let k = 0; k < 8 && opts.length < 2; k++) {
+      const r = drawBatsu(ref, n, true);
+      if (!opts.some((o) => o.html === r.html)) opts.push(r);
+    }
+    if (opts.length === 2) {
+      g.pick = { winner, n, losers, opts: opts.map((o) => ({ night: o.night, htmls: losers.map((t) => (t === ref ? o.html : fill(o.tpl, t, o.fo))) })) };
+      g.gacha = [];
+      return;
+    }
+  }
+  g.gacha = losers.map((t) => ({ i: t, n, ...drawBatsu(t, n) }));
+}
+function choosePick(k) {
+  const g = S.game, p = g.pick;
+  if (!p || !p.opts[k]) return;
+  const o = p.opts[k];
+  g.gacha = p.losers.map((t, j) => ({ i: t, n: p.n, lucky: false, night: o.night, html: o.htmls[j], picked: p.winner }));
+  g.pick = null;
 }
 function applyAdds() {
   const g = S.game;

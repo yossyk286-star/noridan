@@ -21,7 +21,7 @@ const K = kingJson as unknown as Record<Kind, string[]>;
 
 /**
  * 王様ゲーム：1人ずつ長押しで番号を見る（1人だけ王様）。王様だーれだ！→ 命令（アプリのおすすめ or 自分で）→ 番号を公開。
- * できへんかった人は罰ガチャ。夜モードなら夜・深夜の命令も（深夜の触れ合う系は下ネタNGの人を選ばへん・なるべく男女）
+ * できへんかった人は罰ガチャ2倍（絶対服従）。夜モードなら夜・深夜の命令も（深夜の触れ合う系は下ネタNGの人を選ばへん・なるべく男女）
  */
 export default function KingScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
   useKeepAwake();
@@ -155,7 +155,7 @@ export default function KingScreen({ members, level, night, onQuit, onSettings, 
               );
             })}
           </View>
-          <Note fg={fg}>命令を実行！できへんかった人は下で選んで罰ガチャ</Note>
+          <Note fg={fg}>命令を実行！できへんかった人は下で選んで罰ガチャ2倍</Note>
           <View style={s.chips}>
             {cand.map((w) => {
               const on = refuse.includes(w);
@@ -169,7 +169,7 @@ export default function KingScreen({ members, level, night, onQuit, onSettings, 
         </ModeCard>
       );
       controls = refuse.length ? (
-        <BigButton pal={pal} danger label={`できへんかった${refuse.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(refuse); setPhase('batsu'); }} />
+        <BigButton pal={pal} danger label={`できへんかった${refuse.map((i) => members[i].name).join('・')}に罰ガチャ×2`} onPress={() => { P.draw(refuse, 2); setPhase('batsu'); }} />
       ) : (
         <RoundEnd pal={pal} next="もう1回" onNext={deal} onEnd={() => finish()} />
       );

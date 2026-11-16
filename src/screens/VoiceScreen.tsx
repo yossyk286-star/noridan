@@ -5,7 +5,8 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
-import { StageShell, usePenalty } from '../components/StageShell';
+import { soleBest } from '../lib/game';
+import { StageShell, pickView, usePenalty } from '../components/StageShell';
 import { Tap } from '../components/Tap';
 import { HELP } from '../lib/help';
 import { RevealItem, useHold, useReveal } from '../components/Reveal';
@@ -278,7 +279,7 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
         </ModeCard>
         </Pressable>
       );
-      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers, x); setPhase('batsu'); }} />;
+      controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers, x, soleBest(members.map((_, i) => i), (i) => res[i])); setPhase('batsu'); }} />;
       break;
     case 'batsu':
       card = (
@@ -290,6 +291,8 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
       break;
   }
   // ため（ドラムロール）の間は「結果は…」を出す
+  const pv = phase === 'batsu' ? pickView(pal, members, P.pick, P.choose) : null;
+  if (pv) { card = pv.card; controls = pv.controls; }
   const hv = H.view(pal);
   if (hv) { card = hv.card; controls = hv.controls; }
   return (
