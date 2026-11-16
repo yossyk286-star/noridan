@@ -34,6 +34,8 @@ const S = {
   screen: "home", hist: [], ask: null,
   members: cleanMembers(store.get("nd_members", null)) || EXAMPLE.map((m) => ({ ...m })),
   isExample: cleanMembers(store.get("nd_members", null)) === null,
+  restored: cleanMembers(store.get("nd_members", null)) !== null, // 前回のメンバーが残ってる（いじったら false）
+  memOpen: null, // メンバー入力で男/女を開いてる人
   level: ((v) => (v in LV ? v : "futsu"))(store.get("nd_level", "futsu")),
   night: (() => { const v = store.get("nd_night", false); return v === true ? "yoru" : v === "yoru" || v === "shinya" ? v : false; })(), // false | "yoru" | "shinya"
   nightAsk: false,  // false | "yoru" | "shinya"（確認画面）
@@ -48,7 +50,6 @@ const S = {
   voice: store.get("nd_voice", false) === true, // お題の読み上げ
   step: 1,          // ホーム: 1=メンバー 2=モード選択
   sheet: false,     // 設定シート
-  tut: store.get("nd_tut", false) ? null : 0, // 初回だけ遊び方
   flip: false,      // 上下反転
   menu: false,      // ゲーム中の「⋯」メニュー
   shareMsg: "",

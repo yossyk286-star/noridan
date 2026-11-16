@@ -252,36 +252,34 @@ function logoBlock() {
 function vHome1() {
   const ms = S.members, ok = ms.length >= 2;
   const groups = loadGroups().filter((g) => g.map((m) => m.name).join() !== ms.map((m) => m.name).join());
+  const last = S.restored && ms.length >= 2; // 前回のメンバーがそのまま残ってる
+  const open = S.memOpen != null && ms[S.memOpen] ? S.memOpen : null;
   return `
   <div class="home-top">${logoBlock()}<button class="icon-btn" data-act="sheet" aria-label="設定">${ICON.gear}</button></div>
-  <div class="step-dots"><i class="on"></i><i></i><span>メンバー</span></div>
-  ${S.seen.members ? "" : `<div class="home-coach" role="note">
-    <b>遊ぶ人の名前を入れよう</b>
-    <ol>
-      <li>名前を入れて「＋」を押す（12人まで）</li>
-      <li>2人以上入れたら「遊ぶ」を押す</li>
-    </ol>
-    <button data-act="coachOk" data-k="members">わかった</button>
-  </div>`}
-  <div class="mem-head"><p class="step-h"><span class="num">①</span>メンバー<small>${ms.length}人</small></p>${S.isExample ? `<button class="text-btn" data-act="clearAll">例を全部消す</button>` : ""}</div>
+  ${last ? `<button class="last-group" data-act="step2">
+    <small>前回のメンバー</small>
+    <span class="lg-row">${ms.map((_, i) => dot(i)).join("")}<b>${ms.map((m) => esc(m.name)).join("・")}</b></span>
+    <span class="lg-go">このまま遊ぶ ▶</span>
+  </button>
+  <p class="h2">それか、メンバーを変える</p>` : ""}
+  <div class="mem-head"><p class="step-h">メンバー<small>${ms.length}人</small></p>${S.isExample ? `<button class="text-btn" data-act="clearAll">例を全部消す</button>` : ""}</div>
   <form class="add1" id="addForm">
-    <input id="inName" maxlength="10" placeholder="名前を入れて＋（続けて入れられる）" autocomplete="off" enterkeyhint="done">
+    <input id="inName" maxlength="10" placeholder="名前を入れて Enter" autocomplete="off" enterkeyhint="done">
     <button class="add-btn" type="submit" aria-label="追加">${ICON.plus}</button>
   </form>
   ${S.addMsg ? `<p class="add-msg" role="alert">${esc(S.addMsg)}</p>` : ""}
-  <section class="members" aria-label="メンバー">
-    ${S.isExample ? `<p class="note">↓は例。自分らの名前に入れ替えてな</p>` : ""}
-    ${ms.map((m, i) => `
-      <div class="mem">
-        ${dot(i)}
-        <div class="nm"><b>${esc(m.name)}</b></div>
-        <div class="sex" role="group" aria-label="${esc(m.name)}の性別">${[["m", "男"], ["f", "女"]].map(([v, t]) => `<button data-act="sex" data-i="${i}" data-v="${v}" aria-pressed="${m.sex === v}" class="${v}">${t}</button>`).join("")}</div>
-        ${S.night ? `<button class="ng" data-act="ng" data-i="${i}" aria-pressed="${!!m.ng}">${m.ng ? "下ネタNG" : "下ネタOK"}</button>` : "<span></span>"}
-        <button class="x" data-act="del" data-i="${i}" aria-label="${esc(m.name)}を外す">${ICON.close}</button>
-      </div>`).join("")}
+  ${S.isExample ? `<p class="note">↓は例。自分らの名前に入れ替えてな</p>` : ""}
+  <section class="mem-chips" aria-label="メンバー">
+    ${ms.map((m, i) => `<span class="mem-chip ${open === i ? "open" : ""}" style="--mc:${colorOf(i)}"><button class="mc-name" data-act="memOpen" data-i="${i}" aria-expanded="${open === i}">${dot(i)}<b>${esc(m.name)}</b>${m.sex ? `<em>${m.sex === "m" ? "男" : "女"}</em>` : ""}${S.night && m.ng ? `<em class="ngm">NG</em>` : ""}</button><button class="x" data-act="del" data-i="${i}" aria-label="${esc(m.name)}を外す">${ICON.close}</button></span>`).join("")}
   </section>
+  ${open !== null ? `<div class="mem-detail" style="--mc:${colorOf(open)}">
+    <b>${esc(ms[open].name)}</b>
+    <div class="sex" role="group" aria-label="${esc(ms[open].name)}の性別">${[["m", "男"], ["f", "女"]].map(([v, t]) => `<button data-act="sex" data-i="${open}" data-v="${v}" aria-pressed="${ms[open].sex === v}" class="${v}">${t}</button>`).join("")}</div>
+    ${S.night ? `<button class="ng" data-act="ng" data-i="${open}" aria-pressed="${!!ms[open].ng}">${ms[open].ng ? "下ネタNG" : "下ネタOK"}</button>` : ""}
+  </div>` : ""}
+  <p class="note">名前を押すと 男/女${S.night ? "・下ネタNG" : ""} を選べる（深夜のペアゲームだけで使う。入れんでもOK）</p>
   ${groups.length ? `<section class="groups">
-    <p class="h2">前回のメンバー</p>
+    <p class="h2">ほかのメンバー</p>
     ${groups.map((g, k) => `<button class="group" data-act="loadGroup" data-i="${k}">${ICON.users}<span>${g.map((m) => esc(m.name)).join("・")}</span></button>`).join("")}
   </section>` : ""}
   <div class="dock">
@@ -334,39 +332,29 @@ function vModeTabs() {
   const okN = S.members.filter((m) => !m.ng).length;
   const card = (x) => {
     const why = x.min && S.members.length < x.min ? `${x.min}人から遊べる` : x.ok && okN < x.ok ? `下ネタOKの人が${x.ok}人から` : "";
-    return `<button class="mode-card2 ${x.cat === "deep" ? "deep-mode" : ""}" data-act="start" data-m="${x.m}" ${why ? "disabled" : ""}><span class="mc-top"><i class="mode-ic">${ICON[x.ic] || ""}</i><em>${x.t}</em></span><b>${esc(MODE_NAME[x.m])}</b><span class="mc-desc">${why || HELP[x.m].desc}</span></button>`;
+    const ppl = x.ok ? `OK${x.ok}人〜` : `${x.min || 2}人〜`;
+    return `<button class="mode-row cat-${x.cat}" data-act="start" data-m="${x.m}" ${why ? "disabled" : ""}><i class="mode-ic">${ICON[x.ic] || ""}</i><span class="mr-tx"><b>${esc(MODE_NAME[x.m])}</b><span>${why || HELP[x.m].desc}</span></span><span class="mr-meta">${x.t}<br>${ppl}</span></button>`;
   };
-  return `<div class="mode-tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" class="${k === "deep" ? "deep" : ""}" data-act="modeTab" data-v="${k}" aria-selected="${k === tab}">${k === "fav" ? "★ " : ""}${t}</button>`).join("")}</div>
-    <div class="mode-grid">${shown.map(card).join("")}</div>`;
+  const count = (k) => (k === "fav" ? favs.length : k === "all" ? list.length : list.filter((x) => x.cat === k).length);
+  return `<div class="mode-tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" class="${k === "deep" ? "deep" : ""}" data-act="modeTab" data-v="${k}" aria-selected="${k === tab}">${k === "fav" ? "★ " : ""}${t}<em>${count(k)}</em></button>`).join("")}</div>
+    <div class="mode-list">${shown.map(card).join("")}</div>`;
 }
 
 function vHome2() {
   return `
-  <div class="home-top">
+  <div class="home-top bar2">
     <button class="icon-btn" data-act="step1" aria-label="メンバーに戻る">${ICON.back}</button>
-    <div class="step-dots"><i class="on"></i><i class="on"></i><span>モード</span></div>
+    <button class="mem-pill" data-act="step1" aria-label="メンバーを変える">${S.members.slice(0, 6).map((_, i) => dot(i)).join("")}<b>${S.members.length}人</b><small>変える</small></button>
     <button class="icon-btn" data-act="sheet" aria-label="設定">${ICON.gear}</button>
   </div>
-  <div class="mchips">${S.members.map((m, i) => `<span class="mchip">${dot(i)}${esc(m.name)}</span>`).join("")}</div>
-  ${S.seen.mode ? "" : `<div class="home-coach" role="note">
-    <b>遊び方を選ぼう</b>
-    <ol>
-      <li>地獄度はお題の攻め具合。迷ったら「普通」</li>
-      <li>遊び方を押したら、まず説明が出る</li>
-      <li>やめたい時は「⋯」→結果発表</li>
-    </ol>
-    <button data-act="coachOk" data-k="mode">わかった</button>
-  </div>`}
-  <section style="display:flex;flex-direction:column;gap:10px">
-    <p class="step-h"><span class="num">②</span>地獄度<small>お題・罰の攻め具合</small></p>
-    <div class="levels">
-      ${Object.entries(LV).map(([k, v]) => `<button class="lv" data-act="lv" data-v="${k}" aria-pressed="${S.level === k}">${v}<small>${LV_SUB[k]}</small></button>`).join("")}
-    </div>
-  </section>
-  <section style="display:flex;flex-direction:column;gap:10px">
-    <p class="step-h"><span class="num">③</span>遊び方</p>
-    ${vModeTabs()}
-  </section>
+  <div class="seg-lv" role="group" aria-label="地獄度（お題・罰の攻め具合）">
+    ${Object.entries(LV).map(([k, v]) => `<button class="lv-${k}" data-act="lv" data-v="${k}" aria-pressed="${S.level === k}">${v}<small>${LV_SUB[k]}</small></button>`).join("")}
+  </div>
+  <button class="hero-mode" data-act="start" data-m="odai">
+    <span><small>迷ったらこれ</small><b>${esc(MODE_NAME.odai)}</b><em>${esc(HELP.odai.desc)}</em></span>
+    <i aria-hidden="true">▶</i>
+  </button>
+  ${vModeTabs()}
   ${S.night ? `<section class="night-switch">
     <p class="h2">夜の深さ</p>
     <div class="night-lv three">
@@ -430,48 +418,13 @@ function vSheet() {
         <p class="note">夜はしゃべるだけ、深夜は軽いタッチあり（脱ぐは無し）。下ネタNGの人には振られへん。夜お題は「無理」で罰なしパス。</p>
         <button class="ghost" data-act="nightOff">夜モードをやめる</button>
       </div>` : ""}
-      <button class="ghost" data-act="coachReset">遊び方をもう一回見る<small class="ghost-sub">最初の説明と、各画面のひとこと説明がまた出る</small></button>
+      <button class="ghost" data-act="coachReset">ひとこと説明をもう一回出す<small class="ghost-sub">ゲーム中に出る「わかった」の説明がまた出る</small></button>
       <button class="ghost" data-act="sheetClose">閉じる</button>
       <p class="sheet-foot"><a href="/privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a>・お酒は20歳から。飲めへん人はソフドリでOK</p>
     </div>
   </div>`;
 }
 
-// ---------- views: tutorial ----------
-const TUT = [
-  {
-    step: "1 / 3",
-    title: "名前を入れて、<br>遊び方を選ぶ",
-    text: "遊ぶ人の名前を入れて、遊び方を選ぶだけ。遊び方は<b>18個</b>。どれも始める前に<b>説明が出る</b>から大丈夫。",
-    art: () => `<div class="tut-modes">${["アホお題", "すごろく", "神経衰弱", "価値観ナンバー", "ジェスチャー", "褒め殺し", "NGワード", "ぶっちゃけ投票", "ワードウルフ", "ピッタリ予想", "傾けたらアウト", "全力シェイク", "ピタッとストップ", "ロシアンタップ", "爆弾パス", "ハイ&ロー", "反射神経バトル", "声デカ選手権"].map((m) => `<span>${m}</span>`).join("")}</div>`,
-  },
-  {
-    step: "2 / 3",
-    title: "負けたら罰ガチャ",
-    text: "負けた人は<b>罰ガチャ</b>を引く。ドクロなら罰、たまに出る<b>天使</b>なら罰なし（飲めへん人はソフドリでOK）。",
-    art: () => `<div class="gacha" style="max-width:280px"><div class="gacha-item" style="--d:.1s;--mc:var(--futsu)"><div class="capsule"><i class="top"></i><i class="bot"></i></div><div class="gacha-txt"><b>まゆの罰</b><p>次の番まで語尾が「ござる」</p></div></div></div>`,
-  },
-  {
-    step: "3 / 3",
-    title: "困ったら「⋯」",
-    text: "画面のフチの色は<b>いまの人の色</b>。右上の<b>「⋯」</b>で、ルール・結果発表・設定が開ける。「〇〇だけ見て」の時は、他の人は見たらアカン。",
-    art: () => `<div class="tut-menu"><span>${ICON.book}ルール早見表</span><span>${ICON.flag}結果発表</span><span>${ICON.gear}設定</span></div>`,
-  },
-];
-function vTut() {
-  const t = TUT[S.tut], last = S.tut === TUT.length - 1;
-  return `
-  <div class="tut" role="dialog" aria-label="遊び方">
-    <div class="tut-in">
-      <div class="tut-top"><div class="tut-dots">${TUT.map((_, i) => `<i class="${i <= S.tut ? "on" : ""}"></i>`).join("")}</div><button class="tut-skip" data-act="tutEnd">スキップ</button></div>
-      <div class="tut-art" key="${S.tut}">${t.art()}</div>
-      <div class="tut-step">${t.step}</div>
-      <h2>${t.title}</h2>
-      <p>${t.text}</p>
-      <button class="big" data-act="${last ? "tutEnd" : "tutNext"}">${last ? "はじめる" : "次へ"}</button>
-    </div>
-  </div>`;
-}
 
 // ---------- views: stage ----------
 function vChips(head, act, list, showCount = true) {
@@ -2589,7 +2542,7 @@ function render(anim) {
   rvSetup(anim);
   drSetup();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
-  overlay.innerHTML = S.tut !== null ? vTut() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
+  overlay.innerHTML = S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   jaWrap(overlay);
   if (onStage) { fixHeight(); fitCard(); }
   if (anim) { window.scrollTo(0, 0); cue(); if (S.gIntro) { clearTimeout(S.speakT); S.speakT = setTimeout(speakNow, GACHA_T * 1000); } else speakNow(); postFx(); }
@@ -2835,7 +2788,7 @@ function boomFlash() {
 }
 function paintDie() { const d = document.getElementById("die"); if (d) d.innerHTML = dieFace(S.game.die); play("clack"); }
 
-function saveMembers() { S.isExample = false; store.set("nd_members", S.members); }
+function saveMembers() { S.isExample = false; S.restored = false; store.set("nd_members", S.members); }
 function onAdd(e) {
   e.preventDefault();
   const input = document.getElementById("inName");
@@ -2895,7 +2848,8 @@ function onClick(e) {
   switch (act) {
     case "pickBatsu": choosePick(+b.dataset.k); play("buzzer"); vib([60, 30, 120]); render(); break;
     // home
-    case "del": S.members.splice(i, 1); S.addMsg = ""; saveMembers(); render(); break;
+    case "del": S.members.splice(i, 1); S.addMsg = ""; S.memOpen = null; saveMembers(); render(); break;
+    case "memOpen": S.memOpen = S.memOpen === i ? null : i; render(); break;
     case "modeTab": S.modeTab = b.dataset.v; store.set("nd_tab", S.modeTab); render(); document.querySelector(".mode-tabs [aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "center" }); break;
     case "lv": S.level = b.dataset.v; store.set("nd_level", S.level); render(); break;
     case "step1": S.step = 1; render(); break;
@@ -2933,9 +2887,6 @@ function onClick(e) {
     case "vibe": S.vibe = !S.vibe; store.set("nd_vibe", S.vibe); render(); vib(40); break;
     case "voice": S.voice = !S.voice; store.set("nd_voice", S.voice); render(); if (S.voice) speak("読み上げオン"); else stopSpeak(); break;
     case "dual": S.dual = !S.dual; store.set("nd_dual", S.dual); S.menu = false; render(); break;
-    case "tut": S.sheet = false; S.tut = 0; render(); break;
-    case "tutNext": S.tut++; render(); break;
-    case "tutEnd": S.tut = null; store.set("nd_tut", true); render(); break;
     case "flip": S.flip = !S.flip; S.menu = false; render(); break;
 
     // play
@@ -2948,7 +2899,7 @@ function onClick(e) {
       break;
     }
     case "next": finishCard(); break;
-    case "coachReset": S.seen = {}; store.set("nd_seen", {}); store.set("nd_tut", false); S.sheet = false; S.tut = 0; render(); break;
+    case "coachReset": S.seen = {}; store.set("nd_seen", {}); S.sheet = false; render(); break;
     case "coachOk": S.seen[b.dataset.k] = 1; store.set("nd_seen", S.seen); render(); break;
     case "rules": S.menu = false; S.rules = true; render(); break;
     case "rulesClose": S.rules = false; render(); break;

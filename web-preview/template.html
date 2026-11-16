@@ -1667,6 +1667,63 @@ body[data-level="jigoku"] .odai { --tile-fg: #f7f3ea; }
 .night-box.off { border-color: color-mix(in srgb, var(--night) 60%, transparent); }
 .sheet-foot { margin: 2px 0 0; text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); }
 .sheet-foot a { color: inherit; }
+
+/* 案5：メンバー入力（前回のメンバーを一番上に・名前はチップで） */
+.home-top .logo { font-size: clamp(44px, 14vw, 64px); }
+.last-group { display: flex; flex-direction: column; gap: 8px; text-align: left; padding: 16px 18px; border-radius: 20px; background: var(--yuru); color: var(--ink); box-shadow: 0 6px 0 #b8901a; }
+.last-group small { font-size: 12px; font-weight: 900; letter-spacing: .08em; }
+.last-group .lg-row { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.last-group .lg-row .dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 13px; color: var(--ink); box-shadow: 0 0 0 2px var(--ink); flex: none; }
+.last-group .lg-row b { margin-left: 6px; font-size: 16px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.last-group .lg-go { align-self: flex-end; font-family: var(--display); font-size: 18px; }
+.mem-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.mem-chip { display: inline-flex; align-items: center; border-radius: 999px; background: rgba(247,243,234,.08); border: 1.5px solid transparent; }
+.mem-chip.open { border-color: var(--mc); }
+.mem-chip .mc-name { display: inline-flex; align-items: center; gap: 7px; padding: 5px 4px 5px 5px; color: var(--paper); font-weight: 900; font-size: 16px; }
+.mem-chip .dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; color: var(--ink); }
+.mem-chip em { font-style: normal; font-size: 12px; color: var(--muted); }
+.mem-chip em.ngm { color: var(--night); }
+.mem-chip .x { width: 32px; height: 32px; display: grid; place-items: center; color: var(--muted); }
+.mem-chip .x svg { width: 15px; height: 15px; }
+.mem-detail { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; border: 1.5px solid var(--mc); }
+.mem-detail b { flex: 1; font-size: 15px; }
+.mem-detail .sex { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.mem-detail .sex button { width: 44px; height: 34px; font-size: 14px; font-weight: 900; color: var(--muted); }
+.mem-detail .sex button + button { border-left: 1px solid var(--line); }
+.mem-detail .sex button.m[aria-pressed="true"] { background: #3ec7ff; color: #0b1a24; }
+.mem-detail .sex button.f[aria-pressed="true"] { background: #ff5aa5; color: #2a0716; }
+/* 案1：遊び方選び（地獄度はスイッチ・迷ったらこれ・行の一覧） */
+.home-top.bar2 { align-items: center; }
+.mem-pill { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; padding: 6px 12px 6px 6px; border-radius: 14px; background: rgba(247,243,234,.08); color: var(--paper); }
+.mem-pill .dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 12px; color: var(--ink); flex: none; }
+.mem-pill b { margin-left: 4px; font-size: 14px; font-weight: 900; }
+.mem-pill small { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--muted); }
+.seg-lv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: rgba(247,243,234,.08); }
+.seg-lv button { padding: 8px 0; border-radius: 10px; font-weight: 900; font-size: 15px; color: var(--muted); line-height: 1.2; }
+.seg-lv button small { display: block; font-size: 12px; font-weight: 700; opacity: .8; }
+.seg-lv button.lv-yurume[aria-pressed="true"] { background: var(--yuru); color: var(--ink); }
+.seg-lv button.lv-futsu[aria-pressed="true"] { background: var(--futsu); color: var(--ink); }
+.seg-lv button.lv-jigoku[aria-pressed="true"] { background: #000; color: var(--blood); box-shadow: inset 0 0 0 2px var(--blood); }
+.hero-mode { display: flex; align-items: center; gap: 14px; text-align: left; padding: 16px 18px; border-radius: 22px; background: var(--yuru); color: var(--ink); box-shadow: 0 6px 0 #b8901a; }
+.hero-mode > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hero-mode small { font-size: 12px; font-weight: 900; letter-spacing: .08em; }
+.hero-mode b { font-family: var(--display); font-weight: 400; font-size: 28px; line-height: 1.15; }
+.hero-mode em { font-style: normal; font-size: 13px; font-weight: 700; }
+.hero-mode i { flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--ink); color: var(--yuru); display: grid; place-items: center; font-style: normal; font-size: 22px; }
+.mode-tabs button em { font-style: normal; margin-left: 5px; font-size: 12px; opacity: .6; }
+.mode-list { display: flex; flex-direction: column; gap: 8px; }
+.mode-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: rgba(247,243,234,.06); text-align: left; color: var(--paper); }
+.mode-row:active { transform: translateY(2px); }
+.mode-row[disabled] { opacity: .45; }
+.mode-row .mode-ic { grid-row: auto; flex: none; width: 44px; height: 44px; color: var(--ink); background: var(--yuru); }
+.mode-row.cat-phone .mode-ic { background: #4dd4ff; }
+.mode-row.cat-talk .mode-ic { background: var(--futsu); }
+.mode-row.cat-brain .mode-ic { background: #7cf06b; }
+.mode-row.cat-deep .mode-ic { background: var(--deep); color: #fff; }
+.mode-row .mr-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mode-row .mr-tx b { font-size: 16px; font-weight: 900; }
+.mode-row .mr-tx span { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mode-row .mr-meta { flex: none; text-align: right; font-size: 12px; font-weight: 700; color: var(--muted); line-height: 1.5; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
