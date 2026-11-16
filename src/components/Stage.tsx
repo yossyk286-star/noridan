@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import batsuJson from '../data/batsu.json';
+const QUIPS: string[] = batsuJson.quip;
 import { Tap } from './Tap';
 import type React from 'react';
 import { Alert, Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
@@ -443,6 +445,8 @@ export function GachaCard({ members, items: raw }: { pal: Pal; members: Member[]
     setPassTick((t) => t + 1);
   };
   const allLucky = items.every((g) => g.lucky);
+  // 全員セーフの時の、天使のひとこと（同じガチャの間は同じ言葉）
+  const quip = useMemo(() => QUIPS[Math.floor(Math.random() * QUIPS.length)], [raw]);
   const mixed = !allLucky && items.some((g) => g.lucky);
   const look = allLucky ? LUCKY_LOOK : BATSU_LOOK;
   const { dual } = usePrefs();
@@ -479,6 +483,7 @@ export function GachaCard({ members, items: raw }: { pal: Pal; members: Member[]
       <View style={{ alignItems: 'center', gap: 4 }}>
         {allLucky ? <Angel /> : items.some((g) => g.n > 1 && !g.lucky) ? <TwinSkulls /> : <Skull />}
         <Text style={[styles.batsuHead, allLucky && { color: '#d99a00' }, !allLucky && items.some((g) => g.n > 1 && !g.lucky) && { fontSize: 26, color: '#ff2a2a' }]}>{allLucky ? 'ラッキー！セーフ' : items.some((g) => g.n > 1 && !g.lucky) ? '罰ゲーム2倍！' : '罰ゲーム確定'}</Text>
+        {allLucky && <Text style={styles.quip}>{quip}</Text>}
       </View>
       <View style={[styles.cardBody, { gap: 14 }]}>
         {items.map((g, k) => (
@@ -1036,6 +1041,7 @@ const styles = StyleSheet.create({
   endBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, width: 74, height: 37, borderRadius: 12 },
   rvDot: { position: 'absolute', bottom: -5, right: -5, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   rvText: { fontSize: 9, fontWeight: '900' },
+  quip: { color: '#8a6a00', fontSize: 14, fontWeight: '900', opacity: 0.85 },
   teamLine: { position: 'absolute', left: 6, right: 6, bottom: -8, height: 4, borderRadius: 2 },
   undoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, width: 66, height: 37, borderRadius: 12 },
   menuBtn: { width: 37, height: 37, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },

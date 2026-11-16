@@ -1235,44 +1235,19 @@ function rtTap(t) {
 }
 
 // ---------- 山手線ゲーム ----------
-// スマホが「パン・パン」と手拍子、3拍目で番の人が答える。1周ごとに速くなる。詰まった人が罰
-const YA_BPM = { yurume: 84, futsu: 100, jigoku: 120 };
+// お題が出たら、みんなで準備してから始める。手拍子（パン・パン）は自分らでやる。詰まった人が罰
 function yaRound() {
   const g = S.game, ya = g.ya;
   ya.round++; g.turn = ya.round; ya.topic = draw("yama_" + S.level, DATA.yama[S.level] || DATA.yama.futsu);
-  ya.start = (ya.round - 1) % S.members.length; ya.who = ya.start; ya.said = 0; ya.beat = 0; ya.bpm = YA_BPM[S.level] || 100; ya.loser = null;
-  g.doer = ya.who; ya.phase = "ready";
+  ya.start = (ya.round - 1) % S.members.length; ya.loser = null;
+  g.doer = ya.start; ya.phase = "ready";
 }
-function yaPaint() {
-  const ya = S.game?.ya; if (!ya) return;
-  document.querySelectorAll("[data-yb]").forEach((el) => el.classList.toggle("on", +el.dataset.yb === ya.beat % 3));
-  const w = document.getElementById("yaWho");
-  if (w) { w.textContent = S.members[ya.who].name; w.style.setProperty("--mc", colorOf(ya.who)); }
-  const b = document.getElementById("yaBpm"); if (b) b.textContent = `テンポ ${ya.bpm}`;
-  document.body.style.setProperty("--pc", colorOf(ya.who));
-}
-function yaGo() {
-  const g = S.game, ya = g.ya;
-  ya.phase = "play"; ya.beat = -1; render(true);
-  const tick = () => {
-    if (S.game?.ya !== ya || ya.phase !== "play") return;
-    ya.beat++;
-    const k = ya.beat % 3;
-    if (k === 0 && ya.beat > 0) {
-      // 答えの拍が終わったら次の人へ。1周したらテンポアップ
-      ya.who = (ya.who + 1) % S.members.length; ya.said++; g.doer = ya.who;
-      if (ya.who === ya.start) ya.bpm = Math.min(170, ya.bpm + 8);
-    }
-    if (k < 2) play("clack"); else { play("tick"); vib(30); }
-    yaPaint();
-    ya.t = setTimeout(tick, 60000 / ya.bpm);
-  };
-  ya.t = setTimeout(tick, 500);
-}
+function yaSwap() { const ya = S.game.ya; ya.topic = draw("yama_" + S.level, DATA.yama[S.level] || DATA.yama.futsu); play("flip"); render(); }
+function yaGo() { const ya = S.game.ya; ya.phase = "play"; play("coin"); render(true); }
 function yaStuck() {
   const g = S.game, ya = g.ya;
   if (ya.phase !== "play") return;
-  clearTimeout(ya.t); ya.phase = "who"; ya.loser = ya.who; g.doer = -1;
+  ya.phase = "who"; ya.loser = ya.start; g.doer = -1;
   play("buzzer"); vib([120, 60, 120]); render(true);
 }
 

@@ -271,6 +271,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       </View>
 
       {/* 地獄度：細い切り替えスイッチ（お題・罰の攻め具合） */}
+      <Text style={s.lvNote}>地獄度：お題と罰のキツさ</Text>
       <View style={s.seg} accessibilityLabel="地獄度（お題・罰の攻め具合）">
         {LEVELS.map((l) => {
           const on = level === l;
@@ -503,6 +504,7 @@ const s = StyleSheet.create({
   seg: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.08)' },
   segBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   segText: { color: C.muted, fontWeight: '900', fontSize: 15 },
+  lvNote: { color: C.muted, fontWeight: '700', fontSize: 12, opacity: 0.75, marginBottom: -4 },
   segSub: { color: C.muted, fontWeight: '700', fontSize: 12, opacity: 0.8 },
   hero: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 22, backgroundColor: C.yuru, shadowColor: '#b8901a', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   heroHead: { color: C.ink, fontSize: 12, fontWeight: '900', letterSpacing: 1 },

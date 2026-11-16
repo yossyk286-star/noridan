@@ -15,7 +15,7 @@ export const C = {
 };
 
 export const LEVEL_LABEL: Record<Level, string> = { yurume: 'ゆるめ', futsu: '普通', jigoku: '地獄' };
-export const LEVEL_SUB: Record<Level, string> = { yurume: '初手はこれ', futsu: 'いつもの', jigoku: '覚悟しろ' };
+export const LEVEL_SUB: Record<Level, string> = { yurume: '軽いお題・軽い罰', futsu: 'ちょい恥ずかしい', jigoku: '容赦なし・重い罰' };
 
 /** 地獄度ごとの画面の色。背景はどれも暗い色にそろえて、地獄度の色は札の縁だけに使う（見やすさ優先） */
 export type Pal = { bg: string; fg: string; muted: string; chip: string; cardBg: string; cardFg: string; cardEdge: string; /** ネオン看板の時の管の色 */ neon?: string; /** 地獄（赤黒の配色） */ jigoku?: boolean };

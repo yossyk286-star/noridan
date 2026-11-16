@@ -39,7 +39,7 @@ const GAP = 70;
 function Safety({ fg }: { fg: string }) {
   return (
     <View style={s.safe}>
-      <Text style={s.safeTitle}>⚠ スマホが飛ばんように</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Icon name="warn" color="#e8780a" size={16} /><Text style={s.safeTitle}>スマホが飛ばんように</Text></View>
       <Text style={[s.safeText, { color: fg }]}>ガッチリ握る（ストラップは手首に）・周りの人やグラスから離れる・濡れた手はNG・手は絶対に離さへん</Text>
     </View>
   );

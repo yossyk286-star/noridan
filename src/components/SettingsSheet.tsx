@@ -5,6 +5,7 @@ import { ALLOW_SHINYA } from '../lib/game';
 import { useSeen } from '../lib/coach';
 import { C, F } from '../theme';
 import type { Night } from '../types';
+import { GoHome } from './Extras';
 
 type Props = {
   visible: boolean;
@@ -22,6 +23,8 @@ type Props = {
   onNoTouch: (on: boolean) => void;
   passOn: boolean;
   onPass: (on: boolean) => void;
+  goHome: string | null;
+  onGoHome: (t: string | null) => void;
   water: boolean;
   onWater: (on: boolean) => void;
   voice: boolean;
@@ -36,7 +39,7 @@ type Props = {
 };
 
 /** 歯車から開く設定。夜モード（20歳以上）もここからオンにする */
-export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, sober, onSober, noTouch, onNoTouch, passOn, onPass, water, onWater, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
+export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, sober, onSober, noTouch, onNoTouch, passOn, onPass, goHome, onGoHome, water, onWater, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
   const { resetSeen } = useSeen();
   const [privacy, setPrivacy] = useState(false);
   return (
@@ -50,6 +53,7 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
             <Toggle label="お酒なし" sub="「飲む」罰やお題を出さへん" on={sober} onPress={() => onSober(!sober)} />
             <Toggle label="体に触るのなし" sub="くすぐり・ハグ・肩もみ系の罰と命令を出さへん" on={noTouch} onPress={() => onNoTouch(!noTouch)} />
             <Toggle label="パス券" sub="1人1回、罰をゆるい罰に替えられる" on={passOn} onPress={() => onPass(!passOn)} />
+            <GoHome time={goHome} onChange={onGoHome} />
             <Toggle label="お水タイム" sub="30分ごとに「全員お水をひと口」のお知らせ" on={water} onPress={() => onWater(!water)} />
             <Text style={s.sec}>音と画面</Text>
             <Toggle label="効果音" sub="めくる音・ガチャ・爆発" on={sound} onPress={() => onSound(!sound)} />

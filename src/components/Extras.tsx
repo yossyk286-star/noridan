@@ -168,7 +168,7 @@ export function GoHome({ time, onChange }: { time: string | null; onChange: (t: 
   const left = minsLeft(time);
   return (
     <View style={[s.tool, !!time && { borderColor: '#4dd4ff' }]}>
-      <Text style={s.toolHead}>🚃 帰る時間</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Icon name="gohome" color="#4dd4ff" size={18} /><Text style={s.toolHead}>帰る時間</Text></View>
       {time ? (
         <>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -204,7 +204,11 @@ export function Toast({ text, kind, onHide }: { text: string; kind: string; onHi
   return (
     <Animated.View style={[s.toastWrap, { transform: [{ translateY: y }] }]} pointerEvents="box-none">
       <Tap onPress={onHide} style={[s.toast, kind === 'train' && { backgroundColor: '#4dd4ff' }, kind === 'water' && { backgroundColor: '#7cf06b' }]}>
-        <Text style={s.toastText}>{text}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {kind === 'train' && <Icon name="gohome" color={C.ink} size={22} />}
+          {kind === 'water' && <Icon name="drop" color={C.ink} size={22} />}
+          <Text style={[s.toastText, { flexShrink: 1 }]}>{text}</Text>
+        </View>
       </Tap>
     </Animated.View>
   );
@@ -406,7 +410,7 @@ const s = StyleSheet.create({
   smBtn: { borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12 },
   smText: { color: C.paper, fontWeight: '900', fontSize: 13 },
   tallyN: { fontFamily: F.display, fontSize: 18, color: C.paper },
-  tool: { flex: 1, padding: 12, borderRadius: 16, borderWidth: 1.5, borderColor: 'rgba(247,243,234,0.16)', gap: 6 },
+  tool: { padding: 12, borderRadius: 16, borderWidth: 1.5, borderColor: 'rgba(247,243,234,0.16)', gap: 6 },
   toolHead: { color: C.paper, fontWeight: '900', fontSize: 14 },
   toolSub: { color: C.muted, fontSize: 11, fontWeight: '700' },
   step: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(247,243,234,0.1)', alignItems: 'center', justifyContent: 'center' },

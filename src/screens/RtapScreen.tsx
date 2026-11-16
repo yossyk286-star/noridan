@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Icon } from '../components/Icon';
 import type React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Vibration } from '../lib/vibe';
@@ -80,7 +81,7 @@ export default function RtapScreen({ members, level, night, onQuit, onSettings, 
               const b = t === bomb && (o || boom);
               return (
                 <Tap key={t} onPress={() => tap(t)} disabled={o || boom} style={[s.tile, { width: `${100 / cols - 3}%`, backgroundColor: b ? '#ff3b3b' : o ? alpha('#888888', 0.12) : alpha(colorOf(who), 0.25), borderStyle: o ? 'dashed' : 'solid' }]}>
-                  <Text style={s.tileText}>{b ? '💣' : o ? '🍺' : '?'}</Text>
+                  {b ? <Icon name="bomb" color="#fff" size={30} /> : o ? <Icon name="cup" color="#8d857a" size={28} /> : <Text style={s.tileText}>?</Text>}
                 </Tap>
               );
             })}

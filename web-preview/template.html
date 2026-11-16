@@ -420,10 +420,8 @@ body.stage .odai.board-card { overflow-y: auto; justify-content: flex-start !imp
 .ya-topic { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 18px; border-radius: 18px; background: var(--yuru); color: var(--ink); align-self: stretch; text-align: center; }
 .ya-topic small { font-size: 12px; font-weight: 900; }
 .ya-topic b { font-family: var(--display); font-weight: 400; font-size: clamp(24px, 8vw, 34px); line-height: 1.25; }
-.ya-beats { display: flex; gap: 12px; justify-content: center; }
-.ya-beats i { font-style: normal; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 15px; background: color-mix(in srgb, currentColor 10%, transparent); transition: transform .08s, background .08s; }
-.ya-beats i.on { background: var(--futsu); color: var(--ink); transform: scale(1.15); }
-.ya-beats i[data-yb="2"].on { background: var(--yuru); }
+.ya-swap { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 999px; border: 1.5px solid color-mix(in srgb, currentColor 30%, transparent); background: transparent; color: inherit; font: inherit; font-weight: 900; font-size: 14px; cursor: pointer; }
+.ya-swap svg { width: 18px; height: 18px; }
 .ya-who { margin: 0; display: flex; flex-direction: column; align-items: center; }
 .ya-who b { font-family: var(--display); font-weight: 400; font-size: clamp(40px, 13vw, 60px); line-height: 1.1; color: var(--mc); text-shadow: 0 2px 0 rgba(0,0,0,.25); }
 .ya-who small { font-weight: 900; opacity: .7; }
@@ -1802,7 +1800,7 @@ body[data-level="jigoku"] .odai { --tile-fg: #f7f3ea; }
 .inout-list .nm small { color: var(--muted); font-size: 12px; }
 .ghost.sm { padding: 8px 12px; font-size: 13px; }
 /* 帰る時間・幹事の道具 */
-.tools-row { display: grid; grid-template-columns: 1.25fr 1fr; gap: 8px; }
+.tools-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
 .gohome, .kanji-btn { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 16px; border: 1.5px solid var(--line); text-align: left; font-weight: 900; font-size: 14px; position: relative; }
 .gohome small, .kanji-btn small { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 2px; }
 .gohome.set { border-color: #4dd4ff; }
@@ -1852,6 +1850,21 @@ body.bigscreen #app { max-width: 560px; min-height: var(--app-h); }
 #bigRank p em { font-style: normal; font-family: var(--display); font-size: 26px; }
 #bigRank p.tm { border-top: 1px solid rgba(247,243,234,.16); padding-top: 8px; }
 #bigRank p.tm i { width: 14px; height: 14px; }
+
+.lv-note { margin: 0 0 -8px; font-size: 12px; font-weight: 900; color: var(--muted); letter-spacing: .06em; }
+.gohome { display: grid !important; grid-template-columns: auto 1fr; align-items: center; gap: 4px 12px !important; }
+.gohome .gh-ic svg { width: 24px; height: 24px; display: block; }
+.gohome .gh-tx { font-weight: 900; font-size: 15px; padding-right: 40px; }
+.gohome input { grid-column: 1 / -1; }
+.toast { display: flex; align-items: center; gap: 10px; }
+.toast svg { width: 22px; height: 22px; flex: none; }
+.ho-pass svg { width: 18px; height: 18px; vertical-align: -3px; margin-right: 4px; }
+.rt-tile svg { width: 60%; height: 60%; display: block; margin: auto; }
+.rt-tile.bomb { color: #fff; }
+.bp-bomb svg { width: 72px; height: 72px; display: block; margin: 0 auto; }
+.sk-safe b svg { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
+.skull-wrap .quip { font-size: 14px; font-weight: 900; color: #8a6a00; opacity: .85; animation: reveal .3s .55s ease-out both; }
+.odai.drum .skull-wrap .quip { animation-delay: calc(var(--gt) + .55s); }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

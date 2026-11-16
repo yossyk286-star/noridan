@@ -47,7 +47,7 @@ import { PrefsContext } from './src/lib/prefs';
 import { Decks, PASS, setContent } from './src/lib/game';
 import { markFirstOpen, maybeAskReview } from './src/lib/review';
 import { getTally, makeTeams, minsLeft, recordTally, setToastHandler, toast, type Tally } from './src/lib/extras';
-import { GoHome, InoutSheet, KanjiSheet, LeftResult, QrSheet, TallyResult, TeamPick, TeamResult, Toast, ToolButton, tallyText } from './src/components/Extras';
+import { InoutSheet, KanjiSheet, LeftResult, QrSheet, TallyResult, TeamPick, TeamResult, Toast, ToolButton, tallyText } from './src/components/Extras';
 import { MODE_TITLE } from './src/components/ModeParts';
 import { speak, stopSpeak } from './src/lib/speech';
 import type { Stats } from './src/lib/titles';
@@ -298,7 +298,7 @@ export default function App() {
           const key = `${goHome}:${k}`;
           if (l <= k && l > k - 10 && !alerted.current[key]) {
             alerted.current[key] = true;
-            toast(k === 0 ? `🚃 ${goHome}、帰る時間やで！忘れ物ないように` : `🚃 帰る時間（${goHome}）まであと${l}分`, 'train');
+            toast(k === 0 ? `${goHome}、帰る時間やで！忘れ物ないように` : `帰る時間（${goHome}）まであと${l}分`, 'train');
             play('alarm');
             return;
           }
@@ -308,7 +308,7 @@ export default function App() {
         const n = Math.floor((Date.now() - since.current) / (30 * 60e3));
         if (n > 0 && !alerted.current[`water${n}`]) {
           alerted.current[`water${n}`] = true;
-          toast('💧 お水タイム！全員お水かソフドリをひと口（罰ちゃうで）', 'water');
+          toast('お水タイム！全員お水かソフドリをひと口（罰ちゃうで）', 'water');
           play('chin');
         }
       }
@@ -390,10 +390,7 @@ export default function App() {
               lastNote={tallyText(tally, (m) => MODE_TITLE[m as Mode] ?? '')}
               tools={
                 <>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <GoHome time={goHome} onChange={updateGoHome} />
-                    <ToolButton label="幹事の道具" sub="席替え・役割・順番・二次会" onPress={() => setKanji(true)} />
-                  </View>
+                  <ToolButton label="幹事の道具" sub="席替え・役割・順番・二次会" onPress={() => setKanji(true)} />
                   <TeamPick members={members} on={teamOn} teams={teams} onToggle={updateTeam} onShuffle={() => setTeams(makeTeams(members.length))} />
                 </>
               }
@@ -451,6 +448,8 @@ export default function App() {
           onNoTouch={updateNoTouch}
           passOn={passOn}
           onPass={updatePass}
+          goHome={goHome}
+          onGoHome={updateGoHome}
           water={water}
           onWater={updateWater}
           voice={voice}

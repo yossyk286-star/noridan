@@ -13,6 +13,7 @@ import { C, F, LEVEL_LABEL, STAGE, colorOf } from '../theme';
 import type { Level, Member, Night } from '../types';
 import bpassJson from '../data/bpass.json';
 import { bigBoom } from '../lib/fx';
+import { Icon } from '../components/Icon';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
 type Phase = 'intro' | 'ready' | 'play' | 'boom' | 'batsu';
@@ -134,7 +135,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
         <IntroCard pal={pal} mode="bpass" tag={`${n}人`}>
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：爆発まで${SEC[level][0]}〜${SEC[level][1]}秒のどこか`} />
           <View style={s.safe}>
-            <Text style={s.safeTitle}>⚠ スマホは手渡しで</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Icon name="warn" color="#e8780a" size={16} /><Text style={s.safeTitle}>スマホは手渡しで</Text></View>
             <Text style={[s.safeText, { color: fg }]}>投げたらアカン。落とさんように両手で渡す</Text>
           </View>
         </IntroCard>
@@ -161,7 +162,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
             <Text style={[s.tier, { backgroundColor: TIER_COLOR[tier] }]}>{TIER_LABEL[tier]}</Text>
           </View>
           <Text style={[s.topic, { color: fg }]}>{topic}</Text>
-          <Animated.Text style={[s.bomb, { transform: [{ rotate: wob.interpolate({ inputRange: [-1, 1], outputRange: ['-8deg', '8deg'] }) }] }]}>💣</Animated.Text>
+          <Animated.View style={[s.bombBox, { transform: [{ rotate: wob.interpolate({ inputRange: [-1, 1], outputRange: ['-8deg', '8deg'] }) }] }]}><Icon name="bomb" color={fg} size={72} /></Animated.View>
           <HandWho members={members} i={holder} sub="が持ってる" fg={fg} />
           <Note fg={fg}>{`${passes}回パス`}</Note>
         </ModeCard>
@@ -205,7 +206,7 @@ const s = StyleSheet.create({
   tier: { color: '#fff', fontSize: 12, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 1, borderRadius: 999, overflow: 'hidden' },
   topicL: { fontSize: 12, fontWeight: '800', opacity: 0.6 },
   topic: { fontFamily: F.display, fontSize: 38, lineHeight: 46, textAlign: 'center' },
-  bomb: { fontSize: 72, lineHeight: 84 },
+  bombBox: { alignSelf: 'center', marginVertical: 6 },
   boom: { fontFamily: F.display, fontSize: 56, lineHeight: 64, color: '#ff2a2a' },
   safe: { alignSelf: 'stretch', gap: 4, padding: 12, borderRadius: 12, borderWidth: 2, borderColor: '#ffb02e', backgroundColor: 'rgba(255,176,46,0.16)' },
   safeTitle: { color: '#e8780a', fontSize: 14, fontWeight: '900' },

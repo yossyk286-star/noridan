@@ -143,7 +143,7 @@ function timeCheck() {
       const key = S.goHome + ":" + k;
       if (left <= k && left > k - 10 && !S.alerted[key]) {
         S.alerted[key] = true;
-        toast(k === 0 ? `🚃 ${S.goHome}、帰る時間やで！忘れ物ないように` : `🚃 帰る時間（${S.goHome}）まであと${left}分`, "train");
+        toast(k === 0 ? `${S.goHome}、帰る時間やで！忘れ物ないように` : `帰る時間（${S.goHome}）まであと${left}分`, "train");
         play("alarm");
         return;
       }
@@ -153,7 +153,7 @@ function timeCheck() {
     const n = Math.floor((Date.now() - S.since) / (30 * 60e3));
     if (n > 0 && !S.alerted["water" + n]) {
       S.alerted["water" + n] = true;
-      toast("💧 お水タイム！全員お水かソフドリをひと口（罰ちゃうで）", "water");
+      toast("お水タイム！全員お水かソフドリをひと口（罰ちゃうで）", "water");
       play("chin");
     }
   }
@@ -161,13 +161,14 @@ function timeCheck() {
 setInterval(timeCheck, 20000);
 function vGoHome() {
   const left = minsLeft();
-  return `<label class="gohome ${S.goHome ? "set" : ""}"><span>🚃 帰る時間<small>${S.goHome ? (left > 0 ? `あと${Math.floor(left / 60) ? `${Math.floor(left / 60)}時間` : ""}${left % 60}分` : "もう時間やで") : "入れとくと30分前と10分前に知らせる"}</small></span><input type="time" id="goHomeIn" value="${S.goHome}" aria-label="帰る時間">${S.goHome ? `<button class="text-btn" data-act="goHomeClear">消す</button>` : ""}</label>`;
+  return `<label class="gohome ${S.goHome ? "set" : ""}"><span class="gh-ic">${ICON.gohome}</span><span class="gh-tx">帰る時間<small>${S.goHome ? (left > 0 ? `あと${Math.floor(left / 60) ? `${Math.floor(left / 60)}時間` : ""}${left % 60}分` : "もう時間やで") : "入れとくと30分前と10分前に知らせる"}</small></span><input type="time" id="goHomeIn" value="${S.goHome}" aria-label="帰る時間">${S.goHome ? `<button class="text-btn" data-act="goHomeClear">消す</button>` : ""}</label>`;
 }
 // 画面の上にちょっとだけ出すお知らせ（タップで消える）
 function toast(text, kind = "") {
   let el = document.getElementById("toast");
   if (!el) { el = document.createElement("button"); el.id = "toast"; el.type = "button"; el.addEventListener("click", () => el.classList.remove("on")); document.body.appendChild(el); }
-  el.textContent = text; el.className = "toast on " + kind;
+  const ic = kind === "train" ? ICON.gohome : kind === "water" ? ICON.drop : "";
+  el.innerHTML = `${ic}<span>${esc(text)}</span>`; el.className = "toast on " + kind;
   clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("on"), kind ? 12000 : 3500);
 }
 
@@ -280,6 +281,14 @@ function bigLayout() {
   r.innerHTML = `<small>罰ランキング</small>${rows.map((x) => `<p style="--mc:${colorOf(x.i)}"><i>${esc(x.m.name.slice(0, 1))}</i><b>${esc(x.m.name)}</b><em>${x.n}</em></p>`).join("")}${teamOn() ? teamScore(g.pen).map((x) => `<p class="tm" style="--mc:${TEAM[x.t].color}"><i></i><b>${TEAM[x.t].name}チーム</b><em>${x.sum}</em></p>`).join("") : ""}`;
 }
 window.addEventListener("resize", () => { if (S.big) bigLayout(); });
+
+// ---------- 天使のひとこと ----------
+// 罰ガチャが全員セーフの時、「ラッキー！セーフ」の下にユーモアのひとこと（同じガチャの間は同じ言葉）
+const quipCache = new WeakMap();
+function luckyQuip(gacha) {
+  if (!quipCache.has(gacha)) quipCache.set(gacha, draw("quip", DATA.batsu.quip));
+  return quipCache.get(gacha);
+}
 
 // ---------- ボタン ----------
 function extraClick(act, b, g, i) {

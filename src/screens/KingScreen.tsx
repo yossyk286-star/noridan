@@ -12,6 +12,7 @@ import type { Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, colorOf } from '../theme';
 import type { Level, Member, Night } from '../types';
 import kingJson from '../data/king.json';
+import { Icon } from '../components/Icon';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
 type Phase = 'intro' | 'deal' | 'call' | 'order' | 'open' | 'batsu';
@@ -116,7 +117,7 @@ export default function KingScreen({ members, level, night, onQuit, onSettings, 
       card = (
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round}回`}</Prog>
-          <Text style={[s.king, { color: fg }]}>{`👑 ${members[king].name}が王様！`}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Icon name="king" color={fg} size={26} /><Text style={[s.king, { color: fg }]}>{`${members[king].name}が王様！`}</Text></View>
           {cmd ? (
             <>
               <Text style={[s.small, { color: fg }]}>おすすめの命令</Text>

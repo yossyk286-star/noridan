@@ -120,7 +120,7 @@ export function Handoff({ members, i, left, right, label, onGo }: { members: Mem
           <Text style={[s.hoDotText, { color: colorOf(i) }]}>{initialOf(members, i)}</Text>
         </View>
         <Text style={s.hoName} numberOfLines={1} adjustsFontSizeToFit>{members[i].name}</Text>
-        <Text style={s.hoPass}>📱 スマホ渡してな</Text>
+        <View style={s.hoPassBox}><Icon name="handoff" color="#141210" size={22} /><Text style={s.hoPass}>スマホ渡してな</Text></View>
       </View>
       <View style={s.hoBtn}>
         <Text style={s.hoBtnText}>{label}</Text>
@@ -329,7 +329,8 @@ const s = StyleSheet.create({
   hoDot: { width: 140, height: 140, borderRadius: 70, alignItems: 'center', justifyContent: 'center' },
   hoDotText: { fontFamily: F.display, fontSize: 70 },
   hoName: { fontFamily: F.display, fontSize: 76, lineHeight: 90, color: '#141210', maxWidth: '100%' },
-  hoPass: { fontWeight: '900', fontSize: 18, color: '#141210', backgroundColor: 'rgba(20,18,16,0.12)', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 999, overflow: 'hidden' },
+  hoPassBox: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(20,18,16,0.12)', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 999 },
+  hoPass: { fontWeight: '900', fontSize: 18, color: '#141210' },
   hoBtn: { backgroundColor: '#141210', borderRadius: 20, paddingVertical: 18, alignItems: 'center' },
   hoBtnText: { fontFamily: F.display, fontSize: 22, color: '#fff8e7' },
   hoAfter: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 16, flexWrap: 'wrap' },
