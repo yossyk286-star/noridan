@@ -1654,6 +1654,19 @@ body[data-level="jigoku"] .odai { --tile-fg: #f7f3ea; }
 .odai .head .tag[data-t="ルール"] { background: #ff9a3c; }
 .odai .head .tag[data-t="緊急"] { background: #ff2a2a; color: #fff; }
 .odai .head .meta:has(.tag[data-t]) { opacity: 1; }
+
+/* 案3：結果のあとは「もう一回」を一番押しやすく */
+.res-actions { display: flex; flex-direction: column; gap: 10px; }
+.res-actions .again-btn { background: var(--yuru); color: var(--ink); box-shadow: 0 6px 0 #b8901a; }
+.res-actions .again-btn small { display: block; font-family: var(--body); font-weight: 900; font-size: 13px; opacity: .75; margin-top: 2px; }
+.res-actions .row2 .ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.res-actions .row2 .ghost svg { width: 18px; height: 18px; }
+
+/* 案3：夜モードは設定から（隠しコマンドはやめた） */
+.night-box .h2 .age { margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--night); color: var(--ink); font-size: 12px; letter-spacing: 0; vertical-align: 2px; }
+.night-box.off { border-color: color-mix(in srgb, var(--night) 60%, transparent); }
+.sheet-foot { margin: 2px 0 0; text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); }
+.sheet-foot a { color: inherit; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

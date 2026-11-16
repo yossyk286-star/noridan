@@ -247,17 +247,7 @@ function vHome() {
 function logoBlock() {
   const night = S.night === "shinya" ? "is-night is-deep" : S.night ? "is-night" : "";
   const sub = S.night === "shinya" ? "深夜モード 発動中" : S.night ? "夜モード 発動中" : "ノリで断れない飲み会ゲーム";
-  return `<div><h1 class="logo ${night}" id="logo"><button class="logo-btn" data-act="logo" aria-label="ノリダン">ノリダン</button></h1><p class="catch">${sub}</p>${whisper()}</div>`;
-}
-// 隠しモードのヒント（ささやき）。夜モード前は「ロゴに秘密がある」、夜モード中は「まだ奥がある」
-function whisper() {
-  const h = new Date().getHours();
-  const late = h >= 21 || h < 5;
-  let t = "";
-  if (S.night === "yoru") t = "まだ奥がある…ロゴをもう一回";
-  else if (!S.night && late) t = "夜が更けてきた…ロゴ、連打してみ？";
-  else if (!S.night && S.whisper) t = "ロゴには秘密があるらしい";
-  return t ? `<p class="whisper ${S.night === "yoru" ? "deep" : ""}">${MOON}<span>${t}</span></p>` : "";
+  return `<div><h1 class="logo ${night}" id="logo">ノリダン</h1><p class="catch">${sub}</p></div>`;
 }
 function vHome1() {
   const ms = S.members, ok = ms.length >= 2;
@@ -403,7 +393,7 @@ function vNightAsk() {
   </div>`;
   return `
   <div class="night-ask">
-    <p class="h2">隠しコマンド発動</p>
+    <p class="h2">20歳以上だけ</p>
     <h1 class="night-title">夜モード</h1>
     <p class="night-lead">恋愛・下ネタ寄りのお題が混ざるモード。夜はしゃべるだけ、深夜はハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</p>
     <ul class="night-rules">
@@ -426,8 +416,13 @@ function vSheet() {
       <button class="toggle" data-act="vibe" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="voice" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="dual" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
+      ${!S.night ? `<div class="night-box off">
+        <p class="h2">夜モード<span class="age">20歳以上</span></p>
+        <p class="note">恋愛・下ネタ寄りのお題が混ざる。全員が20歳以上で、全員OKの時だけ。</p>
+        ${S.screen === "home" ? `<button class="ghost" data-act="nightAskOpen">夜モードをオンにする</button>` : `<p class="note">ゲームが終わってから、最初の画面の設定でオンにできる</p>`}
+      </div>` : ""}
       ${S.night ? `<div class="night-box">
-        <p class="h2">夜モード</p>
+        <p class="h2">夜モード<span class="age">20歳以上</span></p>
         <div class="night-lv">
           <button data-act="nightLv" data-v="yoru" aria-pressed="${S.night === "yoru"}">夜<small>たまに下ネタ</small></button>
           <button data-act="nightLv" data-v="shinya" aria-pressed="${S.night === "shinya"}">深夜<small>全部下ネタ</small></button>
@@ -437,6 +432,7 @@ function vSheet() {
       </div>` : ""}
       <button class="ghost" data-act="coachReset">遊び方をもう一回見る<small class="ghost-sub">最初の説明と、各画面のひとこと説明がまた出る</small></button>
       <button class="ghost" data-act="sheetClose">閉じる</button>
+      <p class="sheet-foot"><a href="/privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a>・お酒は20歳から。飲めへん人はソフドリでOK</p>
     </div>
   </div>`;
 }
@@ -2409,6 +2405,11 @@ function vResult() {
     <h1 class="res-head"><span>本日の戦犯</span></h1>
     ${hero}
   </section>
+  <div class="res-actions">
+    <button class="big again-btn" data-act="again">もう一回<small>同じメンバー・同じ遊び方</small></button>
+    <div class="row2"><button class="ghost" data-act="home">${ICON.back}<span>別の遊び方</span></button><button class="ghost share-ghost" data-act="share">${ICON.share}<span>画像でシェア</span></button></div>
+    ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}
+  </div>
   ${(() => { const ts = titles(); return ts.length ? `<h2 class="res-h2">称号</h2><ul class="titles">${ts.map((t, k) => `<li style="--d:${(0.3 + k * 0.12).toFixed(2)}s">${MEDAL(k)}<div><small>${esc(t.title)}</small><b>${esc(titleNames(t))}</b><span>${esc(t.desc)}</span></div></li>`).join("")}</ul>` : ""; })()}
   ${g.mode === "gesture" && g.gs ? `<h2 class="res-h2">ジェスチャーの点数</h2><ul class="ng-list res">${S.members.map((m, j) => ({ m, j })).sort((a, b) => g.gs.score[b.j] - g.gs.score[a.j]).map(({ m, j }) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${g.gs.score[j]}点</b></li>`).join("")}</ul>` : ""}
   ${g.mode === "memory" && g.mm ? `<h2 class="res-h2">神経衰弱の点数</h2><ul class="ng-list res">${S.members.map((m, j) => ({ m, j })).sort((a, b) => g.mm.score[b.j] - g.mm.score[a.j]).map(({ m, j }) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${g.mm.score[j]}点</b></li>`).join("")}</ul>` : ""}
@@ -2416,22 +2417,16 @@ function vResult() {
   <h2 class="res-h2">罰ランキング</h2>
   <ol class="rank">${rows.map((r, k) => `<li style="--mc:${colorOf(r.i)};--w:${(r.n / maxN) * 100}%;--d:${(0.2 + k * 0.06).toFixed(2)}s"><span class="no ${rankOf(r.n) === 1 && r.n > 0 ? "top" : ""}">${rankOf(r.n)}</span><span class="r-av">${ini(r.i)}</span><span class="nm">${esc(r.m.name)}${whyText(r.i) ? `<small>${esc(whyText(r.i))}</small>` : ""}</span><span class="r-bar"><i></i></span><span class="ct">${r.n}</span></li>`).join("")}</ol>
   <p class="tip">${MOON}<span>${esc(resultTip())}</span></p>
-  <button class="share-btn" data-act="share">${ICON.share}<span>画像で保存・シェア</span></button>
-  ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}
-  <div class="row2"><button class="ghost" data-act="home">${ICON.back}<span>遊び方を選ぶ</span></button><button class="big" data-act="again">もう一回</button></div>
   <button class="res-link" data-act="members">メンバーを変える</button>
   </div>`;
 }
 
-// 結果画面のひとこと。夜モードに入ってない人には噂として隠しモードをにおわせる
-const TIPS = ["罰ガチャの天使はだいたい7回に1回", "リベンジ権は罰を食らった人だけのご褒美", "倍プッシュは勝てば誰かに罰、負けたら罰2倍", "設定の「向かい合わせ表示」で机の真ん中に置ける"];
+// 結果画面のひとこと（豆知識）
+const TIPS = ["罰ガチャの天使はだいたい7回に1回", "リベンジ権は罰を食らった人だけのご褒美", "倍プッシュは勝てば誰かに罰、負けたら罰2倍", "⋯の「向かい合わせ表示」で机の真ん中に置ける", "20歳以上だけなら、設定から夜モードをオンにできる"];
 let tipCache = null;
 function resultTip() {
   if (tipCache && tipCache.key === S.game) return tipCache.t;
-  let t;
-  if (!S.night && Math.random() < 0.6) t = "噂：ロゴを3回連打すると、何かが起きるらしい";
-  else if (S.night === "yoru" && Math.random() < 0.6) t = "噂：夜の、さらに奥があるらしい";
-  else t = "豆知識：" + pick(TIPS);
+  const t = "豆知識：" + pick(TIPS);
   tipCache = { key: S.game, t };
   return t;
 }
@@ -3337,26 +3332,12 @@ function onClick(e) {
     case "vNext": applyAdds(); g.gacha = []; startVoteRound(); render(true); break;
 
     // 夜モード
-    case "logo": {
-      const now = Date.now();
-      S.taps = (S.taps || []).filter((x) => now - x < 2500).concat(now);
-      const lg = document.getElementById("logo");
-      // 1回タップするごとにロゴが震えて光る（何か起きそう）
-      if (lg && S.taps.length < 3) { lg.classList.remove("tease"); void lg.offsetWidth; lg.classList.add("tease"); play("tick"); }
-      if (S.taps.length >= 3) {
-        S.taps = [];
-        if (!S.night) S.nightAsk = "yoru";
-        else if (S.night === "yoru") S.nightAsk = "shinya";
-        else break; // 深夜はもう一番奥
-        play("warn"); render(); window.scrollTo(0, 0);
-      }
-      break;
-    }
     case "nightPick":
       if (b.dataset.v === "off") { S.night = false; store.set("nd_night", false); render(); break; }
       if (b.dataset.v === "shinya" && S.night !== "shinya") { S.nightAsk = "shinya"; render(); window.scrollTo(0, 0); }
       else { S.night = b.dataset.v; store.set("nd_night", S.night); render(); }
       break;
+    case "nightAskOpen": S.sheet = false; S.nightAsk = "yoru"; render(); window.scrollTo(0, 0); break;
     case "nightOn": S.night = S.nightAsk || "yoru"; S.nightAsk = false; store.set("nd_night", S.night); render(); break;
     case "nightLv": S.night = b.dataset.v; store.set("nd_night", S.night); render(); break;
     case "nightOff": S.night = false; S.nightAsk = false; S.sheet = false; store.set("nd_night", false); render(); break;
