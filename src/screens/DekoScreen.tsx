@@ -183,7 +183,7 @@ export default function DekoScreen({ members, level, night, onQuit, onSettings, 
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round}回戦・${k + 1}/${n}人目`}</Prog>
           <HandWho members={members} i={who} sub="の番" fg={fg} />
-          <Note fg={fg}>{'スマホを縦にしておでこに当てる（画面は外向き、自分は見たらアカン）。\n当てたら下に傾けて正解、わからんかったら上に傾けてパス'}</Note>
+          <Note fg={fg}>{'スマホを縦にしておでこに当てる（画面は外向き、自分は見たらアカン）。\n当てたら下に傾けて正解、わからへんかったら上に傾けてパス'}</Note>
           <Text style={[s.lim, { color: fg }]}>{sec}秒</Text>
         </ModeCard>
       );

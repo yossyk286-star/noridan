@@ -38,7 +38,7 @@ const LABEL: Record<Color, string> = { wait: '待って…', go: '今！', yello
 const LV_TEXT: Record<Level, string> = { yurume: 'フェイクなし', futsu: 'たまにフェイクが出る', jigoku: 'フェイクが何回も出る' };
 
 /**
- * 反射神経バトル：画面が緑になった瞬間にタップ。フライングした人は罰、おらんかったら一番遅い人が罰。
+ * 反射神経バトル：画面が緑になった瞬間にタップ。フライングした人は罰、おらへんかったら一番遅い人が罰。
  * 「1人ずつ」か「みんな同時」（4人までの組ごとに画面を区切って一斉に）を選べる。
  * 普通はたまにフェイク、地獄はフェイクが何回も。緑になる時間も毎回バラバラ
  */
@@ -399,7 +399,7 @@ const s = StyleSheet.create({
   styleRow: { flexDirection: 'row', gap: 8 },
   styleBtn: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 12, paddingHorizontal: 6, borderRadius: 14, borderWidth: 2 },
   styleT: { fontSize: 17, fontWeight: '900' },
-  styleS: { fontSize: 11, opacity: 0.65 },
+  styleS: { fontSize: 12, opacity: 0.65 },
   boxText: { fontFamily: F.display, fontSize: 60, lineHeight: 70 },
   hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
   big: { fontFamily: F.display, fontSize: 64, lineHeight: 72 },

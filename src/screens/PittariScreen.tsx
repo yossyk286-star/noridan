@@ -324,7 +324,7 @@ const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   no: { fontFamily: F.display, fontSize: 22 },
-  tag: { fontSize: 11, fontWeight: '900', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
+  tag: { fontSize: 12, fontWeight: '900', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
   qBig: { fontFamily: F.display, fontSize: 34, lineHeight: 48 },
   qSmall: { fontFamily: F.display, fontSize: 19, lineHeight: 28 },
   small: { fontSize: 12, fontWeight: '700', opacity: 0.65, lineHeight: 18 },

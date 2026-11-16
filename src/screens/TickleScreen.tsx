@@ -131,7 +131,7 @@ export default function TickleScreen({ members, level, night, onQuit, onSettings
         <ModeCard pal={pal} center>
           <Text style={[s.verdict, { color: '#1f9d55' }]}>耐えた！</Text>
           <HandWho members={members} i={who} fg={fg} />
-          <Note fg={fg}>{`${SEC}秒笑わんかったので罰なし`}</Note>
+          <Note fg={fg}>{`${SEC}秒笑わへんかったので罰なし`}</Note>
         </ModeCard>
       );
       controls = <RoundEnd pal={pal} next="もう1回戦" onNext={() => round(k + 1)} onEnd={() => finish()} />;

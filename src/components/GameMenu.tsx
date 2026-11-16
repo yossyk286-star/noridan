@@ -95,7 +95,7 @@ const s = StyleSheet.create({
   askBtn: { borderRadius: 16, padding: 18, alignItems: 'center', marginTop: 8 },
   askBtnText: { fontSize: 18, fontWeight: '900' },
   title: { color: C.paper, fontWeight: '900', fontSize: 16 },
-  sub: { color: C.muted, fontSize: 11, fontWeight: '700', marginTop: 2 },
+  sub: { color: C.muted, fontSize: 12, fontWeight: '700', marginTop: 2 },
   state: { color: C.paper, fontSize: 12, fontWeight: '900', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },
   ghost: { borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 14, padding: 14, alignItems: 'center', marginTop: 4 },
   ghostText: { color: C.paper, fontWeight: '900' },

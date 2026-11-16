@@ -253,7 +253,7 @@ const s = StyleSheet.create({
   pLabel: { fontSize: 12, fontWeight: '900', opacity: 0.7 },
   arrow: { fontFamily: F.display, fontSize: 26, opacity: 0.6 },
   theme: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center' },
-  themeLabel: { fontSize: 11, fontWeight: '900', opacity: 0.6, letterSpacing: 2 },
+  themeLabel: { fontSize: 12, fontWeight: '900', opacity: 0.6, letterSpacing: 2 },
   themeText: { fontSize: 18, fontWeight: '900' },
   hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
   result: { fontFamily: F.display, fontSize: 22, textAlign: 'center' },

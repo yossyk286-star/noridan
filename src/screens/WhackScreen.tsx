@@ -261,7 +261,7 @@ const s = StyleSheet.create({
   lim: { fontFamily: F.display, fontSize: 44, lineHeight: 50 },
   hud: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   pill: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 9, borderRadius: 16, backgroundColor: '#141210', overflow: 'hidden' },
-  lbl: { color: 'rgba(247,243,234,0.65)', fontSize: 11, fontWeight: '900', marginBottom: 3, maxWidth: 64 },
+  lbl: { color: 'rgba(247,243,234,0.65)', fontSize: 12, fontWeight: '900', marginBottom: 3, maxWidth: 64 },
   pillNum: { color: '#f7f3ea', fontFamily: F.display, fontSize: 26, lineHeight: 28 },
   tbar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 4, backgroundColor: 'rgba(255,255,255,0.12)' },
   tbarIn: { height: 4 },

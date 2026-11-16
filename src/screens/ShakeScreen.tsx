@@ -473,6 +473,6 @@ const s = StyleSheet.create({
   barBox: { flex: 1, height: 12 },
   bar: { height: 12, borderRadius: 6 },
   num: { minWidth: 36, textAlign: 'right', fontFamily: F.display, fontSize: 20 },
-  tapTag: { fontSize: 10, opacity: 0.6 },
+  tapTag: { fontSize: 12, opacity: 0.6 },
   lose: { fontFamily: F.display, fontSize: 26, lineHeight: 32, textAlign: 'center', marginTop: 8 },
 });

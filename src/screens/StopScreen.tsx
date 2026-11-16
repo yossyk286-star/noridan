@@ -483,10 +483,10 @@ const s = StyleSheet.create({
   d: { fontSize: 13, fontWeight: '800' },
   lose: { fontFamily: F.display, fontSize: 24, lineHeight: 30, textAlign: 'center', marginTop: 8 },
   rateBox: { alignItems: 'center', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 16, marginTop: 6 },
-  rateSmall: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  rateSmall: { color: '#fff', fontSize: 12, fontWeight: '800' },
   rateBig: { color: '#fff', fontFamily: F.display, fontSize: 44, lineHeight: 50 },
   dirRow: { flexDirection: 'row', gap: 8 },
   dirBtn: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 12, paddingHorizontal: 4, borderRadius: 14, borderWidth: 2 },
   dirT: { fontSize: 16, fontWeight: '900' },
-  dirS: { fontSize: 11, opacity: 0.65 },
+  dirS: { fontSize: 12, opacity: 0.65 },
 });

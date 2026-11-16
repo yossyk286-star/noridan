@@ -176,7 +176,7 @@ function canYoru(tpl: string, members: Member[], p: number) {
 }
 
 /** 3人以上おらんと成立せえへんお題（2人やと必ず引き分け・全員該当になる） */
-const NEEDS_3 = /少数派|被らんかった|多数決|一番指された|指差せ|一番似てない|一番低い点|ひとりぼっち|被ったら/;
+const NEEDS_3 = /少数派|被らへんかった|多数決|一番指された|指差せ|一番似てない|一番低い点|ひとりぼっち|被ったら/;
 
 export function usable(t: string, n: number) {
   if (NEEDS_3.test(t) && n < 3) return false;
@@ -349,7 +349,7 @@ export class Decks {
     }
     if (list !== 'bad') {
       const tpl = pickFrom('batsu_' + list, batsu[list]);
-      // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらんかったら普通の罰
+      // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらへんかったら普通の罰
       const okX = members.some((m, j) => j !== p && !m.ng);
       const fo = { noNg: true, shinya: this.night === 'shinya' };
       if (tpl && (!tpl.includes('{X}') || okX)) return { segments: fill(tpl, members, p, fo), lucky: false, night: list, tpl, fo };

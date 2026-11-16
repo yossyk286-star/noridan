@@ -42,7 +42,7 @@ const angleOf = (v: Vec, w: Vec) => (Math.acos(Math.max(-1, Math.min(1, v[0] * w
 
 /**
  * 傾けたらアウト：画面を上にしてスマホを手のひらに乗せる。カウントダウンが0になった瞬間の向きを0°にして10秒キープ。
- * 地獄度の角度（ゆるめ5°・普通3°・地獄1°）を超えたら即アウトで罰。周りは触らんかったら邪魔してOK。
+ * 地獄度の角度（ゆるめ5°・普通3°・地獄1°）を超えたら即アウトで罰。周りは触らへんかったら邪魔してOK。
  * センサーが使えへん時は、みんなの目で判定する
  */
 export default function TiltScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
@@ -309,7 +309,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
           <ModeCard pal={pal} center>
             <Prog fg={fg}>{`第${Math.floor(k / pn) + 1}回戦・${(k % pn) + 1}/${pn}人目`}</Prog>
             <HandWho members={members} i={who} sub="の番" fg={fg} />
-            <Note fg={fg}>{'画面を上にして、手のひらに平らに乗せて。\n周りは触らんかったら、しゃべって邪魔してOK'}</Note>
+            <Note fg={fg}>{'画面を上にして、手のひらに平らに乗せて。\n周りは触らへんかったら、しゃべって邪魔してOK'}</Note>
             <Text style={[s.lim, { color: fg }]}>{lim}°</Text>
             <Text style={[s.small, { color: fg }]}>超えたらアウト</Text>
           </ModeCard>

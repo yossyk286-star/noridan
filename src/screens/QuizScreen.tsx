@@ -175,7 +175,7 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
           {zones(true)}
         </ModeCard>
       );
-      controls = <Outline label="誰もわからん → 答えを見る" fg={pal.fg} onPress={() => { setOk(false); setBuzz(-1); setPhase('res'); }} />;
+      controls = <Outline label="誰もわからへん → 答えを見る" fg={pal.fg} onPress={() => { setOk(false); setBuzz(-1); setPhase('res'); }} />;
       break;
     case 'ans':
       card = (

@@ -805,7 +805,7 @@ export function Who({ name, color, label, fg }: { name: string; color: string; l
   );
 }
 
-/** 普通のお題は種類名を出さへん（地獄度は画面の色で分かる）。夜・緊急・押し付けなどの時だけ出す */
+/** 普通のお題は種類名を出さへん（地獄度は画面の色でわかる）。夜・緊急・押し付けなどの時だけ出す */
 function plainKind(c: Card) {
   return !!c.kind && !c.kind.includes('（') && /^(\d+マス目・)?(アホお題|全員参加)/.test(c.kind);
 }
@@ -995,7 +995,7 @@ export function BigButton({
 const styles = StyleSheet.create({
   introRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8 },
   introBack: { width: 64, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 1 },
-  introBackT: { fontSize: 11, fontWeight: '900' },
+  introBackT: { fontSize: 12, fontWeight: '900' },
   x2Meter: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.35)', borderWidth: 2, borderColor: 'rgba(255,42,42,0.6)' },
   x2Old: { fontFamily: F.display, fontSize: 18, color: '#ff8a80', opacity: 0.8 },
   x2Line: { position: 'absolute', left: -3, right: -3, top: '50%', height: 4, borderRadius: 2, backgroundColor: '#ff2a2a' },
@@ -1033,13 +1033,13 @@ const styles = StyleSheet.create({
   kind: { fontSize: 12, fontWeight: '900', letterSpacing: 0.3, opacity: 0.7 },
   no: { fontSize: 11, fontWeight: '900', letterSpacing: 1, opacity: 0.6, fontVariant: ['tabular-nums'] },
   badge: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
-  badgeText: { fontSize: 11, fontWeight: '900' },
+  badgeText: { fontSize: 12, fontWeight: '900' },
   cardBody: { flex: 1, justifyContent: 'center' },
   who: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0, maxWidth: '100%' },
   whoDot: { width: 12, height: 12, borderRadius: 6 },
   whoName: { fontFamily: F.display, fontSize: 22, lineHeight: 28, flexShrink: 1 },
   whoLabel: { fontSize: 13, fontWeight: '900' },
-  tag: { flexShrink: 0, fontSize: 10, fontWeight: '900', letterSpacing: 1, borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden', opacity: 0.8 },
+  tag: { flexShrink: 0, fontSize: 12, fontWeight: '900', letterSpacing: 1, borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden', opacity: 0.8 },
   coach: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, backgroundColor: '#26221e', borderWidth: 1, borderColor: 'rgba(255,210,63,0.35)' },
   coachArrow: { position: 'absolute', top: -7, left: 28, width: 12, height: 12, backgroundColor: '#26221e', borderLeftWidth: 1, borderTopWidth: 1, borderColor: 'rgba(255,210,63,0.35)', transform: [{ rotate: '45deg' }] },
   coachText: { flex: 1, color: '#f7f3ea', fontSize: 13, fontWeight: '700', lineHeight: 20 },
@@ -1080,7 +1080,7 @@ const styles = StyleSheet.create({
   cardText: { fontFamily: F.display, fontSize: 32, lineHeight: 46 },
   gachaWhoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   mark: { borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
-  markText: { fontSize: 10, fontWeight: '900' },
+  markText: { fontSize: 12, fontWeight: '900' },
   batsuHead: { fontFamily: F.display, fontSize: 22, color: '#e8202a', letterSpacing: 2 },
   gachaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   gachaWho: { fontSize: 12, fontWeight: '900', letterSpacing: 1, opacity: 0.7 },
@@ -1097,20 +1097,20 @@ const styles = StyleSheet.create({
   penGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   penTile: { width: '31.5%', minHeight: 64, borderRadius: 14, borderWidth: 2, borderBottomWidth: 6, paddingVertical: 8, paddingHorizontal: 10, justifyContent: 'center', overflow: 'hidden' },
   penName: { fontSize: 17, fontWeight: '900' },
-  penMeta: { fontSize: 10, fontWeight: '900', opacity: 0.7 },
+  penMeta: { fontSize: 12, fontWeight: '900', opacity: 0.7 },
   stamp: { position: 'absolute', right: 6, top: '50%', marginTop: -18, width: 36, height: 36, borderRadius: 18, borderWidth: 3, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-14deg' }] },
   stampText: { fontFamily: F.display, fontSize: 18 },
-  penHead: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, marginBottom: 8 },
+  penHead: { fontSize: 12, fontWeight: '900', letterSpacing: 1.5, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingVertical: 10, paddingRight: 14, paddingLeft: 10, borderRadius: 999 },
   chipDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.25)' },
   chipText: { fontWeight: '900', fontSize: 15 },
-  chipN: { fontSize: 11, opacity: 0.7 },
+  chipN: { fontSize: 12, opacity: 0.7 },
   choices: { flexDirection: 'row', gap: 10 },
   choice: { flex: 1, borderRadius: 16, borderWidth: 2, paddingVertical: 16, paddingHorizontal: 10, alignItems: 'center', gap: 4 },
   choiceHot: { fontSize: 17, fontWeight: '900' },
   choiceTitle: { fontWeight: '900', fontSize: 15 },
-  choiceSub: { fontSize: 11, fontWeight: '700', opacity: 0.75, textAlign: 'center' },
+  choiceSub: { fontSize: 12, fontWeight: '700', opacity: 0.75, textAlign: 'center' },
   subActs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   subBtn: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1.5, borderColor: 'rgba(247,243,234,0.35)' },
   revenge: { borderWidth: 1.5 },

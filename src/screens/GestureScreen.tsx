@@ -94,7 +94,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
     setActor((actor + 1) % n);
     setPhase('hand');
   };
-  // 1人終わるごとに罰：ノルマ（持ち時間15秒ごとに1問）に届かんかったら演じた人、届いたら当てた数が一番少ない人
+  // 1人終わるごとに罰：ノルマ（持ち時間15秒ごとに1問）に届かへんかったら演じた人、届いたら当てた数が一番少ない人
   const quota = Math.max(1, Math.round(sec / 15));
   const turnLosers = (): { why: 'quota' | 'few'; who: number[]; min: number } => {
     if (got < quota) return { why: 'quota', who: [actor], min: 0 };

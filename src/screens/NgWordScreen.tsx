@@ -404,7 +404,7 @@ const s = StyleSheet.create({
   lookSub: { fontFamily: undefined, fontSize: 13, fontWeight: '900' },
   timer: { fontFamily: F.display, fontSize: 80, lineHeight: 92, fontVariant: ['tabular-nums'] },
   topic: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center' },
-  topicLabel: { fontSize: 11, fontWeight: '900', opacity: 0.6, letterSpacing: 2 },
+  topicLabel: { fontSize: 12, fontWeight: '900', opacity: 0.6, letterSpacing: 2 },
   topicText: { fontSize: 17, fontWeight: '900' },
   q: { fontSize: 15, fontWeight: '900' },
   reveal: { fontFamily: F.display, fontSize: 40, textAlign: 'center' },

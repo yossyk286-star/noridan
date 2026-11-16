@@ -265,7 +265,7 @@ const s = StyleSheet.create({
   },
   no: { position: 'absolute', left: 5, top: 3, fontSize: 9, fontWeight: '900', opacity: 0.5 },
   label: { fontFamily: F.display, fontSize: 17, textAlign: 'center' },
-  labelSmall: { fontSize: 11, fontWeight: '900', textAlign: 'center' },
+  labelSmall: { fontSize: 12, fontWeight: '900', textAlign: 'center' },
   bubble: {
     position: 'absolute', zIndex: 5, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 14, borderWidth: 3, borderColor: '#141210',
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 8,

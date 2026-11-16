@@ -273,7 +273,7 @@ const s = StyleSheet.create({
   wordName: { fontWeight: '900', fontSize: 15, flexShrink: 1 },
   word: { fontFamily: F.display, fontSize: 22 },
   introTitle: { fontFamily: F.display, fontSize: 22 },
-  introTag: { fontSize: 11, fontWeight: '900', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
+  introTag: { fontSize: 12, fontWeight: '900', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
   howRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   howIc: { width: 30, height: 27, alignItems: 'center', justifyContent: 'center' },
   howText: { flex: 1, fontSize: 18, lineHeight: 27, fontWeight: '700' },

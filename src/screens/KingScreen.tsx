@@ -123,7 +123,7 @@ export default function KingScreen({ members, level, night, onQuit, onSettings, 
               <Text style={[s.cmd, { color: fg }]}>{text(cmd)}</Text>
             </>
           ) : (
-            <Text style={[s.cmd, { color: fg }]}>{'王様が自由に命令して\n「◯番が○○」「◯番と◯番が○○」'}</Text>
+            <Text style={[s.cmd, { color: fg }]}>{'王様が自由に命令して\n「○番が○○」「○番と○番が○○」'}</Text>
           )}
           <Note fg={fg}>{'王様が大きい声で命令を読み上げて。\n番号の人はまだ名乗らんといて'}</Note>
         </ModeCard>

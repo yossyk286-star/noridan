@@ -303,34 +303,34 @@ function vHome1() {
 // cat: 定番 / phone=スマホで勝負 / talk=話す・ノリ / brain=頭を使う / deep=深夜。min=最低人数、ok=下ネタOKの人の最低人数（深夜）、t=目安時間
 const MODE_LIST = [
   { m: "odai", ic: "cards", cat: "basic", t: "好きなだけ" },
-  { m: "king", ic: "king", cat: "basic", t: "1回2分", min: 3 },
+  { m: "king", ic: "king", cat: "basic", t: "1回 2分", min: 3 },
   { m: "sugoroku", ic: "dice", cat: "basic", t: "15〜30分" },
   { m: "memory", ic: "grid", cat: "basic", t: "10分" },
-  { m: "tilt", ic: "tilt", cat: "phone", t: "1人30秒" },
-  { m: "shake", ic: "shake", cat: "phone", t: "1人15秒" },
-  { m: "stop", ic: "stop", cat: "phone", t: "1人20秒" },
-  { m: "reflex", ic: "reflex", cat: "phone", t: "1回戦3分" },
-  { m: "voice", ic: "voice", cat: "phone", t: "1回戦3分" },
-  { m: "rtap", ic: "rtap", cat: "phone", t: "1回戦2分" },
-  { m: "bpass", ic: "bpass", cat: "phone", t: "1回戦2分" },
-  { m: "deko", ic: "deko", cat: "phone", t: "1人60秒" },
-  { m: "whack", ic: "whack", cat: "phone", t: "1人15秒" },
+  { m: "tilt", ic: "tilt", cat: "phone", t: "1人 30秒" },
+  { m: "shake", ic: "shake", cat: "phone", t: "1人 15秒" },
+  { m: "stop", ic: "stop", cat: "phone", t: "1人 20秒" },
+  { m: "reflex", ic: "reflex", cat: "phone", t: "1回 3分" },
+  { m: "voice", ic: "voice", cat: "phone", t: "1回 3分" },
+  { m: "rtap", ic: "rtap", cat: "phone", t: "1回 2分" },
+  { m: "bpass", ic: "bpass", cat: "phone", t: "1回 2分" },
+  { m: "deko", ic: "deko", cat: "phone", t: "1人 60秒" },
+  { m: "whack", ic: "whack", cat: "phone", t: "1人 15秒" },
   { m: "ngword", ic: "mute", cat: "talk", t: "10分〜" },
-  { m: "doubt", ic: "doubt", cat: "talk", t: "1人2分", min: 3 },
-  { m: "homeru", ic: "heart", cat: "talk", t: "1回2分" },
-  { m: "gesture", ic: "hand", cat: "talk", t: "1人60秒", min: 3 },
-  { m: "face", ic: "face", cat: "talk", t: "1回戦5分", min: 3 },
-  { m: "draw", ic: "draw", cat: "talk", t: "1周5分", min: 3 },
-  { m: "wolf", ic: "wolf", cat: "talk", t: "1回戦5分", min: 3 },
-  { m: "quiz", ic: "quiz", cat: "brain", t: "10問5分" },
-  { m: "ito", ic: "num", cat: "brain", t: "1問3分" },
-  { m: "hilo", ic: "hilo", cat: "brain", t: "1回戦2分" },
-  { m: "pittari", ic: "target", cat: "brain", t: "1問3分", min: 3 },
-  { m: "vote", ic: "vote", cat: "brain", t: "1問2分", min: 3 },
-  { m: "blind", ic: "blind", cat: "deep", t: "1回1分", ok: 3 },
-  { m: "pocky", ic: "pocky", cat: "deep", t: "1回1分", ok: 2 },
-  { m: "tickle", ic: "tickle", cat: "deep", t: "1回30秒", ok: 2 },
-  { m: "hug", ic: "hug", cat: "deep", t: "1回30秒", ok: 2 },
+  { m: "doubt", ic: "doubt", cat: "talk", t: "1人 2分", min: 3 },
+  { m: "homeru", ic: "heart", cat: "talk", t: "1回 2分" },
+  { m: "gesture", ic: "hand", cat: "talk", t: "1人 60秒", min: 3 },
+  { m: "face", ic: "face", cat: "talk", t: "1回 5分", min: 3 },
+  { m: "draw", ic: "draw", cat: "talk", t: "1回 5分", min: 3 },
+  { m: "wolf", ic: "wolf", cat: "talk", t: "1回 5分", min: 3 },
+  { m: "quiz", ic: "quiz", cat: "brain", t: "1回 5分" },
+  { m: "ito", ic: "num", cat: "brain", t: "1回 3分" },
+  { m: "hilo", ic: "hilo", cat: "brain", t: "1回 2分" },
+  { m: "pittari", ic: "target", cat: "brain", t: "1回 3分", min: 3 },
+  { m: "vote", ic: "vote", cat: "brain", t: "1回 2分", min: 3 },
+  { m: "blind", ic: "blind", cat: "deep", t: "1回 1分", ok: 3 },
+  { m: "pocky", ic: "pocky", cat: "deep", t: "1回 1分", ok: 2 },
+  { m: "tickle", ic: "tickle", cat: "deep", t: "1回 30秒", ok: 2 },
+  { m: "hug", ic: "hug", cat: "deep", t: "1回 30秒", ok: 2 },
 ];
 const MODE_TABS = [["fav", "よく遊ぶ"], ["all", "すべて"], ["basic", "定番"], ["phone", "スマホで勝負"], ["talk", "話す・ノリ"], ["brain", "頭を使う"], ["deep", "深夜"]];
 const modePlays = () => { const v = store.get("nd_plays", {}); return v && typeof v === "object" ? v : {}; };
@@ -761,7 +761,7 @@ function shortKind(k) {
   const m = k.match(/（(.*)）$/);
   return m ? m[1] : k;
 }
-// 普通のお題は種類名を出さへん（地獄度は画面の色で分かる）。夜・緊急・押し付けなどの時だけ出す
+// 普通のお題は種類名を出さへん（地獄度は画面の色でわかる）。夜・緊急・押し付けなどの時だけ出す
 function plainKind(c) {
   return !!c.kind && !c.kind.includes("（") && /^(\d+マス目・)?(アホお題|全員参加)/.test(c.kind);
 }
@@ -1088,7 +1088,7 @@ function vWfCard() {
   const late = wf.phase === "reveal" && S.anim ? "late" : "";
   const lateD = `--late:${(voteFxTime([...(wf.counts || []), wf.none || 0]) + 0.2).toFixed(2)}s`;
   const words = (showMaj = true) => wf.allCit
-    ? `<div class="wf-words one ${late}" style="${lateD}"><p class="c"><small>全員市民</small><b>${esc(wf.maj)}</b><span>ウルフはおらんかった</span></p></div>`
+    ? `<div class="wf-words one ${late}" style="${lateD}"><p class="c"><small>全員市民</small><b>${esc(wf.maj)}</b><span>ウルフはおらへんかった</span></p></div>`
     : `<div class="wf-words ${late}" style="${lateD}">
       <p class="w"><small>${WOLF()}ウルフ${wf.wolves.length > 1 ? `${wf.wolves.length}人` : ""}</small><b>${esc(wf.min)}</b><span class="wn">${wf.wolves.map((i) => `<span style="--mc:${colorOf(i)}"><i></i>${mName(i)}</span>`).join("")}</span></p>
       <p class="c"><small>市民</small><b>${showMaj ? esc(wf.maj) : "？？？"}</b><span>ほか${n - wf.wolves.length}人</span></p>
@@ -1104,7 +1104,7 @@ function vWfCard() {
     case "look": return `<div class="odai ${nc} mode-card center" id="card">
       <p class="prog">${mName(wf.viewer)}のお題</p>
       ${peekBox(`<p class="ng-reveal wf-word"><b style="${wordSize(wfWord(wf.viewer), 52)}">${esc(wfWord(wf.viewer))}</b></p>`)}
-      <p class="hand-note">自分が市民かウルフかは分からへん。<br>お題そのものは言うたらアカン</p>
+      <p class="hand-note">自分が市民かウルフかはわからへん。<br>お題そのものは言うたらアカン</p>
     </div>`;
     case "talk": case "who": return `<div class="odai mode-card center" id="card">
       <p class="ng-timer ${wf.timeUp ? "" : "run"}" id="${wf.timeUp ? "" : "modeTimer"}">${wf.timeUp ? "0:00" : fmtTime(wf.endAt ? Math.max(0, wf.endAt - Date.now()) : wf.minutes * 60000)}</p>
@@ -1155,7 +1155,7 @@ function vWfCard() {
         const ok = !lose.length;
         return `<div class="odai mode-card center wf-res ${ok ? "cit" : "wolf"}" id="card">
           <p class="prog">第${wf.round}回戦</p>
-          <div class="wf-wolf ghost">${WOLF("ghost")}<em class="wf-stamp">不在！</em><span>ウルフはおらんかった</span></div>
+          <div class="wf-wolf ghost">${WOLF("ghost")}<em class="wf-stamp">不在！</em><span>ウルフはおらへんかった</span></div>
           <p class="wf-win">${ok ? "全員見抜いた！" : "全員市民やった！"}</p>
           <p class="hand-note">${ok ? "全員が「ウルフはおらん」に入れた。全員セーフ" : "誰かを疑った人の負け"}</p>
           ${words(true)}
@@ -1453,7 +1453,7 @@ function vKing() {
     card = `<div class="odai mode-card center" id="card"><p class="kg-call">せーの<br>王様だーれだ！</p><p class="hand-note">みんなで言ってから、王様が名乗り出る</p></div>`;
     controls = `<button class="big" data-act="kgReveal">王様を見る</button>`;
   } else if (kg.phase === "order") {
-    card = `<div class="odai mode-card center kg-card" id="card"><p class="prog">第${kg.round}回</p><p class="kg-king">${CROWN}<b>${mName(kg.king)}</b>が王様！</p>${kg.cmd ? `<p class="bl-l">おすすめの命令</p><p class="kg-cmd">${kgText(kg.cmd)}</p>` : `<p class="kg-cmd">王様が自由に命令して<br><small>「◯番が○○」「◯番と◯番が○○」</small></p>`}<p class="hand-note">王様が大きい声で命令を読み上げて。<br>番号の人はまだ名乗らんといて</p></div>`;
+    card = `<div class="odai mode-card center kg-card" id="card"><p class="prog">第${kg.round}回</p><p class="kg-king">${CROWN}<b>${mName(kg.king)}</b>が王様！</p>${kg.cmd ? `<p class="bl-l">おすすめの命令</p><p class="kg-cmd">${kgText(kg.cmd)}</p>` : `<p class="kg-cmd">王様が自由に命令して<br><small>「○番が○○」「○番と○番が○○」</small></p>`}<p class="hand-note">王様が大きい声で命令を読み上げて。<br>番号の人はまだ名乗らんといて</p></div>`;
     controls = `<div class="sub-acts two"><button data-act="kgReroll">別の命令</button><button data-act="kgFree">${kg.cmd ? "自分で考える" : "おすすめを出す"}</button></div><button class="big" data-act="kgOpen">番号を公開</button>`;
   } else {
     const nos = kg.cmd ? [kg.cmd.A, kg.cmd.B].filter((x) => x != null) : S.members.map((_, i) => kg.num[i]).filter((x) => x > 0).sort((a, b) => a - b);
@@ -1522,7 +1522,7 @@ function vDeko() {
   if (dk.phase === "batsu") return stageWrap(vCard(), roundEnd("dkAccept", true));
   let card, controls;
   if (dk.phase === "hand") {
-    card = `<div class="odai mode-card center" id="card"><p class="prog">第${dk.round}回戦・${dk.k + 1}/${n}人目</p>${bigWho(dk.who, "の番")}<p class="hand-note">スマホを縦にして<b>おでこに当てる</b>（画面は外向き、自分は見たらアカン）。<br>当てたら<b>下に傾けて正解</b>、わからんかったら<b>上に傾けてパス</b></p><p class="tl-lim">${dkSec()}秒</p></div>`;
+    card = `<div class="odai mode-card center" id="card"><p class="prog">第${dk.round}回戦・${dk.k + 1}/${n}人目</p>${bigWho(dk.who, "の番")}<p class="hand-note">スマホを縦にして<b>おでこに当てる</b>（画面は外向き、自分は見たらアカン）。<br>当てたら<b>下に傾けて正解</b>、わからへんかったら<b>上に傾けてパス</b></p><p class="tl-lim">${dkSec()}秒</p></div>`;
     controls = `<button class="big" data-act="dkReady">おでこに当てた → 3・2・1</button>`;
   } else if (dk.phase === "count") {
     card = countCard(dk.n, `${mName(dk.who)}、構えて…`);
@@ -1577,7 +1577,7 @@ function vQuiz() {
     controls = `<button class="big" data-act="qzGo">1問目</button>`;
   } else if (qz.phase === "q") {
     card = `<div class="odai mode-card center qz-card" id="card"><p class="prog">第${qz.k}問 / ${QZ_N}</p><p class="qz-q">${esc(qz.q)}</p><p class="qz-tip">${qz.locked.length ? `${qz.locked.map(mName).join("・")}は×。<b>ほかの人、わかったら押して！</b>` : "<b>わかった人は自分の名前を押して！</b>"}</p>${zones(true)}</div>`;
-    controls = `<button class="ghost" data-act="qzReveal">誰もわからん → 答えを見る</button>`;
+    controls = `<button class="ghost" data-act="qzReveal">誰もわからへん → 答えを見る</button>`;
   } else if (qz.phase === "ans") {
     card = `<div class="odai mode-card center qz-card" id="card"><p class="qz-who" style="--mc:${colorOf(qz.buzz)}"><b>${mName(qz.buzz)}</b>が答える！</p><p class="qz-q">${esc(qz.q)}</p><p class="qz-tip">${mName(qz.buzz)}、下の4つから<b>答えを1つ押して</b></p><div class="qz-opts">${qz.opts.map((o) => `<button class="pen-tile qz-opt" style="--mc:${colorOf(qz.buzz)}" data-act="qzAns" data-v="${esc(o)}"><span class="bar"></span><span class="nm">${esc(o)}</span></button>`).join("")}</div></div>`;
     controls = `<p class="hint">ほかの人は口出し禁止</p>`;
@@ -1619,7 +1619,7 @@ function vFace() {
     controls = `<button class="big" data-act="fcAfter">${last ? "結果発表" : (fc.k + 1) % FC_PER === 0 ? `次は${mName((fc.who + 1) % n)}` : `${mName(fc.who)}の2問目`}</button>`;
   } else {
     const idx = S.members.map((_, i) => i).sort((a, b) => fc.score[b] - fc.score[a]);
-    card = `<div class="odai mode-card center board-card batsu" id="card" ${rvCard(n)}><p class="prog">第${fc.round}回戦の結果</p>${rankList(idx.map((i) => ({ i, v: `${fc.score[i]}点`, bad: fc.losers.includes(i) })), -1, true)}<p class="ng-lead ${rvLate(n)}">${fc.losers.map(mName).join("・")}が一番伝わらんかった</p></div>`;
+    card = `<div class="odai mode-card center board-card batsu" id="card" ${rvCard(n)}><p class="prog">第${fc.round}回戦の結果</p>${rankList(idx.map((i) => ({ i, v: `${fc.score[i]}点`, bad: fc.losers.includes(i) })), -1, true)}<p class="ng-lead ${rvLate(n)}">${fc.losers.map(mName).join("・")}が一番伝わらへんかった</p></div>`;
     controls = `<button class="big has-pen" data-act="fcGacha">${fc.losers.map(mName).join("・")}に罰ガチャ</button>`;
   }
   return stageWrap(card, controls);
@@ -1663,7 +1663,7 @@ function vTickle() {
     card = `<div class="odai mode-card center deep" id="card"><p class="prog">${byNames} → ${mName(tk.who)}の${esc(tk.part)}</p><p class="tl-count" id="modeTimer">${TK_SEC}</p><p class="ng-lead">笑うな…！</p></div>`;
     controls = `<button class="big has-pen" data-act="tkLaugh">笑った！アウト</button>`;
   } else if (tk.phase === "safe") {
-    card = `<div class="odai mode-card center lucky" id="card"><p class="tl-big q-ok">耐えた！</p>${bigWho(tk.who)}<p class="hand-note">${TK_SEC}秒笑わんかったので罰なし</p></div>`;
+    card = `<div class="odai mode-card center lucky" id="card"><p class="tl-big q-ok">耐えた！</p>${bigWho(tk.who)}<p class="hand-note">${TK_SEC}秒笑わへんかったので罰なし</p></div>`;
     controls = roundEnd("tkNext");
   } else {
     card = `<div class="odai mode-card center batsu ${S.anim ? "shake" : ""}" id="card"><p class="tl-big q-ng">笑った！</p>${bigWho(tk.who, "の負け")}<p class="hand-note">${esc(tk.part)}をこしょばされて笑ったので罰</p></div>`;
@@ -1868,7 +1868,7 @@ function vTiltCard() {
     </div>` : `<div class="odai mode-card center" id="card">
       <p class="prog">第${Math.floor(tl.k / pn) + 1}回戦・${tl.k % pn + 1}/${pn}人目</p>
       ${bigWho(tl.who, "の番")}
-      <p class="hand-note">画面を上にして、手のひらに平らに乗せて。<br>周りは触らんかったら、しゃべって邪魔してOK</p>
+      <p class="hand-note">画面を上にして、手のひらに平らに乗せて。<br>周りは触らへんかったら、しゃべって邪魔してOK</p>
       <p class="tl-lim">${lim}°<small>超えたらアウト</small></p>
     </div>`; }
     case "count": return `<div class="odai mode-card center" id="card">
@@ -2832,7 +2832,7 @@ function onAdd(e) {
   const name = input.value.trim().slice(0, 10);
   if (!name) return;
   if (S.isExample) S.members = [];
-  // 同じ名前・13人目は入れへん（投票や順位で誰か分からんようになるので）。理由はひとこと出す
+  // 同じ名前・13人目は入れへん（投票や順位で誰かわからへんようになるので）。理由はひとこと出す
   const err = S.members.length >= 12 ? "12人までやで" : S.members.some((m) => m.name === name) ? `「${name}」はもうおるで。ちょっと変えて入れて` : "";
   S.addMsg = err;
   if (err) { render(); const el = document.getElementById("inName"); el.value = name; el.focus(); el.select(); return; }

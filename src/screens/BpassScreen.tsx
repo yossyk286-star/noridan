@@ -25,7 +25,7 @@ const TIER_COLOR: Record<Tier, string> = { easy: '#1f9d55', normal: '#e8780a', h
 /** パス何回ごとに1段難しくなるか */
 const STEP: Record<Level, number> = { yurume: 5, futsu: 4, jigoku: 3 };
 
-/** 爆弾パス：お題に合うものを言えたら次の人へ手渡し。いつ爆発するか分からん。爆発した時に持ってた人が罰 */
+/** 爆弾パス：お題に合うものを言えたら次の人へ手渡し。いつ爆発するかわからへん。爆発した時に持ってた人が罰 */
 export default function BpassScreen({ members, level, night, onQuit, onSettings, onFinish, skipIntro }: Props) {
   useKeepAwake();
   const n = members.length;
@@ -202,7 +202,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
 const s = StyleSheet.create({
   burnt: { color: '#ffe14a', textShadowColor: '#ff3a00', textShadowRadius: 18, textShadowOffset: { width: 0, height: 0 }, transform: [{ rotate: '-4deg' }] },
   topicRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  tier: { color: '#fff', fontSize: 11, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 1, borderRadius: 999, overflow: 'hidden' },
+  tier: { color: '#fff', fontSize: 12, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 1, borderRadius: 999, overflow: 'hidden' },
   topicL: { fontSize: 12, fontWeight: '800', opacity: 0.6 },
   topic: { fontFamily: F.display, fontSize: 38, lineHeight: 46, textAlign: 'center' },
   bomb: { fontSize: 72, lineHeight: 84 },

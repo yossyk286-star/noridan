@@ -160,7 +160,7 @@ export default function FaceScreen({ members, level, night, onQuit, onSettings, 
     case 'rank':
       card = (
         <ModeCard pal={pal} bg="#1a0606" edge="#e8202a">
-          <ScoreRank members={members} score={score} losers={losers} rv={RV} fg="#f7f3ea" title={`第${round}回戦の結果`} foot={`${losers.map((i) => members[i].name).join('・')}が一番伝わらんかった`} />
+          <ScoreRank members={members} score={score} losers={losers} rv={RV} fg="#f7f3ea" title={`第${round}回戦の結果`} foot={`${losers.map((i) => members[i].name).join('・')}が一番伝わらへんかった`} />
         </ModeCard>
       );
       controls = !RV.ready ? <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={() => { P.draw(losers, 1, soleBest(members.map((_, i) => i), (i) => score[i])); setPhase('batsu'); }} />;

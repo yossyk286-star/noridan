@@ -87,7 +87,7 @@ function fill(tpl, pIdx, opts = {}) {
 }
 const textOf = (t) => (typeof t === "string" ? t : t?.text ?? "");
 // 3人以上おらんと成立せえへんお題（2人やと必ず引き分け・全員該当になる）
-const NEEDS_3 = /少数派|被らんかった|多数決|一番指された|指差せ|一番似てない|一番低い点|ひとりぼっち|被ったら/;
+const NEEDS_3 = /少数派|被らへんかった|多数決|一番指された|指差せ|一番似てない|一番低い点|ひとりぼっち|被ったら/;
 function usable(t) {
   const s = textOf(t), n = S.members.length;
   if (NEEDS_3.test(s) && n < 3) return false;
@@ -328,7 +328,7 @@ function drawBatsu(i, n = 1, noLucky = false) {
   }
   if (list !== "bad") {
     const tpl = drawBatsuFrom("batsu_" + list, DATA.batsu[list], n);
-    // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらんかったら普通の罰
+    // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらへんかったら普通の罰
     if (tpl && (!tpl.includes("{X}") || others(i).some(okForYoru))) return { lucky: false, night: list, tpl, fo: { noNg: true }, html: fill(tpl, i, { noNg: true }) };
   }
   const tpl = drawBatsuFrom("batsu", DATA.batsu.bad, n);
@@ -755,10 +755,10 @@ function deckPop(key, list) {
 }
 
 // ---------- ワードウルフ ----------
-// 全員にお題。ウルフだけちょっと違うお題で、自分がどっちかは分からへん。話して投票（「ウルフはおらん」も選べる）。
+// 全員にお題。ウルフだけちょっと違うお題で、自分がどっちかはわからへん。話して投票（「ウルフはおらん」も選べる）。
 // ・ウルフがおる回：一番票が多いのがウルフの誰かなら市民の勝ち（ただしウルフが市民のお題を当てたら逆転）。
 //   市民・同票・「おらん」が一番なら、ウルフの勝ちで市民全員の負け
-// ・全員市民の回（4人以上、たまに）：「おらん」に入れんかった人（誰かを疑った人）の負け
+// ・全員市民の回（4人以上、たまに）：「おらん」に入れへんかった人（誰かを疑った人）の負け
 const WF_MIN = [2, 3, 5];
 const WF_NONE = -1; // 投票の「ウルフはおらん」
 const wfAuto = (n) => (n >= 10 ? 3 : n >= 7 ? 2 : 1);
@@ -826,7 +826,7 @@ function wfGroupBatsu() {
 
 // ---------- 傾けたらアウト ----------
 // 画面を上にしてスマホを手のひらに乗せる。スタートした瞬間の向きを0°にして、10秒キープ。
-// 地獄度の角度（ゆるめ5°・普通3°・地獄1°）を超えたらアウトで罰。周りは触らんかったら邪魔してOK
+// 地獄度の角度（ゆるめ5°・普通3°・地獄1°）を超えたらアウトで罰。周りは触らへんかったら邪魔してOK
 const TILT_SEC = 10;
 const TILT_LIMIT = { yurume: 5, futsu: 3, jigoku: 1 };
 const tiltLimit = () => TILT_LIMIT[S.level] || 4;
@@ -1209,7 +1209,7 @@ function rtTap(t) {
 }
 
 // ---------- 爆弾パス ----------
-// お題に合うものを言えたら次の人へ渡す。いつ爆発するか分からん。爆発した時に持ってた人が罰
+// お題に合うものを言えたら次の人へ渡す。いつ爆発するかわからへん。爆発した時に持ってた人が罰
 const BP_SEC = { yurume: [15, 30], futsu: [10, 24], jigoku: [6, 16] };
 // お題はパスするたびに変わる。パスが進むほど かんたん → ふつう → むずい（地獄は最初から1段上）
 const BP_STEP = { yurume: 5, futsu: 4, jigoku: 3 };
@@ -1694,7 +1694,7 @@ function hlNext() {
 }
 
 // ---------- 反射神経バトル ----------
-// 1人ずつ。画面が緑になった瞬間にタップ。フライングした人は罰、おらんかったら一番遅い人が罰。
+// 1人ずつ。画面が緑になった瞬間にタップ。フライングした人は罰、おらへんかったら一番遅い人が罰。
 // 普通はたまにフェイク、地獄はフェイクが何回も（地獄でも出えへん回がある）。緑になる時間も毎回バラバラ
 const RF_LATE = 1500; // これより遅かったら「遅すぎ」で打ち切り
 // みんな同時：4人までの組に分けて、組ごとに画面を区切って同時に押す（5人以上は 5→3+2、9→3+3+3 みたいに均等に）
@@ -1926,7 +1926,7 @@ const mmOk = (t) => /^\{P\}、/.test(t) && usable(t) && !!markOf(t);
 function mmDeal() {
   const g = S.game, n = S.members.length;
   g.doer = 0; g.cur = 0;
-  // 夜・深夜はお題も夜寄りに混ぜる（下ネタNGの人がおる時は、誰が揃えるか分からんので混ぜへん）
+  // 夜・深夜はお題も夜寄りに混ぜる（下ネタNGの人がおる時は、誰が揃えるかわからへんので混ぜへん）
   const pools = [DATA.odai[S.level]];
   if (S.night && !S.members.some((m) => m.ng)) pools.push(DATA.odai.yoru);
   if (S.night === "shinya" && !S.members.some((m) => m.ng)) pools.push(DATA.odai.shinya, DATA.odai.shinya);
@@ -2091,7 +2091,7 @@ function spinRoulette(onDone) {
 
 // ---------- 早押しジェスチャー ----------
 // 番の人だけお題を見て、声を出さずに体で伝える。当てた人と演じた人に1点。
-// 1人演じ終わるごとに罰：ノルマ（持ち時間15秒ごとに1問）に届かんかったら演じた人、届いたら当てた数が一番少ない人
+// 1人演じ終わるごとに罰：ノルマ（持ち時間15秒ごとに1問）に届かへんかったら演じた人、届いたら当てた数が一番少ない人
 const gsQuota = (sec) => Math.max(1, Math.round(sec / 15));
 function gsWord() {
   let key = S.level;

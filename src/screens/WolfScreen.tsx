@@ -43,9 +43,9 @@ const shuffled = (a: number[]) => { const b = a.slice(); for (let i = b.length -
 const fmt = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 
 /**
- * ワードウルフ：全員にお題。ウルフだけちょっと違うお題で、自分がどっちかは分からへん。話して投票（「ウルフはおらん」も選べる）。
+ * ワードウルフ：全員にお題。ウルフだけちょっと違うお題で、自分がどっちかはわからへん。話して投票（「ウルフはおらん」も選べる）。
  * ・ウルフがおる回：一番票が多いのがウルフの誰かなら市民の勝ち（市民のお題を当てたら逆転）。市民・同票・「おらん」が一番ならウルフの勝ち
- * ・全員市民の回（4人以上、たまに）：「おらん」に入れんかった人（誰かを疑った人）の負け
+ * ・全員市民の回（4人以上、たまに）：「おらん」に入れへんかった人（誰かを疑った人）の負け
  */
 export default function WolfScreen({ members, level, night, onQuit, onSettings, onFinish }: Props) {
   useKeepAwake();
@@ -225,7 +225,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       <View style={[s.wordBox, { backgroundColor: alpha('#888888', 0.12) }]}>
         <Text style={[s.wordLab, { color: fg }]}>全員市民</Text>
         <Text style={[s.wordText, { color: fg }]}>{round.maj}</Text>
-        <Text style={[s.wordLab, { color: fg }]}>ウルフはおらんかった</Text>
+        <Text style={[s.wordLab, { color: fg }]}>ウルフはおらへんかった</Text>
       </View>
     </View>
   ) : (
@@ -289,7 +289,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
           <Peek fg={fg}>
             <Text style={[s.bigWord, { color: fg }]} adjustsFontSizeToFit numberOfLines={2}>{word(viewer)}</Text>
           </Peek>
-          <Note fg={fg}>{'自分が市民かウルフかは分からへん。\nお題そのものは言うたらアカン'}</Note>
+          <Note fg={fg}>{'自分が市民かウルフかはわからへん。\nお題そのものは言うたらアカン'}</Note>
         </ModeCard>
       );
       controls = (
@@ -414,7 +414,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
               <View style={{ opacity: 0.25 }}><WolfFace size={104} /></View>
               <Stamp text="不在！" color={ok ? '#1f9d55' : '#ff3b3b'} />
             </View>
-            <WolfTag name="" color="#8d857a" fg={fg} label="ウルフはおらんかった" />
+            <WolfTag name="" color="#8d857a" fg={fg} label="ウルフはおらへんかった" />
             <Text style={[s.win, { color: ok ? '#1f9d55' : '#ff3b3b' }]} numberOfLines={1} adjustsFontSizeToFit>{ok ? '全員見抜いた！' : '全員市民やった！'}</Text>
             <Note fg={fg}>{ok ? '全員が「ウルフはおらん」に入れた。全員セーフ' : '誰かを疑った人の負け'}</Note>
             {words(true)}
