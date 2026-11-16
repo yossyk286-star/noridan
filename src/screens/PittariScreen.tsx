@@ -307,6 +307,8 @@ export default function PittariScreen({ members, level, night, onQuit, onSetting
       <Frame color={frame} />
       <RulesSheet visible={rules} custom={HELP.pittari.rules} onClose={() => setRules(false)} />
       <GameMenu
+        flipped={flipped}
+        onFlip={() => setFlipped((f) => !f)}
         visible={menu}
         meta={`ピッタリ予想・${LEVEL_LABEL[level]}・${done}問`}
         rulesSub="このモードの遊び方"

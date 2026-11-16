@@ -614,7 +614,7 @@ function vCard() {
   // 向かい合わせ：同じお題を上下逆さにもう1枚（仕掛け人だけが見る爆弾の中身は出さない）
   const dual = S.dual && g.phase !== "bombPeek" && g.phase !== "bombSet";
   return `<div class="odai ${cardClass(c)} ${anim}" id="card">
-    <div class="head">${vWho()}<span class="meta">${plainKind(c) ? "" : `<span class="kind">${esc(shortKind(c.kind))}</span>`}${cardTag(c) && g.phase === "play" ? `<i class="tag">${cardTag(c)}</i>` : ""}${badge}</span></div>
+    <div class="head">${vWho()}<span class="meta">${plainKind(c) ? "" : `<span class="kind">${esc(shortKind(c.kind))}</span>`}${cardTag(c) && g.phase === "play" ? `<i class="tag" data-t="${cardTag(c)}">${cardTag(c)}</i>` : ""}${badge}</span></div>
     ${c.solo && !needsPick(c.tpl) && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
     ${art}
     ${dual ? `<p class="txt mirror" aria-hidden="true" style="font-size:${fitSize(c.html, g.mode === "sugoroku", 0.74)}"><span>${c.html}</span></p><hr class="dual-line">` : ""}
@@ -658,10 +658,10 @@ function vWho() {
 // 上のバー：左に罰スコアの顔アイコン列、右に「⋯」メニューだけ
 function vBar() {
   const g = S.game, n = S.members.length;
-  // 右のボタン（結果発表・上下反転・⋯）の分をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
+  // 右のボタン（結果・⋯）の分をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
   const frameW = Math.min(window.innerWidth, 560) - 32;
-  // 右：結果発表(38)・上下反転(36)・向かい合わせ(36)・⋯(38)とすき間6px。顔は1人34px＋すき間6px
-  const fit = Math.max(2, Math.floor((frameW - (38 + 36 + 36 + 38 + 4 * 6) - 15 + 6) / 40));
+  // 右：結果(74)・⋯(38)とすき間6px。上下反転・向かい合わせは⋯の中へ。顔は1人34px＋すき間6px
+  const fit = Math.max(2, Math.floor((frameW - (74 + 38 + 2 * 6) - 15 + 6) / 40));
   let shown = S.members.map((_, i) => i);
   if (n > fit) {
     shown = shown.slice(0, fit - 1);
@@ -683,11 +683,9 @@ function vBar() {
   return `<div class="bar">
     <div class="score" aria-label="罰スコア">${shown.map((i) => `
       <span class="av ${i === g.doer ? "is-turn" : ""} ${bump(i) ? "bump" : ""}" style="--mc:${colorOf(i)}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
-        ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
+        ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">罰${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
     <button class="bar-res" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>結果</span></button>
-    <button class="icon-btn bar-btn" data-act="flip" aria-pressed="${S.flip}" aria-label="上下反転">${ICON.flip}</button>
-    <button class="icon-btn bar-btn" data-act="dual" aria-pressed="${S.dual}" aria-label="向かい合わせ表示">${ICON.split}</button>
     <button class="icon-btn menu-btn" data-act="menu" aria-label="メニュー">${ICON.more}</button>
   </div>`;
 }
@@ -749,6 +747,8 @@ function vMenu() {
       <button class="menu-item hot" data-act="ask" data-v="end">${ICON.flag}<span>結果発表<small>ここで終わって、罰が一番多い人を発表</small></span></button>
       <button class="menu-item" data-act="undo" ${canUndo ? "" : "disabled"}>${ICON.undo}<span>1手戻す<small>${canUndo ? "押し間違えた時に、直前の操作を取り消す" : "まだ戻せる操作がない"}</small></span></button>
       <button class="menu-item" data-act="rules">${ICON.book}<span>ルール早見表<small>${MODE_NAME[g.mode]}の遊び方</small></span></button>
+      <button class="menu-item" data-act="flip" aria-pressed="${S.flip}">${ICON.flip}<span>上下反転${S.flip ? "（オン）" : ""}<small>向かいの人に画面を向ける</small></span></button>
+      <button class="menu-item" data-act="dual" aria-pressed="${S.dual}">${ICON.split}<span>向かい合わせ表示${S.dual ? "（オン）" : ""}<small>机の真ん中に置いて、両側から読める</small></span></button>
       <button class="menu-item" data-act="sheet">${ICON.gear}<span>設定<small>効果音・読み上げ・遊び方</small></span></button>
       <button class="menu-item danger" data-act="ask" data-v="home">${ICON.exit}<span>ゲームをやめる<small>罰の記録は消える</small></span></button>
       <button class="ghost" data-act="menuClose">閉じる</button>
@@ -2937,7 +2937,7 @@ function onClick(e) {
     case "vol": S.vol = +b.dataset.v; store.set("nd_vol", S.vol); SFX.unlock(); render(); play("jan"); break;
     case "vibe": S.vibe = !S.vibe; store.set("nd_vibe", S.vibe); render(); vib(40); break;
     case "voice": S.voice = !S.voice; store.set("nd_voice", S.voice); render(); if (S.voice) speak("読み上げオン"); else stopSpeak(); break;
-    case "dual": S.dual = !S.dual; store.set("nd_dual", S.dual); render(); break;
+    case "dual": S.dual = !S.dual; store.set("nd_dual", S.dual); S.menu = false; render(); break;
     case "tut": S.sheet = false; S.tut = 0; render(); break;
     case "tutNext": S.tut++; render(); break;
     case "tutEnd": S.tut = null; store.set("nd_tut", true); render(); break;

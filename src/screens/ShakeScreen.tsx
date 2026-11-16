@@ -433,6 +433,8 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
       <Frame color={frame} />
       <RulesSheet visible={rules} custom={HELP.shake.rules} onClose={() => setRules(false)} />
       <GameMenu
+        flipped={flipped}
+        onFlip={() => setFlipped((f) => !f)}
         visible={menu}
         meta={`全力シェイク・${LEVEL_LABEL[level]}・${round}回戦`}
         rulesSub="このモードの遊び方"

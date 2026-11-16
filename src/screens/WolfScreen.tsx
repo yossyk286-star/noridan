@@ -484,6 +484,8 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       <HurryFrame on={hurry} />
       <RulesSheet visible={rules} custom={HELP.wolf.rules} onClose={() => setRules(false)} />
       <GameMenu
+        flipped={flipped}
+        onFlip={() => setFlipped((f) => !f)}
         visible={menu}
         meta={`ワードウルフ・${LEVEL_LABEL[level]}・${played}回戦`}
         rulesSub="このモードの遊び方"

@@ -71,9 +71,9 @@ body:not(.stage) .frame { display: none; }
 .note { font-size: 12px; color: var(--muted); line-height: 1.7; margin: 0; }
 .warn { font-size: 12px; color: var(--futsu); margin: 0; font-weight: 700; }
 /* 上のバーの「結果」ボタン（2回押しで結果発表） */
-.bar-res { flex: 0 0 auto; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; width: 42px; height: 42px; padding: 0; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--fg) 30%, transparent); background: transparent; color: var(--fg); font: inherit; font-size: 12px; font-weight: 900; cursor: pointer; white-space: nowrap; }
-.bar-res svg { width: 15px; height: 15px; }
-.bar-res span { font-size: 9px; line-height: 1.1; letter-spacing: -.02em; }
+.bar-res { flex: 0 0 auto; display: inline-flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; width: 74px; height: 38px; padding: 0; border-radius: 12px; border: 1.5px solid color-mix(in srgb, var(--fg) 30%, transparent); background: transparent; color: var(--fg); font: inherit; font-size: 12px; font-weight: 900; cursor: pointer; white-space: nowrap; }
+.bar-res svg { width: 16px; height: 16px; }
+.bar-res span { font-size: 14px; line-height: 1; }
 .bar-res.armed { background: #ffd23f; color: #141210; border-color: #ffd23f; }
 .icon-btn { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--chip); flex: none; }
 .icon-btn svg { width: 22px; height: 22px; }
@@ -1431,7 +1431,8 @@ body.neon .intro-back { border-color: color-mix(in srgb, var(--nc) 60%, transpar
 /* 上のバー：結果・上下反転・向かい合わせ・⋯ の4つ並べても顔が4人入るように詰める */
 .bar { gap: 6px; }
 .bar .score { gap: 6px; padding-left: 9px; padding-right: 6px; }
-.bar .bar-res, .bar .menu-btn { width: 38px; height: 38px; }
+.bar .menu-btn { width: 38px; height: 38px; }
+.bar .bar-res { width: 74px; height: 38px; }
 .bar .icon-btn.bar-btn { width: 36px; height: 36px; }
 .bar .icon-btn.bar-btn svg { width: 19px; height: 19px; }
 /* ===== 爆弾パスの大爆発 ===== */
@@ -1641,6 +1642,18 @@ body[data-level="jigoku"] .odai { --tile-fg: #f7f3ea; }
 .pen-grid-wrap .pen-tile .bar { display: none; }
 .pen-grid-wrap .pen-tile > * { grid-column: 1 / -1; }
 .pen-grid-wrap .pen-tile .nm:last-child, .pen-grid-wrap .pen-tile .nm { grid-row: auto; }
+
+/* 案2：お題文は読みやすい太ゴシック（名前と見出しは看板文字のまま）。札の種類はタグの色で */
+.odai .txt { font-family: var(--body); font-weight: 900; line-height: 1.55; letter-spacing: .01em; }
+.odai .head .who b { font-size: 26px; }
+.odai .head .tag[data-t] { border: 0; color: #141210; opacity: 1; padding: 3px 10px; }
+.odai .head .tag[data-t="ひとり"] { background: #ff5d8f; }
+.odai .head .tag[data-t="全員"] { background: #ffd23f; }
+.odai .head .tag[data-t="勝負"] { background: #4dd4ff; }
+.odai .head .tag[data-t="みんなで判定"] { background: #7cf06b; }
+.odai .head .tag[data-t="ルール"] { background: #ff9a3c; }
+.odai .head .tag[data-t="緊急"] { background: #ff2a2a; color: #fff; }
+.odai .head .meta:has(.tag[data-t]) { opacity: 1; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

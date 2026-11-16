@@ -46,7 +46,6 @@ export function Frame({ color }: { color: string }) {
 export function ScoreBar({
   pal, members, pen, rev, doer, onMenu, flipped, onFlip, onEnd,
 }: { pal: Pal; members: Member[]; pen: number[]; rev: boolean[]; doer: number; onMenu: () => void; flipped?: boolean; onFlip?: () => void; onEnd?: () => void }) {
-  const { dual, setDual } = usePrefs();
   // 「結果」ボタン：うっかり押しても終わらんように「もう結果出す？」の確認を出す
   const pressEnd = () => {
     if (!onEnd) return;
@@ -57,10 +56,9 @@ export function ScoreBar({
   };
   const { width } = useWindowDimensions();
   const [all, setAll] = useState(false);
-  // 右のボタン（上下反転・結果・向かい合わせ・⋯）をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
-  const btns = (onFlip ? 1 : 0) + (onEnd ? 1 : 0) + 2;
-  // ボタン1個 37px＋すき間6px、顔1人 34px＋すき間6px
-  const fit = Math.max(2, Math.floor((Math.min(width, 560) - 32 - btns * 43 - 15 + 6) / 40));
+  // 右のボタン（結果・⋯）をよけて、入る人数だけ顔を出す。上下反転・向かい合わせは⋯の中。入りきらん分は「…」にまとめる
+  // 結果 74px・⋯ 37px（＋すき間6px）、顔1人 34px＋すき間6px
+  const fit = Math.max(2, Math.floor((Math.min(width, 560) - 32 - (onEnd ? 80 : 0) - 43 - 15 + 6) / 40));
   let shown = members.map((_, i) => i);
   if (members.length > fit) {
     shown = shown.slice(0, fit - 1);
@@ -78,7 +76,6 @@ export function ScoreBar({
   }
   const hidden = members.length - shown.length;
   const ranking = members.map((m, i) => ({ m, i, n: pen[i] })).sort((a, b) => b.n - a.n);
-  const quick = (on: boolean) => [styles.menuBtn, { backgroundColor: on ? pal.fg : pal.chip }];
   return (
     <View style={styles.bar}>
       <View style={[styles.score, { flex: 1, flexDirection: 'row', overflow: 'hidden', paddingTop: 14 }]}>
@@ -88,7 +85,7 @@ export function ScoreBar({
             <Text style={[styles.avText, iniFit(initialOf(members, i))]}>{initialOf(members, i)}</Text>
             {pen[i] > 0 && (
               <View style={[styles.cnt, { borderColor: pal.bg }]}>
-                <Text style={styles.cntText}>{pen[i]}</Text>
+                <Text style={styles.cntText}>罰{pen[i]}</Text>
               </View>
             )}
             {rev[i] && (
@@ -107,20 +104,12 @@ export function ScoreBar({
           </Tap>
         )}
       </View>
-      {onFlip && (
-        <Tap onPress={onFlip} accessibilityLabel="上下反転" accessibilityState={{ selected: !!flipped }} style={quick(!!flipped)}>
-          <Icon name="flip" color={flipped ? pal.bg : pal.fg} size={19} />
-        </Tap>
-      )}
       {onEnd && (
-        <Tap onPress={pressEnd} accessibilityLabel="結果発表" style={[styles.menuBtn, { backgroundColor: pal.chip }]}>
-          <Icon name="flag" color={pal.fg} size={15} />
-          <Text style={{ fontSize: 9, fontWeight: '900', color: pal.fg }}>結果</Text>
+        <Tap onPress={pressEnd} accessibilityLabel="結果発表" style={[styles.endBtn, { backgroundColor: pal.chip }]}>
+          <Icon name="flag" color={pal.fg} size={16} />
+          <Text style={{ fontSize: 14, fontWeight: '900', color: pal.fg }}>結果</Text>
         </Tap>
       )}
-      <Tap onPress={() => setDual(!dual)} accessibilityLabel="向かい合わせ表示" accessibilityState={{ selected: dual }} style={quick(dual)}>
-        <Icon name="split" color={dual ? pal.bg : pal.fg} size={19} />
-      </Tap>
       <Tap onPress={onMenu} accessibilityLabel="メニュー" style={[styles.menuBtn, { backgroundColor: pal.chip }]}>
         <Icon name="more" color={pal.fg} size={20} />
       </Tap>
@@ -373,7 +362,7 @@ export function OdaiCard({
             <Text style={[styles.kind, { color: neon ? look.edge : look.fg, opacity: neon ? 1 : undefined, flexShrink: 1 }, textGlow]} numberOfLines={1}>{card.kind.match(/（(.*)）$/)?.[1] ?? card.kind}</Text>
           )}
           {!!cardTag(card) && art === undefined && (
-            <Text style={[styles.tag, { color: neon ? look.edge : look.fg, borderColor: neon ? look.edge : look.fg }]} numberOfLines={1}>{cardTag(card)}</Text>
+            <Text style={[styles.tag, TAG_BG[cardTag(card)] ? { color: cardTag(card) === '緊急' ? '#fff' : '#141210', backgroundColor: TAG_BG[cardTag(card)], borderColor: TAG_BG[cardTag(card)], opacity: 1 } : { color: neon ? look.edge : look.fg, borderColor: neon ? look.edge : look.fg }]} numberOfLines={1}>{cardTag(card)}</Text>
           )}
           {doubled ? (
             <View style={[styles.badge, { backgroundColor: look.fg, flexShrink: 0 }]}>
@@ -810,6 +799,8 @@ function plainKind(c: Card) {
   return !!c.kind && !c.kind.includes('（') && /^(\d+マス目・)?(アホお題|全員参加)/.test(c.kind);
 }
 
+/** 札の種類タグの色（ひとり・全員…が一目でわかるように） */
+const TAG_BG: Record<string, string> = { ひとり: '#ff5d8f', 全員: '#ffd23f', 勝負: '#4dd4ff', みんなで判定: '#7cf06b', ルール: '#ff9a3c', 緊急: '#ff2a2a' };
 /** 札の種類タグ（誰が動くお題か） */
 export function cardTag(c: Card): string {
   if (!c || c.bomb || !c.tpl) return '';
@@ -1012,6 +1003,7 @@ const styles = StyleSheet.create({
   avText: { color: '#141210', fontWeight: '900', fontSize: 15 },
   cnt: { position: 'absolute', top: -7, right: -8, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: '#e8202a', borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   cntText: { color: '#fff', fontSize: 10, fontWeight: '900' },
+  endBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, width: 74, height: 37, borderRadius: 12 },
   rvDot: { position: 'absolute', bottom: -5, right: -5, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   rvText: { fontSize: 9, fontWeight: '900' },
   menuBtn: { width: 37, height: 37, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
@@ -1037,7 +1029,7 @@ const styles = StyleSheet.create({
   cardBody: { flex: 1, justifyContent: 'center' },
   who: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0, maxWidth: '100%' },
   whoDot: { width: 12, height: 12, borderRadius: 6 },
-  whoName: { fontFamily: F.display, fontSize: 22, lineHeight: 28, flexShrink: 1 },
+  whoName: { fontFamily: F.display, fontSize: 26, lineHeight: 32, flexShrink: 1 },
   whoLabel: { fontSize: 13, fontWeight: '900' },
   tag: { flexShrink: 0, fontSize: 12, fontWeight: '900', letterSpacing: 1, borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden', opacity: 0.8 },
   coach: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, backgroundColor: '#26221e', borderWidth: 1, borderColor: 'rgba(255,210,63,0.35)' },
@@ -1077,7 +1069,8 @@ const styles = StyleSheet.create({
   mirror: { transform: [{ rotate: '180deg' }] },
   mirrorText: { fontSize: 14, lineHeight: 20 },
   dualLine: { borderTopWidth: 2, borderStyle: 'dashed', opacity: 0.22 },
-  cardText: { fontFamily: F.display, fontSize: 32, lineHeight: 46 },
+  /** お題文は読みやすい太ゴシック（名前・見出しは看板文字のまま） */
+  cardText: { fontWeight: '900', fontSize: 32, lineHeight: 48 },
   gachaWhoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   mark: { borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
   markText: { fontSize: 12, fontWeight: '900' },

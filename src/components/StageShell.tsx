@@ -84,6 +84,8 @@ export function StageShell({
       <Frame color={frame} />
       <RulesSheet visible={showRules} custom={rules} onClose={() => setShowRules(false)} />
       <GameMenu
+        flipped={flipped}
+        onFlip={() => setFlipped((f) => !f)}
         visible={menu}
         meta={meta}
         rulesSub="このモードの遊び方"

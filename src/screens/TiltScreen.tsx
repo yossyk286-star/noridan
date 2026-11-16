@@ -434,6 +434,8 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
       {heat > 0 && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderWidth: 3 + 13 * heat, borderColor: frame, opacity: edge ? 0.9 : 1, zIndex: 10 }]} />}
       <RulesSheet visible={rules} custom={HELP.tilt.rules} onClose={() => setRules(false)} />
       <GameMenu
+        flipped={flipped}
+        onFlip={() => setFlipped((f) => !f)}
         visible={menu}
         meta={`傾けたらアウト・${LEVEL_LABEL[level]}・${tries}回挑戦`}
         rulesSub="このモードの遊び方"
