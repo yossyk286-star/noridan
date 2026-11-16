@@ -5,6 +5,7 @@ import { Alert, Animated, Easing, Modal, PanResponder, Pressable, ScrollView, St
 import { PASS, doubleSegments, iniFit, initialOf, isSituational, mustPick, needsPick, othersOf, passItem, penHead } from '../lib/game';
 import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
+import { TEAM } from '../lib/extras';
 import { useSeen } from '../lib/coach';
 import { CARD_LOOK, F, STAGE, alpha, colorOf } from '../theme';
 import type { Bomb, Card, GachaItem, Level, Member, Rule, Segment } from '../types';
@@ -56,6 +57,10 @@ export function ScoreBar({
   };
   const { width } = useWindowDimensions();
   const [all, setAll] = useState(false);
+  // メンバーの出入りで引き継いだ罰を足して出す。チーム戦は顔の下に赤・青の線
+  const { carry, teams, livePen } = usePrefs();
+  if (livePen) livePen.current = pen;
+  if (carry?.some((v) => v)) pen = pen.map((v, i) => v + (carry[i] ?? 0));
   // 右のボタン（結果・⋯）をよけて、入る人数だけ顔を出す。上下反転・向かい合わせは⋯の中。入りきらん分は「…」にまとめる
   // 結果 74px・⋯ 37px（＋すき間6px）、顔1人 34px＋すき間6px
   const fit = Math.max(2, Math.floor((Math.min(width, 560) - 32 - (onEnd ? 80 : 0) - (onUndo ? 72 : 0) - 43 - 15 + 6) / 40));
@@ -82,6 +87,7 @@ export function ScoreBar({
         {shown.map((i) => (
           <Bump key={i} n={pen[i]} style={[styles.av, { backgroundColor: colorOf(i) }, i === doer && { borderWidth: 3 }]} big={i === doer}>
             {kings.includes(i) && <Crown />}
+            {teams && teams[i] != null && <View style={[styles.teamLine, { backgroundColor: TEAM[teams[i]].color }]} />}
             <Text style={[styles.avText, iniFit(initialOf(members, i))]}>{initialOf(members, i)}</Text>
             {pen[i] > 0 && (
               <View style={[styles.cnt, { borderColor: pal.bg }]}>
@@ -1030,6 +1036,7 @@ const styles = StyleSheet.create({
   endBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, width: 74, height: 37, borderRadius: 12 },
   rvDot: { position: 'absolute', bottom: -5, right: -5, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   rvText: { fontSize: 9, fontWeight: '900' },
+  teamLine: { position: 'absolute', left: 6, right: 6, bottom: -8, height: 4, borderRadius: 2 },
   undoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, width: 66, height: 37, borderRadius: 12 },
   menuBtn: { width: 37, height: 37, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   nextUp: { flexDirection: 'row', alignItems: 'center', gap: 6 },

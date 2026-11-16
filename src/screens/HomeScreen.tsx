@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type React from 'react';
 import { iniFit, initialOf } from '../lib/game';
 import { Tap } from '../components/Tap';
 import { Animated, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -28,6 +29,10 @@ type Props = {
   initialStep?: 1 | 2;
   /** 設定の「夜モードをオンにする」が押されたら増える（確認画面を出す合図） */
   nightAskReq?: number;
+  /** モード選択の上に出す道具（帰る時間・幹事の道具・チーム戦） */
+  tools?: React.ReactNode;
+  /** 「前回のメンバー」に出すひとこと（前回の戦犯・通算） */
+  lastNote?: string;
 };
 
 const LEVELS: Level[] = ['yurume', 'futsu', 'jigoku'];
@@ -96,7 +101,7 @@ function Gear({ onPress }: { onPress: () => void }) {
   );
 }
 
-function StepMembers({ members, isExample, night, groups, restored, onMembers, onSettings, onNext }: Props & { restored: boolean; onNext: () => void }) {
+function StepMembers({ members, isExample, night, groups, restored, onMembers, onSettings, onNext, lastNote }: Props & { restored: boolean; onNext: () => void }) {
   const [name, setName] = useState('');
   const input = useRef<TextInput>(null);
   const [addMsg, setAddMsg] = useState('');
@@ -154,6 +159,7 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
                 ))}
                 <Text style={s.lastNames} numberOfLines={1}>{members.map((m) => m.name).join('・')}</Text>
               </View>
+              {!!lastNote && <Text style={s.lastNote}>{lastNote}</Text>}
               <Text style={s.lastGo}>このまま遊ぶ ▶</Text>
             </Tap>
             <Text style={s.h2}>それか、メンバーを変える</Text>
@@ -247,7 +253,7 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
   );
 }
 
-function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings, onBack, onAskDeep }: Props & { onBack: () => void; onAskDeep: () => void }) {
+function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings, onBack, onAskDeep, tools }: Props & { onBack: () => void; onAskDeep: () => void }) {
   return (
     <ScrollView contentContainerStyle={s.wrap}>
       <View style={[s.top, { alignItems: 'center' }]}>
@@ -283,6 +289,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
         })}
       </View>
 
+      {tools}
       {/* 迷ったらこれ */}
       <Tap style={s.hero} onPress={() => onStart('odai')} accessibilityLabel={`迷ったらこれ：${MODE_TITLE.odai}`}>
         <View style={{ flex: 1, gap: 2 }}>
@@ -348,6 +355,8 @@ const MODE_LIST: { m: Mode; ic: IconName; cat: Cat; t: string; min?: number; ok?
   { m: 'reflex', ic: 'reflex', cat: 'phone', t: '1回 3分' },
   { m: 'voice', ic: 'voice', cat: 'phone', t: '1回 3分' },
   { m: 'rtap', ic: 'rtap', cat: 'phone', t: '1回 2分' },
+  { m: 'yama', ic: 'yama', cat: 'basic', t: '1回 2分', min: 3 },
+  { m: 'nyok', ic: 'nyok', cat: 'basic', t: '1回 1分', min: 3 },
   { m: 'bpass', ic: 'bpass', cat: 'phone', t: '1回 2分' },
   { m: 'deko', ic: 'deko', cat: 'phone', t: '1人 60秒' },
   { m: 'whack', ic: 'whack', cat: 'phone', t: '1人 15秒' },
@@ -490,6 +499,7 @@ const s = StyleSheet.create({
   memPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingLeft: 6, paddingRight: 12, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.08)' },
   memPillText: { color: C.paper, fontWeight: '900', fontSize: 14, marginLeft: 4 },
   memPillSub: { color: C.muted, fontWeight: '700', fontSize: 12, marginLeft: 'auto' },
+  lastNote: { color: '#141210', fontSize: 13, fontWeight: '700', lineHeight: 19 },
   seg: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.08)' },
   segBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   segText: { color: C.muted, fontWeight: '900', fontSize: 15 },

@@ -205,10 +205,10 @@ function drawEvent(p) {
 }
 
 // ---------- game state ----------
-const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢", hug: "ハグタイム当て", quiz: "早押し雑学クイズ", face: "テンション伝言", deko: "おでこ当て", doubt: "ダウト", king: "王様ゲーム", draw: "お絵かき伝言", whack: "ワニワニタップ" };
+const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", yama: "山手線ゲーム", nyok: "たけのこニョッキ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢", hug: "ハグタイム当て", quiz: "早押し雑学クイズ", face: "テンション伝言", deko: "おでこ当て", doubt: "ダウト", king: "王様ゲーム", draw: "お絵かき伝言", whack: "ワニワニタップ" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face", "deko", "doubt", "draw", "whack"].includes(g.mode) ? "回戦" : g.mode === "king" ? "回" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "yama", "nyok", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face", "deko", "doubt", "draw", "whack"].includes(g.mode) ? "回戦" : g.mode === "king" ? "回" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
   // よく遊ぶモードを数える（もう一回は数えへん）
   if (!again) { const pl = (() => { const v = store.get("nd_plays", {}); return v && typeof v === "object" ? v : {}; })(); pl[mode] = (pl[mode] || 0) + 1; store.set("nd_plays", pl); }
@@ -227,12 +227,15 @@ function newGame(mode, again = false) {
     st: { lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), votes: Array(n).fill(0), exact: Array(n).fill(0), wolf: Array(n).fill(0), why: Array.from({ length: n }, () => ({})) },
   };
   S.ruleSheet = null;
+  applyCarry(); // メンバーの出入りでやり直した時は、罰を引き継ぐ
   S.screen = mode;
   if (mode === "ngword") { S.game.doer = -1; S.game.ng = { phase: "setup", minutes: oneOf(store.get("nd_ng_min", 10), [3, 5, 10, 15, 0], 10), words: [], viewer: 0, dealing: false, out: null, res: null, left: 0, endAt: 0, topic: null }; render(true); return; }
   if (mode === "vote") { S.game.doer = -1; S.game.vt = { phase: "intro", round: 0 }; if (again) startVoteRound(); render(true); return; }
   if (mode === "memory") { mmDeal(); render(true); return; }
   if (mode === "wolf") { S.game.doer = -1; S.game.wf = { phase: "intro", round: 0, minutes: oneOf(store.get("nd_wf_min", 3), WF_MIN, 3), count: oneOf(store.get("nd_wf_n", 0), [0, 1, 2, 3], 0), peace: store.get("nd_wf_peace", true) !== false, wolves: [] }; render(true); return; }
   if (mode === "rtap") { S.game.doer = -1; S.game.rt = { phase: "intro", round: 0 }; if (again) rtRound(); render(true); return; }
+  if (mode === "yama") { S.game.doer = -1; S.game.ya = { phase: "intro", round: 0 }; if (again) yaRound(); render(true); return; }
+  if (mode === "nyok") { S.game.doer = -1; S.game.ny = { phase: "intro", round: 0 }; if (again) nyRound(); render(true); return; }
   if (mode === "bpass") { S.game.doer = -1; S.game.bp = { phase: "intro", round: 0 }; if (again) bpRound(); render(true); return; }
   if (mode === "blind") { S.game.doer = -1; S.game.bl = { phase: "intro", k: 0, hits: Array(n).fill(0), fool: Array(n).fill(0) }; if (again) blRound(); render(true); return; }
   if (mode === "king") { S.game.doer = -1; S.game.kg = { phase: "intro", round: 0, kings: Array(n).fill(0) }; if (again) kgRound(); render(true); return; }
@@ -551,7 +554,7 @@ function resolveCell(me, pre = "", depth = 0) {
 }
 function sugoNext() {
   const g = S.game;
-  if (g.done) { S.screen = "result"; render(true); return; }
+  if (g.done) { tallyRecord(); S.screen = "result"; render(true); return; }
   tickRule();
   g.cur = (g.cur + 1) % S.members.length;
   g.doer = g.cur;
@@ -625,6 +628,8 @@ function titles() {
   whyTop("stop", 2, "止まられへん人", "止め負け");
   whyTop("reflex", 2, "反応遅め", "負け");
   whyTop("rtap", 2, "爆弾に好かれる人", "爆弾");
+  whyTop("yama", 2, "リズム音痴", "詰まった");
+  whyTop("nyok", 2, "空気読めへん人", "アウト");
   return out.slice(0, 8);
 }
 const titleNames = (t) => t.idx.map((i) => S.members[i].name).join("・");
@@ -1227,6 +1232,86 @@ function rtTap(t) {
     play("pop"); rt.who = (rt.who + 1) % S.members.length; g.doer = rt.who;
   }
   render(true);
+}
+
+// ---------- 山手線ゲーム ----------
+// スマホが「パン・パン」と手拍子、3拍目で番の人が答える。1周ごとに速くなる。詰まった人が罰
+const YA_BPM = { yurume: 84, futsu: 100, jigoku: 120 };
+function yaRound() {
+  const g = S.game, ya = g.ya;
+  ya.round++; g.turn = ya.round; ya.topic = draw("yama_" + S.level, DATA.yama[S.level] || DATA.yama.futsu);
+  ya.start = (ya.round - 1) % S.members.length; ya.who = ya.start; ya.said = 0; ya.beat = 0; ya.bpm = YA_BPM[S.level] || 100; ya.loser = null;
+  g.doer = ya.who; ya.phase = "ready";
+}
+function yaPaint() {
+  const ya = S.game?.ya; if (!ya) return;
+  document.querySelectorAll("[data-yb]").forEach((el) => el.classList.toggle("on", +el.dataset.yb === ya.beat % 3));
+  const w = document.getElementById("yaWho");
+  if (w) { w.textContent = S.members[ya.who].name; w.style.setProperty("--mc", colorOf(ya.who)); }
+  const b = document.getElementById("yaBpm"); if (b) b.textContent = `テンポ ${ya.bpm}`;
+  document.body.style.setProperty("--pc", colorOf(ya.who));
+}
+function yaGo() {
+  const g = S.game, ya = g.ya;
+  ya.phase = "play"; ya.beat = -1; render(true);
+  const tick = () => {
+    if (S.game?.ya !== ya || ya.phase !== "play") return;
+    ya.beat++;
+    const k = ya.beat % 3;
+    if (k === 0 && ya.beat > 0) {
+      // 答えの拍が終わったら次の人へ。1周したらテンポアップ
+      ya.who = (ya.who + 1) % S.members.length; ya.said++; g.doer = ya.who;
+      if (ya.who === ya.start) ya.bpm = Math.min(170, ya.bpm + 8);
+    }
+    if (k < 2) play("clack"); else { play("tick"); vib(30); }
+    yaPaint();
+    ya.t = setTimeout(tick, 60000 / ya.bpm);
+  };
+  ya.t = setTimeout(tick, 500);
+}
+function yaStuck() {
+  const g = S.game, ya = g.ya;
+  if (ya.phase !== "play") return;
+  clearTimeout(ya.t); ya.phase = "who"; ya.loser = ya.who; g.doer = -1;
+  play("buzzer"); vib([120, 60, 120]); render(true);
+}
+
+// ---------- たけのこニョッキ ----------
+// スマホを真ん中に置いて、自分のエリアを押しながら「1ニョッキ！」。0.6秒以内にかぶったらアウト、最後の1人もアウト
+const NY_GAP = 600, NY_MAX = 8;
+function nyRound() {
+  const g = S.game, ny = g.ny, n = S.members.length;
+  ny.round++; g.turn = ny.round;
+  const all = S.members.map((_, i) => i);
+  ny.heat = n <= NY_MAX ? all : shuffle(all).slice(0, NY_MAX).sort((a, b) => a - b);
+  ny.taps = []; ny.losers = []; ny.why = ""; clearTimeout(ny.endT);
+  g.doer = -1; ny.phase = "hand";
+}
+function nyGo() { const ny = S.game.ny; ny.phase = "play"; play("coin"); render(true); }
+function nyTap(i, ts) {
+  const g = S.game, ny = g.ny;
+  if (ny.phase !== "play" || !ny.heat.includes(i) || ny.taps.some((t) => t.i === i)) return;
+  const last = ny.taps[ny.taps.length - 1];
+  ny.taps.push({ i, ts, no: ny.taps.length + 1 });
+  if (last && ts - last.ts < NY_GAP) {
+    // かぶった：0.6秒以内に押した人を全員アウト
+    clearTimeout(ny.endT);
+    ny.losers = ny.taps.filter((t) => ts - t.ts < NY_GAP).map((t) => t.i);
+    ny.why = "かぶった！"; ny.phase = "out";
+    play("boom"); vib([200, 60, 200]); render(true); return;
+  }
+  play("pop"); vib(20);
+  const z = document.querySelector(`[data-ny="${i}"]`);
+  if (z) { z.classList.add("hit"); const v = z.querySelector(".rf-zv"); if (v) v.textContent = `${ny.taps.length}ニョッキ`; }
+  const c = document.getElementById("nyCount"); if (c) c.textContent = `${ny.taps.length}ニョッキ！`;
+  if (ny.taps.length === ny.heat.length - 1) {
+    // 残り1人：かぶりの判定を待ってから、押せへんかった人がアウト
+    ny.endT = setTimeout(() => {
+      if (S.game?.ny !== ny || ny.phase !== "play") return;
+      ny.losers = ny.heat.filter((j) => !ny.taps.some((t) => t.i === j));
+      ny.why = "最後まで残った"; ny.phase = "out"; play("buzzer"); render(true);
+    }, NY_GAP + 50);
+  }
 }
 
 // ---------- 爆弾パス ----------

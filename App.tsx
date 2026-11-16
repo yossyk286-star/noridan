@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { Animated, Easing, StyleSheet } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Tap } from './src/components/Tap';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
@@ -20,6 +21,8 @@ import TiltScreen from './src/screens/TiltScreen';
 import ShakeScreen from './src/screens/ShakeScreen';
 import StopScreen from './src/screens/StopScreen';
 import RtapScreen from './src/screens/RtapScreen';
+import YamaScreen from './src/screens/YamaScreen';
+import NyokScreen from './src/screens/NyokScreen';
 import BpassScreen from './src/screens/BpassScreen';
 import HiloScreen from './src/screens/HiloScreen';
 import ReflexScreen from './src/screens/ReflexScreen';
@@ -41,8 +44,11 @@ import { setVibeEnabled, Vibration } from './src/lib/vibe';
 import { cancelFx, quakeX, resetStreak } from './src/lib/fx';
 import FxLayer from './src/components/FxLayer';
 import { PrefsContext } from './src/lib/prefs';
-import { PASS, setContent } from './src/lib/game';
+import { Decks, PASS, setContent } from './src/lib/game';
 import { markFirstOpen, maybeAskReview } from './src/lib/review';
+import { getTally, makeTeams, minsLeft, recordTally, setToastHandler, toast, type Tally } from './src/lib/extras';
+import { GoHome, InoutSheet, KanjiSheet, LeftResult, QrSheet, TallyResult, TeamPick, TeamResult, Toast, ToolButton, tallyText } from './src/components/Extras';
+import { MODE_TITLE } from './src/components/ModeParts';
 import { speak, stopSpeak } from './src/lib/speech';
 import type { Stats } from './src/lib/titles';
 import SettingsSheet from './src/components/SettingsSheet';
@@ -57,7 +63,7 @@ import type { Level, Member, Mode, Night } from './src/types';
 const STAGES: Record<Mode, ComponentType<any>> = {
   odai: OdaiScreen, sugoroku: SugorokuScreen, memory: MemoryScreen, ito: ItoScreen, gesture: GestureScreen, homeru: HomeruScreen,
   ngword: NgWordScreen, vote: VoteScreen, wolf: WolfScreen, pittari: PittariScreen, tilt: TiltScreen, shake: ShakeScreen, stop: StopScreen,
-  rtap: RtapScreen, bpass: BpassScreen, hilo: HiloScreen, reflex: ReflexScreen, voice: VoiceScreen, blind: BlindScreen, pocky: PockyScreen, tickle: TickleScreen, hug: HugScreen, quiz: QuizScreen, face: FaceScreen, deko: DekoScreen, doubt: DoubtScreen, king: KingScreen, draw: DrawScreen, whack: WhackScreen,
+  rtap: RtapScreen, yama: YamaScreen, nyok: NyokScreen, bpass: BpassScreen, hilo: HiloScreen, reflex: ReflexScreen, voice: VoiceScreen, blind: BlindScreen, pocky: PockyScreen, tickle: TickleScreen, hug: HugScreen, quiz: QuizScreen, face: FaceScreen, deko: DekoScreen, doubt: DoubtScreen, king: KingScreen, draw: DrawScreen, whack: WhackScreen,
 };
 const isStage = (name: string): name is Mode => name in STAGES;
 
@@ -89,6 +95,23 @@ export default function App() {
   const [nightAskReq, setNightAskReq] = useState(0);
   const [groups, setGroups] = useState<Member[][]>([]);
   const [stageBg, setStageBg] = useState<string | null>(null);
+  // ===== 第3弾 =====
+  const [team, setTeam] = useState(false); // チーム戦
+  const [teams, setTeams] = useState<number[]>([]);
+  const [goHome, setGoHome] = useState<string | null>(null); // 帰る時間 "23:40"
+  const [water, setWater] = useState(true); // お水タイム
+  const [left, setLeft] = useState<{ name: string; pen: number }[]>([]); // 先に帰った人
+  const [carry, setCarry] = useState<Record<string, number> | null>(null); // メンバーの出入りで引き継ぐ罰
+  const [inout, setInout] = useState(false);
+  const [kanji, setKanji] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [tally, setTally] = useState<Tally | null>(null);
+  const [teamBatsu, setTeamBatsu] = useState('');
+  const [toastMsg, setToastMsg] = useState({ text: '', kind: '' });
+  const livePen = useRef<number[]>([]);
+  const since = useRef(0);
+  const alerted = useRef<Record<string, boolean>>({});
+  const teamDecks = useRef(new Decks()).current;
 
   useEffect(() => {
     (async () => {
@@ -124,6 +147,10 @@ export default function App() {
       setPassOn(po);
       setContent(so, nt);
       PASS.on = po;
+      setTeam((await load<unknown>('nd_team', false)) === true);
+      setWater((await load<unknown>('nd_water', true)) !== false);
+      const gh = await load<{ t?: string; at?: number } | null>('nd_gohome', null);
+      if (gh && typeof gh.t === 'string' && Date.now() - (gh.at ?? 0) < 12 * 3600e3) setGoHome(gh.t);
     })();
   }, []);
 
@@ -194,16 +221,121 @@ export default function App() {
     setGroups(next);
     save('nd_groups', next);
   };
+  // チーム戦（4人以上）。メンバーが変わったら組み直す
+  const teamOn = team && members.length >= 4;
+  useEffect(() => {
+    if (teamOn && teams.length !== members.length) setTeams(makeTeams(members.length));
+  }, [teamOn, members]);
+  const updateTeam = () => {
+    const on = !teamOn;
+    setTeam(on);
+    save('nd_team', on);
+    if (on) setTeams(makeTeams(members.length));
+  };
+  const updateWater = (on: boolean) => {
+    setWater(on);
+    save('nd_water', on);
+  };
+  const updateGoHome = (t: string | null) => {
+    setGoHome(t);
+    alerted.current = {};
+    save('nd_gohome', t ? { t, at: Date.now() } : null);
+  };
+  // このメンバーの通算（前回の戦犯）
+  useEffect(() => {
+    if (!isExample) getTally(members).then(setTally);
+  }, [members, isExample]);
+  // お知らせ
+  useEffect(() => {
+    setToastHandler((text, kind = '') => setToastMsg({ text, kind }));
+  }, []);
+  const carryArr = members.map((m) => carry?.[m.name] ?? 0);
+
+  // メンバーの出入り：今の罰を引き継いで、同じ遊び方をやり直す
+  const totals = () => members.map((_, i) => (livePen.current[i] ?? 0) + carryArr[i]);
+  const restart = (ms: Member[], c: Record<string, number>, msg: string) => {
+    updateMembers(ms);
+    setCarry(c);
+    setInout(false);
+    if (teamOn) setTeams(makeTeams(ms.length));
+    if (isStage(screen.name)) {
+      resetStreak();
+      cancelFx();
+      setScreen({ name: screen.name, key: Date.now(), again: true });
+    }
+    toast(msg);
+  };
+  const join = (name: string) => {
+    if (members.length >= 12) return '12人までやで';
+    if (members.some((m) => m.name === name)) return `「${name}」はもうおるで`;
+    const t = totals();
+    const c: Record<string, number> = {};
+    members.forEach((m, i) => (c[m.name] = t[i]));
+    const back = left.find((x) => x.name === name);
+    c[name] = back ? back.pen : t.length ? Math.round(t.reduce((a, b) => a + b, 0) / t.length) : 0;
+    setLeft(left.filter((x) => x.name !== name));
+    restart([...members, { name }], c, `${name}が参加！罰${c[name]}からスタート`);
+    return '';
+  };
+  const leave = (i: number) => {
+    if (members.length <= 2) return;
+    const t = totals();
+    const c: Record<string, number> = {};
+    members.forEach((m, j) => j !== i && (c[m.name] = t[j]));
+    setLeft([...left, { name: members[i].name, pen: t[i] }]);
+    restart(members.filter((_, j) => j !== i), c, `${members[i].name}は先に帰った。おつかれ！`);
+  };
+
+  // 終電アラートとお水タイム（ゲーム中だけ、20秒ごとに見る）
+  const onStageNow = isStage(screen.name);
+  useEffect(() => {
+    if (!onStageNow) return;
+    if (!since.current) since.current = Date.now();
+    const check = () => {
+      const l = minsLeft(goHome);
+      if (l != null && goHome) {
+        for (const k of [30, 10, 0]) {
+          const key = `${goHome}:${k}`;
+          if (l <= k && l > k - 10 && !alerted.current[key]) {
+            alerted.current[key] = true;
+            toast(k === 0 ? `🚃 ${goHome}、帰る時間やで！忘れ物ないように` : `🚃 帰る時間（${goHome}）まであと${l}分`, 'train');
+            play('alarm');
+            return;
+          }
+        }
+      }
+      if (water) {
+        const n = Math.floor((Date.now() - since.current) / (30 * 60e3));
+        if (n > 0 && !alerted.current[`water${n}`]) {
+          alerted.current[`water${n}`] = true;
+          toast('💧 お水タイム！全員お水かソフドリをひと口（罰ちゃうで）', 'water');
+          play('chin');
+        }
+      }
+    };
+    check();
+    const t = setInterval(check, 20000);
+    return () => clearInterval(t);
+  }, [onStageNow, goHome, water]);
+
   const start = (mode: Mode, again = false) => {
     if (screen.name === 'home') rememberGroup();
+    setCarry(null); // 普通に始めた時は引き継ぎなし
+    setLeft([]);
     resetStreak(); // 連続罰はゲームごとに数え直し
     if (!again) countPlay(mode); // 「よく遊ぶ」タブ用
     cancelFx();
     PASS.used.clear(); // パス券はゲームごとに1人1枚
     setScreen({ name: mode, key: Date.now(), again });
   };
-  const finish = (mode: Mode) => (pen: number[], turns: number, stats: Stats, words?: string[], scores?: number[]) => {
+  const finish = (mode: Mode) => (pen0: number[], turns: number, stats: Stats, words?: string[], scores?: number[]) => {
+    const pen = pen0.map((v, i) => v + carryArr[i]); // 出入りで引き継いだ罰も足す
     setScreen({ name: 'result', mode, pen, turns, stats: { ...stats }, words, scores });
+    if (teamOn) {
+      const b = teamDecks.groupBatsu(members);
+      setTeamBatsu(b.lucky ? '天使が来た！今回はセーフ' : b.segments.map((x) => x.text).join(''));
+    }
+    if (!isExample) recordTally(members, pen, stats.lucky ?? [], mode).then(setTally);
     // 結果発表の演出が終わったころに、条件がそろってたら星のお願い
     setTimeout(maybeAskReview, 6000);
   };
@@ -236,7 +368,7 @@ export default function App() {
   }, [onStage]);
 
   return (
-    <PrefsContext.Provider value={{ dual, voice, handoff, noTouch, setDual: updateDual }}>
+    <PrefsContext.Provider value={{ dual, voice, handoff, noTouch, setDual: updateDual, teams: teamOn ? teams : undefined, carry: carry ? carryArr : undefined, livePen, onInout: () => setTimeout(() => setInout(true), 400) }}>
     <SafeAreaProvider>
       <SafeAreaView style={[s.root, { backgroundColor: bg }]}>
         <StatusBar style="light" />
@@ -255,6 +387,16 @@ export default function App() {
               onSettings={() => setSheet(true)}
               groups={groups}
               nightAskReq={nightAskReq}
+              lastNote={tallyText(tally, (m) => MODE_TITLE[m as Mode] ?? '')}
+              tools={
+                <>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <GoHome time={goHome} onChange={updateGoHome} />
+                    <ToolButton label="幹事の道具" sub="席替え・役割・順番・二次会" onPress={() => setKanji(true)} />
+                  </View>
+                  <TeamPick members={members} on={teamOn} teams={teams} onToggle={updateTeam} onShuffle={() => setTeams(makeTeams(members.length))} />
+                </>
+              }
             />
           )}
           {screen.name !== 'home' && screen.name !== 'result' && (() => {
@@ -275,6 +417,20 @@ export default function App() {
               onHome={home}
               onMembers={() => { stopSpeak(); setScreen({ name: 'home', step: 1 }); }}
               onAgain={() => start(screen.mode, true)}
+              extraTop={
+                <>
+                  <Tap style={s.qrBtn} onPress={() => setQrOpen(true)}>
+                    <Text style={s.qrText}>隣の人にもノリダン（QR）</Text>
+                  </Tap>
+                  {teamOn && teams.length === members.length && <TeamResult members={members} teams={teams} pen={screen.pen} batsu={teamBatsu} />}
+                </>
+              }
+              extraBottom={
+                <>
+                  <LeftResult left={left} />
+                  <TallyResult members={members} tally={tally} />
+                </>
+              }
             />
           )}
         </Animated.View>
@@ -295,6 +451,8 @@ export default function App() {
           onNoTouch={updateNoTouch}
           passOn={passOn}
           onPass={updatePass}
+          water={water}
+          onWater={updateWater}
           voice={voice}
           night={night}
           onSound={updateSound}
@@ -304,6 +462,10 @@ export default function App() {
           onNightAsk={screen.name === 'home' ? () => { setSheet(false); setNightAskReq((n) => n + 1); } : undefined}
           onClose={() => setSheet(false)}
         />
+        <InoutSheet visible={inout && onStageNow} members={members} pen={totals()} left={left} onJoin={join} onLeave={leave} onClose={() => setInout(false)} />
+        <KanjiSheet visible={kanji} members={members} onClose={() => setKanji(false)} />
+        <QrSheet visible={qrOpen} onClose={() => setQrOpen(false)} />
+        <Toast text={toastMsg.text} kind={toastMsg.kind} onHide={() => setToastMsg({ text: '', kind: '' })} />
       </SafeAreaView>
     </SafeAreaProvider>
     </PrefsContext.Provider>
@@ -312,4 +474,6 @@ export default function App() {
 
 const s = StyleSheet.create({
   root: { flex: 1 },
+  qrBtn: { borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 14, padding: 14, alignItems: 'center' },
+  qrText: { color: '#f7f3ea', fontWeight: '900' },
 });

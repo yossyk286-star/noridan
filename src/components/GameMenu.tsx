@@ -24,7 +24,7 @@ type Props = {
 
 /** ゲーム中の「⋯」メニュー。画面をスッキリさせるために、たまにしか使わん操作はここに寄せる */
 export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRules, onSettings, onQuit, onClose, rulesSub, onUndo }: Props) {
-  const { dual, setDual } = usePrefs();
+  const { dual, setDual, onInout } = usePrefs();
   // 結果発表・やめるは押し間違えたら戻れへんので、1回だけ確認を挟む
   const [ask, setAsk] = useState<null | 'end' | 'quit'>(null);
   useEffect(() => {
@@ -75,6 +75,7 @@ export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRule
           <>
           {item('flag', '結果発表', 'ここで終わって、罰が一番多い人を発表', () => setAsk('end'), { hot: true, keep: true })}
           {onUndo && item('undo', '1手戻す', '押し間違えた時に、ひとつ前に戻る', onUndo)}
+          {onInout && item('users', 'メンバーの出入り', '今来た人を入れる・先に帰る人を外す', onInout)}
           {item('book', 'ルール早見表', rulesSub ?? '倍プッシュ・時限爆弾・リベンジ権…', onRules)}
           {onFlip && item('flip', '上下反転', '向かいの人に画面を向ける', onFlip, { state: flipped ? 'オン' : 'オフ' })}
           {item('split', '向かい合わせ表示', '机の真ん中に置いて、両側から読める', () => setDual(!dual), { state: dual ? 'オン' : 'オフ' })}

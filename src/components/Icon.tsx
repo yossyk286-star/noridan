@@ -1,10 +1,12 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /** 線のアイコン（お試し版と同じ形）。色は color、太さは中で統一 */
-export type IconName = 'gear' | 'flip' | 'split' | 'wolf' | 'target' | 'undo' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt' | 'king' | 'draw' | 'whack';
+export type IconName = 'gear' | 'flip' | 'split' | 'wolf' | 'target' | 'undo' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'yama' | 'nyok' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt' | 'king' | 'draw' | 'whack';
 
 const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
   wolf: 'M12 8a3 3 0 1 1-6 0a3 3 0 1 1 6 0zM3.5 19a5.5 5.5 0 0 1 11 0M20 9a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0zM15.5 14.2A4.5 4.5 0 0 1 21 18.5M17.5 3.5v1',
+  yama: 'M3 12a9 5 0 1 0 18 0a9 5 0 1 0 -18 0M7 12h.01M12 12h.01M17 12h.01',
+  nyok: 'M12 21V9M12 9l-4 4M12 9l4 4M8 21l4-16 4 16M6 21h12',
   rtap: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM16.5 13.5a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM18.6 13.2l1.4-1.4',
   bpass: 'M10 21a6.5 6.5 0 1 0 0-13a6.5 6.5 0 1 0 0 13zM14.6 9.4l2-2M17 5.5l1.5-1.5M19.5 7.5l1.5.5M16.5 3l.5 1.5',
   blind: 'M3 12s3.5-6 9-6c1.6 0 3 .5 4.3 1.2M21 12s-3.5 6-9 6c-1.6 0-3-.5-4.3-1.2M4 20L20 4M9.5 14.5a3 3 0 0 1 4.9-4.1',

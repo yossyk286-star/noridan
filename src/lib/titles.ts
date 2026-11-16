@@ -33,7 +33,7 @@ export type Stats = {
   /** 罰の理由ごとの回数（結果発表の内訳） */
   why: Partial<Record<Why, number>>[];
 };
-export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt' | 'king' | 'draw' | 'whack';
+export type Why = 'out' | 'rule' | 'double' | 'push' | 'bomb' | 'vote' | 'ng' | 'mfail' | 'skull' | 'mlow' | 'ito' | 'glow' | 'gquota' | 'hmlaugh' | 'hmfail' | 'wolf' | 'pit' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'yama' | 'nyok' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt' | 'king' | 'draw' | 'whack';
 /** 罰の理由の名前（src/data/why.json。Web版と共通） */
 export const WHY_LABEL = whyJson as Record<Why, string>;
 export function whyText(st: Stats | undefined, i: number) {
@@ -177,5 +177,7 @@ export function titles(pen: number[], st: Stats | undefined): Title[] {
   whyTop('stop', 2, '止まられへん人', '止め負け');
   whyTop('reflex', 2, '反応遅め', '負け');
   whyTop('rtap', 2, '爆弾に好かれる人', '爆弾');
+  whyTop('yama', 2, 'リズム音痴', '詰まった');
+  whyTop('nyok', 2, '空気読めへん人', 'アウト');
   return out.slice(0, 8);
 }
