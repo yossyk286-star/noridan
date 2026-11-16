@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Tap } from './Tap';
 import type React from 'react';
 import { Alert, Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { doubleSegments, iniFit, initialOf, isSituational, mustPick, needsPick, othersOf, penHead } from '../lib/game';
+import { PASS, doubleSegments, iniFit, initialOf, isSituational, mustPick, needsPick, othersOf, passItem, penHead } from '../lib/game';
 import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
 import { useSeen } from '../lib/coach';
@@ -44,8 +44,8 @@ export function Frame({ color }: { color: string }) {
 
 /** 上のバー：左に罰スコアの顔アイコン列、右に「⋯」メニュー */
 export function ScoreBar({
-  pal, members, pen, rev, doer, onMenu, flipped, onFlip, onEnd,
-}: { pal: Pal; members: Member[]; pen: number[]; rev: boolean[]; doer: number; onMenu: () => void; flipped?: boolean; onFlip?: () => void; onEnd?: () => void }) {
+  pal, members, pen, rev, doer, onMenu, flipped, onFlip, onEnd, onUndo,
+}: { pal: Pal; members: Member[]; pen: number[]; rev: boolean[]; doer: number; onMenu: () => void; flipped?: boolean; onFlip?: () => void; onEnd?: () => void; /** 1手戻す（戻せる時だけ渡す） */ onUndo?: () => void }) {
   // 「結果」ボタン：うっかり押しても終わらんように「もう結果出す？」の確認を出す
   const pressEnd = () => {
     if (!onEnd) return;
@@ -58,7 +58,7 @@ export function ScoreBar({
   const [all, setAll] = useState(false);
   // 右のボタン（結果・⋯）をよけて、入る人数だけ顔を出す。上下反転・向かい合わせは⋯の中。入りきらん分は「…」にまとめる
   // 結果 74px・⋯ 37px（＋すき間6px）、顔1人 34px＋すき間6px
-  const fit = Math.max(2, Math.floor((Math.min(width, 560) - 32 - (onEnd ? 80 : 0) - 43 - 15 + 6) / 40));
+  const fit = Math.max(2, Math.floor((Math.min(width, 560) - 32 - (onEnd ? 80 : 0) - (onUndo ? 72 : 0) - 43 - 15 + 6) / 40));
   let shown = members.map((_, i) => i);
   if (members.length > fit) {
     shown = shown.slice(0, fit - 1);
@@ -104,6 +104,12 @@ export function ScoreBar({
           </Tap>
         )}
       </View>
+      {onUndo && (
+        <Tap onPress={onUndo} accessibilityLabel="1手戻す" style={[styles.undoBtn, { backgroundColor: pal.chip }]}>
+          <Icon name="undo" color={pal.fg} size={16} />
+          <Text style={{ fontSize: 14, fontWeight: '900', color: pal.fg }}>戻す</Text>
+        </Tap>
+      )}
       {onEnd && (
         <Tap onPress={pressEnd} accessibilityLabel="結果発表" style={[styles.endBtn, { backgroundColor: pal.chip }]}>
           <Icon name="flag" color={pal.fg} size={16} />
@@ -419,8 +425,17 @@ const BATSU_LOOK = { bg: '#1a0606', fg: '#ffffff', edge: '#e8202a' };
 const LUCKY_LOOK = { bg: '#eef6ff', fg: '#1c2a4a', edge: '#ffd23f' };
 
 /** 罰ガチャ：ドクロがドンッ → カプセルが落ちてきて開き、中身が出る */
-export function GachaCard({ members, items }: { pal: Pal; members: Member[]; items: GachaItem[] }) {
-  const anim = useFlipIn(items);
+export function GachaCard({ members, items: raw }: { pal: Pal; members: Member[]; items: GachaItem[] }) {
+  const anim = useFlipIn(raw);
+  // パス券：罰の数はそのまま、中身だけゆるい罰に替える（結果の記録にも残るように、その罰そのものを書き換える）
+  const [, setPassTick] = useState(0);
+  const items = raw;
+  const usePass = (k: number) => {
+    const g = raw[k];
+    PASS.used.add(g.i);
+    Object.assign(g, { segments: passItem(members, g.i).segments, night: undefined, passed: true });
+    setPassTick((t) => t + 1);
+  };
   const allLucky = items.every((g) => g.lucky);
   const mixed = !allLucky && items.some((g) => g.lucky);
   const look = allLucky ? LUCKY_LOOK : BATSU_LOOK;
@@ -431,7 +446,7 @@ export function GachaCard({ members, items }: { pal: Pal; members: Member[]; ite
     setRolling(true);
     const t = setTimeout(() => setRolling(false), GACHA_MS);
     return () => clearTimeout(t);
-  }, [items]);
+  }, [raw]);
   if (rolling) {
     return (
       <Animated.View style={[styles.card, { backgroundColor: look.bg, borderColor: look.edge, borderWidth: 3 }, anim]}>
@@ -461,7 +476,16 @@ export function GachaCard({ members, items }: { pal: Pal; members: Member[]; ite
       </View>
       <View style={[styles.cardBody, { gap: 14 }]}>
         {items.map((g, k) => (
-          <GachaRow key={g.i} name={members[g.i].name} color={colorOf(g.i)} item={g} fg={look.fg} mark={mixed} delay={400 + k * 350} />
+          <View key={g.i} style={{ gap: 8 }}>
+            <GachaRow name={members[g.i].name} color={colorOf(g.i)} item={g} fg={look.fg} mark={mixed} delay={400 + k * 350} />
+            {PASS.on && !g.lucky && !g.passed && !PASS.used.has(g.i) && (
+              <Tap onPress={() => usePass(k)} accessibilityLabel={`${members[g.i].name}がパス券を使う`} style={[styles.passBtn, { borderColor: look.fg }]}>
+                <Text style={[styles.passText, { color: look.fg }]}>パス券を使う</Text>
+                <Text style={[styles.passSub, { color: look.fg }]}>あと1枚・ゆるい罰に替わる</Text>
+              </Tap>
+            )}
+            {g.passed && <Text style={[styles.passSub, { color: look.fg, marginLeft: 62 }]}>パス券を使った</Text>}
+          </View>
         ))}
       </View>
     </Animated.View>
@@ -514,12 +538,12 @@ function GachaRow({ name, color, item, delay, fg, mark }: { name: string; color:
           <Text style={[styles.gachaWho, { color: fg }]}>
             {name}{item.lucky ? 'はセーフ' : item.night === 'shinya' ? 'の深夜の罰' : item.night ? 'の夜の罰' : 'の罰'}
           </Text>
-          {item.n > 1 && !item.lucky && (
+          {item.n > 1 && !item.lucky && !item.passed && (
             <View style={styles.x2Badge}><Text style={styles.x2BadgeText}>×{item.n}</Text></View>
           )}
         </View>
-        <SegText segments={item.lucky ? item.segments : doubleSegments(item.segments, item.n)} style={[styles.gachaText, { color: fg }]} />
-        {!item.lucky && item.n > 1 && <X2Meter segments={doubleSegments(item.segments, item.n)} />}
+        <SegText segments={item.lucky || item.passed ? item.segments : doubleSegments(item.segments, item.n)} style={[styles.gachaText, { color: fg }]} />
+        {!item.lucky && !item.passed && item.n > 1 && <X2Meter segments={doubleSegments(item.segments, item.n)} />}
       </Animated.View>
     </View>
   );
@@ -1006,6 +1030,7 @@ const styles = StyleSheet.create({
   endBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, width: 74, height: 37, borderRadius: 12 },
   rvDot: { position: 'absolute', bottom: -5, right: -5, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   rvText: { fontSize: 9, fontWeight: '900' },
+  undoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, width: 66, height: 37, borderRadius: 12 },
   menuBtn: { width: 37, height: 37, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   nextUp: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nextText: { fontSize: 13, fontWeight: '900' },
@@ -1071,6 +1096,9 @@ const styles = StyleSheet.create({
   dualLine: { borderTopWidth: 2, borderStyle: 'dashed', opacity: 0.22 },
   /** お題文は読みやすい太ゴシック（名前・見出しは看板文字のまま） */
   cardText: { fontWeight: '900', fontSize: 32, lineHeight: 48 },
+  passBtn: { marginLeft: 62, alignSelf: 'flex-start', borderWidth: 1.5, borderRadius: 12, paddingVertical: 6, paddingHorizontal: 12, opacity: 0.9 },
+  passText: { fontSize: 14, fontWeight: '900' },
+  passSub: { fontSize: 11, fontWeight: '700', opacity: 0.7 },
   gachaWhoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   mark: { borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
   markText: { fontSize: 12, fontWeight: '900' },

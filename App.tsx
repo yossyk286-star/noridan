@@ -41,6 +41,8 @@ import { setVibeEnabled, Vibration } from './src/lib/vibe';
 import { cancelFx, quakeX, resetStreak } from './src/lib/fx';
 import FxLayer from './src/components/FxLayer';
 import { PrefsContext } from './src/lib/prefs';
+import { PASS, setContent } from './src/lib/game';
+import { markFirstOpen, maybeAskReview } from './src/lib/review';
 import { speak, stopSpeak } from './src/lib/speech';
 import type { Stats } from './src/lib/titles';
 import SettingsSheet from './src/components/SettingsSheet';
@@ -79,6 +81,9 @@ export default function App() {
   const [dual, setDual] = useState(false);
   const [voice, setVoice] = useState(false);
   const [handoff, setHandoff] = useState(true); // お題の前に「つぎは○○」をはさむ
+  const [sober, setSober] = useState(false); // お酒なし
+  const [noTouch, setNoTouch] = useState(false); // 体に触るのなし
+  const [passOn, setPassOn] = useState(true); // パス券（1人1回）
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
   const [sheet, setSheet] = useState(false);
   const [nightAskReq, setNightAskReq] = useState(0);
@@ -111,6 +116,14 @@ export default function App() {
       setDual((await load<unknown>('nd_dual', false)) === true);
       setVoice((await load<unknown>('nd_voice', false)) === true);
       setHandoff((await load<unknown>('nd_handoff', true)) !== false);
+      const so = (await load<unknown>('nd_sober', false)) === true;
+      const nt = (await load<unknown>('nd_notouch', false)) === true;
+      const po = (await load<unknown>('nd_pass', true)) !== false;
+      setSober(so);
+      setNoTouch(nt);
+      setPassOn(po);
+      setContent(so, nt);
+      PASS.on = po;
     })();
   }, []);
 
@@ -154,6 +167,21 @@ export default function App() {
     setHandoff(on);
     save('nd_handoff', on);
   };
+  const updateSober = (on: boolean) => {
+    setSober(on);
+    setContent(on, noTouch);
+    save('nd_sober', on);
+  };
+  const updateNoTouch = (on: boolean) => {
+    setNoTouch(on);
+    setContent(sober, on);
+    save('nd_notouch', on);
+  };
+  const updatePass = (on: boolean) => {
+    setPassOn(on);
+    PASS.on = on;
+    save('nd_pass', on);
+  };
   const updateNight = (n: Night) => {
     setNight(n);
     save('nd_night', n);
@@ -171,9 +199,17 @@ export default function App() {
     resetStreak(); // 連続罰はゲームごとに数え直し
     if (!again) countPlay(mode); // 「よく遊ぶ」タブ用
     cancelFx();
+    PASS.used.clear(); // パス券はゲームごとに1人1枚
     setScreen({ name: mode, key: Date.now(), again });
   };
-  const finish = (mode: Mode) => (pen: number[], turns: number, stats: Stats, words?: string[], scores?: number[]) => setScreen({ name: 'result', mode, pen, turns, stats: { ...stats }, words, scores });
+  const finish = (mode: Mode) => (pen: number[], turns: number, stats: Stats, words?: string[], scores?: number[]) => {
+    setScreen({ name: 'result', mode, pen, turns, stats: { ...stats }, words, scores });
+    // 結果発表の演出が終わったころに、条件がそろってたら星のお願い
+    setTimeout(maybeAskReview, 6000);
+  };
+  useEffect(() => {
+    markFirstOpen();
+  }, []);
   const home = () => {
     stopSpeak();
     setScreen({ name: 'home', step: 2 });
@@ -200,7 +236,7 @@ export default function App() {
   }, [onStage]);
 
   return (
-    <PrefsContext.Provider value={{ dual, voice, handoff, setDual: updateDual }}>
+    <PrefsContext.Provider value={{ dual, voice, handoff, noTouch, setDual: updateDual }}>
     <SafeAreaProvider>
       <SafeAreaView style={[s.root, { backgroundColor: bg }]}>
         <StatusBar style="light" />
@@ -253,6 +289,12 @@ export default function App() {
           dual={dual}
           handoff={handoff}
           onHandoff={updateHandoff}
+          sober={sober}
+          onSober={updateSober}
+          noTouch={noTouch}
+          onNoTouch={updateNoTouch}
+          passOn={passOn}
+          onPass={updatePass}
           voice={voice}
           night={night}
           onSound={updateSound}

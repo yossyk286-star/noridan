@@ -1,6 +1,6 @@
 import { useReducer, useRef } from 'react';
 import { Haptics } from './vibe';
-import { CHANCE, Decks, PERSONAL, makeCard, nameSeg, othersOf, pick } from './game';
+import { CHANCE, Decks, PASS, PERSONAL, makeCard, nameSeg, othersOf, pick } from './game';
 import { play } from './sound';
 import { newStats, type Why } from './titles';
 import type { Bomb, Card, GachaItem, Member, Phase, Rule, Segment } from '../types';
@@ -14,7 +14,10 @@ const OFFER_CARD = (members: Member[], doer: number): Card => ({
  * 1枚のカードを出してから次に進むまでの流れ（両モード共通）
  * 罰チップ → 罰ガチャ → (時限爆弾) → 次へ、の間にダブルアップとリベンジ権が入る
  */
-export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => void) {
+/** 1手戻す時に画面側の状態（今の番・ターン数など）も一緒に戻すための出し入れ */
+export type UndoExt = { get: () => unknown; set: (v: any) => void };
+
+export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => void, ext?: UndoExt) {
   const [, rerender] = useReducer((x: number) => x + 1, 0);
   const n = members.length;
   const st = useRef({
@@ -44,6 +47,28 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
     /** 発動中のルール（緊急指令・「次の自分の番まで〜」の罰やお題） */
     rules: [] as Rule[],
   }).current;
+
+  /** 1手戻す用の記録（最大20手） */
+  const hist = useRef<{ st: typeof st; pass: number[]; ext: unknown }[]>([]).current;
+  const snap = () => {
+    const copy = {
+      ...st,
+      pen: st.pen.slice(),
+      rev: st.rev.slice(),
+      add: new Map(st.add),
+      gacha: st.gacha.map((g) => ({ ...g })),
+      bomb: st.bomb ? { ...st.bomb } : null,
+      rules: st.rules.slice(),
+      stats: JSON.parse(JSON.stringify(st.stats)),
+    };
+    hist.push({ st: copy, pass: [...PASS.used], ext: ext?.get() });
+    if (hist.length > 20) hist.shift();
+  };
+  /** 操作の前に記録を取ってから実行する */
+  const rec = <A extends unknown[], R>(fn: (...a: A) => R) => (...a: A): R => {
+    snap();
+    return fn(...a);
+  };
 
   /** その人の次の番が終わるまで何ターンあるか（すぐ次がその人でも、その番の間は出しとく） */
   const untilNext = (i: number) => (((i - st.cur + n) % n) || n) + 1;
@@ -142,6 +167,17 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
   return {
     st,
     members,
+    canUndo: () => hist.length > 0,
+    /** 1手戻す */
+    undo() {
+      const h = hist.pop();
+      if (!h) return;
+      Object.assign(st, h.st);
+      PASS.used = new Set(h.pass);
+      if (ext) ext.set(h.ext);
+      play('tick');
+      rerender();
+    },
     /** カードをそのまま出す（イベント・マスなど） */
     show(card: Card, doer: number) {
       st.doer = doer;
@@ -172,19 +208,19 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       } else play('tick');
       rerender();
     },
-    next: finishCard,
+    next: rec(finishCard),
     /** やった！（罰なしで次へ） */
-    clear() {
+    clear: rec(() => {
       st.add = new Map();
       finishCard();
-    },
+    }),
     /** できへんかった（番の人に罰） */
-    fail() {
+    fail: rec(() => {
       st.add = new Map([[st.doer, 1]]);
       finishCard();
-    },
+    }),
     /** ルール違反：お題の途中でもその場で罰ガチャ（天使なら帳消し） */
-    rulePenalty(i: number): GachaItem {
+    rulePenalty: rec((i: number): GachaItem => {
       const item: GachaItem = { i, n: 1, ...decks.batsu(members, i) };
       if (item.lucky) st.stats.lucky[i]++;
       else {
@@ -197,21 +233,21 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       Haptics.notificationAsync(item.lucky ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error).catch(() => {});
       rerender();
       return item;
-    },
+    }),
     /** 他の人に罰をつけたい時だけ一覧を開く */
     openPen() {
       st.penOpenFor = st.card;
       rerender();
     },
-    accept: afterCard,
+    accept: rec(afterCard),
     /** 夜お題の「無理」。罰なしで次へ */
-    pass() {
+    pass: rec(() => {
       st.stats.pass[st.doer]++;
       st.add = new Map();
       afterCard();
-    },
+    }),
     /** 仕掛け人だけが中身を見る */
-    peekBomb() {
+    peekBomb: rec(() => {
       if (!st.bomb) return;
       st.phase = 'bombPeek';
       st.card = {
@@ -220,40 +256,40 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
         segments: [{ text: '今から' }, { text: st.bomb.cond, hl: true }, { text: '奴を、こっそり監視しろ。爆発したら発表してもらう' }],
       };
       rerender();
-    },
-    hideBomb() {
+    }),
+    hideBomb: rec(() => {
       st.bombJust = false;
       onAdvance();
-    },
+    }),
     stopPlanting() {
       st.noPlant = true;
     },
-    chooseDouble(on: boolean) {
+    chooseDouble: rec((on: boolean) => {
       st.double = on;
       if (on) st.stats.dbl[st.doer]++;
       st.card = st.pending ?? st.card;
       st.pending = null;
       st.phase = 'play';
       rerender();
-    },
-    doubleWin() {
+    }),
+    doubleWin: rec(() => {
       st.stats.dwin[st.doer]++;
       st.phase = 'push';
       rerender();
-    },
+    }),
     doubleLose() {
       st.addReason = 'double';
       addPen(st.doer, 2);
       finishCard();
     },
-    pushTo(i: number) {
+    pushTo: rec((i: number) => {
       st.stats.hit[i]++;
       st.addReason = 'push';
       addPen(i, 1);
       finishCard();
-    },
+    }),
     /** 当てはまらん → ランダムで別の人に回す（1枚につき1回、NGの人には夜お題を回さない） */
-    notMe() {
+    notMe: rec(() => {
       const c = st.card;
       const from = st.doer;
       const pool = othersOf(members, from).filter((j) => !c.yoru || !members[j].ng);
@@ -268,7 +304,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
         passed: true,
       });
       rerender();
-    },
+    }),
     startRevenge() {
       st.phase = 'revenge';
       rerender();
@@ -277,7 +313,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       st.phase = 'play';
       rerender();
     },
-    revengeTo(i: number) {
+    revengeTo: rec((i: number) => {
       const from = st.doer;
       const c = st.card;
       if (!c.tpl) return;
@@ -295,7 +331,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
       st.phase = 'play';
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       rerender();
-    },
+    }),
     /** 緊急指令のルールを足す */
     addRule(r: Rule) {
       addRule(r);

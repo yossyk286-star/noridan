@@ -24,6 +24,35 @@ const EVENTS = events as GameEvent[];
  */
 export const ALLOW_SHINYA = true;
 
+/**
+ * お酒なし・体に触るのなし（設定。App が設定を読んだ時・変えた時に入れる）。
+ * お題・罰・指令・王様の命令から外す（ワードウルフの言葉などは外さへん）
+ */
+export const CONTENT = { sober: false, noTouch: false, ver: 0 };
+export const SOBER_NG = /お酌|ひと口|ふた口|飲む|飲め|飲ませ|飲んで|飲んだ|一気|お酒|酒豪|酒癖|朝まで飲/;
+export const TOUCH_NG = /肩を(10秒)?(揉|もむ|もん|組|トントン)|肩(組|もみ)|もんでもら|デコピン|お姫様|手を握|握手|ハイタッチ|耳元|手をつな|ハグ|くすぐ|こしょば|膝枕|キス(?!顔)|触る|触って|密着|おんぶ|抱き/;
+export function setContent(sober: boolean, noTouch: boolean) {
+  if (CONTENT.sober === sober && CONTENT.noTouch === noTouch) return;
+  CONTENT.sober = sober;
+  CONTENT.noTouch = noTouch;
+  CONTENT.ver++;
+}
+export const contentOk = (t: string) => !(CONTENT.sober && SOBER_NG.test(t)) && !(CONTENT.noTouch && TOUCH_NG.test(t));
+/** 外したら1個も残らん時はそのまま */
+export const okList = (list: string[]) => {
+  const c = list.filter(contentOk);
+  return c.length ? c : list;
+};
+const CONTENT_KEY = /^(yurume|futsu|jigoku|minna|yoru|shinya|ev|bomb|batsu|lucky)/;
+
+/** パス券：1人1回、罰ガチャの罰をゆるい罰に替える（ゲームを始めるたびに App が空にする） */
+export const PASS = { on: true, used: new Set<number>() };
+export function passItem(members: Member[], i: number): GachaItem {
+  const list = okList((batsu as unknown as { pass: string[] }).pass);
+  const tpl = list.filter((t) => usable(t, members.length));
+  return { i, n: 1, lucky: false, segments: fill(pick(tpl.length ? tpl : list), members, i) };
+}
+
 export const CHANCE = { event: 0.14, double: 0.2, minna: 0.25, bomb: 0.12, yoru: 0.35, lucky: 0.15 };
 
 const rnd = (n: number) => Math.floor(Math.random() * n);
@@ -188,11 +217,21 @@ export function usable(t: string, n: number) {
 /** 同じお題が続かないための山札 */
 export class Decks {
   private decks: Record<string, unknown[]> = {};
+  /** お酒なし・触るのなしが変わったら山札を作り直す */
+  private ver = CONTENT.ver;
 
   /** 人数的に使えるお題が無ければ undefined */
   private draw<T>(key: string, list: T[], text: (t: T) => string, n: number): T | undefined {
+    if (this.ver !== CONTENT.ver) {
+      this.decks = {};
+      this.ver = CONTENT.ver;
+    }
     let d = this.decks[key] as T[] | undefined;
-    if (!d || !d.length) d = this.decks[key] = shuffle(list.filter((t) => usable(text(t), n)));
+    if (!d || !d.length) {
+      const l = list.filter((t) => usable(text(t), n));
+      const c = CONTENT_KEY.test(key) ? l.filter((t) => contentOk(text(t))) : l;
+      d = this.decks[key] = shuffle(c.length ? c : l);
+    }
     return d.pop();
   }
   private str(key: string, list: string[], n: number): string | undefined {
@@ -320,11 +359,11 @@ export class Decks {
   /** 市民全員の罰：全員で同じ罰を1つ（人で中身が変わるもの・「次の自分の番まで」系は外す） */
   groupBatsu(members: Member[]): { segments: Segment[]; lucky: boolean } {
     if (Math.random() < CHANCE.lucky) {
-      const t = this.obj('lucky_group', batsu.lucky.filter((x) => !/\{[PXY]\}/.test(x))) ?? 'セーフ！';
+      const t = this.obj('lucky_group' + CONTENT.ver, okList(batsu.lucky.filter((x) => !/\{[PXY]\}/.test(x)))) ?? 'セーフ！';
       return { segments: [{ text: t }], lucky: true };
     }
-    const pool = batsu.bad.filter((t) => !/\{[PXY]\}/.test(t) && !PERSONAL.test(t));
-    return { segments: [{ text: this.obj('batsu_group', pool) ?? '全員でひと口飲む（ソフドリでもOK）' }], lucky: false };
+    const pool = okList(batsu.bad.filter((t) => !/\{[PXY]\}/.test(t) && !PERSONAL.test(t)));
+    return { segments: [{ text: this.obj('batsu_group' + CONTENT.ver, pool) ?? '全員で変顔して写真を撮る' }], lucky: false };
   }
 
   /** 罰ガチャ。たまにラッキー（天使）で帳消し */

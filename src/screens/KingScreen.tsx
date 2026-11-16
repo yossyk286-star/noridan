@@ -6,7 +6,7 @@ import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Outline, Peek, Prog } from '../components/ModeParts';
 import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
-import { sexPrefer, pick, shuffle } from '../lib/game';
+import { okList, sexPrefer, pick, shuffle } from '../lib/game';
 import { play } from '../lib/sound';
 import type { Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, colorOf } from '../theme';
@@ -66,7 +66,7 @@ export default function KingScreen({ members, level, night, onQuit, onSettings, 
       }
     }
     const two = pool.length >= 2;
-    const tpl = pick(K[kind].filter((t) => two || !t.includes('{B}')));
+    const tpl = pick(okList(K[kind].filter((t) => two || !t.includes('{B}'))));
     const a = pick(pool);
     const b = two ? (kind === 'shinya' ? pick(sexPrefer(members, a, pool.filter((i) => i !== a))) : pick(pool.filter((i) => i !== a))) : -1;
     setCmd({ tpl, kind, A: nu[a], B: b >= 0 ? nu[b] : null });

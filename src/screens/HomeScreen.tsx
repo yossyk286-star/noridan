@@ -6,6 +6,7 @@ import { C, F, LEVEL_LABEL, LEVEL_SUB, colorOf } from '../theme';
 import { Icon } from '../components/Icon';
 import { ALLOW_SHINYA } from '../lib/game';
 import { HELP } from '../lib/help';
+import { usePrefs } from '../lib/prefs';
 import type { Level, Member, Mode, Night } from '../types';
 import type { IconName } from '../components/Icon';
 import { load, save } from '../lib/storage';
@@ -384,7 +385,9 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
     load<Record<string, number>>('nd_plays', {}).then((v) => setPlays(v && typeof v === 'object' ? v : {}));
     load<string | null>('nd_tab', null).then((v) => setTab(v));
   }, []);
-  const deep = night === 'shinya';
+  const { noTouch } = usePrefs();
+  // 「体に触るのなし」の時は深夜の触る遊びを出さへん
+  const deep = night === 'shinya' && !noTouch;
   const list = MODE_LIST.filter((x) => x.cat !== 'deep' || deep);
   const favs = list.filter((x) => (plays[x.m] ?? 0) > 0).sort((a, b) => plays[b.m] - plays[a.m]).slice(0, 6);
   const tabs = TABS.filter(([k]) => (k !== 'deep' || deep) && (k !== 'fav' || favs.length));

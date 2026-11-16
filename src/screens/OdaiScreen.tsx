@@ -63,13 +63,26 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
     }
   };
 
-  const flow = useTurnFlow(members, decks, () => {
-    const nc = (cur + 1) % members.length;
-    flow.tickRules(nc);
-    setCur(nc);
-    setTurn(turn + 1);
-    startTurn(nc, turn + 1);
-  });
+  const flow = useTurnFlow(
+    members,
+    decks,
+    () => {
+      const nc = (cur + 1) % members.length;
+      flow.tickRules(nc);
+      setCur(nc);
+      setTurn(turn + 1);
+      startTurn(nc, turn + 1);
+    },
+    {
+      get: () => ({ cur, turn }),
+      set: (v: { cur: number; turn: number }) => {
+        setCur(v.cur);
+        setTurn(v.turn);
+        setHandoff(false);
+      },
+    },
+  );
+  const undo = flow.canUndo() ? flow.undo : undefined;
 
   useEffect(() => {
     if (!intro) startTurn(0, 1);
@@ -120,7 +133,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
     <View style={{ flex: 1, backgroundColor: pal.bg }}>
       {/* 1画面に固定（スクロールしない） */}
       <View style={[s.wrap, flipped && s.flipped]}>
-        <ScoreBar onEnd={() => onFinish(flow.finalPen(), turn, flow.st.stats)} pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+        <ScoreBar onEnd={() => onFinish(flow.finalPen(), turn, flow.st.stats)} pal={pal} members={members} pen={st.pen} rev={st.rev} doer={st.doer} onMenu={() => setMenu(true)} flipped={flipped} onFlip={() => setFlipped((f) => !f)} onUndo={undo} />
         {!st.phase.startsWith('bomb') && <BombBanner pal={pal} members={members} bomb={st.bomb} />}
         {/* ルールが出た札そのものを見てる間は、上の枠は出さへん（同じ文が2回並ぶので） */}
         <RuleBanner pal={pal} members={members} rules={st.rules} hideCard={st.phase === 'play' ? st.card : null} onViolate={(r) => { setRule(r); setRuleSheet('pick'); }} />
@@ -154,6 +167,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
         flipped={flipped}
         onFlip={() => setFlipped((f) => !f)}
         onRules={() => setRules(true)}
+        onUndo={undo}
         onEnd={() => onFinish(flow.finalPen(), turn, flow.st.stats)}
         onSettings={onSettings}
         onQuit={onQuit}

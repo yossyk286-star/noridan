@@ -49,6 +49,9 @@ const S = {
   dual: store.get("nd_dual", false) === true,
   handoff: store.get("nd_handoff", true) !== false, // お題の前に「つぎは○○」の交代画面をはさむ   // 向かい合わせ表示
   voice: store.get("nd_voice", false) === true, // お題の読み上げ
+  sober: store.get("nd_sober", false) === true, // お酒なし：「飲む」罰・お題を出さへん
+  noTouch: store.get("nd_notouch", false) === true, // 体に触るのなし：くすぐり・ハグ・肩もみ系を出さへん
+  passOn: store.get("nd_pass", true) !== false, // パス券：1人1回、罰をゆるい罰に替えられる
   step: 1,          // ホーム: 1=メンバー 2=モード選択
   sheet: false,     // 設定シート
   flip: false,      // 上下反転
@@ -104,8 +107,22 @@ const isSituational = (tpl) => !!tpl && SITUATIONAL.test(tpl);
 
 // 山札：同じお題が続かないように
 const decks = {};
+// お酒なし・体に触るのなし：お題・罰・指令・王様の命令から外す言葉（ワードウルフの言葉などは外さへん）
+const SOBER_NG = /お酌|ひと口|ふた口|飲む|飲め|飲ませ|飲んで|飲んだ|一気|お酒|酒豪|酒癖|朝まで飲/;
+const TOUCH_NG = /肩を(10秒)?(揉|もむ|もん|組|トントン)|肩(組|もみ)|もんでもら|デコピン|お姫様|手を握|握手|ハイタッチ|耳元|手をつな|ハグ|くすぐ|こしょば|膝枕|キス(?!顔)|触る|触って|密着|おんぶ|抱き/;
+const CONTENT_KEY = /^(yurume|futsu|jigoku|minna|yoru|shinya|ev|bomb|batsu|lucky|king|passb)/;
+function contentOk(t) {
+  const s = typeof t === "string" ? t : t?.text || "";
+  return !(S.sober && SOBER_NG.test(s)) && !(S.noTouch && TOUCH_NG.test(s));
+}
+/** 設定が変わったら山札を作り直す */
+function resetDecks() { for (const k of Object.keys(decks)) delete decks[k]; }
 function draw(key, list) {
-  if (!decks[key] || !decks[key].length) decks[key] = shuffle(list.filter(usable));
+  if (!decks[key] || !decks[key].length) {
+    const l = list.filter(usable);
+    const c = CONTENT_KEY.test(key) ? l.filter(contentOk) : l;
+    decks[key] = shuffle(c.length ? c : l); // 全部外れたら仕方なくそのまま
+  }
   return decks[key].pop(); // 人数的に使えるお題が無ければ undefined
 }
 
@@ -205,6 +222,7 @@ function newGame(mode, again = false) {
     pos: Array(n).fill(0), vpos: Array(n).fill(0), skip: Array(n).fill(false), hopping: false,
     rolled: false, rolling: false, die: 0, done: false,
     bomb: null, bombJust: false, cards: 0,
+    passUsed: Array(n).fill(false), // パス券を使った人
     // 称号用の記録
     st: { lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), votes: Array(n).fill(0), exact: Array(n).fill(0), wolf: Array(n).fill(0), why: Array.from({ length: n }, () => ({})) },
   };
@@ -824,7 +842,7 @@ const wolfNames = () => S.game.wf.wolves.map((i) => esc(S.members[i].name)).join
 function wfGroupBatsu() {
   if (Math.random() < CHANCE.lucky) return { lucky: true, html: esc(draw("lucky_group", DATA.batsu.lucky.filter((t) => !/\{[PXY]\}/.test(t))) || "セーフ！") };
   const pool = DATA.batsu.bad.filter((t) => !/\{[PXY]\}/.test(t) && !PERSONAL.test(t));
-  return { lucky: false, html: esc(draw("batsu_group", pool) || "全員でひと口飲む（ソフドリでもOK）") };
+  return { lucky: false, html: esc(draw("batsu_group", pool) || "全員で変顔して写真を撮る") };
 }
 
 // ---------- 傾けたらアウト ----------

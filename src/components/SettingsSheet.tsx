@@ -16,6 +16,12 @@ type Props = {
   dual: boolean;
   handoff: boolean;
   onHandoff: (on: boolean) => void;
+  sober: boolean;
+  onSober: (on: boolean) => void;
+  noTouch: boolean;
+  onNoTouch: (on: boolean) => void;
+  passOn: boolean;
+  onPass: (on: boolean) => void;
   voice: boolean;
   night: Night;
   onSound: (on: boolean) => void;
@@ -28,7 +34,7 @@ type Props = {
 };
 
 /** 歯車から開く設定。夜モード（20歳以上）もここからオンにする */
-export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
+export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, sober, onSober, noTouch, onNoTouch, passOn, onPass, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
   const { resetSeen } = useSeen();
   const [privacy, setPrivacy] = useState(false);
   return (
@@ -38,6 +44,11 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
           <ScrollView contentContainerStyle={{ gap: 12 }}>
             <View style={s.grip} />
             <Text style={s.title}>設定</Text>
+            <Text style={s.sec}>遊ぶ前に決める</Text>
+            <Toggle label="お酒なし" sub="「飲む」罰やお題を出さへん" on={sober} onPress={() => onSober(!sober)} />
+            <Toggle label="体に触るのなし" sub="くすぐり・ハグ・肩もみ系の罰と命令を出さへん" on={noTouch} onPress={() => onNoTouch(!noTouch)} />
+            <Toggle label="パス券" sub="1人1回、罰をゆるい罰に替えられる" on={passOn} onPress={() => onPass(!passOn)} />
+            <Text style={s.sec}>音と画面</Text>
             <Toggle label="効果音" sub="めくる音・ガチャ・爆発" on={sound} onPress={() => onSound(!sound)} />
             {sound && (
               <View style={s.volRow} accessibilityLabel="音量">
@@ -164,6 +175,7 @@ function Toggle({ label, sub, on, onPress }: { label: string; sub: string; on: b
 }
 
 const s = StyleSheet.create({
+  sec: { color: C.paper, opacity: 0.6, fontSize: 12, fontWeight: '900', letterSpacing: 1, marginTop: 4 },
   volRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   volLabel: { color: C.muted, fontSize: 13, fontWeight: '800', paddingHorizontal: 4 },
   volBtn: { flex: 1, paddingVertical: 9, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', alignItems: 'center' },

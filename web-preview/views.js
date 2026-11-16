@@ -323,7 +323,7 @@ const MODE_LIST = [
 const MODE_TABS = [["fav", "よく遊ぶ"], ["all", "すべて"], ["basic", "定番"], ["phone", "スマホで勝負"], ["talk", "話す・ノリ"], ["brain", "頭を使う"], ["deep", "深夜"]];
 const modePlays = () => { const v = store.get("nd_plays", {}); return v && typeof v === "object" ? v : {}; };
 function vModeTabs() {
-  const deep = S.night === "shinya", plays = modePlays();
+  const deep = S.night === "shinya" && !S.noTouch, plays = modePlays();
   const list = MODE_LIST.filter((x) => x.cat !== "deep" || deep);
   const favs = list.filter((x) => plays[x.m] > 0).sort((a, b) => plays[b.m] - plays[a.m]).slice(0, 6);
   const tabs = MODE_TABS.filter(([k]) => (k !== "deep" || deep) && (k !== "fav" || favs.length));
@@ -399,6 +399,11 @@ function vSheet() {
     <div class="sheet" role="dialog" aria-label="設定" data-stop>
       <div class="sheet-grip"></div>
       <h2>設定</h2>
+      <p class="sheet-sec">遊ぶ前に決める</p>
+      <button class="toggle" data-act="sober" aria-pressed="${S.sober}"><span>お酒なし<small>「飲む」罰やお題を出さへん</small></span><b>${S.sober ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="noTouch" aria-pressed="${S.noTouch}"><span>体に触るのなし<small>くすぐり・ハグ・肩もみ系の罰と命令を出さへん</small></span><b>${S.noTouch ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="passOn" aria-pressed="${S.passOn}"><span>パス券<small>1人1回、罰をゆるい罰に替えられる</small></span><b>${S.passOn ? "ON" : "OFF"}</b></button>
+      <p class="sheet-sec">音と画面</p>
       <button class="toggle" data-act="sound" aria-pressed="${S.sound}"><span>効果音<small>めくる音・ガチャ・爆発</small></span><b>${S.sound ? "ON" : "OFF"}</b></button>
       ${S.sound ? `<div class="vol-row" role="group" aria-label="音量"><span>音量</span>${[[1, "小"], [2, "中"], [3, "大"]].map(([v, t]) => `<button data-act="vol" data-v="${v}" aria-pressed="${S.vol === v}">${t}</button>`).join("")}</div>` : ""}
       <button class="toggle" data-act="vibe" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
@@ -553,7 +558,7 @@ function vCard() {
       <div class="gacha">${g.gacha.map((x, k) => `
         <div class="gacha-item ${x.night ? "night " + x.night : ""}" style="--d:calc(var(--gt, 0s) + ${(k * 0.35).toFixed(2)}s);--mc:${colorOf(x.i)}">
           <div class="capsule"><i class="top"></i><i class="bot"></i><i class="res ${x.lucky ? "ok" : ""}">${x.lucky ? "天" : "罰"}</i></div>
-          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="x2-badge">×${x.n}</span>` : ""}</b><p>${x.lucky ? x.html : doubleHtml(x.html, x.n)}</p>${!x.lucky && x.n > 1 ? x2Meter(x.html, x.n) : ""}</div>
+          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="x2-badge">×${x.n}</span>` : ""}</b><p>${x.lucky ? x.html : doubleHtml(x.html, x.n)}</p>${!x.lucky && x.n > 1 ? x2Meter(x.html, x.n) : ""}${canPass(x) ? `<button class="pass-btn" data-act="pass" data-k="${k}">パス券を使う<small>あと1枚・ゆるい罰に替わる</small></button>` : x.passed ? `<span class="pass-done">パス券を使った</span>` : ""}</div>
         </div>`).join("")}</div>
     </div>`;
   }
@@ -611,7 +616,9 @@ function vBar() {
   // 右のボタン（結果・⋯）の分をよけて、入る人数だけ顔を出す。入りきらん分は「…」にまとめる
   const frameW = Math.min(window.innerWidth, 560) - 32;
   // 右：結果(74)・⋯(38)とすき間6px。上下反転・向かい合わせは⋯の中へ。顔は1人34px＋すき間6px
-  const fit = Math.max(2, Math.floor((frameW - (74 + 38 + 2 * 6) - 15 + 6) / 40));
+  // 「戻す」(66)が出てる時はその分もよける
+  const undoW = S.hist.length && !busyGame() ? 66 + 6 : 0;
+  const fit = Math.max(2, Math.floor((frameW - (74 + 38 + 2 * 6) - undoW - 15 + 6) / 40));
   let shown = S.members.map((_, i) => i);
   if (n > fit) {
     shown = shown.slice(0, fit - 1);
@@ -635,6 +642,7 @@ function vBar() {
       <span class="av ${i === g.doer ? "is-turn" : ""} ${bump(i) ? "bump" : ""}" style="--mc:${colorOf(i)}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
         ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">罰${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
+    ${S.hist.length && !busyGame() ? `<button class="bar-undo" data-act="undo" aria-label="1手戻す">${ICON.undo}<span>戻す</span></button>` : ""}
     <button class="bar-res" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>結果</span></button>
     <button class="icon-btn menu-btn" data-act="menu" aria-label="メニュー">${ICON.more}</button>
   </div>`;
@@ -2827,6 +2835,17 @@ function rememberGroup() {
   store.set("nd_groups", gs.slice(0, 3));
 }
 
+// ---------- パス券 ----------
+// 1人1回、罰ガチャの罰をゆるい罰（batsu.pass）に替える。罰の数はそのまま
+const canPass = (x) => S.passOn && !x.lucky && !x.passed && S.game?.passUsed && !S.game.passUsed[x.i];
+function usePass(k) {
+  const g = S.game, x = g?.gacha?.[k];
+  if (!x || !canPass(x)) return;
+  g.passUsed[x.i] = true;
+  Object.assign(x, { passed: true, n: 1, night: false, html: fill(draw("passb", DATA.batsu.pass), x.i) });
+  play("pop");
+}
+
 // ---------- 1手戻す ----------
 // ゲームの中身が変わる操作の直前を覚えとく（最大20手）。タイマー・サイコロ・ルーレットの途中は戻さへん
 const snapKey = (g) => { try { return JSON.stringify(g, (k, v) => (v instanceof Map || v instanceof Set ? [...v] : v)); } catch { return ""; } };
@@ -3040,6 +3059,10 @@ function onClick(e) {
     case "introGo": g.intro = false; render(true); break;
     case "handoffGo": if (S.game) S.game.handoff = false; play("pop"); render(true); break;
     case "handoff": S.handoff = !S.handoff; store.set("nd_handoff", S.handoff); render(); break;
+    case "sober": S.sober = !S.sober; store.set("nd_sober", S.sober); resetDecks(); render(); break;
+    case "noTouch": S.noTouch = !S.noTouch; store.set("nd_notouch", S.noTouch); resetDecks(); render(); break;
+    case "passOn": S.passOn = !S.passOn; store.set("nd_pass", S.passOn); render(); break;
+    case "pass": usePass(+b.dataset.k); render(); break;
     case "vBegin": startVoteRound(); render(true); break;
 
     // 神経衰弱
