@@ -26,7 +26,7 @@ type Props = {
   /** 画面の外側（ノッチ部分）の色を合わせる */
   onBg?: (bg: string | null) => void;
   onFinish: (pen: number[], turns: number, stats: Stats) => void;
-  /** 「もう一回」の時は始める前の説明を出さへん */
+  /** 「もう1回」の時は始める前の説明を出さへん */
   skipIntro?: boolean;
 };
 
@@ -108,7 +108,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
   const pal = neon ? neonPal(st.card.kind.includes('深夜') ? C.deep : C.night) : basePal;
   useEffect(() => onBg?.(handoff && !intro ? colorOf(cur) : neon ? NEON_BG : null), [neon, handoff, intro, cur]);
   const art = st.phase === 'bombSet' || st.phase === 'bombPeek' ? 'bomb' : st.phase === 'offer' ? 'coin' : undefined;
-  // 始める前の説明（「もう一回」の時は出さへん）
+  // 始める前の説明（「もう1回」の時は出さへん）
   if (intro)
     return (
       <View style={{ flex: 1, backgroundColor: basePal.bg }}>

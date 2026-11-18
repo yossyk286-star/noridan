@@ -127,7 +127,7 @@ export function Entrance({ members, tally, mode, onDone }: { members: Member[]; 
                 </View>
                 <View style={[{ flexShrink: 1 }, right && { alignItems: 'flex-end' }]}>
                   <Text style={[ls.enName, many && { fontSize: 17 }]} numberOfLines={1}>{m.name}</Text>
-                  <Text style={[ls.enNick, { color: colorOf(i) }, many && { fontSize: 11 }]} numberOfLines={1}>{nicks[i]}</Text>
+                  <Text style={[ls.enNick, { color: colorOf(i) }, many && { fontSize: 12 }]} numberOfLines={1}>{nicks[i]}</Text>
                 </View>
               </Animated.View>
             );
@@ -483,12 +483,12 @@ const ls = StyleSheet.create({
   pola: { width: '48%', backgroundColor: '#fff', padding: 7, paddingBottom: 10, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 10, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
   polaImg: { width: '100%', aspectRatio: 4 / 3, backgroundColor: '#333' },
   polaName: { color: C.ink, fontWeight: '900', fontSize: 14, marginTop: 5 },
-  polaTxt: { color: C.ink, opacity: 0.7, fontSize: 11, fontWeight: '700' },
+  polaTxt: { color: C.ink, opacity: 0.7, fontSize: 12, fontWeight: '700' },
   small: { color: C.muted, fontSize: 12, fontWeight: '700' },
   storyHead: { fontFamily: F.display, fontSize: 16, color: C.yuru, marginTop: 14 },
   spola: { width: '31%', backgroundColor: '#fff', padding: 4, paddingBottom: 5 },
-  spName: { color: C.ink, fontWeight: '900', fontSize: 10, marginTop: 2 },
-  spTxt: { color: C.ink, opacity: 0.6, fontSize: 7, fontWeight: '700' },
+  spName: { color: C.ink, fontWeight: '900', fontSize: 12, marginTop: 2 },
+  spTxt: { color: C.ink, opacity: 0.6, fontSize: 9, fontWeight: '700' },
   strip: { position: 'absolute', left: 0, right: 0, top: 0, height: 4, backgroundColor: 'rgba(0,0,0,0.15)', zIndex: 30 },
   stripIn: { height: '100%', borderTopRightRadius: 4, borderBottomRightRadius: 4 },
   qBack: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },

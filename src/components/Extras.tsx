@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { Switch } from './Motion';
+import { Switch, isCalm } from './Motion';
 import { Tap } from './Tap';
 import { Icon } from './Icon';
 import { C, F, colorOf } from '../theme';
 import { TEAM, minsLeft, shiftTime, teamScore, type Tally } from '../lib/extras';
 import { play } from '../lib/sound';
+import { Haptics } from '../lib/vibe';
 import qr from '../data/qr.json';
 import type { Member } from '../types';
 
@@ -322,6 +323,54 @@ export function KanjiSheet({ visible, members, onClose }: { visible: boolean; me
   );
 }
 
+// ---------- 誰が罰か決める1画面ルーレット ----------
+export function RouletteSheet({ visible, members, onClose }: { visible: boolean; members: Member[]; onClose: () => void }) {
+  const n = members.length;
+  const [cur, setCur] = useState(-1);
+  const [phase, setPhase] = useState<'idle' | 'spin' | 'done'>('idle');
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!visible) { if (timer.current) clearTimeout(timer.current); setCur(-1); setPhase('idle'); }
+    return () => { if (timer.current) clearTimeout(timer.current); };
+  }, [visible]);
+  const go = () => {
+    if (phase === 'spin' || n < 1) return;
+    setPhase('spin');
+    const win = Math.floor(Math.random() * n);
+    const start = cur < 0 ? 0 : cur;
+    // 止まる場所から逆算して、だんだん遅くなる
+    const steps = isCalm() ? 1 : 14 + ((win - start + n * 3) % n);
+    let k = 0;
+    let pos = start;
+    const tick = () => {
+      pos = (pos + 1) % n;
+      k++;
+      setCur(pos);
+      play('tik');
+      Haptics.selectionAsync().catch(() => {});
+      if (k >= steps) { setCur(win); setPhase('done'); play('buzzer'); return; }
+      timer.current = setTimeout(tick, 70 + k * k * 1.4);
+    };
+    tick();
+  };
+  return (
+    <Sheet visible={visible} title="誰が罰か決める" onClose={onClose}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {members.map((m, i) => (
+          <View key={i} style={[s.rlItem, i === cur && (phase === 'done' ? s.rlWin : s.rlOn)]}>
+            <View style={[s.rlDot, { backgroundColor: colorOf(i) }]} />
+            <Text style={[s.rlName, i === cur && { color: phase === 'done' ? '#fff' : C.ink }]} numberOfLines={1}>{m.name}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={s.rlMsg} accessibilityLiveRegion="polite">{phase === 'done' && cur >= 0 ? `${members[cur].name}が罰！` : phase === 'spin' ? 'どーれーにーしーよーうーかーな…' : 'ボタンを押したら回るで'}</Text>
+      <Tap style={[s.big, phase === 'spin' && { opacity: 0.4 }]} disabled={phase === 'spin'} onPress={go}>
+        <Text style={s.bigText}>{phase === 'done' ? 'もう1回' : '回す'}</Text>
+      </Tap>
+    </Sheet>
+  );
+}
+
 // ---------- 18 隣の人にQR ----------
 export function QrSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const n = qr.size + 4;
@@ -361,10 +410,10 @@ export function TallyResult({ members, tally }: { members: Member[]; tally: Tall
   );
 }
 
-export function ToolButton({ label, sub, onPress }: { label: string; sub: string; onPress: () => void }) {
+export function ToolButton({ label, sub, onPress, icon = 'users' }: { label: string; sub: string; onPress: () => void; icon?: 'users' | 'target' }) {
   return (
     <Tap style={[s.tool, { flexDirection: 'row', alignItems: 'center', gap: 10 }]} onPress={onPress}>
-      <Icon name="users" color={C.paper} />
+      <Icon name={icon} color={C.paper} />
       <View style={{ flex: 1 }}>
         <Text style={s.toolHead}>{label}</Text>
         <Text style={s.toolSub}>{sub}</Text>
@@ -374,6 +423,12 @@ export function ToolButton({ label, sub, onPress }: { label: string; sub: string
 }
 
 const s = StyleSheet.create({
+  rlItem: { width: '48%', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(247,243,234,0.18)' },
+  rlOn: { backgroundColor: C.paper, borderColor: C.paper },
+  rlWin: { backgroundColor: C.blood, borderColor: C.blood },
+  rlDot: { width: 14, height: 14, borderRadius: 7 },
+  rlName: { flex: 1, color: C.paper, fontSize: 16, fontWeight: '900' },
+  rlMsg: { color: C.paper, fontSize: 18, fontWeight: '900', textAlign: 'center', marginVertical: 14, minHeight: 28 },
   back: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: '#1d1a17', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 34, maxHeight: '90%', width: '100%', maxWidth: 560, alignSelf: 'center' },
   grip: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(247,243,234,0.25)', alignSelf: 'center' },
@@ -413,7 +468,7 @@ const s = StyleSheet.create({
   tallyN: { fontFamily: F.display, fontSize: 18, color: C.paper },
   tool: { padding: 12, borderRadius: 16, borderWidth: 1.5, borderColor: 'rgba(247,243,234,0.16)', gap: 6 },
   toolHead: { color: C.paper, fontWeight: '900', fontSize: 14 },
-  toolSub: { color: C.muted, fontSize: 11, fontWeight: '700' },
+  toolSub: { color: C.muted, fontSize: 12, fontWeight: '700' },
   step: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(247,243,234,0.1)', alignItems: 'center', justifyContent: 'center' },
   stepText: { color: C.paper, fontSize: 20, fontWeight: '900' },
   time: { flex: 1, textAlign: 'center', fontFamily: F.display, fontSize: 24, color: C.paper },

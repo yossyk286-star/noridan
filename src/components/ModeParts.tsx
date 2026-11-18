@@ -310,7 +310,7 @@ const s = StyleSheet.create({
   tileDot: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   tileIni: { fontSize: 14, fontWeight: '900', color: '#141210' },
   tileName: { fontSize: 16, fontWeight: '900' },
-  tileCount: { fontSize: 10, fontWeight: '900', opacity: 0.7, alignSelf: 'flex-end' },
+  tileCount: { fontSize: 12, fontWeight: '900', opacity: 0.7, alignSelf: 'flex-end' },
   wordCell: { width: '48.5%', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12, borderLeftWidth: 5 },
   peek: { alignSelf: 'stretch', minHeight: 120, justifyContent: 'center', alignItems: 'center' },
   peekCover: { borderRadius: 18, borderWidth: 2.5, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4 },

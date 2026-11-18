@@ -23,6 +23,7 @@ export function Tap({ style, onPressIn, onPressOut, scaleTo = 0.95, haptic = tru
   const transform = [...((flat.transform as any[]) ?? []), { scale: v }];
   return (
     <APressable
+      accessibilityRole="button"
       {...rest}
       disabled={disabled}
       onPressIn={(e) => {

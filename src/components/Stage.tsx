@@ -10,7 +10,7 @@ import type { TurnFlow } from '../lib/useTurnFlow';
 import { usePrefs } from '../lib/prefs';
 import { TEAM } from '../lib/extras';
 import { useSeen } from '../lib/coach';
-import { CARD_LOOK, F, STAGE, alpha, colorOf } from '../theme';
+import { CARD_LOOK, F, ROLE, STAGE, alpha, colorOf } from '../theme';
 import type { Bomb, Card, GachaItem, Level, Member, Rule, Segment } from '../types';
 import type { BatsuPick } from '../lib/game';
 import { Angel, BombArt, Capsule, Coin, Crown, Fuse, GACHA_MS, GachaMachine, Skull, TwinSkulls } from './Fx';
@@ -30,11 +30,11 @@ export function SegText({ segments, style, underline, fit }: { segments: Segment
         if (s.x2 === 'old') return <Text key={i} style={{ color: '#ff6b62', textDecorationLine: 'line-through', textDecorationColor: '#ff2a2a', fontSize: 0.82 * ((StyleSheet.flatten(style as object) as { fontSize?: number })?.fontSize ?? 20) }}>{s.text}</Text>;
         if (s.x2 === 'new') return <Text key={i} style={{ color: '#ffd23f', backgroundColor: 'rgba(255,42,42,0.32)' }}>{` ${s.text} `}</Text>;
         if (!s.hl) return <Text key={i}>{s.text}</Text>;
-        const col = s.who !== undefined ? colorOf(s.who) : '#ffd23f';
+        const col = s.who !== undefined ? colorOf(s.who) : ROLE.turn;
         return (
           <Text
             key={i}
-            style={underline ? { textDecorationLine: 'underline', textDecorationColor: col } : { backgroundColor: alpha(col, 0.55) }}
+            style={{ textDecorationLine: 'underline', textDecorationColor: col }}
           >
             {s.text}
           </Text>
@@ -91,7 +91,7 @@ export function ScoreBar({
     <View style={styles.bar}>
       <View style={[styles.score, { flex: 1, flexDirection: 'row', overflow: 'hidden', paddingTop: 14 }]}>
         {shown.map((i) => (
-          <Bump key={i} n={pen[i]} style={[styles.av, { backgroundColor: colorOf(i) }, i === doer && { borderWidth: 3 }]} big={i === doer}>
+          <Bump key={i} n={pen[i]} label={`${members[i].name}${i === doer ? '、今の番の人' : ''}、罰${pen[i]}回`} style={[styles.av, { backgroundColor: colorOf(i) }, i === doer && { borderWidth: 3 }]} big={i === doer}>
             {kings.includes(i) && <Crown />}
             {teams && teams[i] != null && <View style={[styles.teamLine, { backgroundColor: TEAM[teams[i]].color }]} />}
             <Text style={[styles.avText, iniFit(initialOf(members, i))]}>{initialOf(members, i)}</Text>
@@ -156,7 +156,7 @@ export function ScoreBar({
 }
 
 /** 罰が増えた時にポンと跳ねる顔アイコン */
-function Bump({ n, style, big, children }: { n: number; style: object; big?: boolean; children: React.ReactNode }) {
+function Bump({ n, style, big, label, children }: { n: number; style: object; big?: boolean; /** 読み上げ用 */ label?: string; children: React.ReactNode }) {
   const v = useRef(new Animated.Value(0)).current;
   const plus = useRef(new Animated.Value(1)).current;
   const prev = useRef(n);
@@ -173,7 +173,7 @@ function Bump({ n, style, big, children }: { n: number; style: object; big?: boo
   }, [n]);
   const base = big ? 1.08 : 1;
   return (
-    <Animated.View style={[style, { transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [base, base * 1.35] }) }, { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }] }]}>
+    <Animated.View accessible={!!label} accessibilityLabel={label} style={[style, { transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [base, base * 1.35] }) }, { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }] }]}>
       {children}
       <Plus1 v={plus} />
     </Animated.View>
@@ -572,7 +572,7 @@ function GachaRow({ name, color, item, delay, fg, mark }: { name: string; color:
       <Animated.View style={{ flex: 1, opacity: v, transform: [{ translateY }] }}>
         <View style={styles.gachaWhoRow}>
           {mark && (
-            <View style={[styles.mark, { backgroundColor: item.lucky ? '#ffd23f' : '#e8202a' }]}>
+            <View style={[styles.mark, { backgroundColor: item.lucky ? ROLE.info : '#e8202a' }]}>
               <Text style={[styles.markText, { color: item.lucky ? '#141210' : '#fff' }]}>{item.lucky ? '天使' : 'ドクロ'}</Text>
             </View>
           )}
@@ -865,7 +865,7 @@ function plainKind(c: Card) {
 }
 
 /** 札の種類タグの色（ひとり・全員…が一目でわかるように） */
-const TAG_BG: Record<string, string> = { ひとり: '#ff5d8f', 全員: '#ffd23f', 勝負: '#4dd4ff', みんなで判定: '#7cf06b', ルール: '#ff9a3c', 緊急: '#ff2a2a' };
+const TAG_BG: Record<string, string> = { ひとり: '#ff5d8f', 全員: '#f7f3ea', 勝負: '#4dd4ff', みんなで判定: '#7cf06b', ルール: '#ff9a3c', 緊急: '#ff2a2a' };
 /** 札の種類タグ（誰が動くお題か） */
 export function cardTag(c: Card): string {
   if (!c || c.bomb || !c.tpl) return '';
@@ -1078,7 +1078,7 @@ const styles = StyleSheet.create({
   nextUp: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nextText: { fontSize: 13, fontWeight: '900' },
   avSm: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  avSmText: { color: '#141210', fontSize: 11, fontWeight: '900' },
+  avSmText: { color: '#141210', fontSize: 12, fontWeight: '900' },
   stack: { position: 'absolute', left: 14, right: 14, top: 14, bottom: 11, borderRadius: 22 },
   tools: { flexDirection: 'row', gap: 6 },
   pill: { paddingVertical: 9, paddingHorizontal: 12, borderRadius: 999 },
@@ -1141,7 +1141,7 @@ const styles = StyleSheet.create({
   cardText: { fontWeight: '900', fontSize: 32, lineHeight: 48 },
   passBtn: { marginLeft: 62, alignSelf: 'flex-start', borderWidth: 1.5, borderRadius: 12, paddingVertical: 6, paddingHorizontal: 12, opacity: 0.9 },
   passText: { fontSize: 14, fontWeight: '900' },
-  passSub: { fontSize: 11, fontWeight: '700', opacity: 0.7 },
+  passSub: { fontSize: 12, fontWeight: '700', opacity: 0.7 },
   gachaWhoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   mark: { borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
   markText: { fontSize: 12, fontWeight: '900' },

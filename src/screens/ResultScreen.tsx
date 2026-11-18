@@ -15,7 +15,7 @@ import { speak } from '../lib/speech';
 import { titles, whyText, type Stats } from '../lib/titles';
 import { usePhotos } from '../lib/live';
 import { StoryPolas } from '../components/Live';
-import { C, F, LEVEL_LABEL, colorOf } from '../theme';
+import { C, F, LEVEL_LABEL, ROLE, colorOf } from '../theme';
 import type { Level, Member, Mode, Night } from '../types';
 import { iniFit, initialOf } from '../lib/game';
 
@@ -31,7 +31,7 @@ type Props = {
   onHome: () => void;
   /** メンバー登録に戻る */
   onMembers?: () => void;
-  /** 「もう一回」の下に出すもの（隣の人にQR・チーム戦） */
+  /** 「もう1回」の下に出すもの（隣の人にQR・チーム戦） */
   extraTop?: React.ReactNode;
   /** 罰ランキングの下に出すもの（先に帰った人・通算） */
   extraBottom?: React.ReactNode;
@@ -127,7 +127,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
           <View style={{ alignItems: 'center', gap: 6, paddingVertical: 10 }}>
             <Angel />
             <Text style={s.safe}>全員セーフ</Text>
-            <Text style={s.sub}>平和すぎる。もう一回いっとく？</Text>
+            <Text style={s.sub}>平和すぎる。もう1回いっとく？</Text>
           </View>
         ) : (
           <>
@@ -142,7 +142,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
       </View>
       <View style={[{ gap: 10 }, !landed && { opacity: 0 }]} pointerEvents={landed ? 'auto' : 'none'}>
         <Tap style={({ pressed }) => [s.againBig, pressed && { transform: [{ translateY: 4 }] }]} onPress={onAgain}>
-          <Text style={s.againText}>もう一回</Text>
+          <Text style={s.againText}>もう1回</Text>
           <Text style={s.againSub}>同じメンバー・同じ遊び方</Text>
         </Tap>
         <View style={s.row}>
@@ -404,7 +404,7 @@ const st = StyleSheet.create({
   title: { fontFamily: F.display, fontSize: 48, lineHeight: 60, color: '#e8202a', marginTop: 14, transform: [{ rotate: '-2deg' }], textShadowColor: C.yuru, textShadowRadius: 1, textShadowOffset: { width: 2, height: 2 } },
   mvpWrap: { marginTop: 22, transform: [{ rotate: '-1.5deg' }] },
   mvpShadow: { position: 'absolute', left: 4, top: 8, right: -4, bottom: -8, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.5)' },
-  mvp: { backgroundColor: C.yuru, borderRadius: 16, borderWidth: 2, borderColor: '#141210', paddingVertical: 16, paddingHorizontal: 20, gap: 2 },
+  mvp: { backgroundColor: C.paper, borderRadius: 16, borderWidth: 2, borderColor: '#141210', paddingVertical: 16, paddingHorizontal: 20, gap: 2 },
   mvpLabel: { color: '#141210', fontSize: 12, fontWeight: '900' },
   mvpName: { fontFamily: F.display, fontSize: 40, lineHeight: 50, color: '#141210', marginRight: 70 },
   mvpCount: { color: '#141210', fontSize: 15, fontWeight: '900' },
@@ -423,7 +423,7 @@ const st = StyleSheet.create({
   tsHead: { fontFamily: F.display, fontSize: 16, color: C.yuru, marginTop: 14, marginBottom: 6 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   badge: { width: '48%', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,210,63,0.45)', backgroundColor: 'rgba(247,243,234,0.08)', paddingVertical: 6, paddingHorizontal: 9 },
-  badgeTitle: { color: C.yuru, fontSize: 12, fontWeight: '900' },
+  badgeTitle: { color: ROLE.info, fontSize: 12, fontWeight: '900' },
   badgeWho: { color: C.paper, fontSize: 15, fontWeight: '900' },
   foot: { flexDirection: 'row', alignItems: 'baseline', gap: 12, borderTopWidth: 1, borderTopColor: 'rgba(247,243,234,0.18)', paddingTop: 10, marginBottom: 30 },
   footLogo: { fontFamily: F.display, fontSize: 17, color: C.paper },
@@ -448,7 +448,7 @@ const s = StyleSheet.create({
   raysWrap: { position: 'absolute', top: -120, alignSelf: 'center' },
   ribbon: { backgroundColor: C.blood, paddingHorizontal: 24, paddingTop: 4, paddingBottom: 8, transform: [{ rotate: '-3deg' }], shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
   ribbonText: { fontFamily: F.display, fontSize: 40, lineHeight: 50, color: '#fff' },
-  safe: { fontFamily: F.display, fontSize: 34, color: C.yuru },
+  safe: { fontFamily: F.display, fontSize: 34, color: ROLE.info },
   podium: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, alignSelf: 'stretch', marginTop: 4 },
   pod: { alignItems: 'center', gap: 6, minWidth: 0 },
   podAv: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 3 },
@@ -471,7 +471,7 @@ const s = StyleSheet.create({
   head: { fontFamily: F.display, fontSize: 52, lineHeight: 60, color: C.blood, marginTop: 12 },
   sub: { color: C.muted, fontWeight: '700' },
   mvp: {
-    alignSelf: 'stretch', alignItems: 'center', backgroundColor: C.yuru, borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16, gap: 2,
+    alignSelf: 'stretch', alignItems: 'center', backgroundColor: C.paper, borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16, gap: 2,
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 10 }, elevation: 6,
   },
   pc: { width: 12, height: 12, borderRadius: 6 },
@@ -489,7 +489,7 @@ const s = StyleSheet.create({
   h2: { color: C.muted, fontSize: 12, fontWeight: '900', letterSpacing: 3 },
   titles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   title: { flexBasis: '48%', flexGrow: 1, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', gap: 2 },
-  titleName: { color: C.yuru, fontWeight: '900', fontSize: 12 },
+  titleName: { color: ROLE.info, fontWeight: '900', fontSize: 12 },
   titleWho: { fontFamily: F.display, color: C.paper, fontSize: 20, lineHeight: 26 },
   titleDesc: { color: C.muted, fontSize: 12, fontWeight: '700' },
   ghost: { flex: 1, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', padding: 16, alignItems: 'center' },

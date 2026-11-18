@@ -50,7 +50,7 @@ import { PrefsContext } from './src/lib/prefs';
 import { Decks, PASS, setContent } from './src/lib/game';
 import { markFirstOpen, maybeAskReview } from './src/lib/review';
 import { getTally, makeTeams, minsLeft, recordTally, setToastHandler, toast, type Tally } from './src/lib/extras';
-import { InoutSheet, KanjiSheet, LeftResult, QrSheet, TallyResult, TeamPick, TeamResult, Toast, ToolButton, tallyText } from './src/components/Extras';
+import { InoutSheet, KanjiSheet, LeftResult, QrSheet, RouletteSheet, TallyResult, TeamPick, TeamResult, Toast, ToolButton, tallyText } from './src/components/Extras';
 import { MODE_TITLE } from './src/components/ModeParts';
 import { speak, stopSpeak } from './src/lib/speech';
 import type { Stats } from './src/lib/titles';
@@ -107,6 +107,7 @@ export default function App() {
   const [carry, setCarry] = useState<Record<string, number> | null>(null); // メンバーの出入りで引き継ぐ罰
   const [inout, setInout] = useState(false);
   const [kanji, setKanji] = useState(false);
+  const [roul, setRoul] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [tally, setTally] = useState<Tally | null>(null);
   const [teamBatsu, setTeamBatsu] = useState('');
@@ -401,6 +402,7 @@ export default function App() {
               tools={
                 <>
                   <ToolButton label="幹事の道具" sub="席替え・役割・順番・二次会" onPress={() => setKanji(true)} />
+                  <ToolButton icon="target" label="誰が罰か決める" sub="ルーレットで1人だけ選ぶ" onPress={() => setRoul(true)} />
                   <TeamPick members={members} on={teamOn} teams={teams} onToggle={updateTeam} onShuffle={() => setTeams(makeTeams(members.length))} />
                 </>
               }
@@ -477,6 +479,7 @@ export default function App() {
         />
         <InoutSheet visible={inout && onStageNow} members={members} pen={totals()} left={left} onJoin={join} onLeave={leave} onClose={() => setInout(false)} />
         <KanjiSheet visible={kanji} members={members} onClose={() => setKanji(false)} />
+        <RouletteSheet visible={roul} members={members} onClose={() => setRoul(false)} />
         <QrSheet visible={qrOpen} onClose={() => setQrOpen(false)} />
         <Toast text={toastMsg.text} kind={toastMsg.kind} onHide={() => setToastMsg({ text: '', kind: '' })} />
       </SafeAreaView>

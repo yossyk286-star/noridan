@@ -120,7 +120,7 @@ function resetDecks() { for (const k of Object.keys(decks)) delete decks[k]; }
 function draw(key, list) {
   if (!decks[key] || !decks[key].length) {
     const l = list.filter(usable);
-    const c = CONTENT_KEY.test(key) ? l.filter(contentOk) : l;
+    const c = CONTENT_KEY.test(key) ? l.filter(contentOk) : /^quiz_/.test(key) ? l.filter((x) => !(S.sober && x.d)) : l; // クイズのお酒問題はお酒なしで外す
     decks[key] = shuffle(c.length ? c : l); // 全部外れたら仕方なくそのまま
   }
   return decks[key].pop(); // 人数的に使えるお題が無ければ undefined
@@ -210,7 +210,7 @@ const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
 const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "yama", "nyok", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face", "deko", "doubt", "draw", "whack"].includes(g.mode) ? "回戦" : g.mode === "king" ? "回" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
-  // よく遊ぶモードを数える（もう一回は数えへん）
+  // よく遊ぶモードを数える（もう1回は数えへん）
   if (!again) { const pl = (() => { const v = store.get("nd_plays", {}); return v && typeof v === "object" ? v : {}; })(); pl[mode] = (pl[mode] || 0) + 1; store.set("nd_plays", pl); }
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null; S.prevKings = null;
   const n = S.members.length;
@@ -224,7 +224,7 @@ function newGame(mode, again = false) {
     bomb: null, bombJust: false, cards: 0,
     passUsed: Array(n).fill(false), // パス券を使った人
     // 称号用の記録
-    st: { lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), votes: Array(n).fill(0), exact: Array(n).fill(0), wolf: Array(n).fill(0), why: Array.from({ length: n }, () => ({})) },
+    st: { dry: Array(n).fill(0), hot: Array(n).fill(false), lucky: Array(n).fill(0), pass: Array(n).fill(0), rev: Array(n).fill(0), hit: Array(n).fill(0), dbl: Array(n).fill(0), dwin: Array(n).fill(0), notme: Array(n).fill(0), solo: Array(n).fill(0), votes: Array(n).fill(0), exact: Array(n).fill(0), wolf: Array(n).fill(0), why: Array.from({ length: n }, () => ({})) },
   };
   S.ruleSheet = null;
   applyCarry(); // メンバーの出入りでやり直した時は、罰を引き継ぐ
@@ -258,7 +258,7 @@ function newGame(mode, again = false) {
   if (mode === "ito") { S.game.doer = -1; S.game.it = { phase: "intro", round: 0 }; render(true); return; }
   if (mode === "gesture") { S.game.doer = 0; S.game.gs = { phase: "intro", sec: oneOf(store.get("nd_gs_sec", 60), [30, 60, 90], 60), score: Array(n).fill(0), actor: 0, acted: 0, word: null, got: 0, endAt: 0 }; render(true); return; }
   if (mode === "homeru") { S.game.doer = 0; S.game.hm = { phase: "intro", sec: 30, praiser: 0, target: 1, theme: null, endAt: 0, loser: null }; render(true); return; }
-  S.game.intro = !again; // 始める前の説明（「もう一回」の時は出さへん）
+  S.game.intro = !again; // 始める前の説明（「もう1回」の時は出さへん）
   if (mode === "odai") startOdaiTurn();
   else S.game.card = { kind: "すごろく", html: `${nm(0)}からスタート。サイコロ振れ！` };
   render(true);
@@ -344,8 +344,25 @@ function drawBatsuFrom(key, list, n) {
   const pool = list.filter(canDouble);
   return pool.length ? draw(key + "_x2", pool) : draw(key, list);
 }
+// ラッキー（天使）の出やすさ：基本15%の運。出てへん人が続いたら少し上げて、出た直後は下げる（なだめ）
+function luckChance(i) {
+  const st = S.game && S.game.st;
+  if (!st || !st.dry) return CHANCE.lucky;
+  if (st.hot[i]) return 0.06;
+  return Math.min(0.24, CHANCE.lucky + Math.max(0, st.dry[i] - 2) * 0.03);
+}
+function luckNote(i, lucky) {
+  const st = S.game && S.game.st;
+  if (!st || !st.dry) return;
+  st.hot[i] = lucky;
+  st.dry[i] = lucky ? 0 : st.dry[i] + 1;
+}
 function drawBatsu(i, n = 1, noLucky = false) {
-  if (!noLucky && Math.random() < CHANCE.lucky) return { lucky: true, html: fill(draw("lucky", DATA.batsu.lucky), i) };
+  if (!noLucky) {
+    const lk = Math.random() < luckChance(i);
+    luckNote(i, lk);
+    if (lk) return { lucky: true, html: fill(draw("lucky", DATA.batsu.lucky), i) };
+  }
   let list = "bad";
   if (S.night && !S.members[i].ng) {
     const r = Math.random();
@@ -1372,7 +1389,7 @@ function drRound() {
   dr.round++;
   const s0 = (dr.round - 1) % n;
   dr.order = S.members.map((_, k) => (s0 + k) % n);
-  if (n % 2) dr.order.push(dr.order[1]); // 奇数人数やと最後が絵で終わるので、2番目の人がもう一回だけ言葉で答える
+  if (n % 2) dr.order.push(dr.order[1]); // 奇数人数やと最後が絵で終わるので、2番目の人がもう1回だけ言葉で答える
   dr.word = draw("deko", Object.values(DATA.deko).flat());
   dr.chain = []; dr.step = 0; dr.culprit = null;
   g.doer = dr.order[0]; dr.phase = "hand";
@@ -1882,7 +1899,7 @@ function rfFinal() {
 const VC_SEC = 5;
 const vcMic = { stream: null, an: null, src: null, ctx: null, buf: null, perm: "unknown" };
 // iPhone は「タップの中で起こした AudioContext」やないと音が来えへん（suspended のまま0になる）ので、
-// 効果音と同じ AudioContext をタップの瞬間に起こして使う。マイクを開いた後に止まることがあるのでもう一回起こす
+// 効果音と同じ AudioContext をタップの瞬間に起こして使う。マイクを開いた後に止まることがあるのでもう1回起こす
 async function vcAsk() {
   if (vcMic.an) return true;
   const ctx = SFX.ctx(); // ← await より前（タップの中）で起こす

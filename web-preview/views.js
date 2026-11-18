@@ -348,7 +348,7 @@ function vModeTabs() {
   const card = (x) => {
     const why = x.min && S.members.length < x.min ? `${x.min}人から遊べる` : x.ok && okN < x.ok ? `下ネタOKの人が${x.ok}人から` : "";
     const ppl = x.ok ? `OK${x.ok}人〜` : `${x.min || 2}人〜`;
-    return `<button class="mode-row cat-${x.cat}" data-act="start" data-m="${x.m}" ${why ? "disabled" : ""}><i class="mode-ic">${ICON[x.ic] || ""}</i><span class="mr-tx"><b>${esc(MODE_NAME[x.m])}</b><span>${why || HELP[x.m].desc}</span></span><span class="mr-meta">${x.t}<br>${ppl}</span></button>`;
+    return `<button class="mode-row cat-${x.cat}" data-act="start" data-m="${x.m}" ${why ? "disabled" : ""}><i class="mode-ic">${ICON[x.ic] || ""}</i><span class="mr-tx"><b>${esc(MODE_NAME[x.m])}</b><span>${why || HELP[x.m].desc}</span></span><span class="mr-meta"><b class="bd-t">${x.t}</b><span class="bd-p">${ppl}</span></span></button>`;
   };
   const count = (k) => (k === "fav" ? favs.length : k === "all" ? list.length : list.filter((x) => x.cat === k).length);
   return `<div class="mode-tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" class="${k === "deep" ? "deep" : ""}" data-act="modeTab" data-v="${k}" aria-selected="${k === tab}">${k === "fav" ? "★ " : ""}${t}<em>${count(k)}</em></button>`).join("")}</div>
@@ -368,6 +368,7 @@ function vHome2() {
   </div>
   <section class="tools-row">
     <button class="kanji-btn" data-act="kanji" data-v="seat">${ICON.users}<span>幹事の道具<small>席替え・役割・順番・二次会</small></span></button>
+    <button class="kanji-btn" data-act="prl">${ICON.target}<span>誰が罰か決める<small>ルーレットで1人だけ選ぶ</small></span></button>
   </section>
   ${vTeamPick()}
   ${(() => { const h = todHero(); return `<button class="hero-mode" data-act="start" data-m="${h.m}">
@@ -454,7 +455,7 @@ function vSheet() {
         <p class="note">夜はしゃべるだけ、深夜は軽いタッチあり（脱ぐは無し）。下ネタNGの人には振られへん。夜お題は「無理」で罰なしパス。</p>
         <button class="ghost" data-act="nightOff">夜モードをやめる</button>
       </div>` : ""}
-      <button class="ghost" data-act="coachReset">ひとこと説明をもう一回出す<small class="ghost-sub">ゲーム中に出る「わかった」の説明がまた出る</small></button>
+      <button class="ghost" data-act="coachReset">ひとこと説明をもう1回出す<small class="ghost-sub">ゲーム中に出る「わかった」の説明がまた出る</small></button>
       <button class="ghost" data-act="sheetClose">閉じる</button>
       <p class="sheet-foot"><a href="/privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a>・お酒は20歳から。飲めへん人はソフドリでOK</p>
     </div>
@@ -670,7 +671,7 @@ function vBar() {
   const rv = (i) => g.rev[i] && (g.mode === "odai" || g.mode === "sugoroku");
   return `<div class="bar">
     <div class="score" aria-label="罰スコア">${shown.map((i) => `
-      <span class="av ${i === g.doer ? "is-turn" : ""} ${bump(i) ? "bump" : ""} ${teamOf(i) >= 0 ? "tm" : ""}" style="--mc:${colorOf(i)};--tc:${teamOf(i) >= 0 ? TEAM[teamOf(i)].color : "transparent"}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
+      <span class="av ${i === g.doer ? "is-turn" : ""} ${bump(i) ? "bump" : ""} ${teamOf(i) >= 0 ? "tm" : ""}" style="--mc:${colorOf(i)};--tc:${teamOf(i) >= 0 ? TEAM[teamOf(i)].color : "transparent"}" title="${esc(S.members[i].name)} 罰${g.pen[i]}" role="img" aria-label="${esc(S.members[i].name)}${i === g.doer ? "、今の番の人" : ""}、罰${g.pen[i]}回">
         ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${bump(i) ? `<i class="plus1">+1</i>` : ""}${g.pen[i] ? `<b class="cnt">罰${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
     ${S.hist.length && !busyGame() ? `<button class="bar-undo" data-act="undo" aria-label="1手戻す">${ICON.undo}<span>戻す</span></button>` : ""}
@@ -698,6 +699,43 @@ function vBombLook() {
   </div>`;
 }
 // 「…」から開く、全員の罰の一覧
+// 誰が罰か決める1画面ルーレット（ゲームを始めへんでも使える）
+function vPrl() {
+  const r = S.prl, done = r.phase === "done";
+  return `
+  <div class="sheet-back" data-act="prlClose">
+    <div class="sheet prl-sheet" role="dialog" aria-label="誰が罰か決める" data-stop>
+      <div class="sheet-grip"></div>
+      <h2>誰が罰か決める</h2>
+      <ul class="rl-list">${S.members.map((m, i) => `<li class="rl-item ${i === r.cur ? "on" : ""} ${done && i === r.cur ? "win" : ""}"><i class="pc" style="background:${colorOf(i)}"></i><span>${esc(m.name)}</span></li>`).join("")}</ul>
+      <p class="rl-msg" aria-live="polite">${done ? `${nm(r.cur)}が罰！` : r.phase === "spin" ? "どーれーにーしーよーうーかーな…" : "ボタンを押したら回るで"}</p>
+      <button class="big" data-act="prlGo" ${r.phase === "spin" ? "disabled" : ""}>${done ? "もう1回" : "回す"}</button>
+      <button class="ghost" data-act="prlClose">閉じる</button>
+    </div>
+  </div>`;
+}
+function prlSpin() {
+  const r = S.prl, n = S.members.length;
+  if (r.phase === "spin" || n < 1) return;
+  r.phase = "spin";
+  const calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const win = Math.floor(Math.random() * n);
+  // 止まる場所から逆算して、だんだん遅くなる
+  const steps = calm ? 1 : 14 + ((win - r.cur + n * 3) % n);
+  let k = 0;
+  const tick = () => {
+    if (!S.prl) return;
+    r.cur = (r.cur + 1) % n;
+    k++;
+    const items = overlay.querySelectorAll(".rl-item");
+    items.forEach((el, i) => el.classList.toggle("on", i === r.cur));
+    play("tick"); vib(8);
+    if (k >= steps) { r.phase = "done"; r.cur = win; play("buzzer"); vib([60, 30, 120]); render(); return; }
+    setTimeout(tick, 70 + k * k * 1.4);
+  };
+  render();
+  tick();
+}
 function vScores() {
   const g = S.game;
   const rows = S.members.map((m, i) => ({ m, i, n: g.pen[i] })).sort((a, b) => b.n - a.n);
@@ -2451,7 +2489,7 @@ function vResult() {
     </div>`;
   };
   const hero = top.n === 0
-    ? `<div class="res-safe">${ANGEL}<b>全員セーフ</b><span>平和すぎる。もう一回いっとく？</span></div>`
+    ? `<div class="res-safe">${ANGEL}<b>全員セーフ</b><span>平和すぎる。もう1回いっとく？</span></div>`
     : `<div class="podium n${podN}">${order.map(pod).join("")}</div>
        <div class="mvp" ${slot ? "data-slot" : ""}><small>MVP（悪い意味で）</small><b data-final="${esc(who)}">${slot ? "？？？" : esc(who)}</b><span>罰 ${top.n}回${tie.length === 1 && whyText(top.i) ? `（${esc(whyText(top.i))}）` : ""}</span></div>`;
   const MEDAL = (k) => `<i class="medal" style="--m:${["#ffd23f", "#ff5aa5", "#3ec7ff", "#7be36b", "#ff8a1a", "#b48cff"][k % 6]}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h4l1 5-3 2zM17 2h-4l-1 5 3 2z" fill="currentColor" opacity=".55"/><circle cx="12" cy="15" r="7" fill="var(--m)" stroke="#141210" stroke-width="1.6"/><path d="m12 11 1.2 2.5 2.7.3-2 1.9.6 2.7-2.5-1.4-2.5 1.4.6-2.7-2-1.9 2.7-.3z" fill="#fff"/></svg></i>`;
@@ -2464,7 +2502,7 @@ function vResult() {
     ${hero}
   </section>
   <div class="res-actions">
-    <button class="big again-btn" data-act="again">もう一回<small>同じメンバー・同じ遊び方</small></button>
+    <button class="big again-btn" data-act="again">もう1回<small>同じメンバー・同じ遊び方</small></button>
     <div class="row2"><button class="ghost" data-act="home">${ICON.back}<span>別の遊び方</span></button><button class="ghost share-ghost" data-act="share">${ICON.share}<span>画像でシェア</span></button></div>
     ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}
     <button class="ghost qr-btn" data-act="qr">${ICON.share}<span>隣の人にもノリダン（QR）</span></button>
@@ -2658,7 +2696,7 @@ function render(anim) {
   drSetup();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); if (mvFrom && S.navFrom === "home" + 2 && key !== "home2" && dir === "fwd") mvExpand("fwd"); else if (mvFrom && key === "home2" && dir === "back") { mvExpand("back"); mvFrom = null; } }
   if (anim && sc === "result") countUpRank(app);
-  overlay.innerHTML = S.inout && onStage ? vInout() : S.kanji ? vKanji() : S.qr ? vQr() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
+  overlay.innerHTML = S.inout && onStage ? vInout() : S.kanji ? vKanji() : S.prl ? vPrl() : S.qr ? vQr() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   jaWrap(overlay);
   if (onStage) { fixHeight(); fitCard(); }
   if (anim) { window.scrollTo(0, 0); cue(); if (S.gIntro) { clearTimeout(S.speakT); S.speakT = setTimeout(speakNow, GACHA_T * 1000); } else speakNow(); postFx(); }
@@ -2971,7 +3009,7 @@ function onClick(e) {
   const b = e.target.closest("[data-act]");
   if (!b || b.disabled) return;
   // シートの中身をタップしても閉じないように
-  if ((b.dataset.act === "sheetClose" || b.dataset.act === "menuClose" || b.dataset.act === "scoresClose" || b.dataset.act === "rulesClose" || b.dataset.act === "bombLookClose" || b.dataset.act === "inoutClose" || b.dataset.act === "kanjiClose" || b.dataset.act === "qrClose") && b.classList.contains("sheet-back") && e.target.closest("[data-stop]")) return;
+  if ((b.dataset.act === "sheetClose" || b.dataset.act === "menuClose" || b.dataset.act === "scoresClose" || b.dataset.act === "rulesClose" || b.dataset.act === "bombLookClose" || b.dataset.act === "inoutClose" || b.dataset.act === "kanjiClose" || b.dataset.act === "prlClose" || b.dataset.act === "qrClose") && b.classList.contains("sheet-back") && e.target.closest("[data-stop]")) return;
   SFX.unlock();
   if (b.tagName === "BUTTON") vib(6); // 押した手応え（Androidのみ）
   const act = b.dataset.act, g = S.game, i = +b.dataset.i;
@@ -2996,6 +3034,9 @@ function onClick(e) {
     case "ask": S.ask = b.dataset.v; render(); break;
     case "askNo": S.ask = null; if (S.askBar) S.menu = false; S.askBar = false; render(); break;
     case "undo": undoGame(); break;
+    case "prl": S.prl = { phase: "idle", cur: -1 }; render(); break;
+    case "prlGo": prlSpin(); break;
+    case "prlClose": S.prl = null; render(); break;
     case "scores": S.scores = true; render(); break;
     case "bombLook": S.bombLook = 1; render(); break;
     case "bombLookShow": S.bombLook = 2; render(); break;
@@ -3443,7 +3484,7 @@ function onClick(e) {
     case "nightOff": S.night = false; S.nightAsk = false; S.sheet = false; store.set("nd_night", false); render(); break;
     case "nightCancel": S.nightAsk = false; render(); break;
     case "ng": S.members[i].ng = !S.members[i].ng; saveMembers(); render(); break;
-    // 性別：押したらその性別、もう一回押したら未設定に戻る
+    // 性別：押したらその性別、もう1回押したら未設定に戻る
     case "sex": { const m = S.members[i]; if (m.sex === b.dataset.v) delete m.sex; else m.sex = b.dataset.v; saveMembers(); render(); break; }
     case "pass": g.st.pass[g.doer]++; g.add = new Map(); advance(); break;
 

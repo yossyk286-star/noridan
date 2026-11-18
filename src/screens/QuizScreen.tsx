@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { IntroCard, LevelBox, ModeCard, Outline, Prog, tileColors } from '../components/ModeParts';
-import { shuffle, soleBest } from '../lib/game';
+import { CONTENT, shuffle, soleBest } from '../lib/game';
 import { StageShell, pickView, usePenalty } from '../components/StageShell';
 import { ScoreRank } from '../components/ScoreRank';
 import { useHold, useReveal } from '../components/Reveal';
@@ -18,7 +18,7 @@ import quizJson from '../data/quiz.json';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
 type Phase = 'intro' | 'ready' | 'q' | 'ans' | 'wrong' | 'res' | 'tally' | 'rank' | 'batsu';
-type Item = { q: string; a: string[] };
+type Item = { q: string; a: string[]; d?: number };
 const N = 10;
 const TIER: Record<Level, 'easy' | 'normal' | 'hard'> = { yurume: 'easy', futsu: 'normal', jigoku: 'hard' };
 
@@ -33,6 +33,7 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
   const H = useHold();
   const RV = useReveal();
   const deck = useRef<Item[]>([]);
+  const deckSober = useRef(false);
   const [phase, setPhase] = useState<Phase>('intro');
   const [round, setRound] = useState(0);
   const [k, setK] = useState(0);
@@ -54,7 +55,11 @@ export default function QuizScreen({ members, level, night, onQuit, onSettings, 
   }, []);
 
   const draw = () => {
-    if (!deck.current.length) deck.current = shuffle(quizJson[TIER[level]] as Item[]);
+    // お酒の問題は、お酒なしスイッチが入ってる間は外す
+    if (!deck.current.length || deckSober.current !== CONTENT.sober) {
+      deckSober.current = CONTENT.sober;
+      deck.current = shuffle((quizJson[TIER[level]] as Item[]).filter((x) => !(CONTENT.sober && x.d)));
+    }
     return deck.current.pop()!;
   };
   const newRound = () => {

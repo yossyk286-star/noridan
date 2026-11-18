@@ -103,7 +103,7 @@ export default function DrawScreen({ members, level, night, onQuit, onSettings, 
     const s0 = (r - 1) % n;
     setRound(r);
     const od = members.map((_, k) => (s0 + k) % n);
-    if (n % 2) od.push(od[1]); // 奇数人数やと最後が絵で終わるので、2番目の人がもう一回だけ言葉で答える
+    if (n % 2) od.push(od[1]); // 奇数人数やと最後が絵で終わるので、2番目の人がもう1回だけ言葉で答える
     setOrder(od);
     setWord(deck.current.pop()!);
     setChain([]);

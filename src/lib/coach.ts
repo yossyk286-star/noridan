@@ -20,7 +20,7 @@ export function useSeen() {
   }, []);
   return {
     seen,
-    /** 説明をもう一回ぜんぶ出す */
+    /** 説明をもう1回ぜんぶ出す */
     resetSeen() {
       seen = {};
       save('nd_seen', seen);

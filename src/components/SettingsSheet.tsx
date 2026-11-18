@@ -154,7 +154,7 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
                 onClose();
               }}
             >
-              <Text style={s.ghostText}>ひとこと説明をもう一回出す</Text>
+              <Text style={s.ghostText}>ひとこと説明をもう1回出す</Text>
               <Text style={s.ghostSub}>ゲーム中に出る「わかった」の説明がまた出る</Text>
             </Tap>
             <Tap style={s.ghost} onPress={onClose}>

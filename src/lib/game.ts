@@ -220,6 +220,17 @@ export class Decks {
   /** お酒なし・触るのなしが変わったら山札を作り直す */
   private ver = CONTENT.ver;
 
+  /** ラッキー（天使）のなだめ：出てへん人が続いたら少し上げて、出た直後は下げる */
+  private dry: number[] = [];
+  private hot: boolean[] = [];
+  private luck(p: number): boolean {
+    const c = this.hot[p] ? 0.06 : Math.min(0.24, CHANCE.lucky + Math.max(0, (this.dry[p] ?? 0) - 2) * 0.03);
+    const lk = Math.random() < c;
+    this.hot[p] = lk;
+    this.dry[p] = lk ? 0 : (this.dry[p] ?? 0) + 1;
+    return lk;
+  }
+
   /** 人数的に使えるお題が無ければ undefined */
   private draw<T>(key: string, list: T[], text: (t: T) => string, n: number): T | undefined {
     if (this.ver !== CONTENT.ver) {
@@ -380,7 +391,7 @@ export class Decks {
       const pool = list.filter(canDouble);
       return pool.length ? this.str(key + '_x2', pool, members.length) : this.str(key, list, members.length);
     };
-    if (!noLucky && Math.random() < CHANCE.lucky) return { segments: fill(this.str('lucky', batsu.lucky, members.length)!, members, p), lucky: true };
+    if (!noLucky && this.luck(p)) return { segments: fill(this.str('lucky', batsu.lucky, members.length)!, members, p), lucky: true };
     let list: 'bad' | 'yoru' | 'shinya' = 'bad';
     if (this.night && !members[p].ng) {
       const r = Math.random();

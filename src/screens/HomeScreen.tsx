@@ -126,7 +126,7 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
     setTimeout(() => input.current?.focus(), 0);
   };
   const toggleNg = (i: number) => onMembers(members.map((m, j) => (j === i ? { ...m, ng: !m.ng } : m)));
-  // 性別：押したらその性別、もう一回押したら未設定に戻る
+  // 性別：押したらその性別、もう1回押したら未設定に戻る
   const setSex = (i: number, v: 'm' | 'f') =>
     onMembers(members.map((m, j) => {
       if (j !== i) return m;
@@ -449,7 +449,10 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
                   <Text style={s.rowTitle} numberOfLines={1}>{MODE_TITLE[x.m]}</Text>
                   <Text style={s.rowDesc} numberOfLines={1}>{why || HELP[x.m].desc}</Text>
                 </View>
-                <Text style={s.rowMeta}>{`${x.t}\n${x.ok ? `OK${x.ok}人〜` : `${x.min ?? 2}人〜`}`}</Text>
+                <View style={s.rowMetaBox}>
+                  <Text style={s.rowBadge}>{x.t}</Text>
+                  <Text style={s.rowMeta}>{x.ok ? `OK${x.ok}人〜` : `${x.min ?? 2}人〜`}</Text>
+                </View>
               </Tap>
             )}</RowStart>
           );
@@ -460,7 +463,7 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
 }
 
 /** 遊び方の種類ごとのアイコンの色（定番=黄・スマホ=水色・話す=ピンク・頭=緑・深夜=濃いピンク） */
-const CAT_COLOR: Record<Cat, string> = { basic: C.yuru, phone: '#4dd4ff', talk: C.futsu, brain: '#7cf06b', deep: C.deep };
+const CAT_COLOR: Record<Cat, string> = { basic: C.paper, phone: '#4dd4ff', talk: C.futsu, brain: '#7cf06b', deep: C.deep };
 
 function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () => void; onCancel: () => void }) {
   if (kind === 'shinya')
@@ -527,7 +530,9 @@ const s = StyleSheet.create({
   rowIc: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { color: C.paper, fontSize: 16, fontWeight: '900' },
   rowDesc: { color: C.muted, fontSize: 12.5, marginTop: 2 },
-  rowMeta: { color: C.muted, fontSize: 12, fontWeight: '700', lineHeight: 18, textAlign: 'right' },
+  rowMetaBox: { alignItems: 'flex-end', gap: 4 },
+  rowBadge: { color: C.paper, fontSize: 12, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.14)', overflow: 'hidden' },
+  rowMeta: { color: C.muted, fontSize: 12, fontWeight: '700', textAlign: 'right' },
   memPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingLeft: 6, paddingRight: 12, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.08)' },
   memPillText: { color: C.paper, fontWeight: '900', fontSize: 14, marginLeft: 4 },
   memPillSub: { color: C.muted, fontWeight: '700', fontSize: 12, marginLeft: 'auto' },
@@ -543,7 +548,7 @@ const s = StyleSheet.create({
   heroDesc: { color: C.ink, fontSize: 13, fontWeight: '700' },
   heroGo: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center' },
   heroGoText: { color: C.yuru, fontSize: 22 },
-  lastGroup: { gap: 8, padding: 16, borderRadius: 20, backgroundColor: C.yuru, shadowColor: '#b8901a', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  lastGroup: { gap: 8, padding: 16, borderRadius: 20, backgroundColor: C.paper, shadowColor: '#a89f8c', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   lastHead: { color: C.ink, fontSize: 12, fontWeight: '900', letterSpacing: 1 },
   lastRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   lastDot: { borderRadius: 17, borderWidth: 2, borderColor: C.ink },
