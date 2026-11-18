@@ -6,6 +6,8 @@ import type { Stats } from '../lib/titles';
 import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, BigButton } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
 import { Handoff, IntroCard, LevelBox } from '../components/ModeParts';
+import { FaceDeal } from '../components/Live';
+import { liveNow } from '../lib/live';
 import { usePrefs } from '../lib/prefs';
 import { HELP } from '../lib/help';
 import { Flash } from '../components/Fx';
@@ -45,6 +47,8 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
   const prefs = usePrefs();
   /** 番の交代画面（「つぎは○○」）を出してる間 */
   const [handoff, setHandoff] = useState(false);
+  /** 伏せて出す：伏せる → 起こす → お題 */
+  const [face, setFace] = useState<'down' | 'up' | null>(null);
   /** ルール違反のシート（誰を選ぶか → 罰ガチャの結果） */
   const [ruleSheet, setRuleSheet] = useState<'pick' | GachaItem | null>(null);
 
@@ -52,6 +56,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
   const startTurn = (who: number, t: number) => {
     flow.st.cur = who;
     setHandoff(prefs.handoff !== false && members.length >= 2);
+    setFace(liveNow().faceDeal ? 'down' : null);
     if (t > 2 && Math.random() < CHANCE.event) {
       const ev = decks.event(members, who);
       if (ev.rule) flow.addRule(ev.rule);
@@ -79,6 +84,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
         setCur(v.cur);
         setTurn(v.turn);
         setHandoff(false);
+        setFace(null);
       },
     },
   );
@@ -126,6 +132,18 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
     return (
       <View style={{ flex: 1, backgroundColor: colorOf(cur) }}>
         <Handoff members={members} i={cur} left={`アホお題・${LEVEL_LABEL[level]}`} right={`${turn}枚目`} label="タップでお題を見る" onGo={() => setHandoff(false)} />
+      </View>
+    );
+
+  // 伏せて出す：伏せたスマホを起こしたらお題が出る（ボタンでも出せる）
+  if (face && st.phase === 'play')
+    return (
+      <View style={{ flex: 1, backgroundColor: basePal.bg }}>
+        <View style={s.wrap}>
+          <FaceDeal name={members[cur].name} color={colorOf(cur)} turn={turn} fg={basePal.cardFg} cardBg={basePal.cardBg} edge={basePal.cardEdge} face={face} onFace={setFace} onGo={() => setFace(null)} />
+          <BigButton pal={basePal} label="ボタンで出す" onPress={() => setFace(null)} />
+        </View>
+        <Frame color={colorOf(cur)} />
       </View>
     );
 

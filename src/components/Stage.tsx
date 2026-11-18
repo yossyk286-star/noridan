@@ -15,6 +15,9 @@ import type { BatsuPick } from '../lib/game';
 import { Angel, BombArt, Capsule, Coin, Crown, Fuse, GACHA_MS, GachaMachine, Skull, TwinSkulls } from './Fx';
 import { Icon } from './Icon';
 import { HELP } from '../lib/help';
+import { capOf, isSpun, markSpun, useLive } from '../lib/live';
+import { releaseCue } from '../lib/fx';
+import { CAP_COLOR, CamButton, RareLabel, SpinWait } from './Live';
 
 type Pal = (typeof STAGE)[Level];
 
@@ -451,21 +454,43 @@ export function GachaCard({ members, items: raw }: { pal: Pal; members: Member[]
   const look = allLucky ? LUCKY_LOOK : BATSU_LOOK;
   const { dual } = usePrefs();
   // 最初の1.4秒はマシンがガラガラ回って、そのあと結果（ドクロ・カプセルはここで初めて出すので、出た瞬間から動く）
+  const live = useLive();
+  // 振ってガチャ：振るまで（押すまで）マシンを回さへん。同じガチャは1回だけ
+  const [, setSpinTick] = useState(0);
+  const waitSpin = live.spinGacha && !isSpun(raw);
+  const cap = capOf(raw);
   const [rolling, setRolling] = useState(true);
   useEffect(() => {
+    if (waitSpin) return;
     setRolling(true);
     const t = setTimeout(() => setRolling(false), GACHA_MS);
     return () => clearTimeout(t);
-  }, [raw]);
+  }, [raw, waitSpin]);
+  // 罰が出た瞬間、札がガタッと揺れる
+  const hit = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (rolling || allLucky) return;
+    hit.setValue(0);
+    Animated.sequence([-9, 8, -6, 4, -2, 0].map((x) => Animated.timing(hit, { toValue: x, duration: 45, useNativeDriver: true }))).start();
+  }, [rolling]);
+  if (waitSpin) {
+    const names = items.map((g) => members[g.i]?.name).filter(Boolean).join('・');
+    return (
+      <Animated.View style={[styles.card, { backgroundColor: BATSU_LOOK.bg, borderColor: BATSU_LOOK.edge, borderWidth: 3 }, anim]}>
+        <Text style={[styles.kind, { color: BATSU_LOOK.fg }]}>罰ガチャ</Text>
+        <SpinWait names={names} fg={BATSU_LOOK.fg} onSpin={() => { markSpun(raw); setSpinTick((t) => t + 1); releaseCue(); }} />
+      </Animated.View>
+    );
+  }
   if (rolling) {
     return (
       <Animated.View style={[styles.card, { backgroundColor: look.bg, borderColor: look.edge, borderWidth: 3 }, anim]}>
-        <GachaMachine color={look.fg} lucky={allLucky} />
+        <GachaMachine color={look.fg} lucky={allLucky} capColor={CAP_COLOR[cap.c]} rare={<RareLabel cap={cap} />} />
       </Animated.View>
     );
   }
   return (
-    <Animated.View style={[styles.card, { backgroundColor: look.bg, borderColor: look.edge, borderWidth: 3 }, anim]}>
+    <Animated.View style={[styles.card, { backgroundColor: look.bg, borderColor: look.edge, borderWidth: 3 }, anim, { transform: [...((anim as { transform?: object[] }).transform ?? []), { translateX: hit }] } as object]}>
       <Text style={[styles.kind, { color: look.fg }]}>罰ガチャ</Text>
       {dual && (
         <>
@@ -496,6 +521,7 @@ export function GachaCard({ members, items: raw }: { pal: Pal; members: Member[]
               </Tap>
             )}
             {g.passed && <Text style={[styles.passSub, { color: look.fg, marginLeft: 62 }]}>パス券を使った</Text>}
+            {live.camera && !g.lucky && <CamButton item={g} members={members} fg={look.fg} />}
           </View>
         ))}
       </View>

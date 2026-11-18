@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle, Ellipse, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
@@ -227,7 +227,7 @@ function MiniFace({ x, y, angel }: { x: number; y: number; angel?: boolean }) {
 }
 
 /** 罰ガチャのマシン（約1秒）：ガタガタ回って、ドクロか天使のカプセルが出てきて真ん中でパカッと割れる */
-export function GachaMachine({ color = '#141210', lucky }: { color?: string; lucky?: boolean }) {
+export function GachaMachine({ color = '#141210', lucky, capColor, rare }: { color?: string; lucky?: boolean; capColor?: string; rare?: ReactNode }) {
   const shake = useRef(new Animated.Value(0)).current;
   const handle = useRef(new Animated.Value(0)).current;
   const fade = useRef(new Animated.Value(0)).current; // マシンが消える
@@ -297,11 +297,12 @@ export function GachaMachine({ color = '#141210', lucky }: { color?: string; luc
             )}
           </Svg>
         </Animated.View>
-        <Animated.View style={[fx.capHalf, fx.capT, { backgroundColor: lucky ? '#ffd23f' : '#e8202a' }, half(true)]} />
+        <Animated.View style={[fx.capHalf, fx.capT, { backgroundColor: capColor ?? (lucky ? '#ffd23f' : '#e8202a') }, half(true)]} />
         <Animated.View style={[fx.capHalf, fx.capB, half(false)]} />
       </Animated.View>
       {/* パカッと割れた時の光 */}
       <Animated.View style={[fx.burst, { backgroundColor: lucky ? 'rgba(255,224,120,0.8)' : 'rgba(255,255,255,0.8)', opacity: crack.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 1, 0] }), transform: [{ scale: crack.interpolate({ inputRange: [0, 1], outputRange: [0.3, 2.4] }) }] }]} />
+      {rare}
     </Animated.View>
   );
 }

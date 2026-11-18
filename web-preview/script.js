@@ -283,6 +283,7 @@ function startOdaiTurn() {
   g.turn++;
   g.doer = g.cur;
   g.handoff = S.handoff && S.members.length >= 2;
+  g.face = S.faceDeal ? "down" : null; // 伏せて出す（起こしたらお題）
   if (g.turn > 2 && Math.random() < CHANCE.event) {
     const e = drawEvent(g.cur);
     if (e.rule) addRule(e.rule);
@@ -865,7 +866,7 @@ function tiltListen() {
   window.addEventListener("deviceorientation", (e) => {
     if (e.beta == null || e.gamma == null) return;
     tiltSensor.beta = e.beta; tiltSensor.gamma = e.gamma; tiltSensor.at = Date.now();
-    tiltTick(); dkTick();
+    tiltTick(); dkTick(); faceTick();
   });
 }
 // iPhone は押したタイミングで許可を取る必要がある
@@ -1024,7 +1025,7 @@ function skListen() {
       x = G.x - g[0]; y = G.y - g[1]; z = G.z - g[2];
     }
     skSensor.at = Date.now();
-    skTick(x, y, z);
+    skTick(x, y, z); spinTick(x, y, z);
   });
 }
 async function skAsk() {

@@ -43,6 +43,8 @@ import { play, setSoundEnabled, setVolume } from './src/lib/sound';
 import { setVibeEnabled, Vibration } from './src/lib/vibe';
 import { cancelFx, quakeX, resetStreak } from './src/lib/fx';
 import FxLayer from './src/components/FxLayer';
+import { Entrance, MeterGraph, MeterHost, Polaroids } from './src/components/Live';
+import { liveNow, loadLive, setLiveLevel, useLive } from './src/lib/live';
 import { PrefsContext } from './src/lib/prefs';
 import { Decks, PASS, setContent } from './src/lib/game';
 import { markFirstOpen, maybeAskReview } from './src/lib/review';
@@ -112,6 +114,9 @@ export default function App() {
   const since = useRef(0);
   const alerted = useRef<Record<string, boolean>>({});
   const teamDecks = useRef(new Decks()).current;
+  const live = useLive();
+  /** 選手入場（ゲームの最初だけ） */
+  const [entrance, setEntrance] = useState<{ mode: Mode; k: number } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -149,6 +154,7 @@ export default function App() {
       PASS.on = po;
       setTeam((await load<unknown>('nd_team', false)) === true);
       setWater((await load<unknown>('nd_water', true)) !== false);
+      await loadLive();
       const gh = await load<{ t?: string; at?: number } | null>('nd_gohome', null);
       if (gh && typeof gh.t === 'string' && Date.now() - (gh.at ?? 0) < 12 * 3600e3) setGoHome(gh.t);
     })();
@@ -327,6 +333,7 @@ export default function App() {
     cancelFx();
     PASS.used.clear(); // パス券はゲームごとに1人1枚
     setScreen({ name: mode, key: Date.now(), again });
+    setEntrance(!again && liveNow().entrance && members.length >= 2 ? { mode, k: Date.now() } : null);
   };
   const finish = (mode: Mode) => (pen0: number[], turns: number, stats: Stats, words?: string[], scores?: number[]) => {
     const pen = pen0.map((v, i) => v + carryArr[i]); // 出入りで引き継いだ罰も足す
@@ -361,6 +368,7 @@ export default function App() {
   }, [screen]);
 
   const onStage = isStage(screen.name);
+  setLiveLevel(level);
   const neonHome = screen.name === 'home' && !!night;
   const bg = onStage ? stageBg ?? STAGE[level].bg : neonHome ? NEON_BG : C.ink;
   useEffect(() => {
@@ -424,6 +432,8 @@ export default function App() {
               }
               extraBottom={
                 <>
+                  <Polaroids members={members} />
+                  <MeterGraph />
                   <LeftResult left={left} />
                   <TallyResult members={members} tally={tally} />
                 </>
@@ -431,6 +441,8 @@ export default function App() {
             />
           )}
         </Animated.View>
+        <MeterHost active={live.meter && onStage} screen={screen.name} level={level} onLevel={updateLevel} />
+        {entrance && onStage && <Entrance key={entrance.k} members={members} tally={tally} mode={entrance.mode} onDone={() => setEntrance(null)} />}
         <FxLayer deep={night === 'shinya' && screen.name !== 'result'} />
         <SettingsSheet
           visible={sheet}

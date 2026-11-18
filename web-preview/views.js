@@ -104,6 +104,7 @@ const vib = (p) => { if (S.vibe && navigator.vibrate) try { navigator.vibrate(p)
 // 線のアイコン（1本のパスで描く）
 const ico = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 const ICON = {
+  cam: ico("M3 8h4l2-3h6l2 3h4v11H3zM12 17a4 4 0 1 0 0-8a4 4 0 0 0 0 8z"),
   gohome: ico("M14 4h5v16h-5M10 8l-4 4 4 4M6 12h9"),
   drop: ico("M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11zM9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"),
   handoff: ico("M9 3h7a1.5 1.5 0 0 1 1.5 1.5v15A1.5 1.5 0 0 1 16 21H9a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 9 3zM11.5 18h2M2 12h3.5M4 10l2 2-2 2"),
@@ -210,9 +211,9 @@ const miniAngel = (x, y) => `<g><ellipse cx="${x}" cy="${y - 12}" rx="6" ry="2" 
 const CAP_SKULL = `<svg viewBox="0 0 100 100"><path d="M50 10C28 10 16 25 16 44c0 12 7 20 15 24v10c0 3 3 6 6 6h26c3 0 6-3 6-6V68c8-4 15-12 15-24C84 25 72 10 50 10z" fill="#f7f3ea" stroke="#141210" stroke-width="4"/><ellipse cx="36" cy="46" rx="9" ry="10" fill="#e8202a"/><ellipse cx="64" cy="46" rx="9" ry="10" fill="#e8202a"/><path d="M50 56l-5 8h10z" fill="#141210"/></svg>`;
 const CAP_ANGEL = `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="14" rx="20" ry="6" fill="none" stroke="#ffd23f" stroke-width="5"/><circle cx="50" cy="56" r="30" fill="#fff3d6" stroke="#141210" stroke-width="4"/><path d="M34 52q6-7 12 0M54 52q6-7 12 0" fill="none" stroke="#141210" stroke-width="4" stroke-linecap="round"/><path d="M42 68q8 7 16 0" fill="none" stroke="#141210" stroke-width="4" stroke-linecap="round"/></svg>`;
 // 罰ガチャのマシン：ガタガタ回って、ドクロか天使のカプセルが出てきて、パカッと割れる（約1秒）
-const gachaMachine = (lucky = false) => {
+const gachaMachine = (lucky = false, cap = null) => {
   const balls = [[44, 40, 0], [70, 36, 0], [56, 58, 1], [36, 62, 0], [80, 60, 0], [60, 24, 0], [46, 78, 1], [74, 78, 0]];
-  return `<div class="g-machine ${lucky ? "lucky" : ""}" aria-hidden="true"><svg viewBox="0 0 120 160">
+  return `<div class="g-machine ${lucky ? "lucky" : ""} ${cap ? "cap-" + cap.c : ""}" aria-hidden="true">${cap && CAP_LABEL[cap.c] ? `<b class="gm-rare">${CAP_LABEL[cap.c]}</b>` : ""}<svg viewBox="0 0 120 160">
     <g class="gm-body">
       <circle cx="60" cy="56" r="46" fill="rgba(255,255,255,.16)" stroke="currentColor" stroke-width="4"/>
       <g class="gm-balls">${balls.map(([x, y, a]) => (a ? miniAngel(x, y) : miniSkull(x, y))).join("")}</g>
@@ -254,8 +255,9 @@ function vHome() {
 }
 function logoBlock() {
   const night = S.night === "shinya" ? "is-night is-deep" : S.night ? "is-night" : "";
-  const sub = S.night === "shinya" ? "深夜モード 発動中" : S.night ? "夜モード 発動中" : "ノリで断れない飲み会ゲーム";
-  return `<div><h1 class="logo ${night}" id="logo">ノリダン</h1><p class="catch">${sub}</p></div>`;
+  const tod = S.night ? null : todNow();
+  const sub = S.night === "shinya" ? "深夜モード 発動中" : S.night ? "夜モード 発動中" : tod ? tod.line : "ノリで断れない飲み会ゲーム";
+  return `<div class="logo-wrap">${tod ? `<div class="tod-deco tod-${tod.k}" aria-hidden="true">${"<i></i>".repeat(14)}</div><small class="tod-sub">${esc(tod.sub)}</small>` : ""}<h1 class="logo ${night}" id="logo">ノリダン</h1><p class="catch">${esc(sub)}</p></div>`;
 }
 function vHome1() {
   const ms = S.members, ok = ms.length >= 2;
@@ -366,8 +368,8 @@ function vHome2() {
     <button class="kanji-btn" data-act="kanji" data-v="seat">${ICON.users}<span>幹事の道具<small>席替え・役割・順番・二次会</small></span></button>
   </section>
   ${vTeamPick()}
-  <button class="hero-mode" data-act="start" data-m="odai">
-    <span><small>迷ったらこれ</small><b>${esc(MODE_NAME.odai)}</b><em>${esc(HELP.odai.desc)}</em></span>
+  ${(() => { const h = todHero(); return `<button class="hero-mode" data-act="start" data-m="${h.m}">
+    <span><small>${h.label}</small><b>${esc(MODE_NAME[h.m])}</b><em>${esc(HELP[h.m].desc)}</em></span>`; })()}
     <i aria-hidden="true">▶</i>
   </button>
   ${vModeTabs()}
@@ -421,6 +423,7 @@ function vSheet() {
       <button class="toggle" data-act="passOn" aria-pressed="${S.passOn}"><span>パス券<small>1人1回、罰をゆるい罰に替えられる</small></span><b>${S.passOn ? "ON" : "OFF"}</b></button>
       ${vGoHome()}
       <button class="toggle" data-act="water" aria-pressed="${S.water}"><span>お水タイム<small>30分ごとに「全員お水をひと口」のお知らせ</small></span><b>${S.water ? "ON" : "OFF"}</b></button>
+      ${vLiveSettings()}
       <p class="sheet-sec">音と画面</p>
       <button class="toggle" data-act="big" aria-pressed="${S.big}"><span>大画面モード<small>テレビやパソコンに映す時。文字を大きく、横に罰ランキング</small></span><b>${S.big ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="sound" aria-pressed="${S.sound}"><span>効果音<small>めくる音・ガチャ・爆発</small></span><b>${S.sound ? "ON" : "OFF"}</b></button>
@@ -567,17 +570,18 @@ function vCard() {
   if (g.phase === "batsu") {
     const allLucky = g.gacha.every((x) => x.lucky);
     const mixed = !allLucky && g.gacha.some((x) => x.lucky);
+    if (spinWaitNow(g.gacha)) { S.spinWait = true; return vSpinWait(allLucky); }
     const drum = S.anim; // 画面が切り替わった時だけマシンを回す（メニュー開閉などの再描画では回さへん）
     if (drum) S.gIntro = true;
     return `<div class="odai ${allLucky ? "lucky" : "batsu"} ${drum ? "drum" : anim}" id="card">
-      ${drum ? gachaMachine(allLucky) : ""}
+      ${drum ? gachaMachine(allLucky, capOf(g.gacha)) : ""}
       <div class="head"><span>罰ガチャ</span></div>
       ${S.dual ? `<div class="mirror-list">${g.gacha.map((x) => `<p><b>${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : "の罰"}</b>${x.lucky ? x.html : doubledPlain(x.html, x.n)}</p>`).join("")}</div><hr class="dual-line">` : ""}
       ${(() => { const dbl = !allLucky && g.gacha.some((x) => x.n > 1 && !x.lucky); return `<div class="skull-wrap ${dbl ? "x2" : ""}">${allLucky ? `${ANGEL}<b>ラッキー！セーフ</b><small class="quip">${esc(luckyQuip(g.gacha))}</small>` : dbl ? `<div class="x2-skulls">${SKULL}${SKULL}${X2_BURST}</div><b>罰ゲーム2倍！</b>` : `${SKULL}<b>罰ゲーム確定</b>`}</div>`; })()}
       <div class="gacha">${g.gacha.map((x, k) => `
         <div class="gacha-item ${x.night ? "night " + x.night : ""}" style="--d:calc(var(--gt, 0s) + ${(k * 0.35).toFixed(2)}s);--mc:${colorOf(x.i)}">
           <div class="capsule"><i class="top"></i><i class="bot"></i><i class="res ${x.lucky ? "ok" : ""}">${x.lucky ? "天" : "罰"}</i></div>
-          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="x2-badge">×${x.n}</span>` : ""}</b><p>${x.lucky ? x.html : doubleHtml(x.html, x.n)}</p>${!x.lucky && x.n > 1 ? x2Meter(x.html, x.n) : ""}${canPass(x) ? `<button class="pass-btn" data-act="pass" data-k="${k}">パス券を使う<small>あと1枚・ゆるい罰に替わる</small></button>` : x.passed ? `<span class="pass-done">パス券を使った</span>` : ""}</div>
+          <div class="gacha-txt"><b>${mixed ? `<span class="mark ${x.lucky ? "ok" : "ng"}">${x.lucky ? "天使" : "ドクロ"}</span>` : ""}${esc(S.members[x.i].name)}${x.lucky ? "はセーフ" : x.night === "shinya" ? "の深夜の罰" : x.night ? "の夜の罰" : "の罰"} ${x.n > 1 && !x.lucky ? `<span class="x2-badge">×${x.n}</span>` : ""}</b><p>${x.lucky ? x.html : doubleHtml(x.html, x.n)}</p>${!x.lucky && x.n > 1 ? x2Meter(x.html, x.n) : ""}${canPass(x) ? `<button class="pass-btn" data-act="pass" data-k="${k}">パス券を使う<small>あと1枚・ゆるい罰に替わる</small></button>` : x.passed ? `<span class="pass-done">パス券を使った</span>` : ""}${S.camera && !x.lucky ? `<button class="cam-btn ${x.photo ? "done" : ""}" data-act="camShot" data-i="${k}">${ICON.cam}${x.photo ? "撮った！もう1回" : "罰の瞬間を撮る"}</button>` : ""}</div>
         </div>`).join("")}</div>
     </div>`;
   }
@@ -840,6 +844,7 @@ function vOdai() {
   const g = S.game;
   if (g.intro) return vIntroStage("odai", { extra: lvBox("", false), btn: `${mName(0)}からスタート`, act: "introGo" });
   if (g.handoff) return vHandoff(g.cur, `${MODE_NAME.odai}・${LV[S.level]}`, `${g.turn}枚目`, "タップでお題を見る");
+  if (g.face) return vFaceDeal();
   return `<div id="stage" class="${S.flip ? "flipped" : ""}">
     ${vBar()}
     ${vRule()}
@@ -2461,6 +2466,8 @@ function vResult() {
   ${g.mode === "ngword" && g.ng?.words.length ? `<h2 class="res-h2">みんなのNGワード</h2><ul class="ng-list res">${S.members.map((m, j) => `<li style="--mc:${colorOf(j)}"><span class="nm"><i></i>${esc(m.name)}</span><b>${esc(g.ng.words[j])}</b></li>`).join("")}</ul>` : ""}
   <h2 class="res-h2">罰ランキング</h2>
   <ol class="rank">${rows.map((r, k) => `<li style="--mc:${colorOf(r.i)};--w:${(r.n / maxN) * 100}%;--d:${(0.2 + k * 0.06).toFixed(2)}s"><span class="no ${rankOf(r.n) === 1 && r.n > 0 ? "top" : ""}">${rankOf(r.n)}</span><span class="r-av">${ini(r.i)}</span><span class="nm">${esc(r.m.name)}${whyText(r.i) ? `<small>${esc(whyText(r.i))}</small>` : ""}</span><span class="r-bar"><i></i></span><span class="ct">${r.n}</span></li>`).join("")}</ol>
+  ${vPhotos()}
+  ${vMeterResult()}
   ${vLeftResult()}
   ${vTallyResult()}
   <p class="tip">${MOON}<span>${esc(resultTip())}</span></p>
@@ -2533,8 +2540,9 @@ function resultImage() {
   x.restore();
   x.restore();
   // ランキング：罰の数をバーで
-  const ts = titles().slice(0, 4);
-  const maxRows = ts.length > 2 ? 5 : ts.length ? 6 : 8;
+  const pol = S.photos.some((p) => p.img?.complete && p.img.naturalWidth);
+  const ts = pol ? [] : titles().slice(0, 4);
+  const maxRows = pol ? 5 : ts.length > 2 ? 5 : ts.length ? 6 : 8;
   const maxN = Math.max(1, top.n), rowH = 66;
   let y = 1000;
   x.fillStyle = "#8d857a"; x.font = `900 32px ${body}`; x.fillText("罰ランキング", 90, y - 20);
@@ -2551,6 +2559,7 @@ function resultImage() {
   });
   if (rows.length > maxRows) { x.fillStyle = "#8d857a"; x.font = `900 30px ${body}`; x.fillText(`ほか${rows.length - maxRows}人`, 216, y + maxRows * rowH + 24); }
   y += Math.min(rows.length, maxRows) * rowH + (rows.length > maxRows ? 56 : 30);
+  if (pol) drawPolas(x, y + 20, W);
   // 称号のバッジ
   if (ts.length) {
     y += 30;
@@ -2624,6 +2633,8 @@ function render(anim) {
   document.body.classList.toggle("deep", (neon && (vtNight ? vtNight === "shinya" : c.kind?.includes("深夜"))) || (sc === "home" && (S.nightAsk ? S.nightAsk === "shinya" : S.night === "shinya")));
   S.anim = !!anim;
   S.gIntro = false;
+  S.spinWait = false;
+  document.body.dataset.tod = sc === "home" && !S.night ? todNow()?.k || "" : "";
   // 画面が変わった時だけスライドして入ってくる
   const key = sc === "home" ? (S.nightAsk ? "night" : "home" + S.step) : sc;
   const ORDER = { home1: 0, night: 1, home2: 1, result: 3, ...Object.fromEntries(Object.keys(MODE_NAME).map((m) => [m, 2])) };
@@ -2731,24 +2742,27 @@ function confetti(cols = ["#ffd23f", "#ff5aa5", "#3ec7ff", "#7be36b", "#ff8a1a",
 const cuedGacha = new WeakSet();
 function batsuCue() {
   const g = S.game, gs = g.gacha || [];
-  if (!gs.length) return "";
-  const lucky = gs.every((x) => x.lucky), intro = S.gIntro;
+  if (!gs.length || S.spinWait) return ""; // 振ってガチャの待ちの間は鳴らさへん
+  const lucky = gs.every((x) => x.lucky), intro = S.gIntro, cap = capOf(gs);
   if (intro) play(lucky ? "lucky" : "pop"); // ガラガラ → パカッ
   else if (lucky) play("lucky");
   // 連続で罰の人を数える（描き直しで2回数えへんように）
-  let streak = null;
+  let streak = null, say = null;
   if (!cuedGacha.has(gs)) {
     cuedGacha.add(gs);
     const losers = gs.filter((x) => !x.lucky).map((x) => x.i);
     g.stk = S.members.map((_, i) => (losers.includes(i) ? ((g.stk && g.stk[i]) || 0) + 1 : 0));
     const top = losers.filter((i) => g.stk[i] >= 2).sort((a, b) => g.stk[b] - g.stk[a])[0];
     if (top != null) streak = { i: top, n: g.stk[top] };
+    say = jikkyoPick(gs, streak);
   }
   const fx = () => {
     if (lucky) { play("kira"); goldFx(); }
-    else { play(Math.random() < 0.5 ? "sad" : "chin"); quakeFx(); }
+    else { play(Math.random() < 0.5 ? "sad" : "chin"); quakeFx(); hitFx(); }
     if (streak) S.cueTs.push(setTimeout(() => streakFx(streak), 700));
+    if (say) S.cueTs.push(setTimeout(() => hostSay(say), streak ? 2700 : 900));
   };
+  if (intro && CAP_LABEL[cap.c]) S.cueTs.push(setTimeout(rareFlash, 760));
   if (intro) S.cueTs.push(setTimeout(fx, GACHA_T * 1000 + 60)); else fx();
   return "";
 }
@@ -3453,7 +3467,7 @@ function onClick(e) {
       g.phase = "play";
       render(true); break;
     }
-    default: extraClick(act, b, g, i);
+    default: liveClick(act, b, g, i) || extraClick(act, b, g, i);
   }
 }
 app.addEventListener("click", onClick);

@@ -12,6 +12,8 @@ import { play } from '../lib/sound';
 import { usePrefs } from '../lib/prefs';
 import { speak } from '../lib/speech';
 import { titles, whyText, type Stats } from '../lib/titles';
+import { usePhotos } from '../lib/live';
+import { StoryPolas } from '../components/Live';
 import { C, F, LEVEL_LABEL, colorOf } from '../theme';
 import type { Level, Member, Mode, Night } from '../types';
 import { iniFit, initialOf } from '../lib/game';
@@ -327,7 +329,8 @@ function Medal({ color }: { color: string }) {
 
 /** シェア画像：黒地に赤い光、傾いたMVPステッカーとドクロ、罰ランキングのバー、称号バッジ */
 function StoryCard({ members, rows, top, who, line, ts, why }: { members: Member[]; rows: { m: Member; i: number; n: number }[]; top: number; who: string; line: string; ts: { title: string; idx: number[] }[]; why: string }) {
-  const maxRows = ts.length > 2 ? 5 : ts.length ? 6 : 8;
+  const pics = usePhotos().length > 0;
+  const maxRows = pics ? 4 : ts.length > 2 ? 5 : ts.length ? 6 : 8;
   const d = new Date();
   return (
     <View style={st.card}>
@@ -367,7 +370,8 @@ function StoryCard({ members, rows, top, who, line, ts, why }: { members: Member
         </View>
       ))}
       {rows.length > maxRows && <Text style={st.more}>ほか{rows.length - maxRows}人</Text>}
-      {ts.length > 0 && (
+      {pics && <StoryPolas members={members} />}
+      {!pics && ts.length > 0 && (
         <>
           <Text style={st.tsHead}>称号</Text>
           <View style={st.badges}>

@@ -1,3 +1,4 @@
+import { TOD_COLOR, todNow } from '../lib/live';
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { iniFit, initialOf } from '../lib/game';
@@ -132,6 +133,8 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
       return sex === v ? rest : { ...rest, sex: v };
     }));
   const logoColor = night === 'shinya' ? C.deep : night ? C.night : C.yuru;
+  // 夜が深まると画面も変わる（夜モードの時はそっちを優先）
+  const tod = night ? null : todNow();
   const sel = open !== null && members[open] ? open : null;
 
   return (
@@ -139,12 +142,13 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
       <ScrollView contentContainerStyle={s.wrap} keyboardShouldPersistTaps="handled">
         <View style={s.top}>
           <View style={{ flex: 1 }}>
+            {tod && <Text style={[s.todSub, { color: TOD_COLOR[tod.k] }]}>{tod.sub}</Text>}
             {night ? (
               <Neon color={logoColor} style={s.logo}>ノリダン</Neon>
             ) : (
               <Text style={[s.logo, { color: logoColor }]} numberOfLines={1} adjustsFontSizeToFit>ノリダン</Text>
             )}
-            <Text style={[s.catch, night && { color: logoColor, textShadowColor: logoColor, textShadowRadius: 8 }]}>{night === 'shinya' ? '深夜モード 発動中' : night ? '夜モード 発動中' : 'ノリで断れない飲み会ゲーム'}</Text>
+            <Text style={[s.catch, night && { color: logoColor, textShadowColor: logoColor, textShadowRadius: 8 }]}>{night === 'shinya' ? '深夜モード 発動中' : night ? '夜モード 発動中' : tod ? tod.line : 'ノリで断れない飲み会ゲーム'}</Text>
           </View>
           <Gear onPress={onSettings} />
         </View>
@@ -254,6 +258,12 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
 }
 
 function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings, onBack, onAskDeep, tools }: Props & { onBack: () => void; onAskDeep: () => void }) {
+  const hero = (() => {
+    const t = night ? null : todNow();
+    const e = t && t.hero !== 'odai' ? MODE_LIST.find((x) => x.m === t.hero) : null;
+    if (!t || !e || (e.min && members.length < e.min)) return { m: 'odai' as Mode, label: '迷ったらこれ' };
+    return { m: e.m, label: t.k === 'late' ? '深夜のおすすめ' : '今の時間のおすすめ' };
+  })();
   return (
     <ScrollView contentContainerStyle={s.wrap}>
       <View style={[s.top, { alignItems: 'center' }]}>
@@ -291,12 +301,12 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       </View>
 
       {tools}
-      {/* 迷ったらこれ */}
-      <Tap style={s.hero} onPress={() => onStart('odai')} accessibilityLabel={`迷ったらこれ：${MODE_TITLE.odai}`}>
+      {/* 迷ったらこれ（夜は時間でおすすめが変わる） */}
+      <Tap style={s.hero} onPress={() => onStart(hero.m)} accessibilityLabel={`${hero.label}：${MODE_TITLE[hero.m]}`}>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={s.heroHead}>迷ったらこれ</Text>
-          <Text style={s.heroTitle}>{MODE_TITLE.odai}</Text>
-          <Text style={s.heroDesc}>{HELP.odai.desc}</Text>
+          <Text style={s.heroHead}>{hero.label}</Text>
+          <Text style={s.heroTitle}>{MODE_TITLE[hero.m]}</Text>
+          <Text style={s.heroDesc}>{HELP[hero.m].desc}</Text>
         </View>
         <View style={s.heroGo}>
           <Text style={s.heroGoText}>▶</Text>
@@ -541,6 +551,7 @@ const s = StyleSheet.create({
   wrap: { padding: 16, paddingBottom: 40, gap: 14, maxWidth: 560, width: '100%', alignSelf: 'center' },
   top: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   logo: { fontFamily: F.display, fontSize: 60, lineHeight: 68 },
+  todSub: { fontWeight: '900', fontSize: 12, letterSpacing: 2 },
   catch: { color: C.muted, fontWeight: '900', fontSize: 13, letterSpacing: 1, marginTop: 4 },
   iconBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(247,243,234,0.08)', alignItems: 'center', justifyContent: 'center' },
   iconText: { color: C.paper, fontSize: 22, fontWeight: '900' },

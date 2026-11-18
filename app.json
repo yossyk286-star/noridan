@@ -10,14 +10,16 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.yoshi.noridan",
       "infoPlist": {
-        "NSMotionUsageDescription": "「傾けたらアウト」でスマホの傾きを測るのに使います",
-        "NSMicrophoneUsageDescription": "「声デカ選手権」で声の大きさを測るのに使います（録音はしません）"
+        "NSMotionUsageDescription": "「傾けたらアウト」「伏せて出す」「振ってガチャ」でスマホの傾きや揺れを測るのに使います",
+        "NSMicrophoneUsageDescription": "「声デカ選手権」と「盛り上がりメーター」で声の大きさを測るのに使います（録音はしません）",
+        "NSCameraUsageDescription": "「罰の瞬間カメラ」で罰をやってる人の写真を撮るのに使います（写真はこのスマホの中だけに残ります）"
       }
     },
     "android": {
       "package": "com.yoshi.noridan",
       "permissions": [
-        "RECORD_AUDIO"
+        "RECORD_AUDIO",
+        "CAMERA"
       ]
     },
     "web": {
@@ -32,7 +34,15 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "「声デカ選手権」で声の大きさを測るのに使います（録音はしません）"
+          "microphonePermission": "「声デカ選手権」と「盛り上がりメーター」で声の大きさを測るのに使います（録音はしません）"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "「罰の瞬間カメラ」で罰をやってる人の写真を撮るのに使います（写真はこのスマホの中だけに残ります）",
+          "photosPermission": false,
+          "microphonePermission": false
         }
       ]
     ]

@@ -6,6 +6,7 @@ import { useSeen } from '../lib/coach';
 import { C, F } from '../theme';
 import type { Night } from '../types';
 import { GoHome } from './Extras';
+import { LiveSettings } from './Live';
 
 type Props = {
   visible: boolean;
@@ -55,6 +56,7 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
             <Toggle label="パス券" sub="1人1回、罰をゆるい罰に替えられる" on={passOn} onPress={() => onPass(!passOn)} />
             <GoHome time={goHome} onChange={onGoHome} />
             <Toggle label="お水タイム" sub="30分ごとに「全員お水をひと口」のお知らせ" on={water} onPress={() => onWater(!water)} />
+            <LiveSettings Toggle={Toggle} />
             <Text style={s.sec}>音と画面</Text>
             <Toggle label="効果音" sub="めくる音・ガチャ・爆発" on={sound} onPress={() => onSound(!sound)} />
             {sound && (

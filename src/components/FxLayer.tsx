@@ -4,6 +4,7 @@ import Svg, { Path, Polygon } from 'react-native-svg';
 import { onFx } from '../lib/fx';
 import { C, F } from '../theme';
 import { Confetti } from './Fx';
+import { HostSay, RareFlash } from './Live';
 
 const GOLD = ['#ffd23f', '#ffe680', '#fff3b0', '#f5b700', '#ffffff'];
 
@@ -13,6 +14,8 @@ export default function FxLayer({ deep }: { deep: boolean }) {
   const [goldN, setGoldN] = useState(0);
   const [stk, setStk] = useState<{ name: string; n: number; k: number } | null>(null);
   const [bb, setBb] = useState(0);
+  const [host, setHost] = useState<{ text: string; k: number } | null>(null);
+  const [rare, setRare] = useState(0);
   useEffect(
     () =>
       onFx((e) => {
@@ -25,6 +28,8 @@ export default function FxLayer({ deep }: { deep: boolean }) {
         } else if (e.kind === 'gold') {
           setGoldN((x) => x + 1);
         } else if (e.kind === 'bigboom') setBb(Date.now());
+        else if (e.kind === 'host') setHost({ text: e.text, k: Date.now() });
+        else if (e.kind === 'rare') setRare(Date.now());
         else setStk({ name: e.name, n: e.n, k: Date.now() });
       }),
     [],
@@ -36,6 +41,8 @@ export default function FxLayer({ deep }: { deep: boolean }) {
       <Confetti trigger={goldN} colors={GOLD} />
       {stk && <Streak key={stk.k} name={stk.name} n={stk.n} onDone={() => setStk(null)} />}
       {bb > 0 && <BigBoomFx key={bb} onDone={() => setBb(0)} />}
+      {rare > 0 && <RareFlash key={rare} onDone={() => setRare(0)} />}
+      {host && <HostSay key={host.k} text={host.text} onDone={() => setHost(null)} />}
     </View>
   );
 }
