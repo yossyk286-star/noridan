@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import batsuJson from '../data/batsu.json';
 const QUIPS: string[] = batsuJson.quip;
+import { isCalm, Plus1 } from './Motion';
 import { Tap } from './Tap';
 import type React from 'react';
 import { Alert, Animated, Easing, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
@@ -157,10 +158,12 @@ export function ScoreBar({
 /** 罰が増えた時にポンと跳ねる顔アイコン */
 function Bump({ n, style, big, children }: { n: number; style: object; big?: boolean; children: React.ReactNode }) {
   const v = useRef(new Animated.Value(0)).current;
+  const plus = useRef(new Animated.Value(1)).current;
   const prev = useRef(n);
   useEffect(() => {
     if (n > prev.current) {
       v.setValue(0);
+      if (!isCalm()) { plus.setValue(0); Animated.timing(plus, { toValue: 1, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(); }
       Animated.sequence([
         Animated.timing(v, { toValue: 1, duration: 160, easing: Easing.out(Easing.quad), useNativeDriver: true }),
         Animated.spring(v, { toValue: 0, friction: 3, tension: 160, useNativeDriver: true }),
@@ -172,6 +175,7 @@ function Bump({ n, style, big, children }: { n: number; style: object; big?: boo
   return (
     <Animated.View style={[style, { transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [base, base * 1.35] }) }, { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }] }]}>
       {children}
+      <Plus1 v={plus} />
     </Animated.View>
   );
 }

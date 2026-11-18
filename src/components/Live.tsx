@@ -437,11 +437,11 @@ const ROWS: [keyof LiveSet, string, string][] = [
   ['camera', '罰の瞬間カメラ', '罰が出たら写真を撮れる。写真はこのスマホの中だけ'],
   ['meter', '盛り上がりメーター', 'マイクで声の大きさだけ見る（録音は残さへん）'],
 ];
-export function LiveSettings({ Toggle }: { Toggle: (p: { label: string; sub: string; on: boolean; onPress: () => void }) => ReactElement }) {
+export function LiveSettings({ Toggle, hideHead }: { hideHead?: boolean; Toggle: (p: { label: string; sub: string; on: boolean; onPress: () => void }) => ReactElement }) {
   const v = useLive();
   return (
     <>
-      <Text style={ls.sec}>演出</Text>
+      {!hideHead && <Text style={ls.sec}>演出</Text>}
       {ROWS.map(([k, t, sub]) => (
         <Toggle key={k} label={t} sub={sub} on={v[k]} onPress={() => setLive(k, !v[k])} />
       ))}

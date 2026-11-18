@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { Switch } from './Motion';
 import { Tap } from './Tap';
 import { Icon } from './Icon';
 import { C, F, colorOf } from '../theme';
@@ -61,7 +62,7 @@ export function TeamPick({ members, on, teams, onToggle, onShuffle }: { members:
           <Text style={s.toggleText}>チーム戦</Text>
           <Text style={s.toggleSub}>赤と青に分かれて、チームの罰の合計で勝負</Text>
         </View>
-        <Text style={[s.state, on && s.stateOn]}>{on ? 'ON' : 'OFF'}</Text>
+        <Switch on={on} />
       </Tap>
       {on && (
         <>

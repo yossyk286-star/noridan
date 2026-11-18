@@ -105,6 +105,8 @@ const vib = (p) => { if (S.vibe && navigator.vibrate) try { navigator.vibrate(p)
 const ico = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 const ICON = {
   cam: ico("M3 8h4l2-3h6l2 3h4v11H3zM12 17a4 4 0 1 0 0-8a4 4 0 0 0 0 8z"),
+  chev: ico("M6 9l6 6 6-6"),
+  play: ico("M8 5.5v13l10.5-6.5z"),
   gohome: ico("M14 4h5v16h-5M10 8l-4 4 4 4M6 12h9"),
   drop: ico("M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11zM9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"),
   handoff: ico("M9 3h7a1.5 1.5 0 0 1 1.5 1.5v15A1.5 1.5 0 0 1 16 21H9a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 9 3zM11.5 18h2M2 12h3.5M4 10l2 2-2 2"),
@@ -270,7 +272,7 @@ function vHome1() {
     <small>前回のメンバー</small>
     <span class="lg-row">${ms.map((_, i) => dot(i)).join("")}<b>${ms.map((m) => esc(m.name)).join("・")}</b></span>
     ${tallyLine()}
-    <span class="lg-go">このまま遊ぶ ▶</span>
+    <span class="lg-go">このまま遊ぶ${ICON.play}</span>
   </button>
   <p class="h2">それか、メンバーを変える</p>` : ""}
   <div class="mem-head"><p class="step-h">メンバー<small>${ms.length}人</small></p>${S.isExample ? `<button class="text-btn" data-act="clearAll">例を全部消す</button>` : ""}</div>
@@ -370,7 +372,7 @@ function vHome2() {
   ${vTeamPick()}
   ${(() => { const h = todHero(); return `<button class="hero-mode" data-act="start" data-m="${h.m}">
     <span><small>${h.label}</small><b>${esc(MODE_NAME[h.m])}</b><em>${esc(HELP[h.m].desc)}</em></span>`; })()}
-    <i aria-hidden="true">▶</i>
+    <i aria-hidden="true">${ICON.play}</i>
   </button>
   ${vModeTabs()}
   ${S.night ? `<section class="night-switch">
@@ -411,27 +413,33 @@ function vNightAsk() {
   </div>`;
 }
 
+function sgGroup(id, title, n, sub, body) {
+  const open = !!(S.sgOpen && S.sgOpen[id]);
+  return `<section class="sg-grp ${open ? "open" : ""}"><button class="sg-head" data-act="sgToggle" data-v="${id}" aria-expanded="${open}"><span>${title}<em>${n}こ</em><small>${sub}</small></span>${ICON.chev}</button><div class="sg-body"><div class="sg-in">${body}</div></div></section>`;
+}
 function vSheet() {
   return `
   <div class="sheet-back" data-act="sheetClose">
     <div class="sheet" role="dialog" aria-label="設定" data-stop>
       <div class="sheet-grip"></div>
       <h2>設定</h2>
-      <p class="sheet-sec">遊ぶ前に決める</p>
-      <button class="toggle" data-act="sober" aria-pressed="${S.sober}"><span>お酒なし<small>「飲む」罰やお題を出さへん</small></span><b>${S.sober ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="noTouch" aria-pressed="${S.noTouch}"><span>体に触るのなし<small>くすぐり・ハグ・肩もみ系の罰と命令を出さへん</small></span><b>${S.noTouch ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="passOn" aria-pressed="${S.passOn}"><span>パス券<small>1人1回、罰をゆるい罰に替えられる</small></span><b>${S.passOn ? "ON" : "OFF"}</b></button>
-      ${vGoHome()}
-      <button class="toggle" data-act="water" aria-pressed="${S.water}"><span>お水タイム<small>30分ごとに「全員お水をひと口」のお知らせ</small></span><b>${S.water ? "ON" : "OFF"}</b></button>
-      ${vLiveSettings()}
-      <p class="sheet-sec">音と画面</p>
-      <button class="toggle" data-act="big" aria-pressed="${S.big}"><span>大画面モード<small>テレビやパソコンに映す時。文字を大きく、横に罰ランキング</small></span><b>${S.big ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="sound" aria-pressed="${S.sound}"><span>効果音<small>めくる音・ガチャ・爆発</small></span><b>${S.sound ? "ON" : "OFF"}</b></button>
+      <p class="sheet-sec">よく変えるもの</p>
+      <button class="toggle" data-act="sound" role="switch" aria-checked="${S.sound}" aria-pressed="${S.sound}"><span>効果音<small>めくる音・ガチャ・爆発</small></span><b>${S.sound ? "ON" : "OFF"}</b></button>
       ${S.sound ? `<div class="vol-row" role="group" aria-label="音量"><span>音量</span>${[[1, "小"], [2, "中"], [3, "大"]].map(([v, t]) => `<button data-act="vol" data-v="${v}" aria-pressed="${S.vol === v}">${t}</button>`).join("")}</div>` : ""}
-      <button class="toggle" data-act="vibe" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="voice" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="handoff" aria-pressed="${S.handoff}"><span>番の交代画面<small>アホお題で「つぎは○○」を1枚はさむ</small></span><b>${S.handoff ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="dual" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="sober" role="switch" aria-checked="${S.sober}" aria-pressed="${S.sober}"><span>お酒なし<small>「飲む」罰やお題を出さへん</small></span><b>${S.sober ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="voice" role="switch" aria-checked="${S.voice}" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
+      <p class="sheet-sec">まとまりごと</p>
+      ${sgGroup("rule", "遊びのルール", 4, "体に触るのなし・パス券・帰る時間・お水タイム", `
+      <button class="toggle" data-act="noTouch" role="switch" aria-checked="${S.noTouch}" aria-pressed="${S.noTouch}"><span>体に触るのなし<small>くすぐり・ハグ・肩もみ系の罰と命令を出さへん</small></span><b>${S.noTouch ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="passOn" role="switch" aria-checked="${S.passOn}" aria-pressed="${S.passOn}"><span>パス券<small>1人1回、罰をゆるい罰に替えられる</small></span><b>${S.passOn ? "ON" : "OFF"}</b></button>
+      ${vGoHome()}
+      <button class="toggle" data-act="water" role="switch" aria-checked="${S.water}" aria-pressed="${S.water}"><span>お水タイム<small>30分ごとに「全員お水をひと口」のお知らせ</small></span><b>${S.water ? "ON" : "OFF"}</b></button>`)}
+      ${sgGroup("live", "演出", 6, "実況・入場・伏せて出す・振ってガチャ・カメラ・メーター", vLiveSettings())}
+      ${sgGroup("view", "音と画面", 4, "バイブ・番の交代・向かい合わせ・大画面", `
+      <button class="toggle" data-act="vibe" role="switch" aria-checked="${S.vibe}" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="handoff" role="switch" aria-checked="${S.handoff}" aria-pressed="${S.handoff}"><span>番の交代画面<small>アホお題で「つぎは○○」を1枚はさむ</small></span><b>${S.handoff ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="dual" role="switch" aria-checked="${S.dual}" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="big" role="switch" aria-checked="${S.big}" aria-pressed="${S.big}"><span>大画面モード<small>テレビやパソコンに映す時。文字を大きく、横に罰ランキング</small></span><b>${S.big ? "ON" : "OFF"}</b></button>`)}
       ${!S.night ? `<div class="night-box off">
         <p class="h2">夜モード<span class="age">20歳以上</span></p>
         <p class="note">恋愛・下ネタ寄りのお題が混ざる。全員が20歳以上で、全員OKの時だけ。</p>
@@ -663,7 +671,7 @@ function vBar() {
   return `<div class="bar">
     <div class="score" aria-label="罰スコア">${shown.map((i) => `
       <span class="av ${i === g.doer ? "is-turn" : ""} ${bump(i) ? "bump" : ""} ${teamOf(i) >= 0 ? "tm" : ""}" style="--mc:${colorOf(i)};--tc:${teamOf(i) >= 0 ? TEAM[teamOf(i)].color : "transparent"}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
-        ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">罰${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
+        ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${bump(i) ? `<i class="plus1">+1</i>` : ""}${g.pen[i] ? `<b class="cnt">罰${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
     ${S.hist.length && !busyGame() ? `<button class="bar-undo" data-act="undo" aria-label="1手戻す">${ICON.undo}<span>戻す</span></button>` : ""}
     <button class="bar-res" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>結果</span></button>
@@ -725,10 +733,12 @@ function vMenu() {
     <div class="sheet menu" role="dialog" aria-label="メニュー" data-stop>
       <div class="sheet-grip"></div>
       <p class="menu-meta">${esc(modeLine(g))}</p>
-      <button class="menu-item hot" data-act="ask" data-v="end">${ICON.flag}<span>結果発表<small>ここで終わって、罰が一番多い人を発表</small></span></button>
-      <button class="menu-item" data-act="undo" ${canUndo ? "" : "disabled"}>${ICON.undo}<span>1手戻す<small>${canUndo ? "押し間違えた時に、直前の操作を取り消す" : "まだ戻せる操作がない"}</small></span></button>
+      <div class="menu-big">
+        <button class="mb hot" data-act="ask" data-v="end">${ICON.flag}<span>結果発表</span></button>
+        <button class="mb" data-act="undo" ${canUndo ? "" : "disabled"}>${ICON.undo}<span>1手戻す</span></button>
+        <button class="mb" data-act="rules">${ICON.book}<span>ルール</span></button>
+      </div>
       <button class="menu-item" data-act="inout">${ICON.users}<span>メンバーの出入り<small>今来た人を入れる・先に帰る人を外す</small></span></button>
-      <button class="menu-item" data-act="rules">${ICON.book}<span>ルール早見表<small>${MODE_NAME[g.mode]}の遊び方</small></span></button>
       <button class="menu-item" data-act="flip" aria-pressed="${S.flip}">${ICON.flip}<span>上下反転${S.flip ? "（オン）" : ""}<small>向かいの人に画面を向ける</small></span></button>
       <button class="menu-item" data-act="dual" aria-pressed="${S.dual}">${ICON.split}<span>向かい合わせ表示${S.dual ? "（オン）" : ""}<small>机の真ん中に置いて、両側から読める</small></span></button>
       <button class="menu-item" data-act="sheet">${ICON.gear}<span>設定<small>効果音・読み上げ・遊び方</small></span></button>
@@ -2640,13 +2650,14 @@ function render(anim) {
   const ORDER = { home1: 0, night: 1, home2: 1, result: 3, ...Object.fromEntries(Object.keys(MODE_NAME).map((m) => [m, 2])) };
   const moved = S.navKey && S.navKey !== key;
   const dir = moved && ORDER[key] < ORDER[S.navKey] ? "back" : "fwd";
-  S.navKey = key;
+  S.navFrom = S.navKey; S.navKey = key;
   if (S.hold && S.hold.sc !== sc) { clearTimeout(S.holdT); S.hold = null; }
   app.innerHTML = onStage && S.hold ? vHold() : (VIEWS[sc] || vResult)();
   jaWrap(app);
   rvSetup(anim);
   drSetup();
-  if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
+  if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); if (mvFrom && S.navFrom === "home" + 2 && key !== "home2" && dir === "fwd") mvExpand("fwd"); else if (mvFrom && key === "home2" && dir === "back") { mvExpand("back"); mvFrom = null; } }
+  if (anim && sc === "result") countUpRank(app);
   overlay.innerHTML = S.inout && onStage ? vInout() : S.kanji ? vKanji() : S.qr ? vQr() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   jaWrap(overlay);
   if (onStage) { fixHeight(); fitCard(); }
@@ -2975,7 +2986,7 @@ function onClick(e) {
     case "step1": S.step = 1; render(); break;
     case "members": stopTimer(); S.screen = "home"; S.step = 1; render(); window.scrollTo(0, 0); break;
     case "step2": S.step = 2; render(); window.scrollTo(0, 0); break;
-    case "start": rememberGroup(); newGame(b.dataset.m); break;
+    case "start": rememberGroup(); mvRemember(b); newGame(b.dataset.m); break;
     case "home": stopTimer(); S.menu = false; S.ask = null; S.screen = "home"; S.step = 2; render(); break;
     case "again": S.shareMsg = ""; newGame(g.mode, true); break;
     // 上のバーの「結果」：「もう結果出す？」の確認を出す
@@ -3002,6 +3013,7 @@ function onClick(e) {
     // settings / tutorial
     case "sheet": S.menu = false; S.sheet = true; render(); break;
     case "sheetClose": S.sheet = false; render(); break;
+    case "sgToggle": { const v = b.dataset.v; S.sgOpen = S.sgOpen || {}; S.sgOpen[v] = !S.sgOpen[v]; const sec = b.closest(".sg-grp"); if (sec) { sec.classList.toggle("open", S.sgOpen[v]); b.setAttribute("aria-expanded", S.sgOpen[v]); } else render(); break; }
     case "sound": S.sound = !S.sound; store.set("nd_sound", S.sound); render(); if (S.sound) play("pop"); break;
     case "vol": S.vol = +b.dataset.v; store.set("nd_vol", S.vol); SFX.unlock(); render(); play("jan"); break;
     case "vibe": S.vibe = !S.vibe; store.set("nd_vibe", S.vibe); render(); vib(40); break;
@@ -3573,5 +3585,7 @@ const endDrag = () => {
 window.addEventListener("pointerup", endDrag);
 window.addEventListener("pointercancel", endDrag);
 overlay.addEventListener("click", onClick);
+sheetSwipeInit(overlay);
 
 render();
+bootAnim();

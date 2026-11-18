@@ -1,7 +1,7 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /** 線のアイコン（お試し版と同じ形）。色は color、太さは中で統一 */
-export type IconName = 'gear' | 'flip' | 'split' | 'wolf' | 'target' | 'undo' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'gohome' | 'drop' | 'handoff' | 'bomb' | 'cup' | 'warn' | 'yama' | 'nyok' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt' | 'king' | 'draw' | 'whack' | 'cam';
+export type IconName = 'gear' | 'flip' | 'split' | 'wolf' | 'target' | 'undo' | 'back' | 'more' | 'close' | 'flag' | 'exit' | 'plus' | 'share' | 'users' | 'next' | 'moon' | 'book' | 'cards' | 'dice' | 'mute' | 'vote' | 'grid' | 'num' | 'hand' | 'heart' | 'check' | 'pin' | 'skull' | 'hash' | 'chat' | 'smile' | 'timer' | 'eye' | 'bang' | 'question' | 'scale' | 'tilt' | 'shake' | 'stop' | 'rtap' | 'gohome' | 'drop' | 'handoff' | 'bomb' | 'cup' | 'warn' | 'yama' | 'nyok' | 'bpass' | 'hilo' | 'reflex' | 'voice' | 'blind' | 'pocky' | 'tickle' | 'hug' | 'quiz' | 'face' | 'deko' | 'doubt' | 'king' | 'draw' | 'whack' | 'cam' | 'play' | 'chev';
 
 const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
   cam: 'M3 8h4l2-3h6l2 3h4v11H3zM12 17a4 4 0 1 0 0-8a4 4 0 0 0 0 8z',
@@ -38,6 +38,8 @@ const PATHS: Record<Exclude<IconName, 'more' | 'gear' | 'users'>, string> = {
   split: 'M6.5 3.5h11A2.5 2.5 0 0 1 20 6v12a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18V6a2.5 2.5 0 0 1 2.5-2.5zM4 12h16M9 7.5h6M9 16.5h6',
   flip: 'M7 4v16M7 4 3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4',
   back: 'M15 5l-7 7 7 7',
+  play: 'M8 5.5v13l10.5-6.5z',
+  chev: 'M6 9l6 6 6-6',
   close: 'M18 6 6 18M6 6l12 12',
   flag: 'M5 21V4M5 4h11l-2 4 2 4H5',
   exit: 'M15 4h4v16h-4M10 16l4-4-4-4M14 12H4',

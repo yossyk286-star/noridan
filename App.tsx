@@ -1,3 +1,4 @@
+import { ExpandLayer, shrinkBack } from './src/components/Motion';
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { Tap } from './src/components/Tap';
@@ -362,6 +363,7 @@ export default function App() {
   useEffect(() => {
     if (prev.current === screen.name && !isStage(screen.name)) return;
     dir.current = ORDER(screen.name) < ORDER(prev.current) ? -1 : 1;
+    if (screen.name === 'home' && prev.current !== 'home' && prev.current !== 'result') shrinkBack();
     prev.current = screen.name;
     slide.setValue(0);
     Animated.timing(slide, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
@@ -478,6 +480,7 @@ export default function App() {
         <QrSheet visible={qrOpen} onClose={() => setQrOpen(false)} />
         <Toast text={toastMsg.text} kind={toastMsg.kind} onHide={() => setToastMsg({ text: '', kind: '' })} />
       </SafeAreaView>
+      <ExpandLayer />
     </SafeAreaProvider>
     </PrefsContext.Provider>
   );

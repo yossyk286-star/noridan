@@ -1,3 +1,4 @@
+import { CountUp } from '../components/Motion';
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { Tap } from '../components/Tap';
@@ -212,7 +213,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
                 {!!whyText(stats, r.i) && <Text style={s.why} numberOfLines={1}>{whyText(stats, r.i)}</Text>}
               </View>
               <View style={s.track}>{r.n > 0 && <View style={[s.fill, { backgroundColor: colorOf(r.i), width: `${(r.n / Math.max(1, top)) * 100}%` }]} />}</View>
-              <Text style={s.ct}>{r.n}</Text>
+              <CountUp to={r.n} go={landed} delay={300 + (rows.length - 1 - i) * 120} style={s.ct} />
             </View>
           );
         })}

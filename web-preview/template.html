@@ -2020,6 +2020,55 @@ body[data-tod="late"] .logo:not(.is-night) { color: var(--tod); }
 .tod-early i:nth-child(14) { left: 190%; animation-delay: -5.6s; }
 .tod-late i:nth-child(14) { left: 33%; top: 52px; animation-delay: -4.2s; }
 @media (prefers-reduced-motion: reduce) { .entrance, .en-row, .en-h, .host-say, #card.hit, .gm-rare, .sw-art { animation-duration: .01s !important; } }
+/* ===== 第6弾：アプリ全体の動きとデザイン ===== */
+/* 38 色の役割：黄=押すとこ／ピンク=今の番・今の人／赤=罰・危ない／水色=お知らせ・情報／紫=夜（メンバーの色は丸の中だけ） */
+:root { --c-press: #ffd23f; --c-turn: #ff5d8f; --c-danger: #ff2a2a; --c-info: #4dd4ff; --c-night: #b69cff; --press-t: .1s; }
+/* 34 ボタンは3種類：主役（.big 黄/白の太いボタン）・副（.ghost 暗い色）・文字だけ（.link）。押すと下に沈む速さは全部同じ */
+.ghost:active:not(:disabled), .menu-item:active:not(:disabled), .mode-row:active:not(:disabled), .hero-mode:active, .btn-add:active, .mb:active:not(:disabled), .kanji-btn:active { transform: translateY(2px) scale(.99); transition: transform var(--press-t); }
+.hero-mode:active { box-shadow: 0 2px 0 #b8901a; transform: translateY(4px); }
+.hero-mode i svg { width: 26px; height: 26px; stroke-width: 2.6; }
+.lg-go { display: inline-flex; align-items: center; gap: 4px; }
+.lg-go svg { width: 18px; height: 18px; stroke-width: 3; }
+/* ON/OFFは本物のスイッチ（つまみが0.15秒で滑る） */
+.toggle b { position: relative; flex: none; width: 50px; height: 30px; padding: 0; border-radius: 999px; font-size: 0; color: transparent; background: rgba(247,243,234,.16); transition: background .15s; }
+.toggle b::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #b8b0a2; transition: transform .15s cubic-bezier(.3,1.4,.5,1), background .15s; }
+.toggle[aria-pressed="true"] b, .team-box .toggle[aria-pressed="true"] b { background: var(--c-press); }
+.toggle[aria-pressed="true"] b::after { transform: translateX(20px); background: var(--ink); }
+/* 37 メニューは大きい3つ＋リスト、設定はまとまりごとに畳む */
+.menu-big { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mb { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px; padding: 10px 4px; border-radius: 16px; background: rgba(247,243,234,.08); color: var(--paper); font-weight: 900; font-size: 13px; }
+.mb svg { width: 26px; height: 26px; }
+.mb.hot { background: var(--c-press); color: var(--ink); }
+.mb:disabled { opacity: .4; }
+.sheet .menu-item.danger { color: #ff6b6b; }
+.sg-grp { border-radius: 14px; background: rgba(247,243,234,.05); }
+.sg-head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px; text-align: left; font-weight: 900; font-size: 15px; color: var(--paper); }
+.sg-head span { display: block; min-width: 0; }
+.sg-head em { font-style: normal; font-size: 12px; opacity: .55; margin-left: 6px; }
+.sg-head small { display: block; margin-top: 2px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.sg-head svg { flex: none; width: 20px; height: 20px; opacity: .6; transition: transform .2s; }
+.sg-grp.open .sg-head svg { transform: rotate(180deg); }
+.sg-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s cubic-bezier(.2,.9,.3,1); }
+.sg-grp.open .sg-body { grid-template-rows: 1fr; }
+.sg-in { overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 0 10px; min-height: 0; }
+.sg-grp.open .sg-in { padding-bottom: 10px; }
+.sheet { touch-action: pan-y; }
+/* 33 広がる札 */
+.mv-card { position: fixed; z-index: 30; pointer-events: none; }
+/* 35 起動：ロゴがポン→前のメンバーが順に出る */
+body.boot .logo { animation: bootPop .34s cubic-bezier(.2,1.7,.4,1) both; }
+body.boot .last-group { animation: bootUp .3s .18s cubic-bezier(.2,.9,.3,1) both; }
+body.boot .last-group .lg-row > * { animation: bootPop .26s cubic-bezier(.2,1.7,.4,1) both; }
+body.boot .last-group .lg-row > *:nth-child(1) { animation-delay: .24s; }
+body.boot .last-group .lg-row > *:nth-child(2) { animation-delay: .29s; }
+body.boot .last-group .lg-row > *:nth-child(3) { animation-delay: .34s; }
+body.boot .last-group .lg-row > *:nth-child(4) { animation-delay: .39s; }
+@keyframes bootPop { from { transform: scale(.7); opacity: 0; } }
+@keyframes bootUp { from { transform: translateY(14px); opacity: 0; } }
+/* 39 +1がポンと出る */
+.av .plus1 { position: absolute; left: 50%; top: -22px; transform: translateX(-50%); font-style: normal; font-family: var(--display); font-size: 16px; color: var(--c-danger); text-shadow: 0 0 0 #000; pointer-events: none; animation: plus1 .7s cubic-bezier(.2,1.2,.4,1) both; z-index: 4; }
+@keyframes plus1 { 0% { transform: translate(-50%, 8px) scale(.5); opacity: 0; } 25% { transform: translate(-50%, -2px) scale(1.25); opacity: 1; } 75% { opacity: 1; } 100% { transform: translate(-50%, -12px) scale(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .toggle b, .toggle b::after, .sg-body, .sg-head svg { transition: none; } body.boot .logo, body.boot .last-group, body.boot .last-group .lg-row > *, .av .plus1 { animation: none; } .av .plus1 { display: none; } }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

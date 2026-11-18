@@ -14,6 +14,9 @@ export const C = {
   bombEdge: '#ff7a1a',
 };
 
+/** 38 色の役割：1つの色に1つの意味。黄=押すとこ／ピンク=今の番・今の人／赤=罰・危ない／水色=お知らせ・情報／紫=夜（メンバーの色は丸の中だけ） */
+export const ROLE = { press: C.yuru, turn: C.futsu, danger: C.blood, info: '#4dd4ff', night: C.night } as const;
+
 export const LEVEL_LABEL: Record<Level, string> = { yurume: 'ゆるめ', futsu: '普通', jigoku: '地獄' };
 export const LEVEL_SUB: Record<Level, string> = { yurume: '軽いお題・軽い罰', futsu: 'ちょい恥ずかしい', jigoku: '容赦なし・重い罰' };
 

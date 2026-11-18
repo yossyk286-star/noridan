@@ -2020,6 +2020,55 @@ body[data-tod="late"] .logo:not(.is-night) { color: var(--tod); }
 .tod-early i:nth-child(14) { left: 190%; animation-delay: -5.6s; }
 .tod-late i:nth-child(14) { left: 33%; top: 52px; animation-delay: -4.2s; }
 @media (prefers-reduced-motion: reduce) { .entrance, .en-row, .en-h, .host-say, #card.hit, .gm-rare, .sw-art { animation-duration: .01s !important; } }
+/* ===== 第6弾：アプリ全体の動きとデザイン ===== */
+/* 38 色の役割：黄=押すとこ／ピンク=今の番・今の人／赤=罰・危ない／水色=お知らせ・情報／紫=夜（メンバーの色は丸の中だけ） */
+:root { --c-press: #ffd23f; --c-turn: #ff5d8f; --c-danger: #ff2a2a; --c-info: #4dd4ff; --c-night: #b69cff; --press-t: .1s; }
+/* 34 ボタンは3種類：主役（.big 黄/白の太いボタン）・副（.ghost 暗い色）・文字だけ（.link）。押すと下に沈む速さは全部同じ */
+.ghost:active:not(:disabled), .menu-item:active:not(:disabled), .mode-row:active:not(:disabled), .hero-mode:active, .btn-add:active, .mb:active:not(:disabled), .kanji-btn:active { transform: translateY(2px) scale(.99); transition: transform var(--press-t); }
+.hero-mode:active { box-shadow: 0 2px 0 #b8901a; transform: translateY(4px); }
+.hero-mode i svg { width: 26px; height: 26px; stroke-width: 2.6; }
+.lg-go { display: inline-flex; align-items: center; gap: 4px; }
+.lg-go svg { width: 18px; height: 18px; stroke-width: 3; }
+/* ON/OFFは本物のスイッチ（つまみが0.15秒で滑る） */
+.toggle b { position: relative; flex: none; width: 50px; height: 30px; padding: 0; border-radius: 999px; font-size: 0; color: transparent; background: rgba(247,243,234,.16); transition: background .15s; }
+.toggle b::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #b8b0a2; transition: transform .15s cubic-bezier(.3,1.4,.5,1), background .15s; }
+.toggle[aria-pressed="true"] b, .team-box .toggle[aria-pressed="true"] b { background: var(--c-press); }
+.toggle[aria-pressed="true"] b::after { transform: translateX(20px); background: var(--ink); }
+/* 37 メニューは大きい3つ＋リスト、設定はまとまりごとに畳む */
+.menu-big { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mb { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px; padding: 10px 4px; border-radius: 16px; background: rgba(247,243,234,.08); color: var(--paper); font-weight: 900; font-size: 13px; }
+.mb svg { width: 26px; height: 26px; }
+.mb.hot { background: var(--c-press); color: var(--ink); }
+.mb:disabled { opacity: .4; }
+.sheet .menu-item.danger { color: #ff6b6b; }
+.sg-grp { border-radius: 14px; background: rgba(247,243,234,.05); }
+.sg-head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px; text-align: left; font-weight: 900; font-size: 15px; color: var(--paper); }
+.sg-head span { display: block; min-width: 0; }
+.sg-head em { font-style: normal; font-size: 12px; opacity: .55; margin-left: 6px; }
+.sg-head small { display: block; margin-top: 2px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.sg-head svg { flex: none; width: 20px; height: 20px; opacity: .6; transition: transform .2s; }
+.sg-grp.open .sg-head svg { transform: rotate(180deg); }
+.sg-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s cubic-bezier(.2,.9,.3,1); }
+.sg-grp.open .sg-body { grid-template-rows: 1fr; }
+.sg-in { overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 0 10px; min-height: 0; }
+.sg-grp.open .sg-in { padding-bottom: 10px; }
+.sheet { touch-action: pan-y; }
+/* 33 広がる札 */
+.mv-card { position: fixed; z-index: 30; pointer-events: none; }
+/* 35 起動：ロゴがポン→前のメンバーが順に出る */
+body.boot .logo { animation: bootPop .34s cubic-bezier(.2,1.7,.4,1) both; }
+body.boot .last-group { animation: bootUp .3s .18s cubic-bezier(.2,.9,.3,1) both; }
+body.boot .last-group .lg-row > * { animation: bootPop .26s cubic-bezier(.2,1.7,.4,1) both; }
+body.boot .last-group .lg-row > *:nth-child(1) { animation-delay: .24s; }
+body.boot .last-group .lg-row > *:nth-child(2) { animation-delay: .29s; }
+body.boot .last-group .lg-row > *:nth-child(3) { animation-delay: .34s; }
+body.boot .last-group .lg-row > *:nth-child(4) { animation-delay: .39s; }
+@keyframes bootPop { from { transform: scale(.7); opacity: 0; } }
+@keyframes bootUp { from { transform: translateY(14px); opacity: 0; } }
+/* 39 +1がポンと出る */
+.av .plus1 { position: absolute; left: 50%; top: -22px; transform: translateX(-50%); font-style: normal; font-family: var(--display); font-size: 16px; color: var(--c-danger); text-shadow: 0 0 0 #000; pointer-events: none; animation: plus1 .7s cubic-bezier(.2,1.2,.4,1) both; z-index: 4; }
+@keyframes plus1 { 0% { transform: translate(-50%, 8px) scale(.5); opacity: 0; } 25% { transform: translate(-50%, -2px) scale(1.25); opacity: 1; } 75% { opacity: 1; } 100% { transform: translate(-50%, -12px) scale(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .toggle b, .toggle b::after, .sg-body, .sg-head svg { transition: none; } body.boot .logo, body.boot .last-group, body.boot .last-group .lg-row > *, .av .plus1 { animation: none; } .av .plus1 { display: none; } }
 </style>
 
 <div class="frame" aria-hidden="true"></div>
@@ -4595,6 +4644,116 @@ document.addEventListener("change", (e) => {
 });
 document.addEventListener("submit", (e) => { if (e.target.id === "inoutForm") inoutAdd(e); });
 
+// ===== 第6弾：アプリ全体の動き =====
+// 33 押した札が広がって画面になる / 35 起動の0.5秒 / 37 シートを下に引っ張って閉じる / 39 +1とカウントアップ
+// ※ views.js より前に読み込む。ここのトップレベルでは views.js の const を触らんこと（関数の中でだけ使う）
+const calmMotion = () => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } };
+
+// ---------- 33 押した札が広がる ----------
+// 遊び方の行を押したら、その行の位置から広がる。戻る時は逆に、元の行へ縮む
+let mvFrom = null; // { rect, mode, bg }
+function mvRemember(btn) {
+  if (calmMotion() || !btn) { mvFrom = null; return; }
+  const r = btn.getBoundingClientRect();
+  mvFrom = { rect: { top: r.top, left: r.left, width: r.width, height: r.height }, mode: btn.dataset.m, bg: getComputedStyle(btn.classList.contains("hero-mode") ? btn : (btn.querySelector(".mode-ic") || btn)).backgroundColor, rad: getComputedStyle(btn).borderRadius };
+}
+function mvBox() { const f = document.querySelector(".frame") || document.body; const r = f.getBoundingClientRect(); return { top: 0, left: r.left, width: r.width, height: innerHeight }; }
+function mvExpand(dir) {
+  if (!mvFrom || calmMotion()) return;
+  const full = mvBox();
+  let to = mvFrom.rect;
+  if (dir === "back") {
+    const el = document.querySelector(`[data-act="start"][data-m="${mvFrom.mode}"]`);
+    if (!el) { mvFrom = null; return; }
+    const r = el.getBoundingClientRect();
+    to = { top: r.top, left: r.left, width: r.width, height: r.height };
+  }
+  const el = document.createElement("div");
+  el.className = "mv-card";
+  const px = (b) => ({ top: b.top + "px", left: b.left + "px", width: b.width + "px", height: b.height + "px" });
+  el.style.background = mvFrom.bg;
+  document.body.appendChild(el);
+  const a = dir === "back" ? [{ ...px(full), borderRadius: "0px", opacity: 0 }, { ...px(full), borderRadius: "0px", opacity: 1, offset: .25 }, { ...px(to), borderRadius: mvFrom.rad, opacity: 0 }]
+    : [{ ...px(to), borderRadius: mvFrom.rad, opacity: 1 }, { ...px(full), borderRadius: "0px", opacity: 1, offset: .65 }, { ...px(full), borderRadius: "0px", opacity: 0 }];
+  const an = el.animate(a, { duration: 380, easing: "cubic-bezier(.2,.8,.2,1)" });
+  an.onfinish = an.oncancel = () => el.remove();
+  if (dir !== "back") mvFrom = { ...mvFrom };
+}
+
+// ---------- 35 起動の0.5秒 ----------
+// 開いた時だけ。ホームが出たらロゴがポン→前のメンバーが順に出る。同じタブの2回目以降は出さへん
+function bootAnim() {
+  if (calmMotion()) return;
+  try { if (sessionStorage.getItem("nd_booted")) return; sessionStorage.setItem("nd_booted", "1"); } catch {}
+  document.body.classList.add("boot");
+  setTimeout(() => document.body.classList.remove("boot"), 900);
+  window.addEventListener("pointerdown", () => document.body.classList.remove("boot"), { once: true });
+}
+
+// ---------- 37 シートを下に引っ張って閉じる ----------
+// 上の持ち手か、一番上までスクロールした状態から下へ。80px以上か勢いがあれば閉じる。足りんかったら元に戻る
+function sheetSwipeInit(host) {
+  let st = null;
+  host.addEventListener("pointerdown", (e) => {
+    const sh = e.target.closest(".sheet");
+    if (!sh || e.target.closest("input, textarea, select")) return;
+    if (sh.scrollTop > 0 && !e.target.closest(".sheet-grip")) return;
+    st = { sh, y: e.clientY, t: e.timeStamp, dy: 0, on: false, id: e.pointerId };
+  });
+  host.addEventListener("pointermove", (e) => {
+    if (!st || e.pointerId !== st.id) return;
+    const dy = e.clientY - st.y;
+    if (!st.on) { if (dy < 8) { if (dy < -8) st = null; return; } st.on = true; st.sh.style.animation = "none"; st.sh.style.transition = "none"; try { st.sh.setPointerCapture(e.pointerId); } catch {} }
+    st.dy = Math.max(0, dy);
+    st.sh.style.transform = `translateY(${st.dy}px)`;
+    const back = st.sh.parentElement; if (back) back.style.background = `rgba(0,0,0,${0.55 * Math.max(0, 1 - st.dy / 400)})`;
+  });
+  const end = (e) => {
+    if (!st) return;
+    const s = st; st = null;
+    if (!s.on) return;
+    const fast = s.dy / Math.max(1, e.timeStamp - s.t) > 0.6;
+    s.sh.style.transition = "transform .22s cubic-bezier(.2,.9,.3,1)";
+    if (s.dy > 80 || (fast && s.dy > 30)) {
+      s.sh.style.transform = "translateY(110%)";
+      const back = s.sh.parentElement;
+      if (back) back.style.transition = "background .22s", back.style.background = "rgba(0,0,0,0)";
+      s.sh.dataset.swiped = "1";
+      setTimeout(() => (back || s.sh).click(), 200);
+    } else {
+      s.sh.style.transform = "";
+      const back = s.sh.parentElement; if (back) back.style.background = "";
+    }
+    // 引っ張りの後ろに click が出て「押した」扱いにならんように
+    const kill = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+    s.sh.addEventListener("click", kill, { capture: true, once: true });
+    setTimeout(() => s.sh.removeEventListener("click", kill, { capture: true }), 60);
+  };
+  host.addEventListener("pointerup", end);
+  host.addEventListener("pointercancel", end);
+}
+
+// ---------- 39 数字が動く ----------
+// 結果発表の罰の数を、0から数え上げる（下の人から順に。1位だけ最後にドン）
+function countUpRank(root) {
+  if (calmMotion()) return;
+  root.querySelectorAll(".rank li").forEach((li) => {
+    const ct = li.querySelector(".ct"); if (!ct) return;
+    const n = parseInt(ct.textContent, 10);
+    if (!(n > 0) || n > 99) return;
+    const d = parseFloat(li.style.getPropertyValue("--d")) || 0;
+    ct.textContent = "0";
+    const t0 = performance.now() + d * 1000 + 150, dur = Math.min(900, 220 + n * 90);
+    const tick = (now) => {
+      if (!ct.isConnected) return;
+      const r = Math.min(1, Math.max(0, (now - t0) / dur));
+      ct.textContent = String(Math.round(n * (1 - Math.pow(1 - r, 3))));
+      if (r < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
 // ===== 第4弾：動きと演出（実況ひとこと・ガチャのレア演出・手触り・選手入場・スマホを動かす・罰の瞬間カメラ・盛り上がりメーター・夜で変わる画面） =====
 // アプリ版は src/lib/live.ts と src/components/Live.tsx（同じ考え方）
 
@@ -4983,9 +5142,8 @@ function todHero() {
 
 // ---------- 設定とボタン ----------
 function vLiveSettings() {
-  const tg = (act, on, t, s) => `<button class="toggle" data-act="${act}" aria-pressed="${on}"><span>${t}<small>${s}</small></span><b>${on ? "ON" : "OFF"}</b></button>`;
-  return `<p class="sheet-sec">演出</p>
-    ${tg("jikkyo", S.jikkyo, "実況ひとこと", "連続の罰や首位交代に、ノリダンがツッコむ")}
+  const tg = (act, on, t, s) => `<button class="toggle" data-act="${act}" role="switch" aria-checked="${on}" aria-pressed="${on}"><span>${t}<small>${s}</small></span><b>${on ? "ON" : "OFF"}</b></button>`;
+  return `${tg("jikkyo", S.jikkyo, "実況ひとこと", "連続の罰や首位交代に、ノリダンがツッコむ")}
     ${tg("entrance", S.entrance, "選手入場", "ゲームの最初に、二つ名つきでメンバー紹介")}
     ${tg("faceDeal", S.faceDeal, "伏せて出す", "アホお題：伏せたスマホを起こしたらお題が出る")}
     ${tg("spinGacha", S.spinGacha, "振ってガチャ", "罰ガチャをスマホを振って回す（ボタンでもOK）")}
@@ -5116,6 +5274,8 @@ const vib = (p) => { if (S.vibe && navigator.vibrate) try { navigator.vibrate(p)
 const ico = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 const ICON = {
   cam: ico("M3 8h4l2-3h6l2 3h4v11H3zM12 17a4 4 0 1 0 0-8a4 4 0 0 0 0 8z"),
+  chev: ico("M6 9l6 6 6-6"),
+  play: ico("M8 5.5v13l10.5-6.5z"),
   gohome: ico("M14 4h5v16h-5M10 8l-4 4 4 4M6 12h9"),
   drop: ico("M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11zM9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"),
   handoff: ico("M9 3h7a1.5 1.5 0 0 1 1.5 1.5v15A1.5 1.5 0 0 1 16 21H9a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 9 3zM11.5 18h2M2 12h3.5M4 10l2 2-2 2"),
@@ -5281,7 +5441,7 @@ function vHome1() {
     <small>前回のメンバー</small>
     <span class="lg-row">${ms.map((_, i) => dot(i)).join("")}<b>${ms.map((m) => esc(m.name)).join("・")}</b></span>
     ${tallyLine()}
-    <span class="lg-go">このまま遊ぶ ▶</span>
+    <span class="lg-go">このまま遊ぶ${ICON.play}</span>
   </button>
   <p class="h2">それか、メンバーを変える</p>` : ""}
   <div class="mem-head"><p class="step-h">メンバー<small>${ms.length}人</small></p>${S.isExample ? `<button class="text-btn" data-act="clearAll">例を全部消す</button>` : ""}</div>
@@ -5381,7 +5541,7 @@ function vHome2() {
   ${vTeamPick()}
   ${(() => { const h = todHero(); return `<button class="hero-mode" data-act="start" data-m="${h.m}">
     <span><small>${h.label}</small><b>${esc(MODE_NAME[h.m])}</b><em>${esc(HELP[h.m].desc)}</em></span>`; })()}
-    <i aria-hidden="true">▶</i>
+    <i aria-hidden="true">${ICON.play}</i>
   </button>
   ${vModeTabs()}
   ${S.night ? `<section class="night-switch">
@@ -5422,27 +5582,33 @@ function vNightAsk() {
   </div>`;
 }
 
+function sgGroup(id, title, n, sub, body) {
+  const open = !!(S.sgOpen && S.sgOpen[id]);
+  return `<section class="sg-grp ${open ? "open" : ""}"><button class="sg-head" data-act="sgToggle" data-v="${id}" aria-expanded="${open}"><span>${title}<em>${n}こ</em><small>${sub}</small></span>${ICON.chev}</button><div class="sg-body"><div class="sg-in">${body}</div></div></section>`;
+}
 function vSheet() {
   return `
   <div class="sheet-back" data-act="sheetClose">
     <div class="sheet" role="dialog" aria-label="設定" data-stop>
       <div class="sheet-grip"></div>
       <h2>設定</h2>
-      <p class="sheet-sec">遊ぶ前に決める</p>
-      <button class="toggle" data-act="sober" aria-pressed="${S.sober}"><span>お酒なし<small>「飲む」罰やお題を出さへん</small></span><b>${S.sober ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="noTouch" aria-pressed="${S.noTouch}"><span>体に触るのなし<small>くすぐり・ハグ・肩もみ系の罰と命令を出さへん</small></span><b>${S.noTouch ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="passOn" aria-pressed="${S.passOn}"><span>パス券<small>1人1回、罰をゆるい罰に替えられる</small></span><b>${S.passOn ? "ON" : "OFF"}</b></button>
-      ${vGoHome()}
-      <button class="toggle" data-act="water" aria-pressed="${S.water}"><span>お水タイム<small>30分ごとに「全員お水をひと口」のお知らせ</small></span><b>${S.water ? "ON" : "OFF"}</b></button>
-      ${vLiveSettings()}
-      <p class="sheet-sec">音と画面</p>
-      <button class="toggle" data-act="big" aria-pressed="${S.big}"><span>大画面モード<small>テレビやパソコンに映す時。文字を大きく、横に罰ランキング</small></span><b>${S.big ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="sound" aria-pressed="${S.sound}"><span>効果音<small>めくる音・ガチャ・爆発</small></span><b>${S.sound ? "ON" : "OFF"}</b></button>
+      <p class="sheet-sec">よく変えるもの</p>
+      <button class="toggle" data-act="sound" role="switch" aria-checked="${S.sound}" aria-pressed="${S.sound}"><span>効果音<small>めくる音・ガチャ・爆発</small></span><b>${S.sound ? "ON" : "OFF"}</b></button>
       ${S.sound ? `<div class="vol-row" role="group" aria-label="音量"><span>音量</span>${[[1, "小"], [2, "中"], [3, "大"]].map(([v, t]) => `<button data-act="vol" data-v="${v}" aria-pressed="${S.vol === v}">${t}</button>`).join("")}</div>` : ""}
-      <button class="toggle" data-act="vibe" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="voice" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="handoff" aria-pressed="${S.handoff}"><span>番の交代画面<small>アホお題で「つぎは○○」を1枚はさむ</small></span><b>${S.handoff ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="dual" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="sober" role="switch" aria-checked="${S.sober}" aria-pressed="${S.sober}"><span>お酒なし<small>「飲む」罰やお題を出さへん</small></span><b>${S.sober ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="voice" role="switch" aria-checked="${S.voice}" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
+      <p class="sheet-sec">まとまりごと</p>
+      ${sgGroup("rule", "遊びのルール", 4, "体に触るのなし・パス券・帰る時間・お水タイム", `
+      <button class="toggle" data-act="noTouch" role="switch" aria-checked="${S.noTouch}" aria-pressed="${S.noTouch}"><span>体に触るのなし<small>くすぐり・ハグ・肩もみ系の罰と命令を出さへん</small></span><b>${S.noTouch ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="passOn" role="switch" aria-checked="${S.passOn}" aria-pressed="${S.passOn}"><span>パス券<small>1人1回、罰をゆるい罰に替えられる</small></span><b>${S.passOn ? "ON" : "OFF"}</b></button>
+      ${vGoHome()}
+      <button class="toggle" data-act="water" role="switch" aria-checked="${S.water}" aria-pressed="${S.water}"><span>お水タイム<small>30分ごとに「全員お水をひと口」のお知らせ</small></span><b>${S.water ? "ON" : "OFF"}</b></button>`)}
+      ${sgGroup("live", "演出", 6, "実況・入場・伏せて出す・振ってガチャ・カメラ・メーター", vLiveSettings())}
+      ${sgGroup("view", "音と画面", 4, "バイブ・番の交代・向かい合わせ・大画面", `
+      <button class="toggle" data-act="vibe" role="switch" aria-checked="${S.vibe}" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="handoff" role="switch" aria-checked="${S.handoff}" aria-pressed="${S.handoff}"><span>番の交代画面<small>アホお題で「つぎは○○」を1枚はさむ</small></span><b>${S.handoff ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="dual" role="switch" aria-checked="${S.dual}" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="big" role="switch" aria-checked="${S.big}" aria-pressed="${S.big}"><span>大画面モード<small>テレビやパソコンに映す時。文字を大きく、横に罰ランキング</small></span><b>${S.big ? "ON" : "OFF"}</b></button>`)}
       ${!S.night ? `<div class="night-box off">
         <p class="h2">夜モード<span class="age">20歳以上</span></p>
         <p class="note">恋愛・下ネタ寄りのお題が混ざる。全員が20歳以上で、全員OKの時だけ。</p>
@@ -5674,7 +5840,7 @@ function vBar() {
   return `<div class="bar">
     <div class="score" aria-label="罰スコア">${shown.map((i) => `
       <span class="av ${i === g.doer ? "is-turn" : ""} ${bump(i) ? "bump" : ""} ${teamOf(i) >= 0 ? "tm" : ""}" style="--mc:${colorOf(i)};--tc:${teamOf(i) >= 0 ? TEAM[teamOf(i)].color : "transparent"}" title="${esc(S.members[i].name)} 罰${g.pen[i]}">
-        ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${g.pen[i] ? `<b class="cnt">罰${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
+        ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${bump(i) ? `<i class="plus1">+1</i>` : ""}${g.pen[i] ? `<b class="cnt">罰${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
     ${S.hist.length && !busyGame() ? `<button class="bar-undo" data-act="undo" aria-label="1手戻す">${ICON.undo}<span>戻す</span></button>` : ""}
     <button class="bar-res" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>結果</span></button>
@@ -5736,10 +5902,12 @@ function vMenu() {
     <div class="sheet menu" role="dialog" aria-label="メニュー" data-stop>
       <div class="sheet-grip"></div>
       <p class="menu-meta">${esc(modeLine(g))}</p>
-      <button class="menu-item hot" data-act="ask" data-v="end">${ICON.flag}<span>結果発表<small>ここで終わって、罰が一番多い人を発表</small></span></button>
-      <button class="menu-item" data-act="undo" ${canUndo ? "" : "disabled"}>${ICON.undo}<span>1手戻す<small>${canUndo ? "押し間違えた時に、直前の操作を取り消す" : "まだ戻せる操作がない"}</small></span></button>
+      <div class="menu-big">
+        <button class="mb hot" data-act="ask" data-v="end">${ICON.flag}<span>結果発表</span></button>
+        <button class="mb" data-act="undo" ${canUndo ? "" : "disabled"}>${ICON.undo}<span>1手戻す</span></button>
+        <button class="mb" data-act="rules">${ICON.book}<span>ルール</span></button>
+      </div>
       <button class="menu-item" data-act="inout">${ICON.users}<span>メンバーの出入り<small>今来た人を入れる・先に帰る人を外す</small></span></button>
-      <button class="menu-item" data-act="rules">${ICON.book}<span>ルール早見表<small>${MODE_NAME[g.mode]}の遊び方</small></span></button>
       <button class="menu-item" data-act="flip" aria-pressed="${S.flip}">${ICON.flip}<span>上下反転${S.flip ? "（オン）" : ""}<small>向かいの人に画面を向ける</small></span></button>
       <button class="menu-item" data-act="dual" aria-pressed="${S.dual}">${ICON.split}<span>向かい合わせ表示${S.dual ? "（オン）" : ""}<small>机の真ん中に置いて、両側から読める</small></span></button>
       <button class="menu-item" data-act="sheet">${ICON.gear}<span>設定<small>効果音・読み上げ・遊び方</small></span></button>
@@ -7651,13 +7819,14 @@ function render(anim) {
   const ORDER = { home1: 0, night: 1, home2: 1, result: 3, ...Object.fromEntries(Object.keys(MODE_NAME).map((m) => [m, 2])) };
   const moved = S.navKey && S.navKey !== key;
   const dir = moved && ORDER[key] < ORDER[S.navKey] ? "back" : "fwd";
-  S.navKey = key;
+  S.navFrom = S.navKey; S.navKey = key;
   if (S.hold && S.hold.sc !== sc) { clearTimeout(S.holdT); S.hold = null; }
   app.innerHTML = onStage && S.hold ? vHold() : (VIEWS[sc] || vResult)();
   jaWrap(app);
   rvSetup(anim);
   drSetup();
-  if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); }
+  if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); if (mvFrom && S.navFrom === "home" + 2 && key !== "home2" && dir === "fwd") mvExpand("fwd"); else if (mvFrom && key === "home2" && dir === "back") { mvExpand("back"); mvFrom = null; } }
+  if (anim && sc === "result") countUpRank(app);
   overlay.innerHTML = S.inout && onStage ? vInout() : S.kanji ? vKanji() : S.qr ? vQr() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   jaWrap(overlay);
   if (onStage) { fixHeight(); fitCard(); }
@@ -7986,7 +8155,7 @@ function onClick(e) {
     case "step1": S.step = 1; render(); break;
     case "members": stopTimer(); S.screen = "home"; S.step = 1; render(); window.scrollTo(0, 0); break;
     case "step2": S.step = 2; render(); window.scrollTo(0, 0); break;
-    case "start": rememberGroup(); newGame(b.dataset.m); break;
+    case "start": rememberGroup(); mvRemember(b); newGame(b.dataset.m); break;
     case "home": stopTimer(); S.menu = false; S.ask = null; S.screen = "home"; S.step = 2; render(); break;
     case "again": S.shareMsg = ""; newGame(g.mode, true); break;
     // 上のバーの「結果」：「もう結果出す？」の確認を出す
@@ -8013,6 +8182,7 @@ function onClick(e) {
     // settings / tutorial
     case "sheet": S.menu = false; S.sheet = true; render(); break;
     case "sheetClose": S.sheet = false; render(); break;
+    case "sgToggle": { const v = b.dataset.v; S.sgOpen = S.sgOpen || {}; S.sgOpen[v] = !S.sgOpen[v]; const sec = b.closest(".sg-grp"); if (sec) { sec.classList.toggle("open", S.sgOpen[v]); b.setAttribute("aria-expanded", S.sgOpen[v]); } else render(); break; }
     case "sound": S.sound = !S.sound; store.set("nd_sound", S.sound); render(); if (S.sound) play("pop"); break;
     case "vol": S.vol = +b.dataset.v; store.set("nd_vol", S.vol); SFX.unlock(); render(); play("jan"); break;
     case "vibe": S.vibe = !S.vibe; store.set("nd_vibe", S.vibe); render(); vib(40); break;
@@ -8584,7 +8754,9 @@ const endDrag = () => {
 window.addEventListener("pointerup", endDrag);
 window.addEventListener("pointercancel", endDrag);
 overlay.addEventListener("click", onClick);
+sheetSwipeInit(overlay);
 
 render();
+bootAnim();
 
 </script>

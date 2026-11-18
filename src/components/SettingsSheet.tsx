@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type React from 'react';
+import { LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
+import { Icon } from './Icon';
+import { isCalm, Switch, SwipeSheet } from './Motion';
 import { Tap } from './Tap';
 import { ALLOW_SHINYA } from '../lib/game';
 import { useSeen } from '../lib/coach';
@@ -39,6 +42,25 @@ type Props = {
   onClose: () => void;
 };
 
+if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true);
+
+/** まとまりごとに畳むグループ（開くとスッと伸びる） */
+function Group({ title, count, sub, children }: { title: string; count: number; sub: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={s.grp}>
+      <Tap style={s.grpHead} accessibilityState={{ expanded: open }} onPress={() => { if (!isCalm()) LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity')); setOpen(!open); }}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.toggleText}>{title}<Text style={s.grpCount}>{`  ${count}こ`}</Text></Text>
+          <Text style={s.toggleSub}>{sub}</Text>
+        </View>
+        <View style={{ transform: [{ rotate: open ? '180deg' : '0deg' }], opacity: 0.6 }}><Icon name="chev" color={C.paper} size={20} /></View>
+      </Tap>
+      {open && <View style={{ gap: 8, padding: 10, paddingTop: 0 }}>{children}</View>}
+    </View>
+  );
+}
+
 /** 歯車から開く設定。夜モード（20歳以上）もここからオンにする */
 export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, sober, onSober, noTouch, onNoTouch, passOn, onPass, goHome, onGoHome, water, onWater, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
   const { resetSeen } = useSeen();
@@ -46,18 +68,10 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={s.back} onPress={onClose}>
-        <Pressable style={s.sheet} onPress={() => {}}>
+        <SwipeSheet style={s.sheet} onClose={onClose}>
           <ScrollView contentContainerStyle={{ gap: 12 }}>
-            <View style={s.grip} />
             <Text style={s.title}>設定</Text>
-            <Text style={s.sec}>遊ぶ前に決める</Text>
-            <Toggle label="お酒なし" sub="「飲む」罰やお題を出さへん" on={sober} onPress={() => onSober(!sober)} />
-            <Toggle label="体に触るのなし" sub="くすぐり・ハグ・肩もみ系の罰と命令を出さへん" on={noTouch} onPress={() => onNoTouch(!noTouch)} />
-            <Toggle label="パス券" sub="1人1回、罰をゆるい罰に替えられる" on={passOn} onPress={() => onPass(!passOn)} />
-            <GoHome time={goHome} onChange={onGoHome} />
-            <Toggle label="お水タイム" sub="30分ごとに「全員お水をひと口」のお知らせ" on={water} onPress={() => onWater(!water)} />
-            <LiveSettings Toggle={Toggle} />
-            <Text style={s.sec}>音と画面</Text>
+            <Text style={s.sec}>よく変えるもの</Text>
             <Toggle label="効果音" sub="めくる音・ガチャ・爆発" on={sound} onPress={() => onSound(!sound)} />
             {sound && (
               <View style={s.volRow} accessibilityLabel="音量">
@@ -69,10 +83,23 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
                 ))}
               </View>
             )}
-            <Toggle label="バイブ" sub="罰・爆発・ボタンでブルッ" on={vibe} onPress={() => onVibe(!vibe)} />
+            <Toggle label="お酒なし" sub="「飲む」罰やお題を出さへん" on={sober} onPress={() => onSober(!sober)} />
             <Toggle label="お題の読み上げ" sub="札が出たら声で読む（爆弾の中身は読まへん）" on={voice} onPress={() => onVoice(!voice)} />
-            <Toggle label="番の交代画面" sub="アホお題で「つぎは○○」を1枚はさむ" on={handoff} onPress={() => onHandoff(!handoff)} />
-            <Toggle label="向かい合わせ表示" sub="机の真ん中に置いて両側から読める" on={dual} onPress={() => onDual(!dual)} />
+            <Text style={s.sec}>まとまりごと</Text>
+            <Group title="遊びのルール" count={4} sub="体に触るのなし・パス券・帰る時間・お水タイム">
+              <Toggle label="体に触るのなし" sub="くすぐり・ハグ・肩もみ系の罰と命令を出さへん" on={noTouch} onPress={() => onNoTouch(!noTouch)} />
+              <Toggle label="パス券" sub="1人1回、罰をゆるい罰に替えられる" on={passOn} onPress={() => onPass(!passOn)} />
+              <GoHome time={goHome} onChange={onGoHome} />
+              <Toggle label="お水タイム" sub="30分ごとに「全員お水をひと口」のお知らせ" on={water} onPress={() => onWater(!water)} />
+            </Group>
+            <Group title="演出" count={6} sub="実況・入場・伏せて出す・振ってガチャ・カメラ・メーター">
+              <LiveSettings Toggle={Toggle} hideHead />
+            </Group>
+            <Group title="音と画面" count={3} sub="バイブ・番の交代・向かい合わせ">
+              <Toggle label="バイブ" sub="罰・爆発・ボタンでブルッ" on={vibe} onPress={() => onVibe(!vibe)} />
+              <Toggle label="番の交代画面" sub="アホお題で「つぎは○○」を1枚はさむ" on={handoff} onPress={() => onHandoff(!handoff)} />
+              <Toggle label="向かい合わせ表示" sub="机の真ん中に置いて両側から読める" on={dual} onPress={() => onDual(!dual)} />
+            </Group>
             {!night && (
               <View style={[s.nightBox, { borderColor: 'rgba(182,156,255,0.6)' }]}>
                 <View style={s.nightHeadRow}>
@@ -137,7 +164,7 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
               <Text style={s.foot}>プライバシーポリシー・お酒は20歳から。飲めへん人はソフドリでOK</Text>
             </Tap>
           </ScrollView>
-        </Pressable>
+        </SwipeSheet>
       </Pressable>
       <Modal visible={privacy} transparent animationType="slide" onRequestClose={() => setPrivacy(false)}>
         <Pressable style={s.back} onPress={() => setPrivacy(false)}>
@@ -178,12 +205,15 @@ function Toggle({ label, sub, on, onPress }: { label: string; sub: string; on: b
         <Text style={s.toggleText}>{label}</Text>
         <Text style={s.toggleSub}>{sub}</Text>
       </View>
-      <Text style={[s.state, on && s.stateOn]}>{on ? 'ON' : 'OFF'}</Text>
+      <Switch on={on} />
     </Tap>
   );
 }
 
 const s = StyleSheet.create({
+  grp: { borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.05)' },
+  grpHead: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
+  grpCount: { color: C.muted, fontSize: 12, fontWeight: '800' },
   sec: { color: C.paper, opacity: 0.6, fontSize: 12, fontWeight: '900', letterSpacing: 1, marginTop: 4 },
   volRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   volLabel: { color: C.muted, fontSize: 13, fontWeight: '800', paddingHorizontal: 4 },

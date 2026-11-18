@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Tap } from './Tap';
 import { C } from '../theme';
 import { Icon, type IconName } from './Icon';
+import { SwipeSheet } from './Motion';
 import { usePrefs } from '../lib/prefs';
 
 type Props = {
@@ -46,11 +47,23 @@ export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRule
       {extra?.state && <Text style={s.state}>{extra.state}</Text>}
     </Tap>
   );
+  const big = (icon: IconName, title: string, onPress: () => void, extra?: { hot?: boolean; keep?: boolean; off?: boolean }) => (
+    <Tap
+      disabled={extra?.off}
+      style={[s.big, extra?.hot && s.hot, extra?.off && { opacity: 0.4 }]}
+      onPress={() => {
+        if (!extra?.keep) onClose();
+        onPress();
+      }}
+    >
+      <Icon name={icon} size={26} color={extra?.hot ? C.ink : C.paper} />
+      <Text style={[s.bigText, extra?.hot && { color: C.ink }]}>{title}</Text>
+    </Tap>
+  );
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={s.back} onPress={onClose}>
-        <Pressable style={s.sheet} onPress={() => {}}>
-          <View style={s.grip} />
+        <SwipeSheet style={s.sheet} onClose={onClose}>
           <Text style={s.meta}>{meta}</Text>
           {ask ? (
             <>
@@ -73,10 +86,12 @@ export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRule
             </>
           ) : (
           <>
-          {item('flag', '結果発表', 'ここで終わって、罰が一番多い人を発表', () => setAsk('end'), { hot: true, keep: true })}
-          {onUndo && item('undo', '1手戻す', '押し間違えた時に、ひとつ前に戻る', onUndo)}
+          <View style={s.bigRow}>
+            {big('flag', '結果発表', () => setAsk('end'), { hot: true, keep: true })}
+            {big('undo', '1手戻す', onUndo ?? (() => {}), { off: !onUndo })}
+            {big('book', 'ルール', onRules)}
+          </View>
           {onInout && item('users', 'メンバーの出入り', '今来た人を入れる・先に帰る人を外す', onInout)}
-          {item('book', 'ルール早見表', rulesSub ?? '倍プッシュ・時限爆弾・リベンジ権…', onRules)}
           {onFlip && item('flip', '上下反転', '向かいの人に画面を向ける', onFlip, { state: flipped ? 'オン' : 'オフ' })}
           {item('split', '向かい合わせ表示', '机の真ん中に置いて、両側から読める', () => setDual(!dual), { state: dual ? 'オン' : 'オフ' })}
           {item('gear', '設定', '効果音・読み上げ・遊び方', onSettings)}
@@ -86,13 +101,16 @@ export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRule
           </Tap>
           </>
           )}
-        </Pressable>
+        </SwipeSheet>
       </Pressable>
     </Modal>
   );
 }
 
 const s = StyleSheet.create({
+  bigRow: { flexDirection: 'row', gap: 8 },
+  big: { flex: 1, minHeight: 76, borderRadius: 16, backgroundColor: 'rgba(247,243,234,0.08)', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10 },
+  bigText: { color: C.paper, fontWeight: '900', fontSize: 13 },
   back: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: '#1d1a17', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 34, gap: 8, width: '100%', maxWidth: 560, alignSelf: 'center' },
   grip: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(247,243,234,0.25)', alignSelf: 'center', marginBottom: 6 },

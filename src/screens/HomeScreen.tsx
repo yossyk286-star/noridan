@@ -6,6 +6,7 @@ import { Tap } from '../components/Tap';
 import { Animated, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { C, F, LEVEL_LABEL, LEVEL_SUB, colorOf } from '../theme';
 import { Icon } from '../components/Icon';
+import { Pop, expandFrom, useBootOnce } from '../components/Motion';
 import { ALLOW_SHINYA } from '../lib/game';
 import { HELP } from '../lib/help';
 import { usePrefs } from '../lib/prefs';
@@ -132,6 +133,7 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
       const { sex, ...rest } = m;
       return sex === v ? rest : { ...rest, sex: v };
     }));
+  const boot = useBootOnce();
   const logoColor = night === 'shinya' ? C.deep : night ? C.night : C.yuru;
   // 夜が深まると画面も変わる（夜モードの時はそっちを優先）
   const tod = night ? null : todNow();
@@ -143,11 +145,13 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
         <View style={s.top}>
           <View style={{ flex: 1 }}>
             {tod && <Text style={[s.todSub, { color: TOD_COLOR[tod.k] }]}>{tod.sub}</Text>}
-            {night ? (
-              <Neon color={logoColor} style={s.logo}>ノリダン</Neon>
-            ) : (
-              <Text style={[s.logo, { color: logoColor }]} numberOfLines={1} adjustsFontSizeToFit>ノリダン</Text>
-            )}
+            <Pop on={boot}>
+              {night ? (
+                <Neon color={logoColor} style={s.logo}>ノリダン</Neon>
+              ) : (
+                <Text style={[s.logo, { color: logoColor }]} numberOfLines={1} adjustsFontSizeToFit>ノリダン</Text>
+              )}
+            </Pop>
             <Text style={[s.catch, night && { color: logoColor, textShadowColor: logoColor, textShadowRadius: 8 }]}>{night === 'shinya' ? '深夜モード 発動中' : night ? '夜モード 発動中' : tod ? tod.line : 'ノリで断れない飲み会ゲーム'}</Text>
           </View>
           <Gear onPress={onSettings} />
@@ -155,17 +159,17 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
 
         {last && (
           <>
-            <Tap style={s.lastGroup} onPress={onNext} accessibilityLabel="前回のメンバーでこのまま遊ぶ">
+            <Pop on={boot} delay={180}><Tap style={s.lastGroup} onPress={onNext} accessibilityLabel="前回のメンバーでこのまま遊ぶ">
               <Text style={s.lastHead}>前回のメンバー</Text>
               <View style={s.lastRow}>
                 {members.slice(0, 6).map((m, i) => (
-                  <View key={i} style={s.lastDot}><Dot i={i} name={initialOf(members, i)} size={30} /></View>
+                  <Pop key={i} on={boot} delay={240 + i * 50} style={s.lastDot}><Dot i={i} name={initialOf(members, i)} size={30} /></Pop>
                 ))}
                 <Text style={s.lastNames} numberOfLines={1}>{members.map((m) => m.name).join('・')}</Text>
               </View>
               {!!lastNote && <Text style={s.lastNote}>{lastNote}</Text>}
-              <Text style={s.lastGo}>このまま遊ぶ ▶</Text>
-            </Tap>
+              <View style={s.lastGoRow}><Text style={s.lastGo}>このまま遊ぶ</Text><Icon name="play" color={C.ink} size={18} /></View>
+            </Tap></Pop>
             <Text style={s.h2}>それか、メンバーを変える</Text>
           </>
         )}
@@ -264,6 +268,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
     if (!t || !e || (e.min && members.length < e.min)) return { m: 'odai' as Mode, label: '迷ったらこれ' };
     return { m: e.m, label: t.k === 'late' ? '深夜のおすすめ' : '今の時間のおすすめ' };
   })();
+  const heroRef = useRef<View>(null);
   return (
     <ScrollView contentContainerStyle={s.wrap}>
       <View style={[s.top, { alignItems: 'center' }]}>
@@ -302,16 +307,16 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
 
       {tools}
       {/* 迷ったらこれ（夜は時間でおすすめが変わる） */}
-      <Tap style={s.hero} onPress={() => onStart(hero.m)} accessibilityLabel={`${hero.label}：${MODE_TITLE[hero.m]}`}>
+      <View ref={heroRef} collapsable={false}><Tap style={s.hero} onPress={() => go(heroRef, C.yuru, 22, () => onStart(hero.m))} accessibilityLabel={`${hero.label}：${MODE_TITLE[hero.m]}`}>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={s.heroHead}>{hero.label}</Text>
           <Text style={s.heroTitle}>{MODE_TITLE[hero.m]}</Text>
           <Text style={s.heroDesc}>{HELP[hero.m].desc}</Text>
         </View>
         <View style={s.heroGo}>
-          <Text style={s.heroGoText}>▶</Text>
+          <Icon name="play" color={C.yuru} size={26} />
         </View>
-      </Tap>
+      </Tap></View>
 
       <ModeTabs members={members} night={night} onStart={onStart} />
 
@@ -435,16 +440,18 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
         {shown.map((x) => {
           const why = x.min && members.length < x.min ? `${x.min}人から遊べる` : x.ok && okN < x.ok ? `下ネタOKの人が${x.ok}人から` : '';
           return (
-            <Tap key={x.m} onPress={() => onStart(x.m)} disabled={!!why} style={({ pressed }) => [s.rowItem, { opacity: why ? 0.45 : 1, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
-              <View style={[s.rowIc, { backgroundColor: CAT_COLOR[x.cat] }]}>
-                <Icon name={x.ic} color={x.cat === 'deep' ? '#fff' : C.ink} size={22} />
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={s.rowTitle} numberOfLines={1}>{MODE_TITLE[x.m]}</Text>
-                <Text style={s.rowDesc} numberOfLines={1}>{why || HELP[x.m].desc}</Text>
-              </View>
-              <Text style={s.rowMeta}>{`${x.t}\n${x.ok ? `OK${x.ok}人〜` : `${x.min ?? 2}人〜`}`}</Text>
-            </Tap>
+            <RowStart key={x.m}>{(ref) => (
+              <Tap onPress={() => go(ref, CAT_COLOR[x.cat], 14, () => onStart(x.m))} disabled={!!why} style={({ pressed }) => [s.rowItem, { opacity: why ? 0.45 : 1, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
+                <View style={[s.rowIc, { backgroundColor: CAT_COLOR[x.cat] }]}>
+                  <Icon name={x.ic} color={x.cat === 'deep' ? '#fff' : C.ink} size={22} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={s.rowTitle} numberOfLines={1}>{MODE_TITLE[x.m]}</Text>
+                  <Text style={s.rowDesc} numberOfLines={1}>{why || HELP[x.m].desc}</Text>
+                </View>
+                <Text style={s.rowMeta}>{`${x.t}\n${x.ok ? `OK${x.ok}人〜` : `${x.min ?? 2}人〜`}`}</Text>
+              </Tap>
+            )}</RowStart>
           );
         })}
       </View>
@@ -500,6 +507,20 @@ function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () 
   );
 }
 
+/** 押した行の位置を測って、そこから札が広がる（33） */
+function go(ref: React.RefObject<View | null>, bg: string, _r: number, run: () => void) {
+  const v = ref.current;
+  if (!v) { run(); return; }
+  v.measureInWindow((x, y, width, height) => {
+    if (width > 0) expandFrom({ x, y, width, height }, bg);
+    run();
+  });
+}
+function RowStart({ children }: { children: (ref: React.RefObject<View | null>) => React.ReactNode }) {
+  const ref = useRef<View>(null);
+  return <View ref={ref} collapsable={false}>{children(ref)}</View>;
+}
+
 const s = StyleSheet.create({
   tabCount: { fontSize: 12, opacity: 0.6 },
   rowItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.06)' },
@@ -527,7 +548,8 @@ const s = StyleSheet.create({
   lastRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   lastDot: { borderRadius: 17, borderWidth: 2, borderColor: C.ink },
   lastNames: { flex: 1, color: C.ink, fontWeight: '900', fontSize: 16, marginLeft: 6 },
-  lastGo: { alignSelf: 'flex-end', color: C.ink, fontFamily: F.display, fontSize: 18 },
+  lastGoRow: { alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', gap: 4 },
+  lastGo: { color: C.ink, fontFamily: F.display, fontSize: 18 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.08)', borderWidth: 1.5, borderColor: 'transparent' },
   chipName: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 5, paddingLeft: 5, paddingRight: 2 },

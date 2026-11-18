@@ -386,9 +386,8 @@ function todHero() {
 
 // ---------- 設定とボタン ----------
 function vLiveSettings() {
-  const tg = (act, on, t, s) => `<button class="toggle" data-act="${act}" aria-pressed="${on}"><span>${t}<small>${s}</small></span><b>${on ? "ON" : "OFF"}</b></button>`;
-  return `<p class="sheet-sec">演出</p>
-    ${tg("jikkyo", S.jikkyo, "実況ひとこと", "連続の罰や首位交代に、ノリダンがツッコむ")}
+  const tg = (act, on, t, s) => `<button class="toggle" data-act="${act}" role="switch" aria-checked="${on}" aria-pressed="${on}"><span>${t}<small>${s}</small></span><b>${on ? "ON" : "OFF"}</b></button>`;
+  return `${tg("jikkyo", S.jikkyo, "実況ひとこと", "連続の罰や首位交代に、ノリダンがツッコむ")}
     ${tg("entrance", S.entrance, "選手入場", "ゲームの最初に、二つ名つきでメンバー紹介")}
     ${tg("faceDeal", S.faceDeal, "伏せて出す", "アホお題：伏せたスマホを起こしたらお題が出る")}
     ${tg("spinGacha", S.spinGacha, "振ってガチャ", "罰ガチャをスマホを振って回す（ボタンでもOK）")}
