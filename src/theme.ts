@@ -10,7 +10,7 @@ export const C = {
   muted: '#8d857a',
   cream: '#fffaf0',
   night: '#b69cff',
-  deep: '#ff4fa8',
+  deep: '#c58bff',
   bombEdge: '#ff7a1a',
 };
 
@@ -39,7 +39,7 @@ export const neonPal = (nc: string): Pal => ({
 export const CARD_LOOK = {
   yoru: { bg: '#120c1d', fg: '#ffffff', edge: C.night },
   deep: { bg: '#120c1d', fg: '#ffffff', edge: C.deep },
-  event: { bg: C.ink, fg: C.yuru, edge: C.yuru },
+  event: { bg: C.ink, fg: '#ff7a7a', edge: C.blood },
   bomb: { bg: '#0e0e0e', fg: '#ffffff', edge: C.bombEdge },
 };
 

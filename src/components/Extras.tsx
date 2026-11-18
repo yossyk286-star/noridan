@@ -286,7 +286,7 @@ export function KanjiSheet({ visible, members, onClose }: { visible: boolean; me
     const max = Math.max(...votes);
     body = show ? (
       NEXT.map((t, j) => (
-        <View key={t} style={[s.kRow, votes[j] === max && max > 0 && { backgroundColor: C.yuru }]}>
+        <View key={t} style={[s.kRow, votes[j] === max && max > 0 && { backgroundColor: C.paper }]}>
           <Text style={[s.kLabel, votes[j] === max && max > 0 && { color: C.ink }]}>{`${votes[j]}票`}</Text>
           <Text style={[s.inName, votes[j] === max && max > 0 && { color: C.ink }]}>{t}</Text>
         </View>

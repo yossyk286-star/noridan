@@ -11,7 +11,7 @@ import { addPhoto, CAP_LABEL, LIVE, mlog, nickList, setLive, useLive, usePhotos,
 import type { Tally } from '../lib/extras';
 import { play } from '../lib/sound';
 import { Haptics, Vibration } from '../lib/vibe';
-import { C, F, LEVEL_LABEL, colorOf } from '../theme';
+import { C, F, LEVEL_LABEL, ROLE, colorOf } from '../theme';
 import type { GachaItem, Level, Member, Mode } from '../types';
 
 /** ノリダンのキャラ：黄色い四角の顔 */
@@ -485,7 +485,7 @@ const ls = StyleSheet.create({
   polaName: { color: C.ink, fontWeight: '900', fontSize: 14, marginTop: 5 },
   polaTxt: { color: C.ink, opacity: 0.7, fontSize: 12, fontWeight: '700' },
   small: { color: C.muted, fontSize: 12, fontWeight: '700' },
-  storyHead: { fontFamily: F.display, fontSize: 16, color: C.yuru, marginTop: 14 },
+  storyHead: { fontFamily: F.display, fontSize: 16, color: ROLE.info, marginTop: 14 },
   spola: { width: '31%', backgroundColor: '#fff', padding: 4, paddingBottom: 5 },
   spName: { color: C.ink, fontWeight: '900', fontSize: 12, marginTop: 2 },
   spTxt: { color: C.ink, opacity: 0.6, fontSize: 9, fontWeight: '700' },

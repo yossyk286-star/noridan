@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Icon } from '../components/Icon';
 import type React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -10,6 +10,7 @@ import { StageShell, usePenalty } from '../components/StageShell';
 import { Tap } from '../components/Tap';
 import { HELP } from '../lib/help';
 import { play } from '../lib/sound';
+import { usePrefs } from '../lib/prefs';
 import type { Stats } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
 import type { Level, Member, Night } from '../types';
@@ -31,12 +32,30 @@ export default function RtapScreen({ members, level, night, onQuit, onSettings, 
   const [bomb, setBomb] = useState(() => rnd(tiles));
   const [open, setOpen] = useState<number[]>([]);
   const [turns, setTurns] = useState(0);
+  // 駆け引きあり：1人1回だけパス。パスされた次の人はパスで返されへん
+  const { gamble } = usePrefs();
+  const passes = useRef<number[]>(Array(n).fill(1));
+  const [recv, setRecv] = useState(-1);
+  const [passedBy, setPassedBy] = useState(-1);
+  const canPass = !!gamble && phase === 'play' && passes.current[who] > 0 && recv !== who && tiles - open.length > 2;
+  const pass = () => {
+    if (!canPass) return;
+    passes.current[who] = 0;
+    const nx = (who + 1) % n;
+    setPassedBy(who);
+    setRecv(nx);
+    setWho(nx);
+    play('flip');
+  };
 
   const newRound = (r: number) => {
     setRound(r);
     setWho((r - 1) % n);
     setBomb(rnd(tiles));
     setOpen([]);
+    passes.current = Array(n).fill(1);
+    setRecv(-1);
+    setPassedBy(-1);
     setPhase('play');
   };
   const tap = (t: number) => {
@@ -50,6 +69,8 @@ export default function RtapScreen({ members, level, night, onQuit, onSettings, 
     } else {
       play('pop');
       setWho((who + 1) % n);
+      setRecv(-1);
+      setPassedBy(-1);
     }
   };
   const finish = (p: number[] = P.pen) => onFinish(p, turns, P.stats);
@@ -63,7 +84,7 @@ export default function RtapScreen({ members, level, night, onQuit, onSettings, 
     case 'intro':
       card = (
         <IntroCard pal={pal} mode="rtap" tag={`${n}人`}>
-          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：パネル${tiles}枚の中に爆弾が1つ`} />
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：パネル${tiles}枚の中に爆弾が1つ${gamble ? '。1人1回だけパスできる' : ''}`} />
         </IntroCard>
       );
       controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={() => newRound(1)} />;
@@ -88,7 +109,19 @@ export default function RtapScreen({ members, level, night, onQuit, onSettings, 
           </View>
         </ModeCard>
       );
-      controls = boom ? <BigButton pal={pal} danger label={`${members[who].name}に罰ガチャ`} onPress={() => { P.draw([who]); setPhase('batsu'); }} /> : <Text style={[s.hint, { color: pal.muted }]}>1枚だけ爆弾。めくった人が罰</Text>;
+      const passNote = gamble ? (recv === who ? `${members[passedBy >= 0 ? passedBy : (who + n - 1) % n].name}からパスされた。この番はパスで返せへん` : canPass ? 'パスは1人1回。使いどころを考えて' : '') : '';
+      controls = boom ? (
+        <BigButton pal={pal} danger label={`${members[who].name}に罰ガチャ`} onPress={() => { P.draw([who]); setPhase('batsu'); }} />
+      ) : (
+        <View style={{ gap: 8 }}>
+          {canPass && (
+            <Tap onPress={pass} style={s.pass}>
+              <Text style={[s.passText, { color: pal.fg }]}>{`1回だけパスして${members[(who + 1) % n].name}へ`}</Text>
+            </Tap>
+          )}
+          <Text style={[s.hint, { color: pal.muted }]}>{passNote || '1枚だけ爆弾。めくった人が罰'}</Text>
+        </View>
+      );
       break;
     }
     case 'batsu':
@@ -114,4 +147,6 @@ const s = StyleSheet.create({
   tile: { aspectRatio: 1, borderRadius: 14, borderWidth: 3, borderColor: 'rgba(136,136,136,0.35)', alignItems: 'center', justifyContent: 'center' },
   tileText: { fontFamily: F.display, fontSize: 26, color: '#141210' },
   hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  pass: { minHeight: 54, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(247,243,234,0.2)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
+  passText: { fontWeight: '900', fontSize: 16 },
 });

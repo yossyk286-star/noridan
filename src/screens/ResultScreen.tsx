@@ -2,7 +2,8 @@ import { CountUp } from '../components/Motion';
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { Tap } from '../components/Tap';
-import { Animated, Easing, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { load, save } from '../lib/storage';
 import { Haptics } from '../lib/vibe';
 import Svg, { Circle, Defs, Ellipse, Path, RadialGradient, Stop } from 'react-native-svg';
 import { Angel, Confetti, Crown, Skull } from '../components/Fx';
@@ -98,6 +99,16 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
 
   const shot = useRef<View>(null); // シェア用のストーリー画像（画面の外に置いて撮る）
   const [msg, setMsg] = useState('');
+  // 結果画像シート：名前を出す／出さん（Aさん・Bさん）をえらべる
+  const [shareOpen, setShareOpen] = useState(false);
+  const [anon, setAnon] = useState(false);
+  useEffect(() => {
+    load<boolean>('nd_shareanon', false).then((v) => setAnon(v === true));
+  }, []);
+  const sm: Member[] = anon ? members.map((m, i) => ({ ...m, name: `${String.fromCharCode(65 + (i % 26))}さん` })) : members;
+  const smRows = rows.map((r) => ({ ...r, m: sm[r.i] }));
+  const smWho = top === 0 ? '該当者なし' : smRows.filter((r) => r.n === top).map((r) => r.m.name).join('・');
+  const smWhy = !anon && top > 0 && rows.filter((r) => r.n === top).length === 1 ? whyText(stats, rows[0].i) : '';
 
   /** 結果を画像にして共有シートを出す（そのままストーリーに貼れる） */
   const share = async () => {
@@ -150,7 +161,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
             <Icon name="back" color={C.paper} size={18} />
             <Text style={s.ghostText}>別の遊び方</Text>
           </Tap>
-          <Tap style={[s.ghost, { flexDirection: 'row', justifyContent: 'center', gap: 6 }]} onPress={share}>
+          <Tap style={[s.ghost, { flexDirection: 'row', justifyContent: 'center', gap: 6 }]} onPress={() => { setMsg(''); setShareOpen(true); }}>
             <Icon name="share" color={C.paper} size={18} />
             <Text style={s.ghostText}>画像でシェア</Text>
           </Tap>
@@ -235,9 +246,37 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
     {/* シェア用のストーリー画像（360×640 で組んで 1080×1920 で撮る） */}
     <View pointerEvents="none" style={s.offscreen}>
       <View ref={shot} collapsable={false}>
-        <StoryCard members={members} rows={rows} top={top} who={who} line={line} ts={ts.slice(0, 4)} why={top > 0 && rows.filter((r) => r.n === top).length === 1 ? whyText(stats, rows[0].i) : ''} />
+        <StoryCard members={sm} rows={smRows} top={top} who={smWho} line={`${members.length}人・${line}`} ts={ts.slice(0, 4)} why={smWhy} />
       </View>
     </View>
+    <Modal visible={shareOpen} transparent animationType="slide" onRequestClose={() => setShareOpen(false)}>
+      <Pressable style={s.shBack} onPress={() => setShareOpen(false)}>
+        <Pressable style={s.shSheet} onPress={() => {}}>
+          <Text style={s.shTitle}>結果を画像にする</Text>
+          <View style={s.shPrev}>
+            <View style={{ width: 360, height: 640, transform: [{ translateX: -90 }, { translateY: -160 }, { scale: 0.5 }] }} pointerEvents="none">
+              <StoryCard members={sm} rows={smRows} top={top} who={smWho} line={`${members.length}人・${line}`} ts={ts.slice(0, 4)} why={smWhy} />
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {([[false, '名前を出す', 'みんなの名前そのまま'], [true, '名前を出さん', 'Aさん・Bさんにする']] as const).map(([v, t, sub]) => (
+              <Tap key={t} onPress={() => { setAnon(v); save('nd_shareanon', v); }} accessibilityState={{ selected: anon === v }} style={[s.shOpt, anon === v && { backgroundColor: C.yuru, borderColor: C.yuru }]}>
+                <Text style={[s.shOptT, anon === v && { color: C.ink }]}>{t}</Text>
+                <Text style={[s.shOptS, anon === v && { color: C.ink }]}>{sub}</Text>
+              </Tap>
+            ))}
+          </View>
+          <Tap style={s.shBig} onPress={share}>
+            <Text style={s.shBigText}>画像にして保存・送る</Text>
+          </Tap>
+          <Text style={s.shNote}>出てくる画面で「画像を保存」や LINE などをえらべる</Text>
+          {!!msg && <Text style={s.shNote}>{msg}</Text>}
+          <Tap style={[s.ghost, { flex: 0 }]} onPress={() => setShareOpen(false)}>
+            <Text style={s.ghostText}>閉じる</Text>
+          </Tap>
+        </Pressable>
+      </Pressable>
+    </Modal>
     <Confetti trigger={boom} />
     </View>
   );
@@ -420,7 +459,7 @@ const st = StyleSheet.create({
   fill: { height: '100%', borderRadius: 5 },
   ct: { width: 26, textAlign: 'right', fontFamily: F.display, fontSize: 17, color: C.paper },
   more: { color: C.muted, fontSize: 12, fontWeight: '900', marginLeft: 44 },
-  tsHead: { fontFamily: F.display, fontSize: 16, color: C.yuru, marginTop: 14, marginBottom: 6 },
+  tsHead: { fontFamily: F.display, fontSize: 16, color: ROLE.info, marginTop: 14, marginBottom: 6 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   badge: { width: '48%', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,210,63,0.45)', backgroundColor: 'rgba(247,243,234,0.08)', paddingVertical: 6, paddingHorizontal: 9 },
   badgeTitle: { color: ROLE.info, fontSize: 12, fontWeight: '900' },
@@ -462,6 +501,16 @@ const s = StyleSheet.create({
   noText: { color: C.paper, fontWeight: '900', fontSize: 12 },
   track: { width: '28%', height: 12, borderRadius: 6, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 6 },
+  shBack: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  shSheet: { backgroundColor: '#1d1a17', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 34, gap: 10, width: '100%', maxWidth: 560, alignSelf: 'center' },
+  shTitle: { color: C.paper, fontFamily: F.display, fontSize: 22 },
+  shPrev: { width: 180, height: 320, alignSelf: 'center', borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)' },
+  shOpt: { flex: 1, paddingVertical: 10, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', alignItems: 'center' },
+  shOptT: { color: C.paper, fontWeight: '900', fontSize: 16 },
+  shOptS: { color: C.muted, fontWeight: '700', fontSize: 11, marginTop: 2 },
+  shBig: { backgroundColor: C.paper, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
+  shBigText: { fontFamily: F.display, fontSize: 19, color: C.ink },
+  shNote: { color: C.muted, fontSize: 12, fontWeight: '700', textAlign: 'center' },
   offscreen: { position: 'absolute', left: -2000, top: 0, width: 360, height: 640 },
   brand: { fontFamily: F.display, fontSize: 28, color: C.yuru },
   share: {

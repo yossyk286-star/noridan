@@ -57,6 +57,7 @@ import type { Stats } from './src/lib/titles';
 import SettingsSheet from './src/components/SettingsSheet';
 import { C, NEON_BG, STAGE } from './src/theme';
 import type { Level, Member, Mode, Night } from './src/types';
+import { MED_POOL, MODE_CAT, MODE_MIN } from './src/lib/medley';
 
 /**
  * 遊び方ごとの画面。新しい遊び方はここに1行足すだけ（ホームのカードと説明は別）。
@@ -93,6 +94,11 @@ export default function App() {
   const [sober, setSober] = useState(false); // お酒なし
   const [noTouch, setNoTouch] = useState(false); // 体に触るのなし
   const [passOn, setPassOn] = useState(true); // パス券（1人1回）
+  const [gamble, setGamble] = useState(true); // 駆け引きあり
+  const [itCoop, setItCoop] = useState(false); // 価値観ナンバーの協力型
+  const [medN, setMedN] = useState(5); // おまかせメドレーのゲーム数
+  const [medley, setMedley] = useState<{ list: Mode[]; idx: number } | null>(null);
+  const medKeep = useRef(false); // メドレーから始めた時だけメドレーを続ける
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
   const [sheet, setSheet] = useState(false);
   const [nightAskReq, setNightAskReq] = useState(0);
@@ -154,6 +160,10 @@ export default function App() {
       setPassOn(po);
       setContent(so, nt);
       PASS.on = po;
+      setGamble((await load<unknown>('nd_gamble', true)) !== false);
+      setItCoop((await load<unknown>('nd_itcoop', false)) === true);
+      const mn = await load<number>('nd_medn', 5);
+      setMedN([3, 5, 7].includes(mn) ? mn : 5);
       setTeam((await load<unknown>('nd_team', false)) === true);
       setWater((await load<unknown>('nd_water', true)) !== false);
       await loadLive();
@@ -216,6 +226,18 @@ export default function App() {
     setPassOn(on);
     PASS.on = on;
     save('nd_pass', on);
+  };
+  const updateGamble = (on: boolean) => {
+    setGamble(on);
+    save('nd_gamble', on);
+  };
+  const updateItCoop = (on: boolean) => {
+    setItCoop(on);
+    save('nd_itcoop', on);
+  };
+  const updateMedN = (v: number) => {
+    setMedN(v);
+    save('nd_medn', v);
   };
   const updateNight = (n: Night) => {
     setNight(n);
@@ -328,6 +350,8 @@ export default function App() {
 
   const start = (mode: Mode, again = false) => {
     if (screen.name === 'home') rememberGroup();
+    if (medKeep.current) medKeep.current = false;
+    else setMedley(null); // 普通に始めた時はメドレーをやめる
     setCarry(null); // 普通に始めた時は引き継ぎなし
     setLeft([]);
     resetStreak(); // 連続罰はゲームごとに数え直し
@@ -336,6 +360,32 @@ export default function App() {
     PASS.used.clear(); // パス券はゲームごとに1人1枚
     setScreen({ name: mode, key: Date.now(), again });
     setEntrance(!again && liveNow().entrance && members.length >= 2 ? { mode, k: Date.now() } : null);
+  };
+  /** おまかせメドレー：人数に合う長くないゲームを、種類が続かんように並べる */
+  const startMedley = () => {
+    const ok = MED_POOL.filter((m) => members.length >= (MODE_MIN[m] ?? 2));
+    const pool = ok.slice().sort(() => Math.random() - 0.5);
+    const list: Mode[] = [];
+    while (list.length < medN && pool.length) {
+      const k = Math.max(0, pool.findIndex((m) => !list.length || MODE_CAT[m] !== MODE_CAT[list[list.length - 1]]));
+      list.push(pool.splice(k, 1)[0]);
+    }
+    if (list.length < 2) return;
+    medKeep.current = true;
+    setMedley({ list, idx: 0 });
+    start(list[0]);
+  };
+  /** 次のゲームへ：今の罰を引き継ぐ */
+  const medNext = () => {
+    if (!medley || medley.idx >= medley.list.length - 1) return;
+    const t = totals();
+    const c: Record<string, number> = {};
+    members.forEach((m, i) => (c[m.name] = t[i]));
+    const idx = medley.idx + 1;
+    medKeep.current = true;
+    setMedley({ ...medley, idx });
+    start(medley.list[idx]);
+    setCarry(c); // start() が消すので、そのあとで引き継ぐ
   };
   const finish = (mode: Mode) => (pen0: number[], turns: number, stats: Stats, words?: string[], scores?: number[]) => {
     const pen = pen0.map((v, i) => v + carryArr[i]); // 出入りで引き継いだ罰も足す
@@ -379,7 +429,7 @@ export default function App() {
   }, [onStage]);
 
   return (
-    <PrefsContext.Provider value={{ dual, voice, handoff, noTouch, setDual: updateDual, teams: teamOn ? teams : undefined, carry: carry ? carryArr : undefined, livePen, onInout: () => setTimeout(() => setInout(true), 400) }}>
+    <PrefsContext.Provider value={{ gamble, itCoop, setItCoop: updateItCoop, medley: medley ? { idx: medley.idx, total: medley.list.length, rest: medley.list.slice(medley.idx + 1).map((m) => MODE_TITLE[m]) } : undefined, onMedNext: medNext, dual, voice, handoff, noTouch, setDual: updateDual, teams: teamOn ? teams : undefined, carry: carry ? carryArr : undefined, livePen, onInout: () => setTimeout(() => setInout(true), 400) }}>
     <SafeAreaProvider>
       <SafeAreaView style={[s.root, { backgroundColor: bg }]}>
         <StatusBar style="light" />
@@ -395,6 +445,9 @@ export default function App() {
               onLevel={updateLevel}
               onNight={updateNight}
               onStart={start}
+              medN={medN}
+              onMedN={updateMedN}
+              onMedley={startMedley}
               onSettings={() => setSheet(true)}
               groups={groups}
               nightAskReq={nightAskReq}
@@ -464,6 +517,8 @@ export default function App() {
           onNoTouch={updateNoTouch}
           passOn={passOn}
           onPass={updatePass}
+          gamble={gamble}
+          onGamble={updateGamble}
           goHome={goHome}
           onGoHome={updateGoHome}
           water={water}

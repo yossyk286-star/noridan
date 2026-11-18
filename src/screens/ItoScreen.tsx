@@ -13,7 +13,9 @@ import { play } from '../lib/sound';
 import { usePrefs } from '../lib/prefs';
 import { speak } from '../lib/speech';
 import { newStats, type Stats } from '../lib/titles';
-import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf, neonPal } from '../theme';
+import { C, F, LEVEL_LABEL, ROLE, STAGE, alpha, colorOf, neonPal } from '../theme';
+import { Icon } from '../components/Icon';
+import { Tap } from '../components/Tap';
 import type { GachaItem, Level, Member, Night } from '../types';
 import itoJson from '../data/ito.json';
 import { batsuCue } from '../lib/fx';
@@ -29,6 +31,12 @@ type Props = {
 type Topic = { t: string; lo: string; hi: string };
 type Phase = 'intro' | 'hand' | 'look' | 'talk' | 'who' | 'order' | 'reveal' | 'batsu';
 const TOPICS = itoJson as unknown as Record<string, Topic[]>;
+const LIFE = 3;
+const Life = ({ n, fg }: { n: number; fg: string }) => (
+  <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center' }} accessibilityLabel={`ライフ${n}`}>
+    {Array.from({ length: LIFE }, (_, k) => <Icon key={k} name="heart" size={26} color={k < n ? ROLE.danger : alpha(fg, 0.25)} />)}
+  </View>
+);
 
 
 
@@ -40,7 +48,12 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
   decks.night = night;
   decks.level = level;
   const topicDecks = useRef<Record<string, Topic[]>>({}).current;
-  const { voice } = usePrefs();
+  const { voice, itCoop, setItCoop } = usePrefs();
+  // 協力型：1つの順番をみんなで作る。間違えたらライフが1つ減る（ゼロで全員に軽い罰）
+  const [coop, setCoop] = useState(false);
+  const [life, setLife] = useState(LIFE);
+  const [broke, setBroke] = useState(-1);
+  const [punish, setPunish] = useState<number[] | null>(null);
   const drawTopic = (key: string) => {
     if (!topicDecks[key]?.length) topicDecks[key] = shuffle(TOPICS[key]);
     return topicDecks[key].pop()!;
@@ -67,6 +80,10 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
   const newRound = () => {
     const r = round + 1;
     setRound(r);
+    setCoop(!!itCoop);
+    setPunish(null);
+    setBroke(-1);
+    if (life <= 0) setLife(LIFE); // ゼロになって罰を受けたあとは回復
     let key: string = level;
     if (night && !members.some((m) => m.ng) && Math.random() < (night === 'shinya' ? 0.6 : 0.3)) key = night === 'shinya' && Math.random() < 0.6 ? 'shinya' : 'yoru';
     setNightQ(key === 'yoru' || key === 'shinya' ? key : false);
@@ -93,8 +110,15 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
   };
   const check = () => {
     const b = new Set<number>();
-    for (let k = 1; k < order.length; k++) if (nums[order[k - 1]] > nums[order[k]]) { b.add(order[k - 1]); b.add(order[k]); }
+    let br = -1;
+    for (let k = 1; k < order.length; k++) if (nums[order[k - 1]] > nums[order[k]]) { b.add(order[k - 1]); b.add(order[k]); if (br < 0) br = order[k]; }
     setBad([...b]);
+    setBroke(br);
+    if (coop && b.size) {
+      const lf = life - 1;
+      setLife(lf);
+      setPunish(lf <= 0 ? members.map((_, i) => i) : null);
+    }
     // 答え合わせの前にドラムロール
     H.hold('答え合わせ…', 1800, () => {
       setDone(done + 1);
@@ -104,7 +128,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
     });
   };
   const doGacha = () => {
-    const items = bad.map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
+    const items = (punish ?? bad).map((i) => ({ i, n: 1, ...decks.batsu(members, i) }));
     setGacha(items);
     setPhase('batsu');
     batsuCue(items, members);
@@ -143,7 +167,18 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
   switch (phase) {
     case 'intro':
       card = (
-        <IntroCard pal={pal} mode="ito" tag="協力">
+        <IntroCard pal={pal} mode="ito" tag={itCoop ? '協力' : '対戦'}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {([[false, '対戦', '間違えた人が罰'], [true, '協力', 'みんなでライフ3つ']] as const).map(([v, t, sub]) => {
+              const on = !!itCoop === v;
+              return (
+                <Tap key={t} onPress={() => setItCoop?.(v)} accessibilityState={{ selected: on }} style={[s.modeBtn, { borderColor: alpha('#888888', 0.4) }, on && { backgroundColor: C.yuru, borderColor: C.yuru }]}>
+                  <Text style={[s.modeBtnT, { color: on ? C.ink : fg }]}>{t}</Text>
+                  <Text style={[s.modeBtnS, { color: on ? C.ink : fg }]}>{sub}</Text>
+                </Tap>
+              );
+            })}
+          </View>
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
         </IntroCard>
       );
@@ -186,6 +221,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
             <Text style={[s.big, { color: fg }]}>{topic.t}</Text>
             {scale}
             <Text style={[s.small, { color: fg, textAlign: 'center' }]}>1人ずつ、自分の数字っぽい「{topic.t}」を言え。数字は言うたらアカン</Text>
+            {coop && <Life n={life} fg={fg} />}
           </View>
         </ModeCard>
       );
@@ -210,7 +246,8 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
       const left = members.map((_, i) => i).filter((i) => !order.includes(i));
       card = (
         <ModeCard pal={pal}>
-          <Text style={[s.title, { color: fg }]}>小さい順に並べる</Text>
+          <Text style={[s.title, { color: fg }]}>{coop ? 'みんなで小さい順に並べる' : '小さい順に並べる'}</Text>
+          {coop && <Life n={life} fg={fg} />}
           <Text style={[s.small, { color: fg }]}>お題：{topic.t}</Text>
           <ScrollView contentContainerStyle={{ gap: 6 }} style={{ flex: 1 }}>
             {order.map((i, k) => (
@@ -250,6 +287,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
       card = (
         <ModeCard pal={pal}>
           <Text style={[s.title, { color: fg }]}>答え合わせ</Text>
+          {coop && <Life n={life} fg={fg} />}
           <Text style={[s.small, { color: fg }]}>お題：{topic.t}</Text>
           <ScrollView contentContainerStyle={{ gap: 6 }} style={{ flex: 1 }}>
             {order.map((i, k) => (
@@ -260,10 +298,10 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
               </View>
             ))}
           </ScrollView>
-          <Text style={[s.verdict, bad.length ? s.verdictBad : s.verdictGood]}>{bad.length ? `順番が逆：${bad.map((i) => members[i].name).join('・')}に罰` : '完璧！全員セーフ'}</Text>
+          <Text style={[s.verdict, bad.length ? s.verdictBad : s.verdictGood]}>{coop ? (bad.length ? `${members[broke]?.name ?? ''}で崩れた… ${punish ? 'ライフがなくなった' : 'ライフが1つ減った'}` : '全員成功！ライフはそのまま') : bad.length ? `順番が逆：${bad.map((i) => members[i].name).join('・')}に罰` : '完璧！全員セーフ'}</Text>
         </ModeCard>
       );
-      controls = bad.length ? <BigButton pal={pal} danger label={`${bad.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={doGacha} /> : <BigButton pal={pal} label="次のお題へ" onPress={newRound} />;
+      controls = punish ? <BigButton pal={pal} danger label="全員に罰ガチャ（みんなで軽く）" onPress={doGacha} /> : coop || !bad.length ? <BigButton pal={pal} label="次のお題へ" onPress={newRound} /> : <BigButton pal={pal} danger label={`${bad.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={doGacha} />;
       break;
     case 'batsu':
       card = (
@@ -326,5 +364,8 @@ const s = StyleSheet.create({
   lineNum: { fontFamily: F.display, fontSize: 24 },
   verdict: { alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, fontSize: 13, fontWeight: '900', overflow: 'hidden' },
   verdictBad: { backgroundColor: 'rgba(255,59,59,0.14)', color: '#ff3b3b' },
+  modeBtn: { flex: 1, paddingVertical: 10, borderRadius: 14, borderWidth: 2, alignItems: 'center' },
+  modeBtnT: { fontWeight: '900', fontSize: 17 },
+  modeBtnS: { fontWeight: '700', fontSize: 11, opacity: 0.75, marginTop: 2 },
   verdictGood: { backgroundColor: 'rgba(60,180,110,0.18)', color: '#2fbf6f' },
 });

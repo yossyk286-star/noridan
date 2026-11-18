@@ -54,6 +54,16 @@ export function ScoreBar({
   pal, members, pen, rev, doer, onMenu, flipped, onFlip, onEnd, onUndo,
 }: { pal: Pal; members: Member[]; pen: number[]; rev: boolean[]; doer: number; onMenu: () => void; flipped?: boolean; onFlip?: () => void; onEnd?: () => void; /** 1手戻す（戻せる時だけ渡す） */ onUndo?: () => void }) {
   // 「結果」ボタン：うっかり押しても終わらんように「もう結果出す？」の確認を出す
+  const { medley, onMedNext } = usePrefs();
+  const medMid = !!medley && medley.rest.length > 0 && !!onMedNext;
+  // おまかせメドレー中は「結果」の代わりに「次へ」（最後のゲームだけ結果）
+  const pressMed = () => {
+    if (!medley || !onMedNext) return;
+    Alert.alert('次のゲームへ進む？', `次は「${medley.rest[0]}」。今の罰はそのまま引き継ぐ`, [
+      { text: 'まだ続ける', style: 'cancel' },
+      { text: '次へ進む', onPress: onMedNext },
+    ]);
+  };
   const pressEnd = () => {
     if (!onEnd) return;
     Alert.alert('もう結果出す？', 'ゲームはここで終わり。罰が一番多い人を発表するで', [
@@ -123,9 +133,9 @@ export function ScoreBar({
         </Tap>
       )}
       {onEnd && (
-        <Tap onPress={pressEnd} accessibilityLabel="結果発表" style={[styles.endBtn, { backgroundColor: pal.chip }]}>
-          <Icon name="flag" color={pal.fg} size={16} />
-          <Text style={{ fontSize: 14, fontWeight: '900', color: pal.fg }}>結果</Text>
+        <Tap onPress={medMid ? pressMed : pressEnd} accessibilityLabel={medMid ? '次のゲームへ' : '結果発表'} style={[styles.endBtn, { backgroundColor: pal.chip }]}>
+          <Icon name={medMid ? 'next' : 'flag'} color={pal.fg} size={16} />
+          <Text style={{ fontSize: 14, fontWeight: '900', color: pal.fg }}>{medMid ? '次へ' : '結果'}</Text>
         </Tap>
       )}
       <Tap onPress={onMenu} accessibilityLabel="メニュー" style={[styles.menuBtn, { backgroundColor: pal.chip }]}>
@@ -1106,7 +1116,7 @@ const styles = StyleSheet.create({
   coachBtn: { borderRadius: 999, backgroundColor: '#ffd23f', paddingVertical: 8, paddingHorizontal: 12 },
   coachBtnText: { color: '#141210', fontSize: 12, fontWeight: '900' },
   ruleItem: { padding: 12, borderRadius: 12, backgroundColor: 'rgba(247,243,234,0.06)' },
-  ruleItemHead: { color: '#ffd23f', fontWeight: '900', fontSize: 14 },
+  ruleItemHead: { color: ROLE.info, fontWeight: '900', fontSize: 14 },
   ruleItemText: { color: 'rgba(247,243,234,0.85)', fontSize: 13, lineHeight: 20, marginTop: 2 },
   ruleOut: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 10 },
   ruleOutText: { fontSize: 12, fontWeight: '900' },

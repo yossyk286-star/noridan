@@ -2077,6 +2077,101 @@ body.boot .last-group .lg-row > *:nth-child(4) { animation-delay: .39s; }
 .av .plus1 { position: absolute; left: 50%; top: -22px; transform: translateX(-50%); font-style: normal; font-family: var(--display); font-size: 16px; color: var(--c-danger); text-shadow: 0 0 0 #000; pointer-events: none; animation: plus1 .7s cubic-bezier(.2,1.2,.4,1) both; z-index: 4; }
 @keyframes plus1 { 0% { transform: translate(-50%, 8px) scale(.5); opacity: 0; } 25% { transform: translate(-50%, -2px) scale(1.25); opacity: 1; } 75% { opacity: 1; } 100% { transform: translate(-50%, -12px) scale(1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .toggle b, .toggle b::after, .sg-body, .sg-head svg { transition: none; } body.boot .logo, body.boot .last-group, body.boot .last-group .lg-row > *, .av .plus1 { animation: none; } .av .plus1 { display: none; } }
+/* ===== 第8弾 G2 駆け引き ===== */
+.hl-dots { display: flex; gap: 8px; justify-content: center; margin: 6px 0 2px; }
+.hl-dots i { width: 14px; height: 14px; border-radius: 50%; background: color-mix(in srgb, currentColor 18%, transparent); transition: background .2s, transform .2s; }
+.hl-dots i.on { background: var(--c-press); transform: scale(1.15); }
+.hl-pts { font-size: 12px; opacity: .75; font-weight: 800; margin-top: 8px; }
+.hl-pts b { color: var(--c-turn); }
+.hl-stop, .rt-pass { display: block; width: 100%; min-height: 54px; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--line); background: transparent; color: inherit; font-weight: 900; font-size: 16px; text-align: center; cursor: pointer; }
+.hl-stop small { display: block; font-weight: 700; font-size: 12px; opacity: .7; margin-top: 3px; }
+.hl-stop:active, .rt-pass:active { transform: scale(.98); }
+
+/* ===== 第8弾 G3 価値観ナンバー協力型 ===== */
+.it-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 4px; }
+.it-mode button { padding: 10px 8px; border-radius: 14px; border: 2px solid var(--line); background: transparent; color: inherit; text-align: center; cursor: pointer; }
+.it-mode button b { display: block; font-size: 17px; }
+.it-mode button small { display: block; font-size: 11px; font-weight: 700; opacity: .7; margin-top: 2px; }
+.it-mode button[aria-pressed="true"] { background: var(--c-press); color: var(--ink); border-color: var(--c-press); }
+.it-mode button[aria-pressed="true"] small { opacity: .8; }
+.it-life { display: flex; justify-content: center; gap: 8px; margin: 8px 0 0; }
+.it-life i { width: 26px; height: 26px; color: color-mix(in srgb, currentColor 24%, transparent); transition: transform .25s, color .25s; }
+.it-life i.on { color: var(--c-danger); }
+.it-life svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+
+/* ===== 第8弾 G7 結果画像シート ===== */
+.share-prev { display: flex; justify-content: center; margin: 4px 0 10px; }
+.share-prev img { height: min(42vh, 360px); aspect-ratio: 9 / 16; object-fit: cover; border-radius: 14px; border: 2px solid var(--line); background: #141210; }
+.share-prev span { height: 120px; display: flex; align-items: center; opacity: .6; font-weight: 800; }
+.share-anon { margin: 0 0 10px; }
+
+/* ===== 第8弾 G5 おまかせメドレー ===== */
+.med-box { margin: 12px 0; padding: 14px; border-radius: 18px; background: color-mix(in srgb, var(--fg) 7%, transparent); }
+.med-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.med-head b { font-family: var(--display); font-weight: 400; font-size: 22px; }
+.med-head small { font-size: 12px; opacity: .7; font-weight: 700; }
+.med-n { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.med-n button { padding: 10px 0; border-radius: 12px; border: 2px solid var(--line); background: transparent; color: inherit; font-weight: 900; font-size: 15px; cursor: pointer; }
+.med-n button[aria-pressed="true"] { background: color-mix(in srgb, var(--c-turn) 22%, transparent); border-color: var(--c-turn); }
+.med-intro { margin-top: 12px; display: grid; gap: 8px; }
+.med-prog { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 900; }
+.med-prog i { flex: 1; height: 8px; border-radius: 4px; background: color-mix(in srgb, currentColor 14%, transparent); overflow: hidden; }
+.med-prog b { display: block; height: 100%; background: var(--c-press); border-radius: 4px; }
+.med-next { font-size: 14px; font-weight: 800; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, currentColor 7%, transparent); }
+.med-next small { display: block; font-size: 11px; opacity: .65; margin-bottom: 2px; }
+
+/* ===== 第8弾 36 遊び方一覧：色面のタイル（上の線は付けへん。タイル全体とアイコンの色で種類を見分ける） ===== */
+.mode-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-row { --cc: #ffd23f; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 12px; min-height: 112px; padding: 14px; border-radius: 20px; background: color-mix(in srgb, var(--cc) 24%, #1a1713); border: 0; }
+.mode-row.cat-phone { --cc: #4dd4ff; }
+.mode-row.cat-talk { --cc: #ff6fa0; }
+.mode-row.cat-brain { --cc: #7cf06b; }
+.mode-row.cat-deep { --cc: var(--deep, #b69cff); }
+.mode-row .mode-ic, .mode-row.cat-phone .mode-ic, .mode-row.cat-talk .mode-ic, .mode-row.cat-brain .mode-ic { background: var(--cc); color: #141210; width: 46px; height: 46px; border-radius: 15px; }
+.mode-row.cat-deep .mode-ic { background: var(--cc); color: #141210; }
+.mode-row .mr-tx { flex: none; width: 100%; gap: 3px; }
+.mode-row .mr-tx b { font-size: 16px; line-height: 1.25; }
+.mode-row .mr-tx span { font-size: 12px; color: color-mix(in srgb, var(--paper) 72%, transparent); white-space: normal; }
+.mode-row.big-tile { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-start; min-height: 0; padding: 16px; }
+.mode-row.big-tile .mode-ic { width: 56px; height: 56px; border-radius: 18px; }
+.mode-row.big-tile .mr-tx { flex: 1; width: auto; }
+.mode-row.big-tile .mr-tx b { font-size: 20px; }
+.mode-row.big-tile .mr-tx span { white-space: nowrap; }
+.mode-row .mr-meta .bd-t { background: color-mix(in srgb, var(--cc) 30%, transparent); }
+.mode-row[disabled] { opacity: .5; }
+@keyframes tileIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.mode-list.tiles-in .mode-row { animation: tileIn .22s ease-out both; animation-delay: calc(min(var(--i), 8) * 30ms); }
+@media (prefers-reduced-motion: reduce) { .mode-list.tiles-in .mode-row { animation: none; } }
+
+/* ===== 第8弾 38 色の役割を全画面に当てる =====
+   黄=押すところ・選んでる印 / ピンク=今の番・今の人 / 赤=罰・危ない / 水色=お知らせ・情報 / 紫=夜・深夜
+   メンバーの色は丸いアイコンの中だけ。地獄度の背景色（黄・ピンク・黒）と、種類タイルの色は別あつかい */
+:root { --deep: #c58bff; }
+/* 押すところじゃない黄色を外す：進み具合・数字・見出しは、紙色（目立たせない）か水色（お知らせ） */
+.step-dots i.on, .tut-dots i.on { background: var(--paper); }
+.tut-step, .step-h .num, .rules dt, .home-coach b, .tut-menu svg, .qz-tip b, .c-goal b, .pick-lead b { color: var(--c-info); }
+.c-goal b { background: color-mix(in srgb, var(--c-info) 24%, transparent); }
+.kj-list li.top { background: var(--paper); color: var(--ink); }
+.ya-topic { background: var(--c-info); color: var(--ink); }
+.koma .k1 .k-ic, .koma .k2 .k-ic, .koma .k3 .k-ic { background: var(--paper); }
+.med-prog b { background: var(--c-info); }
+.hl-dots i.on { background: var(--c-info); }
+/* 緊急指令は「危ない」なので赤 */
+.odai.event { --card-fg: #ff7a7a; box-shadow: 0 0 0 3px var(--c-danger); }
+.c-event b { background: var(--c-danger); color: #fff; }
+/* 選んでる印は黄色にそろえる（ピンクは「今の番」だけ） */
+.med-n button[aria-pressed="true"], .it-mode button[aria-pressed="true"] { background: var(--c-press); color: var(--ink); border-color: var(--c-press); }
+.mem .sex button[aria-pressed="true"], .mem-detail .sex button[aria-pressed="true"] { background: var(--c-press); color: var(--ink); }
+/* 文字だけのボタンは黄色（押せる）、注意書きは赤 */
+.text-btn { color: var(--c-press); }
+.warn { color: #ff7a7a; }
+.share-btn { background: var(--c-press); color: var(--ink); }
+/* 夜・深夜は紫 */
+.mode-tabs button.deep[aria-selected="true"], .night-ask.deep .big { color: var(--ink); }
+.mode-row.cat-deep .mode-ic { color: #141210; }
+
+.pk-res .pk-full { color: var(--ink); }
+
 </style>
 
 <div class="frame" aria-hidden="true"></div>

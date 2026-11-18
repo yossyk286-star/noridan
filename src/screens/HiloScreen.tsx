@@ -9,14 +9,18 @@ import { StageShell, usePenalty } from '../components/StageShell';
 import { HELP } from '../lib/help';
 import { useHold } from '../components/Reveal';
 import { play } from '../lib/sound';
+import { usePrefs } from '../lib/prefs';
+import { Tap } from '../components/Tap';
 import type { Stats } from '../lib/titles';
-import { C, F, LEVEL_LABEL, STAGE, colorOf } from '../theme';
+import { C, F, LEVEL_LABEL, ROLE, STAGE, colorOf } from '../theme';
 import type { Level, Member, Night } from '../types';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
 type Phase = 'intro' | 'guess' | 'reveal' | 'batsu';
 /** これだけ続いたあとに外したら罰2倍 */
 const X2: Record<Level, number> = { yurume: 99, futsu: 5, jigoku: 3 };
+/** 駆け引きあり：1人の番の連続でこれだけ行ったあとに外したら罰2倍 */
+const X2G: Record<Level, number> = { yurume: 99, futsu: 3, jigoku: 2 };
 const SUITS = ['♠', '♥', '♦', '♣'];
 const face = (v: number) => ({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<number, string>)[v] ?? String(v);
 const rnd = (n: number) => Math.floor(Math.random() * n);
@@ -49,6 +53,10 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
   const [x, setX] = useState(1);
   const [turns, setTurns] = useState(0);
   const hits = useRef<number[]>(Array(n).fill(0)).current;
+  // 駆け引きあり：当たったあと「続ける」か「降りる」。降りたらここまでの連続が点になる
+  const { gamble } = usePrefs();
+  const pts = useRef<number[]>(Array(n).fill(0)).current;
+  const [bank, setBank] = useState({ who: -1, v: 0 });
   useEffect(() => {
     if (skipIntro) newRound(1);
   }, []);
@@ -58,13 +66,32 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
     setWho((r - 1) % n);
     setCur({ v: 1 + rnd(13), s: rnd(4) });
     setStreak(0);
+    setBank({ who: -1, v: 0 });
     setPhase('guess');
+  };
+  const goNext = () => {
+    setCur(next);
+    setWho((who + 1) % n);
+    if (gamble) setStreak(0); // 連続は1人の番ごとに数え直す
+    setPhase('guess');
+  };
+  const cont = () => {
+    setCur(next);
+    play('flip');
+    setPhase('guess');
+  };
+  const stop = () => {
+    pts[who] += streak;
+    setBank({ who, v: streak });
+    play('coin');
+    goNext();
   };
   const guess = (u: boolean) => {
     const nx = { v: 1 + rnd(13), s: rnd(4) };
     const sm = nx.v === cur.v;
     const good = sm ? level !== 'jigoku' : u ? nx.v > cur.v : nx.v < cur.v;
     setNext(nx);
+    setBank({ who: -1, v: 0 });
     setUp(u);
     setSame(sm);
     setOk(good);
@@ -75,7 +102,7 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
       hits[who]++;
       play('pinpon');
     } else {
-      setX(streak >= X2[level] ? 2 : 1);
+      setX(streak >= (gamble ? X2G : X2)[level] ? 2 : 1);
       play('boom');
       Vibration.vibrate([0, 120, 60, 200]);
     }
@@ -94,7 +121,7 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
     case 'intro':
       card = (
         <IntroCard pal={pal} mode="hilo" tag={`${n}人`}>
-          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${level === 'jigoku' ? '同じ数字もアウト。3連続のあとに外したら罰2倍' : level === 'futsu' ? '5連続のあとに外したら罰2倍' : '同じ数字はセーフ'}`} />
+          <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」：${gamble ? (level === 'jigoku' ? '同じ数字もアウト。当たったら続けるか降りるか選べる。2連続のあとに外したら罰2倍' : level === 'futsu' ? '当たったら続けるか降りるか選べる。3連続のあとに外したら罰2倍' : '当たったら続けるか降りるか選べる。同じ数字はセーフ') : level === 'jigoku' ? '同じ数字もアウト。3連続のあとに外したら罰2倍' : level === 'futsu' ? '5連続のあとに外したら罰2倍' : '同じ数字はセーフ'}`} />
         </IntroCard>
       );
       controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={() => newRound(1)} />;
@@ -104,6 +131,11 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round}回戦・${streak}連続中`}</Prog>
           <HandWho members={members} i={who} sub="の番" fg={fg} />
+          {gamble && (
+            <View style={s.dots}>
+              {Array.from({ length: 5 }, (_, k) => <View key={k} style={[s.dot, { backgroundColor: k < streak ? ROLE.info : 'rgba(136,136,136,0.25)' }]} />)}
+            </View>
+          )}
           <View style={s.row}>
             <PlayCard v={cur.v} suit={cur.s} />
             <View style={[s.card, s.back]}>
@@ -111,6 +143,9 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
             </View>
           </View>
           <Note fg={fg}>{`次のカードは${face(cur.v)}より大きい？小さい？${level === 'jigoku' ? '（同じ数字はアウト）' : '（同じ数字はセーフ）'}`}</Note>
+          {gamble && (
+            <Note fg={fg}>{`${bank.who >= 0 && bank.v ? `${members[bank.who].name}が降りて${bank.v}点ゲット。` : ''}貯めた点：${members.map((m, i) => `${m.name} ${pts[i]}`).join('・')}`}</Note>
+          )}
         </ModeCard>
       );
       controls = (
@@ -129,11 +164,19 @@ export default function HiloScreen({ members, level, night, onQuit, onSettings, 
             <PlayCard v={next.v} suit={next.s} />
           </View>
           <Text style={[s.verdict, { color: ok ? '#1f9d55' : '#ff2a2a' }]}>{ok ? (same ? '同じでセーフ' : '当たり！') : same ? '同じでアウト' : 'ハズレ！'}</Text>
-          <Note fg={ok ? fg : '#f7f3ea'}>{ok ? `${streak}連続` : `${streak}連続で止まった${x > 1 ? '（罰2倍）' : ''}`}</Note>
+          <Note fg={ok ? fg : '#f7f3ea'}>{ok ? `${streak}連続` : `${streak}連続で止まった${x > 1 ? '（罰2倍）' : gamble && streak ? `（貯めた${streak}点はゼロ）` : ''}`}</Note>
         </ModeCard>
       );
-      controls = ok ? (
-        <BigButton pal={pal} label={`次は${members[(who + 1) % n].name}`} onPress={() => { setCur(next); setWho((who + 1) % n); setPhase('guess'); }} />
+      controls = ok && gamble ? (
+        <View style={{ gap: 8 }}>
+          <BigButton pal={pal} label="続ける（もう1枚）" onPress={cont} />
+          <Tap onPress={stop} style={s.stop}>
+            <Text style={[s.stopText, { color: pal.fg }]}>{`降りる（ここまでの${streak}点をもらう）`}</Text>
+            <Text style={[s.stopSub, { color: pal.muted }]}>{`外したら点はゼロ＋罰。${X2G[level] < 99 ? `${X2G[level]}連続のあとは罰2倍` : 'ゆるめは罰2倍なし'}`}</Text>
+          </Tap>
+        </View>
+      ) : ok ? (
+        <BigButton pal={pal} label={`次は${members[(who + 1) % n].name}`} onPress={goNext} />
       ) : (
         <BigButton pal={pal} danger label={`${members[who].name}に罰ガチャ`} onPress={() => { P.draw([who], x); setPhase('batsu'); }} />
       );
@@ -167,4 +210,9 @@ const s = StyleSheet.create({
   backText: { fontFamily: F.display, fontSize: 48, color: '#fff' },
   verdict: { fontFamily: F.display, fontSize: 34, lineHeight: 42 },
   btnRow: { flexDirection: 'row', gap: 10 },
+  dots: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
+  dot: { width: 14, height: 14, borderRadius: 7 },
+  stop: { minHeight: 54, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(247,243,234,0.2)', alignItems: 'center', justifyContent: 'center', padding: 10 },
+  stopText: { fontWeight: '900', fontSize: 16 },
+  stopSub: { fontWeight: '700', fontSize: 12, marginTop: 2 },
 });

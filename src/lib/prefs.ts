@@ -11,6 +11,15 @@ export type Prefs = {
   livePen?: { current: number[] };
   /** ⋯メニューの「メンバーの出入り」 */
   onInout?: () => void;
+  /** 駆け引きあり：ハイ&ローで降りられる・ロシアンタップで1回パス */
+  gamble?: boolean;
+  /** 価値観ナンバーを協力型（みんなで並べてライフ制）にする */
+  itCoop?: boolean;
+  setItCoop?: (on: boolean) => void;
+  /** おまかせメドレー中：何番目か・このあとのゲーム */
+  medley?: { idx: number; total: number; /** このあとのゲーム名（今の次から） */ rest: string[] };
+  /** 次のゲームへ（罰は引き継ぐ） */
+  onMedNext?: () => void;
 };
 export const PrefsContext = createContext<Prefs>({ dual: false, voice: false, setDual: () => {} });
 export const usePrefs = () => useContext(PrefsContext);

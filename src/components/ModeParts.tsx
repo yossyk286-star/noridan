@@ -5,7 +5,8 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Haptics } from '../lib/vibe';
 import { play } from '../lib/sound';
 import { Tap } from './Tap';
-import { F, alpha, colorOf } from '../theme';
+import { F, ROLE, alpha, colorOf } from '../theme';
+import { usePrefs } from '../lib/prefs';
 import type { STAGE } from '../theme';
 import type { Level, Member, Mode } from '../types';
 import { HELP } from '../lib/help';
@@ -45,12 +46,14 @@ export function Lead({ fg, children }: { fg: string; children: React.ReactNode }
 export const MODE_TITLE: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票', wolf: 'ワードウルフ', pittari: 'ピッタリ予想', tilt: '傾けたらアウト', shake: '全力シェイク', stop: 'ピタッとストップ', rtap: 'ロシアンタップ', yama: '山手線ゲーム', nyok: 'たけのこニョッキ', bpass: '爆弾パス', hilo: 'ハイ&ロー', reflex: '反射神経バトル', voice: '声デカ選手権', blind: '目隠し当て', pocky: 'ポッキーゲーム', tickle: 'こしょばし我慢', hug: 'ハグタイム当て', quiz: '早押し雑学クイズ', face: 'テンション伝言', deko: 'おでこ当て', doubt: 'ダウト', king: '王様ゲーム', draw: 'お絵かき伝言', whack: 'ワニワニタップ' };
 
 /** 3コマの色：準備→本番→罰 */
-const KOMA = ['#ffd23f', '#ff5d8f', '#ff2a2a'];
+/** 38 色の役割：黄・ピンク・赤は意味があるので、説明の番号アイコンは紙色にそろえる */
+const KOMA = ['#f7f3ea', '#f7f3ea', '#f7f3ea'];
 
 /** 始める前の説明（どのモードも同じ形）。children に地獄度の説明や時間の選択を入れる */
 export function IntroCard({ pal, mode, tag, children }: { pal: Pal; mode: Mode; tag?: string; children?: React.ReactNode }) {
   const fg = pal.cardFg;
   const [rules, setRules] = useState(false);
+  const { medley, onMedNext } = usePrefs();
   return (
     <ModeCard pal={pal}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -71,6 +74,25 @@ export function IntroCard({ pal, mode, tag, children }: { pal: Pal; mode: Mode; 
           </View>
         ))}
         {children}
+        {medley && (
+          <View style={{ gap: 8, marginTop: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={{ color: fg, fontSize: 13, fontWeight: '900' }}>{`メドレー ${medley.idx + 1} / ${medley.total}`}</Text>
+              <View style={{ flex: 1, height: 8, borderRadius: 4, backgroundColor: alpha('#888888', 0.2), overflow: 'hidden' }}>
+                <View style={{ width: `${((medley.idx + 1) / medley.total) * 100}%`, height: '100%', borderRadius: 4, backgroundColor: ROLE.info }} />
+              </View>
+            </View>
+            <View style={{ padding: 10, borderRadius: 12, backgroundColor: alpha('#888888', 0.1) }}>
+              <Text style={{ color: fg, fontSize: 11, fontWeight: '700', opacity: 0.65 }}>このあと</Text>
+              <Text style={{ color: fg, fontSize: 14, fontWeight: '800' }}>{medley.rest.length ? medley.rest.join(' → ') : '最後のゲーム'}</Text>
+            </View>
+            {medley.rest.length > 0 && !!onMedNext && (
+              <Pressable onPress={onMedNext} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+                <Text style={[s.komaMore, { color: fg }]}>このゲームをとばす</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
         <Pressable onPress={() => setRules(true)} hitSlop={8} style={{ alignSelf: 'flex-end' }}>
           <Text style={[s.komaMore, { color: fg }]}>細かいルール ›</Text>
         </Pressable>

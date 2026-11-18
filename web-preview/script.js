@@ -51,6 +51,11 @@ const S = {
   voice: store.get("nd_voice", false) === true, // お題の読み上げ
   sober: store.get("nd_sober", false) === true, // お酒なし：「飲む」罰・お題を出さへん
   noTouch: store.get("nd_notouch", false) === true, // 体に触るのなし：くすぐり・ハグ・肩もみ系を出さへん
+  gamble: store.get("nd_gamble", true) !== false, // 駆け引きあり：ハイ&ローで降りられる・ロシアンタップで1回パス
+  medN: [3, 5, 7].includes(store.get("nd_medn", 5)) ? store.get("nd_medn", 5) : 5, // おまかせメドレーのゲーム数
+  medley: null, // メドレー中 {list:[モード名], idx}
+  shareAnon: store.get("nd_shareanon", false) === true, // 結果画像に名前を出さん（Aさん・Bさん）
+  itCoop: store.get("nd_itcoop", false) === true, // 価値観ナンバーを協力型（みんなで並べてライフ制）にする
   passOn: store.get("nd_pass", true) !== false, // パス券：1人1回、罰をゆるい罰に替えられる
   step: 1,          // ホーム: 1=メンバー 2=モード選択
   sheet: false,     // 設定シート
@@ -208,8 +213,9 @@ function drawEvent(p) {
 const MODE_NAME = { odai: "アホお題", sugoroku: "すごろく", memory: "神経衰弱", ito: "価値観ナンバー", gesture: "早押しジェスチャー", homeru: "褒め殺し", ngword: "NGワード", vote: "ぶっちゃけ投票", wolf: "ワードウルフ", pittari: "ピッタリ予想", tilt: "傾けたらアウト", shake: "全力シェイク", stop: "ピタッとストップ", rtap: "ロシアンタップ", yama: "山手線ゲーム", nyok: "たけのこニョッキ", bpass: "爆弾パス", hilo: "ハイ&ロー", reflex: "反射神経バトル", voice: "声デカ選手権", blind: "目隠し当て", pocky: "ポッキーゲーム", tickle: "こしょばし我慢", hug: "ハグタイム当て", quiz: "早押し雑学クイズ", face: "テンション伝言", deko: "おでこ当て", doubt: "ダウト", king: "王様ゲーム", draw: "お絵かき伝言", whack: "ワニワニタップ" };
 const isStage = (sc) => sc in MODE_NAME;
 // 結果画面などの「アホお題・普通・12ターン」。NGワードは地獄度を使わへん
-const modeLine = (g) => g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "yama", "nyok", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face", "deko", "doubt", "draw", "whack"].includes(g.mode) ? "回戦" : g.mode === "king" ? "回" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
+const modeLine = (g) => S.medley ? `おまかせメドレー・${S.medley.list.length}ゲーム・${LV[S.level]}` : g.mode === "ngword" ? `NGワード・${LV[S.level]}・アウト${g.pen.reduce((a, b) => a + b, 0)}回` : `${MODE_NAME[g.mode]}・${LV[S.level]}・${g.turn || "-"}${g.mode === "vote" || g.mode === "ito" || g.mode === "pittari" ? "問" : g.mode === "wolf" ? "回戦" : g.mode === "tilt" ? "回挑戦" : ["shake", "stop", "rtap", "yama", "nyok", "bpass", "hilo", "reflex", "voice", "blind", "pocky", "tickle", "hug", "quiz", "face", "deko", "doubt", "draw", "whack"].includes(g.mode) ? "回戦" : g.mode === "king" ? "回" : g.mode === "memory" ? "ペア" : g.mode === "gesture" ? "問正解" : g.mode === "homeru" ? "回" : "ターン"}`;
 function newGame(mode, again = false) {
+  if (S._med) S._med = false; else S.medley = null; // メドレーから呼ばれた時だけメドレーを続ける
   // よく遊ぶモードを数える（もう1回は数えへん）
   if (!again) { const pl = (() => { const v = store.get("nd_plays", {}); return v && typeof v === "object" ? v : {}; })(); pl[mode] = (pl[mode] || 0) + 1; store.set("nd_plays", pl); }
   S.scores = false; S.bombLook = 0; S.hist = []; S.ask = null; S.prevPen = null; S.prevKings = null;
@@ -248,7 +254,7 @@ function newGame(mode, again = false) {
   if (mode === "hug") { S.game.doer = -1; S.game.hg = { phase: "intro", k: 0, mate: null, best: Array(n).fill(null) }; if (again) hgRound(); render(true); return; }
   if (mode === "tickle") { S.game.doer = -1; S.game.tk = { phase: "intro", k: 0, got: Array(n).fill(0), safe: Array(n).fill(0), last: null }; if (again) tkRound(); render(true); return; }
   if (mode === "pocky") { S.game.doer = -1; S.game.pk = { phase: "intro", k: 0, mate: null, full: Array(n).fill(0) }; if (again) pkRound(); render(true); return; }
-  if (mode === "hilo") { S.game.doer = -1; S.game.hl = { phase: "intro", round: 0, best: 0, hits: Array(n).fill(0) }; if (again) hlRound(); render(true); return; }
+  if (mode === "hilo") { S.game.doer = -1; S.game.hl = { phase: "intro", round: 0, best: 0, hits: Array(n).fill(0), pts: Array(n).fill(0) }; if (again) hlRound(); render(true); return; }
   if (mode === "reflex") { S.game.doer = -1; S.game.rf = { phase: "intro", style: store.get("nd_rfstyle", "solo") === "multi" ? "multi" : "solo", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [], timers: [] }; render(true); return; }
   if (mode === "voice") { S.game.doer = -1; S.game.vc = { phase: "intro", round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), losers: [] }; render(true); return; }
   if (mode === "stop") { S.game.doer = -1; S.game.sp = { phase: "intro", dir: ((v) => (["up", "blind"].includes(v) ? v : "down"))(store.get("nd_spdir", "down")), round: 0, k: 0, res: Array(n).fill(null), best: Array(n).fill(null), exact: Array(n).fill(0), losers: [] }; render(true); return; }
@@ -1238,6 +1244,19 @@ function rtRound() {
   const g = S.game, rt = g.rt;
   rt.round++; rt.tiles = RT_TILES[S.level] || 12; rt.bomb = rnd(rt.tiles); rt.open = []; rt.loser = null;
   rt.who = (rt.round - 1) % S.members.length; g.doer = rt.who; rt.phase = "play";
+  rt.gamble = S.gamble; rt.passes = Array(S.members.length).fill(1); rt.recv = -1; rt.passedBy = -1;
+}
+// 駆け引きあり：1人1回だけパス。パスされた次の人はパスで返されへん
+function rtCanPass() {
+  const rt = S.game.rt;
+  return rt.gamble && rt.phase === "play" && rt.passes[rt.who] > 0 && rt.recv !== rt.who && rt.tiles - rt.open.length > 2;
+}
+function rtPass() {
+  const g = S.game, rt = g.rt;
+  if (!rtCanPass()) return;
+  rt.passes[rt.who] = 0; rt.passedBy = rt.who;
+  rt.who = (rt.who + 1) % S.members.length; rt.recv = rt.who; g.doer = rt.who;
+  play("flip"); render(true);
 }
 function rtTap(t) {
   const g = S.game, rt = g.rt;
@@ -1247,7 +1266,7 @@ function rtTap(t) {
     rt.loser = rt.who; rt.phase = "boom";
     play("boom"); vib([120, 60, 220]);
   } else {
-    play("pop"); rt.who = (rt.who + 1) % S.members.length; g.doer = rt.who;
+    play("pop"); rt.who = (rt.who + 1) % S.members.length; g.doer = rt.who; rt.recv = -1; rt.passedBy = -1;
   }
   render(true);
 }
@@ -1768,28 +1787,42 @@ function pkEnd(kind) {
 // ---------- ハイ&ロー ----------
 // 次のカードが今より大きいか小さいかを当てる。当たったら次の人。外したら罰（続いた回数が多いと罰2倍）
 const HL_X2 = { yurume: 99, futsu: 5, jigoku: 3 }; // これだけ続いたあとに外したら罰2倍
+const HL_X2G = { yurume: 99, futsu: 3, jigoku: 2 }; // 駆け引きあり：1人の番の連続でこれだけ行ったあとに外したら罰2倍
 const hlFace = (v) => ({ 1: "A", 11: "J", 12: "Q", 13: "K" }[v] || String(v));
 function hlRound() {
   const g = S.game, hl = g.hl;
   hl.round++; hl.cur = 1 + rnd(13); hl.suit = rnd(4); hl.streak = 0; hl.loser = null;
+  hl.gamble = S.gamble; hl.bank = 0; hl.bankWho = -1;
   hl.who = (hl.round - 1) % S.members.length; g.doer = hl.who; hl.phase = "guess";
 }
 function hlGuess(up) {
   const g = S.game, hl = g.hl;
   if (hl.phase !== "guess") return;
-  hl.next = 1 + rnd(13); hl.nsuit = rnd(4); hl.up = up; g.turn++;
+  hl.next = 1 + rnd(13); hl.nsuit = rnd(4); hl.up = up; g.turn++; hl.bank = 0;
   const same = hl.next === hl.cur;
   hl.same = same;
   hl.ok = same ? S.level !== "jigoku" : up ? hl.next > hl.cur : hl.next < hl.cur;
   // 1枚ごとにためると間延びするので、すぐめくる
   if (hl.ok) { hl.streak++; hl.hits[hl.who]++; if (hl.streak > hl.best) hl.best = hl.streak; play("pinpon"); }
-  else { hl.loser = hl.who; hl.x = hl.streak >= (HL_X2[S.level] || 5) ? 2 : 1; play("boom"); vib([120, 60, 200]); }
+  else { hl.loser = hl.who; hl.x = hl.streak >= ((hl.gamble ? HL_X2G : HL_X2)[S.level] || 5) ? 2 : 1; play("boom"); vib([120, 60, 200]); }
   hl.phase = "reveal";
   render(true);
 }
 function hlNext() {
   const g = S.game, hl = g.hl;
   hl.cur = hl.next; hl.suit = hl.nsuit; hl.who = (hl.who + 1) % S.members.length; g.doer = hl.who; hl.phase = "guess";
+  if (hl.gamble) hl.streak = 0; // 駆け引きあり：連続は1人の番ごとに数え直す
+}
+// 駆け引きあり：当たった人が「続ける」（同じ人がもう1枚）
+function hlCont() {
+  const hl = S.game.hl;
+  hl.cur = hl.next; hl.suit = hl.nsuit; hl.phase = "guess"; play("flip");
+}
+// 駆け引きあり：当たった人が「降りる」。ここまでの連続が点になって、次の人へ
+function hlStop() {
+  const hl = S.game.hl;
+  hl.pts[hl.who] += hl.streak; hl.bank = hl.streak; hl.bankWho = hl.who;
+  play("coin"); hlNext();
 }
 
 // ---------- 反射神経バトル ----------
@@ -2118,6 +2151,8 @@ function mmLowest() {
 function itRound() {
   const g = S.game, it = g.it, n = S.members.length;
   it.round++;
+  it.coop = S.itCoop; it.punish = null; it.won = false; it.broke = -1;
+  if (it.life == null || it.life <= 0) it.life = ITO_LIFE; // 協力型のライフ（0になったら罰のあと回復）
   // 夜・深夜はお題も夜寄りに（下ネタNGの人がおる時は混ぜへん）
   let key = S.level;
   if (S.night && !S.members.some((m) => m.ng) && Math.random() < (S.night === "shinya" ? 0.6 : 0.3)) key = S.night === "shinya" && Math.random() < 0.6 ? "shinya" : "yoru";
@@ -2139,13 +2174,19 @@ function itTopic(key) {
   return decks[k].pop();
 }
 // 並べた順で、隣どうしの数字が逆になってる2人
+const ITO_LIFE = 3;
 function itCheck() {
   const it = S.game.it, bad = new Set();
   for (let k = 1; k < it.order.length; k++) {
     const a = it.order[k - 1], b = it.order[k];
-    if (it.nums[a] > it.nums[b]) { bad.add(a); bad.add(b); }
+    if (it.nums[a] > it.nums[b]) { bad.add(a); bad.add(b); if (it.broke < 0) it.broke = b; }
   }
   it.bad = [...bad];
+  if (it.coop) {
+    // 協力型：誰かが罰になるんやなくて、ライフが減る。ゼロになったら全員に軽い罰
+    it.won = !it.bad.length;
+    if (!it.won) { it.life--; if (it.life <= 0) it.punish = S.members.map((_, i) => i); }
+  }
   it.phase = "reveal";
   S.game.turn++;
 }

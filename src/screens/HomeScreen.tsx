@@ -4,7 +4,7 @@ import type React from 'react';
 import { iniFit, initialOf } from '../lib/game';
 import { Tap } from '../components/Tap';
 import { Animated, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { C, F, LEVEL_LABEL, LEVEL_SUB, colorOf } from '../theme';
+import { C, F, LEVEL_LABEL, LEVEL_SUB, ROLE, alpha, colorOf } from '../theme';
 import { Icon } from '../components/Icon';
 import { Pop, expandFrom, useBootOnce } from '../components/Motion';
 import { ALLOW_SHINYA } from '../lib/game';
@@ -35,6 +35,10 @@ type Props = {
   tools?: React.ReactNode;
   /** 「前回のメンバー」に出すひとこと（前回の戦犯・通算） */
   lastNote?: string;
+  /** おまかせメドレー：ゲームの数と、始める */
+  medN?: number;
+  onMedN?: (v: number) => void;
+  onMedley?: () => void;
 };
 
 const LEVELS: Level[] = ['yurume', 'futsu', 'jigoku'];
@@ -261,7 +265,7 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
   );
 }
 
-function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings, onBack, onAskDeep, tools }: Props & { onBack: () => void; onAskDeep: () => void }) {
+function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings, onBack, onAskDeep, tools, medN, onMedN, onMedley }: Props & { onBack: () => void; onAskDeep: () => void }) {
   const hero = (() => {
     const t = night ? null : todNow();
     const e = t && t.hero !== 'odai' ? MODE_LIST.find((x) => x.m === t.hero) : null;
@@ -305,6 +309,26 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
         })}
       </View>
 
+      {onMedley && (
+        <View style={s.medBox} accessibilityLabel="おまかせメドレー">
+          <Text style={s.medTitle}>おまかせメドレー</Text>
+          <Text style={s.medSub}>ゲームを選ぶ手間をなくして、次々流す</Text>
+          <View style={s.row}>
+            {[3, 5, 7].map((v) => {
+              const on = (medN ?? 5) === v;
+              return (
+                <Tap key={v} onPress={() => onMedN?.(v)} accessibilityState={{ selected: on }} style={[s.medN, on && { backgroundColor: C.yuru, borderColor: C.yuru }]}>
+                  <Text style={[s.medNText, on && { color: C.ink }]}>{v}つ</Text>
+                </Tap>
+              );
+            })}
+          </View>
+          <Tap style={s.big} onPress={onMedley}>
+            <Text style={s.bigText}>はじめる</Text>
+          </Tap>
+          <Text style={s.note}>人数に合うゲームだけ自動で選ぶ。お酒なし・触るのなし・地獄度の設定はそのまま守る</Text>
+        </View>
+      )}
       {tools}
       {/* 迷ったらこれ（夜は時間でおすすめが変わる） */}
       <View ref={heroRef} collapsable={false}><Tap style={s.hero} onPress={() => go(heroRef, C.yuru, 22, () => onStart(hero.m))} accessibilityLabel={`${hero.label}：${MODE_TITLE[hero.m]}`}>
@@ -436,22 +460,20 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
           );
         })}
       </ScrollView>
-      <View style={{ gap: 8 }}>
-        {shown.map((x) => {
+      <View style={s.tiles}>
+        {shown.map((x, k) => {
           const why = x.min && members.length < x.min ? `${x.min}人から遊べる` : x.ok && okN < x.ok ? `下ネタOKの人が${x.ok}人から` : '';
+          const big = cur === 'fav' && k === 0 && shown.length > 1;
+          const cc = CAT_COLOR[x.cat];
           return (
-            <RowStart key={x.m}>{(ref) => (
-              <Tap onPress={() => go(ref, CAT_COLOR[x.cat], 14, () => onStart(x.m))} disabled={!!why} style={({ pressed }) => [s.rowItem, { opacity: why ? 0.45 : 1, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
-                <View style={[s.rowIc, { backgroundColor: CAT_COLOR[x.cat] }]}>
-                  <Icon name={x.ic} color={x.cat === 'deep' ? '#fff' : C.ink} size={22} />
+            <RowStart key={x.m} style={big ? s.tileFull : s.tileHalf}>{(ref) => (
+              <Tap onPress={() => go(ref, cc, 20, () => onStart(x.m))} disabled={!!why} style={({ pressed }) => [s.tile, big && s.tileBig, { backgroundColor: alpha(cc, 0.24), opacity: why ? 0.5 : 1, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
+                <View style={[s.tileIc, big && { width: 56, height: 56, borderRadius: 18 }, { backgroundColor: cc }]}>
+                  <Icon name={x.ic} color={C.ink} size={big ? 28 : 24} />
                 </View>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={s.rowTitle} numberOfLines={1}>{MODE_TITLE[x.m]}</Text>
-                  <Text style={s.rowDesc} numberOfLines={1}>{why || HELP[x.m].desc}</Text>
-                </View>
-                <View style={s.rowMetaBox}>
-                  <Text style={s.rowBadge}>{x.t}</Text>
-                  <Text style={s.rowMeta}>{x.ok ? `OK${x.ok}人〜` : `${x.min ?? 2}人〜`}</Text>
+                <View style={{ flex: big ? 1 : undefined, gap: 3 }}>
+                  <Text style={[s.tileTitle, big && { fontSize: 20 }]}>{MODE_TITLE[x.m]}</Text>
+                  <Text style={s.tileMeta}>{why || `${x.t}・${x.ok ? `OK${x.ok}人〜` : `${x.min ?? 2}人〜`}`}</Text>
                 </View>
               </Tap>
             )}</RowStart>
@@ -462,8 +484,8 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
   );
 }
 
-/** 遊び方の種類ごとのアイコンの色（定番=黄・スマホ=水色・話す=ピンク・頭=緑・深夜=濃いピンク） */
-const CAT_COLOR: Record<Cat, string> = { basic: C.paper, phone: '#4dd4ff', talk: C.futsu, brain: '#7cf06b', deep: C.deep };
+/** 36 遊び方の種類ごとの色（タイル全体とアイコンの色で見分ける。上に線は付けへん）：定番=黄・スマホ=水色・話す=ピンク・頭=緑・深夜=紫 */
+const CAT_COLOR: Record<Cat, string> = { basic: '#ffd23f', phone: '#4dd4ff', talk: '#ff6fa0', brain: '#7cf06b', deep: C.deep };
 
 function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () => void; onCancel: () => void }) {
   if (kind === 'shinya')
@@ -519,12 +541,25 @@ function go(ref: React.RefObject<View | null>, bg: string, _r: number, run: () =
     run();
   });
 }
-function RowStart({ children }: { children: (ref: React.RefObject<View | null>) => React.ReactNode }) {
+function RowStart({ children, style }: { children: (ref: React.RefObject<View | null>) => React.ReactNode; style?: object }) {
   const ref = useRef<View>(null);
-  return <View ref={ref} collapsable={false}>{children(ref)}</View>;
+  return <View ref={ref} collapsable={false} style={style}>{children(ref)}</View>;
 }
 
 const s = StyleSheet.create({
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
+  tileHalf: { width: '48.5%' },
+  tileFull: { width: '100%' },
+  tile: { minHeight: 112, padding: 14, borderRadius: 20, justifyContent: 'space-between', gap: 12 },
+  tileBig: { minHeight: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', padding: 16, gap: 14 },
+  tileIc: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  tileTitle: { color: C.paper, fontSize: 16, fontWeight: '900', lineHeight: 20 },
+  tileMeta: { color: 'rgba(247,243,234,0.72)', fontSize: 12, fontWeight: '700' },
+  medBox: { gap: 10, padding: 14, borderRadius: 18, backgroundColor: 'rgba(247,243,234,0.07)' },
+  medTitle: { color: C.paper, fontFamily: F.display, fontSize: 22 },
+  medSub: { color: C.muted, fontSize: 12, fontWeight: '700', marginTop: -6 },
+  medN: { flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', alignItems: 'center' },
+  medNText: { color: C.paper, fontWeight: '900', fontSize: 15 },
   tabCount: { fontSize: 12, opacity: 0.6 },
   rowItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.06)' },
   rowIc: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
@@ -570,8 +605,8 @@ const s = StyleSheet.create({
   time: { fontSize: 12, fontWeight: '900', color: '#8d857a', backgroundColor: 'rgba(20,18,16,0.06)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999, overflow: 'hidden' },
   cardTitle: { fontSize: 17, fontWeight: '900', color: C.ink },
   cardDesc: { fontSize: 12, lineHeight: 16, color: '#5d564c' },
-  guide: { gap: 6, padding: 14, borderRadius: 14, backgroundColor: 'rgba(255,210,63,0.1)', borderWidth: 1, borderColor: 'rgba(255,210,63,0.4)' },
-  guideHead: { color: C.yuru, fontWeight: '900', fontSize: 14 },
+  guide: { gap: 6, padding: 14, borderRadius: 14, backgroundColor: 'rgba(77,212,255,0.1)', borderWidth: 1, borderColor: 'rgba(77,212,255,0.4)' },
+  guideHead: { color: ROLE.info, fontWeight: '900', fontSize: 14 },
   guideText: { color: C.paper, fontSize: 13, lineHeight: 20, fontWeight: '700' },
   guideBtn: { alignSelf: 'flex-end', borderRadius: 999, backgroundColor: C.yuru, paddingVertical: 8, paddingHorizontal: 14 },
   guideBtnText: { color: C.ink, fontSize: 12, fontWeight: '900' },
@@ -584,10 +619,10 @@ const s = StyleSheet.create({
   iconText: { color: C.paper, fontSize: 22, fontWeight: '900' },
   steps: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center' },
   stepBar: { width: 22, height: 4, borderRadius: 2, backgroundColor: 'rgba(247,243,234,0.16)' },
-  stepOn: { backgroundColor: C.yuru },
+  stepOn: { backgroundColor: C.paper },
   stepLabel: { color: C.muted, fontSize: 12, fontWeight: '900', letterSpacing: 1.5 },
   h2: { color: C.muted, fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
-  stepNum: { color: C.yuru, fontSize: 18, fontWeight: '900' },
+  stepNum: { color: ROLE.info, fontSize: 18, fontWeight: '900' },
   stepTitle: { color: C.paper, fontSize: 18, fontWeight: '900' },
   stepSub: { color: C.muted, fontSize: 12, fontWeight: '700' },
   modeIc: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(20,18,16,0.08)', alignItems: 'center', justifyContent: 'center' },
@@ -613,7 +648,7 @@ const s = StyleSheet.create({
   addBtn: { backgroundColor: C.paper, borderRadius: 12, paddingHorizontal: 18, justifyContent: 'center' },
   plus: { width: 54, borderRadius: 14, backgroundColor: C.yuru, alignItems: 'center', justifyContent: 'center' },
   memHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  textBtn: { color: C.futsu, fontSize: 12, fontWeight: '900' },
+  textBtn: { color: C.yuru, fontSize: 12, fontWeight: '900' },
   group: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(247,243,234,0.16)' },
   groupText: { flex: 1, color: C.paper, fontWeight: '900', fontSize: 14 },
   addText: { color: C.ink, fontWeight: '900' },

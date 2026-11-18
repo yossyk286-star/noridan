@@ -323,3 +323,55 @@ document.addEventListener("change", (e) => {
   }
 });
 document.addEventListener("submit", (e) => { if (e.target.id === "inoutForm") inoutAdd(e); });
+
+// ===== 第8弾 G5：おまかせメドレー =====
+// 人数に合うゲームを自動で並べて、次々流す。罰は全部のゲームで足し算（結果発表は最後に1回）
+// 長いゲーム・準備が長いゲーム（すごろく・神経衰弱・NGワード・ワードウルフ・お絵かき・テンション伝言・アホお題）は入れへん
+const MED_POOL = ["king", "yama", "nyok", "rtap", "bpass", "hilo", "ito", "vote", "pittari", "quiz", "reflex", "voice", "doubt", "homeru", "gesture", "whack", "deko", "tilt", "shake", "stop"];
+function medPick(n) {
+  const people = S.members.length;
+  const ok = MED_POOL.filter((m) => { const x = MODE_LIST.find((y) => y.m === m); return x && (!x.min || people >= x.min); });
+  const cat = (m) => MODE_LIST.find((y) => y.m === m).cat;
+  const pool = shuffle(ok), out = [];
+  // 同じ種類が続かんように、できるだけ前と違う種類を選ぶ
+  while (out.length < n && pool.length) {
+    const k = Math.max(0, pool.findIndex((m) => !out.length || cat(m) !== cat(out[out.length - 1])));
+    out.push(pool.splice(k, 1)[0]);
+  }
+  return out;
+}
+function medStart() {
+  const list = medPick(S.medN);
+  if (list.length < 2) return;
+  S.medley = { list, idx: 0 };
+  S.carryPen = null; S.left = [];
+  S._med = true; newGame(list[0]);
+}
+// 次のゲームへ：罰は引き継ぐ
+function medNext() {
+  const md = S.medley, g = S.game;
+  if (!md || md.idx >= md.list.length - 1) return;
+  stopTimer(); applyAdds();
+  S.carryPen = Object.fromEntries(S.members.map((m, i) => [m.name, g.pen[i] || 0]));
+  S.menu = false; S.ask = null; S.askBar = false; S.hold = null; clearTimeout(S.holdT);
+  md.idx++;
+  S._med = true; newGame(md.list[md.idx]);
+}
+const medLast = () => !S.medley || S.medley.idx >= S.medley.list.length - 1;
+function vMedBox() {
+  return `<section class="med-box" aria-label="おまかせメドレー">
+    <div class="med-head"><b>おまかせメドレー</b><small>ゲームを選ぶ手間をなくして、次々流す</small></div>
+    <div class="med-n" role="group" aria-label="ゲームの数">${[3, 5, 7].map((v) => `<button data-act="medN" data-v="${v}" aria-pressed="${S.medN === v}">${v}つ</button>`).join("")}</div>
+    <button class="big" data-act="medStart">はじめる</button>
+    <p class="note">人数に合うゲームだけ自動で選ぶ。お酒なし・触るのなし・地獄度の設定はそのまま守る</p>
+  </section>`;
+}
+// 説明画面の下：進み具合・このあと・とばす
+function vMedIntro() {
+  const md = S.medley;
+  if (!md) return "";
+  const rest = md.list.slice(md.idx + 1);
+  return `<div class="med-intro"><p class="med-prog"><span>メドレー ${md.idx + 1} / ${md.list.length}</span><i><b style="width:${((md.idx + 1) / md.list.length) * 100}%"></b></i></p>
+    <p class="med-next"><small>このあと</small>${rest.length ? rest.map((m) => esc(MODE_NAME[m])).join(" → ") : "最後のゲーム"}</p>
+    ${rest.length ? `<button class="text-btn" data-act="medNext">このゲームをとばす</button>` : ""}</div>`;
+}

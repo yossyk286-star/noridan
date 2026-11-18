@@ -345,14 +345,17 @@ function vModeTabs() {
   let tab = tabs.some(([k]) => k === S.modeTab) ? S.modeTab : favs.length ? "fav" : "all";
   const shown = tab === "fav" ? favs : tab === "all" ? list : list.filter((x) => x.cat === tab);
   const okN = S.members.filter((m) => !m.ng).length;
-  const card = (x) => {
+  const tabFx = !!S.tabFx && !calmMotion(); S.tabFx = false;
+  // 色面のタイル（種類ごとに色を決めて、タイル全体とアイコンの色で見分ける）。よく遊ぶタブの1番目だけ大きく
+  const card = (x, k) => {
     const why = x.min && S.members.length < x.min ? `${x.min}人から遊べる` : x.ok && okN < x.ok ? `下ネタOKの人が${x.ok}人から` : "";
     const ppl = x.ok ? `OK${x.ok}人〜` : `${x.min || 2}人〜`;
-    return `<button class="mode-row cat-${x.cat}" data-act="start" data-m="${x.m}" ${why ? "disabled" : ""}><i class="mode-ic">${ICON[x.ic] || ""}</i><span class="mr-tx"><b>${esc(MODE_NAME[x.m])}</b><span>${why || HELP[x.m].desc}</span></span><span class="mr-meta"><b class="bd-t">${x.t}</b><span class="bd-p">${ppl}</span></span></button>`;
+    const big = tab === "fav" && k === 0 && shown.length > 1;
+    return `<button class="mode-row cat-${x.cat} ${big ? "big-tile" : ""}" style="--i:${k}" data-act="start" data-m="${x.m}" ${why ? "disabled" : ""}><i class="mode-ic">${ICON[x.ic] || ""}</i><span class="mr-tx"><b>${esc(MODE_NAME[x.m])}</b><span>${why || `${x.t}・${ppl}`}</span></span></button>`;
   };
   const count = (k) => (k === "fav" ? favs.length : k === "all" ? list.length : list.filter((x) => x.cat === k).length);
   return `<div class="mode-tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" class="${k === "deep" ? "deep" : ""}" data-act="modeTab" data-v="${k}" aria-selected="${k === tab}">${k === "fav" ? "★ " : ""}${t}<em>${count(k)}</em></button>`).join("")}</div>
-    <div class="mode-list">${shown.map(card).join("")}</div>`;
+    <div class="mode-list ${tabFx ? "tiles-in" : ""}">${shown.map(card).join("")}</div>`;
 }
 
 function vHome2() {
@@ -366,6 +369,7 @@ function vHome2() {
   <div class="seg-lv" role="group" aria-label="地獄度（お題・罰の攻め具合）">
     ${Object.entries(LV).map(([k, v]) => `<button class="lv-${k}" data-act="lv" data-v="${k}" aria-pressed="${S.level === k}">${v}<small>${LV_SUB[k]}</small></button>`).join("")}
   </div>
+  ${vMedBox()}
   <section class="tools-row">
     <button class="kanji-btn" data-act="kanji" data-v="seat">${ICON.users}<span>幹事の道具<small>席替え・役割・順番・二次会</small></span></button>
     <button class="kanji-btn" data-act="prl">${ICON.target}<span>誰が罰か決める<small>ルーレットで1人だけ選ぶ</small></span></button>
@@ -430,7 +434,8 @@ function vSheet() {
       <button class="toggle" data-act="sober" role="switch" aria-checked="${S.sober}" aria-pressed="${S.sober}"><span>お酒なし<small>「飲む」罰やお題を出さへん</small></span><b>${S.sober ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="voice" role="switch" aria-checked="${S.voice}" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
       <p class="sheet-sec">まとまりごと</p>
-      ${sgGroup("rule", "遊びのルール", 4, "体に触るのなし・パス券・帰る時間・お水タイム", `
+      ${sgGroup("rule", "遊びのルール", 5, "体に触るのなし・パス券・駆け引き・帰る時間・お水タイム", `
+      <button class="toggle" data-act="gamble" role="switch" aria-checked="${S.gamble}" aria-pressed="${S.gamble}"><span>駆け引きあり<small>ハイ&ローで降りられる・ロシアンタップで1回パス</small></span><b>${S.gamble ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="noTouch" role="switch" aria-checked="${S.noTouch}" aria-pressed="${S.noTouch}"><span>体に触るのなし<small>くすぐり・ハグ・肩もみ系の罰と命令を出さへん</small></span><b>${S.noTouch ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="passOn" role="switch" aria-checked="${S.passOn}" aria-pressed="${S.passOn}"><span>パス券<small>1人1回、罰をゆるい罰に替えられる</small></span><b>${S.passOn ? "ON" : "OFF"}</b></button>
       ${vGoHome()}
@@ -675,7 +680,7 @@ function vBar() {
         ${kings.includes(i) ? (prevKings.includes(i) ? CROWN.replace('class="crown"', 'class="crown still"') : CROWN) : ""}${ini(i)}${bump(i) ? `<i class="plus1">+1</i>` : ""}${g.pen[i] ? `<b class="cnt">罰${g.pen[i]}</b>` : ""}${rv(i) ? `<i class="rv">↺</i>` : ""}
       </span>`).join("")}${hidden ? `<button class="av more" data-act="scores" aria-label="全員の罰を見る">…<b class="cnt">${hidden}</b></button>` : ""}</div>
     ${S.hist.length && !busyGame() ? `<button class="bar-undo" data-act="undo" aria-label="1手戻す">${ICON.undo}<span>戻す</span></button>` : ""}
-    <button class="bar-res" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>結果</span></button>
+    ${S.medley && !medLast() ? `<button class="bar-res" data-act="medArm" aria-label="次のゲームへ">${ICON.play}<span>次へ</span></button>` : `<button class="bar-res" data-act="endArm" aria-label="結果発表">${ICON.flag}<span>結果</span></button>`}
     <button class="icon-btn menu-btn" data-act="menu" aria-label="メニュー">${ICON.more}</button>
   </div>`;
 }
@@ -752,6 +757,19 @@ function vScores() {
 function vMenu() {
   const g = S.game;
   // 結果発表・やめるは押し間違えたら戻れへんので、1回だけ確認を挟む
+  if (S.ask === "med") {
+    const md = S.medley, nx = md.list[md.idx + 1];
+    return `
+  <div class="sheet-back" data-act="menuClose">
+    <div class="sheet menu" role="dialog" aria-label="確認" data-stop>
+      <div class="sheet-grip"></div>
+      <h2>次のゲームへ進む？</h2>
+      <p class="sheet-note">次は「${esc(MODE_NAME[nx])}」。今の罰はそのまま引き継ぐ</p>
+      <button class="big" data-act="medNext">次へ進む</button>
+      <button class="ghost" data-act="askNo">まだ続ける</button>
+    </div>
+  </div>`;
+  }
   if (S.ask) {
     const end = S.ask === "end";
     return `
@@ -1402,7 +1420,7 @@ function rankList(rows, hi = -1, rv = false) {
 // ロシアンタップ
 function vRtap() {
   const g = S.game, rt = g.rt;
-  if (rt.phase === "intro") return vIntroStage("rtap", { extra: lvBox(`パネル${RT_TILES[S.level]}枚の中に爆弾が1つ`, false), btn: "スタート", act: "rtStart" });
+  if (rt.phase === "intro") return vIntroStage("rtap", { extra: lvBox(`パネル${RT_TILES[S.level]}枚の中に爆弾が1つ${S.gamble ? "。1人1回だけパスできる" : ""}`, false), btn: "スタート", act: "rtStart" });
   if (rt.phase === "batsu") return stageWrap(vCard(), roundEnd("rtAccept", true));
   const boom = rt.phase === "boom", cols = rt.tiles <= 9 ? 3 : 4;
   const card = `<div class="odai mode-card center ${boom ? "batsu" : ""}" id="card">
@@ -1413,7 +1431,8 @@ function vRtap() {
       return `<button class="rt-tile ${open ? "open" : ""} ${bomb ? "bomb" : ""}" data-act="rtTap" data-i="${t}" ${open || boom ? "disabled" : ""} aria-label="${open ? "めくった" : "パネル"}">${bomb ? ICON.bomb : open ? ICON.cup : "?"}</button>`;
     }).join("")}</div>
   </div>`;
-  const controls = boom ? `<button class="big has-pen" data-act="rtGacha">${mName(rt.loser)}に罰ガチャ</button>` : `<p class="hint">1枚だけ爆弾。めくった人が罰</p>`;
+  const passNote = rt.gamble && !boom ? (rt.recv === rt.who ? `${mName(rt.passedBy >= 0 ? rt.passedBy : (rt.who + S.members.length - 1) % S.members.length)}からパスされた。この番はパスで返せへん` : rtCanPass() ? "パスは1人1回。使いどころを考えて" : "") : "";
+  const controls = boom ? `<button class="big has-pen" data-act="rtGacha">${mName(rt.loser)}に罰ガチャ</button>` : `${rtCanPass() ? `<button class="rt-pass" data-act="rtPass">1回だけパスして${mName((rt.who + 1) % S.members.length)}へ</button>` : ""}<p class="hint">${passNote || "1枚だけ爆弾。めくった人が罰"}</p>`;
   return stageWrap(card, controls);
 }
 
@@ -1489,15 +1508,15 @@ const HL_SUITS = ["♠", "♥", "♦", "♣"];
 const hlCard = (v, s, cls = "") => `<div class="hl-card ${s === 1 || s === 2 ? "red" : ""} ${cls}"><span>${hlFace(v)}</span><i>${HL_SUITS[s]}</i></div>`;
 function vHilo() {
   const g = S.game, hl = g.hl;
-  if (hl.phase === "intro") return vIntroStage("hilo", { extra: lvBox(S.level === "jigoku" ? "同じ数字もアウト。3連続のあとに外したら罰2倍" : S.level === "futsu" ? "5連続のあとに外したら罰2倍" : "同じ数字はセーフ", false), btn: "スタート", act: "hlStart" });
+  if (hl.phase === "intro") return vIntroStage("hilo", { extra: lvBox(S.gamble ? (S.level === "jigoku" ? "同じ数字もアウト。当たったら続けるか降りるか選べる。2連続のあとに外したら罰2倍" : S.level === "futsu" ? "当たったら続けるか降りるか選べる。3連続のあとに外したら罰2倍" : "当たったら続けるか降りるか選べる。同じ数字はセーフ") : S.level === "jigoku" ? "同じ数字もアウト。3連続のあとに外したら罰2倍" : S.level === "futsu" ? "5連続のあとに外したら罰2倍" : "同じ数字はセーフ", false), btn: "スタート", act: "hlStart" });
   if (hl.phase === "batsu") return stageWrap(vCard(), roundEnd("hlAccept", true));
   let card, controls;
   if (hl.phase === "guess") {
-    card = `<div class="odai mode-card center board-card hl-cardwrap" id="card"><p class="prog">第${hl.round}回戦・${hl.streak}連続中</p>${bigWho(hl.who, "の番")}<div class="hl-row">${hlCard(hl.cur, hl.suit)}<div class="hl-card back">?</div></div><p class="hand-note">次のカードは<b>${hlFace(hl.cur)}</b>より大きい？小さい？${S.level === "jigoku" ? "（同じ数字はアウト）" : "（同じ数字はセーフ）"}</p></div>`;
+    card = `<div class="odai mode-card center board-card hl-cardwrap" id="card"><p class="prog">第${hl.round}回戦・${hl.streak}連続中</p>${bigWho(hl.who, "の番")}${hl.gamble ? `<div class="hl-dots" aria-label="${hl.streak}連続">${Array.from({ length: 5 }, (_, k) => `<i class="${k < hl.streak ? "on" : ""}"></i>`).join("")}</div>` : ""}<div class="hl-row">${hlCard(hl.cur, hl.suit)}<div class="hl-card back">?</div></div><p class="hand-note">次のカードは<b>${hlFace(hl.cur)}</b>より大きい？小さい？${S.level === "jigoku" ? "（同じ数字はアウト）" : "（同じ数字はセーフ）"}</p>${hl.gamble ? `<p class="hl-pts">${hl.bankWho >= 0 && hl.bank ? `<b>${mName(hl.bankWho)}</b>が降りて${hl.bank}点ゲット。` : ""}貯めた点：${S.members.map((m, i) => `${esc(m.name)} ${hl.pts[i]}`).join("・")}</p>` : ""}</div>`;
     controls = `<div class="row2"><button class="big hl-btn" data-act="hlGuess" data-v="down">▼ ロー</button><button class="big hl-btn" data-act="hlGuess" data-v="up">▲ ハイ</button></div>`;
   } else {
-    card = `<div class="odai mode-card center ${hl.ok ? "" : "batsu"}" id="card"><p class="prog">${mName(hl.who)}は「${hl.up ? "ハイ" : "ロー"}」</p><div class="hl-row">${hlCard(hl.cur, hl.suit, "dim")}${hlCard(hl.next, hl.nsuit, "flip")}</div><p class="tl-big sp-verdict ${hl.ok ? "q-ok" : "q-ng"}">${hl.ok ? (hl.same ? "同じでセーフ" : "当たり！") : hl.same ? "同じでアウト" : "ハズレ！"}</p><p class="hand-note">${hl.ok ? `${hl.streak}連続` : `${hl.streak}連続で止まった${hl.x > 1 ? "（罰2倍）" : ""}`}</p></div>`;
-    controls = hl.ok ? `<button class="big" data-act="hlNext">次は${mName((hl.who + 1) % S.members.length)}</button>` : `<button class="big has-pen" data-act="hlGacha">${mName(hl.loser)}に罰ガチャ</button>`;
+    card = `<div class="odai mode-card center ${hl.ok ? "" : "batsu"}" id="card"><p class="prog">${mName(hl.who)}は「${hl.up ? "ハイ" : "ロー"}」</p><div class="hl-row">${hlCard(hl.cur, hl.suit, "dim")}${hlCard(hl.next, hl.nsuit, "flip")}</div><p class="tl-big sp-verdict ${hl.ok ? "q-ok" : "q-ng"}">${hl.ok ? (hl.same ? "同じでセーフ" : "当たり！") : hl.same ? "同じでアウト" : "ハズレ！"}</p><p class="hand-note">${hl.ok ? `${hl.streak}連続` : `${hl.streak}連続で止まった${hl.x > 1 ? "（罰2倍）" : hl.gamble && hl.streak ? `（貯めた${hl.streak}点はゼロ）` : ""}`}</p></div>`;
+    controls = hl.ok && hl.gamble ? `<button class="big" data-act="hlCont">続ける（もう1枚）</button><button class="hl-stop" data-act="hlStop">降りる（ここまでの${hl.streak}点をもらう）<small>外したら点はゼロ＋罰。${HL_X2G[S.level] < 99 ? `${HL_X2G[S.level]}連続のあとは罰2倍` : "ゆるめは罰2倍なし"}</small></button>` : hl.ok ? `<button class="big" data-act="hlNext">次は${mName((hl.who + 1) % S.members.length)}</button>` : `<button class="big has-pen" data-act="hlGacha">${mName(hl.loser)}に罰ガチャ</button>`;
   }
   return stageWrap(card, controls);
 }
@@ -2163,6 +2182,7 @@ function vMmSheet() {
 function itScale(t) {
   return `<div class="it-scale"><span><b>1</b>${esc(t.lo)}</span><i></i><span><b>100</b>${esc(t.hi)}</span></div>`;
 }
+const itLife = (it) => `<p class="it-life" aria-label="ライフ${it.life}">${Array.from({ length: ITO_LIFE }, (_, k) => `<i class="${k < it.life ? "on" : ""}">${ICON.heart}</i>`).join("")}</p>`;
 function vItCard() {
   const g = S.game, it = g.it, n = S.members.length;
   const nc = it.night === "shinya" ? "deep" : it.night ? "yoru" : "";
@@ -2183,23 +2203,24 @@ function vItCard() {
       <div class="mid-body">
         <p class="it-big">${esc(it.topic.t)}</p>
         ${itScale(it.topic)}
-        <p class="how-note">1人ずつ、自分の数字っぽい「${esc(it.topic.t)}」を言え。数字は言うたらアカン</p>
+        <p class="how-note">1人ずつ、自分の数字っぽい「${esc(it.topic.t)}」を言え。数字は言うたらアカン</p>${it.coop ? itLife(it) : ""}
       </div>
     </div>`;
     case "order": {
       const left = S.members.map((_, i) => i).filter((i) => !it.order.includes(i));
       return `<div class="odai ${nc} mode-card" id="card">
-        <div class="head"><span class="who"><b>小さい順に並べる</b></span><span class="meta"><i class="tag">${esc(it.topic.t)}</i></span></div>
+        <div class="head"><span class="who"><b>${it.coop ? "みんなで小さい順に並べる" : "小さい順に並べる"}</b></span><span class="meta"><i class="tag">${esc(it.topic.t)}</i></span></div>${it.coop ? itLife(it) : ""}
         <ol class="it-line">${it.order.map((i, k) => `<li style="--mc:${colorOf(i)}"><em>${k + 1}</em><span>${mName(i)}</span></li>`).join("")}${left.length ? `<li class="empty"><em>${it.order.length + 1}</em><span>${it.order.length ? "次に小さい人をタップ" : "一番小さい人をタップ"}</span></li>` : ""}</ol>
         <div class="pen-grid vote-grid">${left.map((i) => `<button class="pen-tile" style="--mc:${colorOf(i)}" data-act="itPut" data-i="${i}"><span class="bar">${ini(i)}</span><span class="nm">${mName(i)}</span></button>`).join("")}</div>
       </div>`;
     }
     case "reveal": {
       const ok = !it.bad.length;
+      const verdict = it.coop ? (ok ? "全員成功！ライフはそのまま" : it.punish ? `${mName(it.broke)}で崩れた… ライフがなくなった` : `${mName(it.broke)}で崩れた… ライフが1つ減った`) : ok ? "完璧！全員セーフ" : `順番が逆：${it.bad.map(mName).join("・")}に罰`;
       return `<div class="odai ${nc} mode-card" id="card">
-        <div class="head"><span class="who"><b>答え合わせ</b></span><span class="meta"><i class="tag">${esc(it.topic.t)}</i></span></div>
+        <div class="head"><span class="who"><b>答え合わせ</b></span><span class="meta"><i class="tag">${esc(it.topic.t)}</i></span></div>${it.coop ? itLife(it) : ""}
         <ol class="it-line reveal">${it.order.map((i, k) => `<li class="${it.bad.includes(i) ? "bad" : ""}" style="--mc:${colorOf(i)};--d:${(0.2 + k * 0.35).toFixed(2)}s"><em>${k + 1}</em><span>${mName(i)}</span><b>${it.nums[i]}</b></li>`).join("")}</ol>
-        <p class="vote-rule ${ok ? "good" : "bad"}" style="--d:${(0.3 + it.order.length * 0.35).toFixed(2)}s">${ok ? "完璧！全員セーフ" : `順番が逆：${it.bad.map(mName).join("・")}に罰`}</p>
+        <p class="vote-rule ${ok ? "good" : "bad"}" style="--d:${(0.3 + it.order.length * 0.35).toFixed(2)}s">${verdict}</p>
       </div>`;
     }
     case "batsu": return vCard();
@@ -2214,13 +2235,13 @@ function vItControls() {
     case "talk": return `<div class="sub-acts two"><button data-act="itPeek">数字を見直す</button><button data-act="itSkip">お題を変える</button></div><button class="big" data-act="itOrder">言い終わった → 並べる</button>`;
     case "who": return `${vChipsSimple("誰が数字を見直す？", "itWho", S.members.map((_, i) => i))}<button class="ghost" data-act="itBack">やめる</button>`;
     case "order": return it.order.length === n ? `<div class="sub-acts two"><button data-act="itUndo">1つ戻す</button><button data-act="itClear">やり直す</button></div><button class="big" data-act="itCheck">この順で答え合わせ</button>` : `<div class="sub-acts two"><button data-act="itUndo" ${it.order.length ? "" : "disabled"}>1つ戻す</button><button data-act="itTalk">お題に戻る</button></div>`;
-    case "reveal": return it.bad.length ? `<button class="big has-pen" data-act="itGacha">${it.bad.map(mName).join("・")}に罰ガチャ</button>` : `<button class="big" data-act="itNew">次のお題へ</button>`;
+    case "reveal": return it.punish ? `<button class="big has-pen" data-act="itGacha">全員に罰ガチャ（みんなで軽く）</button>` : it.coop || !it.bad.length ? `<button class="big" data-act="itNew">次のお題へ</button>` : `<button class="big has-pen" data-act="itGacha">${it.bad.map(mName).join("・")}に罰ガチャ</button>`;
     case "batsu": return `<button class="big" data-act="itAccept">${g.gacha.every((x) => x.lucky) ? "ラッキー！" : "受け入れた"} → 次のお題へ</button>`;
   }
   return "";
 }
 function vIto() {
-  if (S.game.it.phase === "intro") return vIntroStage("ito", { tag: "協力", extra: lvBox(), btn: "数字を配る", act: "itStart" });
+  if (S.game.it.phase === "intro") return vIntroStage("ito", { tag: S.itCoop ? "協力" : "対戦", extra: `<div class="it-mode" role="group" aria-label="遊び方">${[[false, "対戦", "間違えた人が罰"], [true, "協力", "みんなでライフ3つ"]].map(([v, t, sub]) => `<button data-act="itMode" data-v="${v}" aria-pressed="${S.itCoop === v}"><b>${t}</b><small>${sub}</small></button>`).join("")}</div>` + lvBox(), btn: "数字を配る", act: "itStart" });
   return `<div id="stage" class="${S.flip ? "flipped" : ""}">
     ${vBar()}
     <div class="deck">${vItCard()}</div>
@@ -2241,6 +2262,7 @@ function vIntroStage(mode, { tag = "", extra = "", btn, act, disabled = false })
       <div class="mid-body">
         <ol class="koma">${h.how.map(([ic, big, sub], i) => `<li class="k${i + 1}"><span class="k-ic">${ICON[ic] || ""}<b>${i + 1}</b></span><span class="k-tx"><b>${big}</b>${sub ? `<small>${sub}</small>` : ""}</span></li>`).join("")}</ol>
         ${extra}
+        ${vMedIntro()}
         <button class="koma-more" data-act="rules" data-m="${mode}">細かいルール ›</button>
       </div>
     </div></div>
@@ -2503,7 +2525,7 @@ function vResult() {
   </section>
   <div class="res-actions">
     <button class="big again-btn" data-act="again">もう1回<small>同じメンバー・同じ遊び方</small></button>
-    <div class="row2"><button class="ghost" data-act="home">${ICON.back}<span>別の遊び方</span></button><button class="ghost share-ghost" data-act="share">${ICON.share}<span>画像でシェア</span></button></div>
+    <div class="row2"><button class="ghost" data-act="home">${ICON.back}<span>別の遊び方</span></button><button class="ghost share-ghost" data-act="shareOpen">${ICON.share}<span>画像でシェア</span></button></div>
     ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}
     <button class="ghost qr-btn" data-act="qr">${ICON.share}<span>隣の人にもノリダン（QR）</span></button>
   </div>
@@ -2533,7 +2555,14 @@ function resultTip() {
   return t;
 }
 // 結果を1枚の画像にする（インスタのストーリーに貼れる縦長）
-function resultImage() {
+// 名前を出さん時は「Aさん」「Bさん」に差し替えて描く（描き終わったら戻す）
+async function resultImage() {
+  if (!S.shareAnon) return resultImageDraw();
+  const orig = S.members.map((m) => m.name);
+  S.members.forEach((m, i) => { m.name = `${String.fromCharCode(65 + (i % 26))}さん`; });
+  try { return await resultImageDraw(); } finally { S.members.forEach((m, i) => { m.name = orig[i]; }); }
+}
+function resultImageDraw() {
   const g = S.game, W = 1080, H = 1920;
   const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
   const x = cv.getContext("2d");
@@ -2557,7 +2586,7 @@ function resultImage() {
   x.fillStyle = "#8d857a"; x.font = `900 34px ${body}`;
   const ds = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
   x.fillText(ds, W - 90 - x.measureText(ds).width, 160);
-  x.fillText(modeLine(g), 90, 230);
+  x.fillText(`${S.members.length}人・${modeLine(g)}`, 90, 230);
   // タイトル
   x.save(); x.translate(90, 410); x.rotate(-0.04);
   x.font = `150px ${disp}`; x.lineWidth = 14; x.strokeStyle = "#ffd23f"; x.lineJoin = "round"; x.strokeText("本日の戦犯", 0, 0);
@@ -2632,7 +2661,31 @@ function resultImage() {
 function roundRect(x, l, t, w, h, r) {
   x.beginPath(); x.moveTo(l + r, t); x.arcTo(l + w, t, l + w, t + h, r); x.arcTo(l + w, t + h, l, t + h, r); x.arcTo(l, t + h, l, t, r); x.arcTo(l, t, l + w, t, r); x.closePath();
 }
-async function shareResult() {
+// 結果の画像シェア用のシート：プレビュー・名前を出す/出さん・保存・LINEなどで送る
+function vShareSheet() {
+  return `<div class="sheet-back" data-act="shareClose">
+    <div class="sheet share-sheet" role="dialog" aria-label="画像でシェア" data-stop>
+      <div class="sheet-grip"></div>
+      <h2>結果を画像にする</h2>
+      <div class="share-prev">${S.sharePrev ? `<img src="${S.sharePrev}" alt="できる画像のプレビュー（縦長）">` : `<span>作ってる…</span>`}</div>
+      <div class="it-mode share-anon" role="group" aria-label="名前">${[[false, "名前を出す", "みんなの名前そのまま"], [true, "名前を出さん", "Aさん・Bさんにする"]].map(([v, t, sub]) => `<button data-act="shareAnon" data-v="${v}" aria-pressed="${!!S.shareAnon === v}"><b>${t}</b><small>${sub}</small></button>`).join("")}</div>
+      <button class="big" data-act="share" data-v="save">画像にして保存</button>
+      <button class="ghost" data-act="share" data-v="send">LINEなどで送る</button>
+      ${S.shareMsg ? `<p class="note" role="status">${esc(S.shareMsg)}</p>` : ""}
+      <button class="ghost" data-act="shareClose">閉じる</button>
+    </div>
+  </div>`;
+}
+async function sharePreview() {
+  S.sharePrev = "";
+  try {
+    const blob = await resultImage();
+    const r = new FileReader();
+    S.sharePrev = await new Promise((res) => { r.onload = () => res(r.result); r.readAsDataURL(blob); });
+  } catch {}
+  if (S.shareSheet) render();
+}
+async function shareResult(how = "send") {
   const blob = await resultImage();
   const name = `noridan-${new Date().toISOString().slice(0, 10)}.png`;
   const say = (m) => { S.shareMsg = m; render(); };
@@ -2642,7 +2695,7 @@ async function shareResult() {
   } catch (e) { if (e?.code === "declined") return; }
   try {
     const file = new File([blob], name, { type: "image/png" });
-    if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: "本日の戦犯" }); return; }
+    if (how === "send" && navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: "本日の戦犯" }); return; }
   } catch { return; }
   // 共有できへんブラウザ（パソコン等）は画像をダウンロード
   try {
@@ -2696,7 +2749,7 @@ function render(anim) {
   drSetup();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); if (mvFrom && S.navFrom === "home" + 2 && key !== "home2" && dir === "fwd") mvExpand("fwd"); else if (mvFrom && key === "home2" && dir === "back") { mvExpand("back"); mvFrom = null; } }
   if (anim && sc === "result") countUpRank(app);
-  overlay.innerHTML = S.inout && onStage ? vInout() : S.kanji ? vKanji() : S.prl ? vPrl() : S.qr ? vQr() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
+  overlay.innerHTML = S.inout && onStage ? vInout() : S.kanji ? vKanji() : S.prl ? vPrl() : S.qr ? vQr() : S.shareSheet ? vShareSheet() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   jaWrap(overlay);
   if (onStage) { fixHeight(); fitCard(); }
   if (anim) { window.scrollTo(0, 0); cue(); if (S.gIntro) { clearTimeout(S.speakT); S.speakT = setTimeout(speakNow, GACHA_T * 1000); } else speakNow(); postFx(); }
@@ -3019,7 +3072,7 @@ function onClick(e) {
     // home
     case "del": S.members.splice(i, 1); S.addMsg = ""; S.memOpen = null; saveMembers(); render(); break;
     case "memOpen": S.memOpen = S.memOpen === i ? null : i; render(); break;
-    case "modeTab": S.modeTab = b.dataset.v; store.set("nd_tab", S.modeTab); render(); document.querySelector(".mode-tabs [aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "center" }); break;
+    case "modeTab": S.tabFx = true; S.modeTab = b.dataset.v; store.set("nd_tab", S.modeTab); render(); document.querySelector(".mode-tabs [aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "center" }); break;
     case "lv": S.level = b.dataset.v; store.set("nd_level", S.level); render(); break;
     case "step1": S.step = 1; render(); break;
     case "members": stopTimer(); S.screen = "home"; S.step = 1; render(); window.scrollTo(0, 0); break;
@@ -3028,6 +3081,10 @@ function onClick(e) {
     case "home": stopTimer(); S.menu = false; S.ask = null; S.screen = "home"; S.step = 2; render(); break;
     case "again": S.shareMsg = ""; newGame(g.mode, true); break;
     // 上のバーの「結果」：「もう結果出す？」の確認を出す
+    case "medStart": medStart(); break;
+    case "medN": S.medN = +b.dataset.v; store.set("nd_medn", S.medN); render(); break;
+    case "medNext": medNext(); break;
+    case "medArm": S.menu = true; S.ask = "med"; S.askBar = true; render(); break;
     case "endArm": S.menu = true; S.ask = "end"; S.askBar = true; render(); break;
     case "end": endGame(); break;
     case "menu": S.menu = true; S.ask = null; render(); break;
@@ -3043,7 +3100,10 @@ function onClick(e) {
     case "bombLookClose": S.bombLook = 0; render(); break;
     case "scoresClose": S.scores = false; render(); break;
     case "menuClose": S.menu = false; S.ask = null; S.askBar = false; render(); break;
-    case "share": shareResult(); break;
+    case "share": shareResult(b.dataset.v || "send"); break;
+    case "shareOpen": S.shareSheet = true; S.shareMsg = ""; render(); sharePreview(); break;
+    case "shareClose": S.shareSheet = false; S.shareMsg = ""; render(); break;
+    case "shareAnon": S.shareAnon = b.dataset.v === "true"; store.set("nd_shareanon", S.shareAnon); render(); sharePreview(); break;
     case "clearAll": S.members = []; saveMembers(); render(); document.getElementById("inName")?.focus(); break;
     case "loadGroup": {
       const gs = loadGroups().filter((x) => x.map((m) => m.name).join() !== S.members.map((m) => m.name).join());
@@ -3171,6 +3231,7 @@ function onClick(e) {
 
     // 価値観ナンバー
     case "itStart": itRound(); render(true); break;
+    case "itMode": S.itCoop = b.dataset.v === "true"; store.set("nd_itcoop", S.itCoop); render(); break;
     case "itSee": g.it.phase = "look"; render(true); break;
     case "itNext": {
       const it = g.it, n = S.members.length;
@@ -3189,8 +3250,9 @@ function onClick(e) {
     case "itClear": g.it.order = []; render(); break;
     case "itCheck": hold("答え合わせ…", 1800, itCheck); break;
     case "itGacha":
-      g.add = new Map(g.it.bad.map((t) => [t, 1])); g.addReason = "ito";
-      g.gacha = g.it.bad.map((t) => ({ i: t, n: 1, ...drawBatsu(t) }));
+      { const who = g.it.punish || g.it.bad;
+      g.add = new Map(who.map((t) => [t, 1])); g.addReason = "ito";
+      g.gacha = who.map((t) => ({ i: t, n: 1, ...drawBatsu(t) })); }
       g.phase = "batsu"; g.it.phase = "batsu"; render(true); break;
     case "itAccept": applyAdds(); g.gacha = []; g.phase = "play"; itRound(); render(true); break;
     case "itNew": itRound(); render(true); break;
@@ -3383,6 +3445,10 @@ function onClick(e) {
     case "hlStart": hlRound(); render(true); break;
     case "hlGuess": hlGuess(b.dataset.v === "up"); break;
     case "hlNext": hlNext(); render(true); break;
+    case "hlCont": hlCont(); render(true); break;
+    case "hlStop": hlStop(); render(true); break;
+    case "rtPass": rtPass(); break;
+    case "gamble": S.gamble = !S.gamble; store.set("nd_gamble", S.gamble); render(); break;
     case "hlGacha": startGacha([g.hl.loser], g.hl.x || 1, "hilo", g.hl); render(true); break;
     case "hlAccept": applyAdds(); g.gacha = []; g.phase = "play"; hlRound(); render(true); break;
     // 反射神経バトル
