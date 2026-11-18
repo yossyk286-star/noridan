@@ -6,7 +6,6 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, Lead, LevelBox, ModeCard, Note, Outline, Prog } from '../components/ModeParts';
-import { usePreTurn } from '../components/PreTurn';
 import { HELP } from '../lib/help';
 import { useHold } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
@@ -73,7 +72,6 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   const [manual, setManual] = useState(false);
   const [sensor, setSensor] = useState<'unknown' | 'ok' | 'none'>('unknown');
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
-  const pre = usePreTurn(members, (ids) => setPen((p) => p.map((v, i) => (ids.includes(i) ? v + 1 : v))));
   const practice = useRef(false); // 0°合わせの練習（罰なし・5秒）
   const [practiceMsg, setPracticeMsg] = useState('');
   const secNow = () => (practice.current ? 5 : SEC);
@@ -213,7 +211,6 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   const out = () => {
     if (phaseRef.current !== 'play') return;
     if (practice.current) return endPractice(true);
-    pre.resolve(false);
     phaseRef.current = 'out';
     clear();
     setOutSec((Date.now() - startAt.current) / 1000);
@@ -225,7 +222,6 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   const safe = () => {
     if (phaseRef.current !== 'play') return;
     if (practice.current) return endPractice(false);
-    pre.resolve(true);
     phaseRef.current = 'safe';
     clear();
     record(!base.current);
@@ -335,7 +331,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
       );
       controls = (
         <View style={{ gap: 10 }}>
-          <BigButton pal={pal} label="準備OK → カウントダウン" onPress={() => { practice.current = false; pre.ask({ who, exclude: mate != null ? [mate] : [], safe: 'tilt', q: '10秒キープできる？', go: countdown }); }} />
+          <BigButton pal={pal} label="準備OK → カウントダウン" onPress={() => { practice.current = false; countdown(); }} />
           {tries === 0 && !pair && <Outline label="0°合わせの練習（罰なし・5秒）" fg={pal.fg} onPress={() => { practice.current = true; setPracticeMsg(''); countdown(); }} />}
           {!!practiceMsg && <Text style={{ color: pal.fg, fontSize: 14, fontWeight: '800', textAlign: 'center' }}>{practiceMsg}</Text>}
         </View>
@@ -454,7 +450,6 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
         {controls}
       </View>
       {heat > 0 && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `rgba(255,30,30,${(heat * heat * 0.22).toFixed(3)})`, zIndex: 9 }]} />}
-      {pre.node}
       <Frame color={frame} />
       {heat > 0 && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderWidth: 3 + 13 * heat, borderColor: frame, opacity: edge ? 0.9 : 1, zIndex: 10 }]} />}
       <RulesSheet visible={rules} custom={HELP.tilt.rules} onClose={() => setRules(false)} />

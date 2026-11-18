@@ -4,7 +4,6 @@ import { LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, Te
 import { Icon } from './Icon';
 import { isCalm, Switch, SwipeSheet } from './Motion';
 import { Tap } from './Tap';
-import { getWatchBet, setWatchBet } from '../lib/watchbet';
 import { ALLOW_SHINYA } from '../lib/game';
 import { useSeen } from '../lib/coach';
 import { C, F } from '../theme';
@@ -68,7 +67,6 @@ function Group({ title, count, sub, children }: { title: string; count: number; 
 export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, sober, onSober, noTouch, onNoTouch, passOn, onPass, gamble, onGamble, goHome, onGoHome, water, onWater, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
   const { resetSeen } = useSeen();
   const [privacy, setPrivacy] = useState(false);
-  const [wbet, setWbet] = useState(getWatchBet());
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={s.back} onPress={onClose}>
@@ -90,15 +88,14 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
             <Toggle label="お酒なし" sub="「飲む」罰やお題を出さへん" on={sober} onPress={() => onSober(!sober)} />
             <Toggle label="お題の読み上げ" sub="札が出たら声で読む（爆弾の中身は読まへん）" on={voice} onPress={() => onVoice(!voice)} />
             <Text style={s.sec}>まとまりごと</Text>
-            <Group title="遊びのルール" count={6} sub="見てる人の予想・体に触るのなし・パス券・駆け引き・帰る時間・お水タイム">
-              <Toggle label="見てる人の予想" sub="傾け・シェイク・ストップ・ワニの番の前に、見てる人が「できる？できへん？」に賭ける" on={wbet} onPress={() => { setWbet(!wbet); setWatchBet(!wbet); }} />
+            <Group title="遊びのルール" count={5} sub="体に触るのなし・パス券・駆け引き・帰る時間・お水タイム">
               <Toggle label="駆け引きあり" sub="ハイ&ローで降りられる・ロシアンタップで1回パス" on={gamble} onPress={() => onGamble(!gamble)} />
               <Toggle label="体に触るのなし" sub="くすぐり・ハグ・肩もみ系の罰と命令を出さへん" on={noTouch} onPress={() => onNoTouch(!noTouch)} />
               <Toggle label="パス券" sub="1人1回、罰をゆるい罰に替えられる" on={passOn} onPress={() => onPass(!passOn)} />
               <GoHome time={goHome} onChange={onGoHome} />
               <Toggle label="お水タイム" sub="30分ごとに「全員お水をひと口」のお知らせ" on={water} onPress={() => onWater(!water)} />
             </Group>
-            <Group title="演出" count={6} sub="実況・入場・伏せて出す・振ってガチャ・カメラ・メーター">
+            <Group title="演出" count={5} sub="実況・入場・伏せて出す・振ってガチャ・カメラ・メーター">
               <LiveSettings Toggle={Toggle} hideHead />
             </Group>
             <Group title="音と画面" count={3} sub="バイブ・番の交代・向かい合わせ">

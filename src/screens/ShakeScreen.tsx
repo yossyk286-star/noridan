@@ -4,7 +4,6 @@ import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { Vibration } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
-import { usePreTurn } from '../components/PreTurn';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { Icon } from '../components/Icon';
@@ -69,7 +68,6 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
   const [cnt, setCnt] = useState<(number | null)[]>(() => Array(n).fill(null));
   const [losers, setLosers] = useState<number[]>([]);
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
-  const pre = usePreTurn(members, (ids) => setPen((p) => p.map((v, i) => (ids.includes(i) ? v + 1 : v))));
   const [turns, setTurns] = useState(0);
   const [gacha, setGacha] = useState<GachaItem[]>([]);
   const [pick, setPick] = useState<BatsuPick | null>(null);
@@ -209,7 +207,6 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     const nc = cnt.slice();
     nc[who] = c;
     setCnt(nc);
-    pre.resolve(c >= (level === 'yurume' ? 25 : level === 'jigoku' ? 35 : 30));
     if (c > (best[who] ?? -1)) best[who] = c;
     if (manualRef.current) tapped[who] = true;
     setTurns((t) => t + 1);
@@ -331,7 +328,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
           <Note fg={fg}>{`3・2・1のあと${SEC}秒間、ひたすら振る`}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label="ガッチリ握った → カウントダウン" onPress={() => pre.ask({ who, safe: 'shake', q: `${level === 'yurume' ? 25 : level === 'jigoku' ? 35 : 30}回以上振れる？`, go: countdown })} />;
+      controls = <BigButton pal={pal} label="ガッチリ握った → カウントダウン" onPress={() => countdown()} />;
       break;
     case 'count':
       card = (
@@ -433,7 +430,6 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>
-      {pre.node}
       <Frame color={frame} />
       <RulesSheet visible={rules} custom={HELP.shake.rules} onClose={() => setRules(false)} />
       <GameMenu

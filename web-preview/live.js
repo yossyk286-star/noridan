@@ -16,7 +16,6 @@ const HOST_FACE = `<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2"
 // ゲームが始まる時：実況・写真を数え直し、選手入場
 const _newGame0 = newGame;
 newGame = function (mode, again = false) {
-  S.wb = null; // 前のゲームの「番の前の確認」は持ち越さへん
   S.lv = { n: 0, last: -9, lead: -1, clean: new Set() };
   S.photos = [];
   spunGacha = new WeakSet();

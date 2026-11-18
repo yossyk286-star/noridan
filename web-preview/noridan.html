@@ -2204,19 +2204,6 @@ body.boot .last-group .lg-row > *:nth-child(4) { animation-delay: .39s; }
 .mode-row { --cc: #efe6d2; }
 
 /* 番の前の予想・安全確認 */
-.wb-checks { display: flex; flex-direction: column; gap: 8px; }
-.wb-chk { display: flex; align-items: center; gap: 12px; padding: 12px 14px; min-height: 48px; border-radius: 14px; background: rgba(247,243,234,.08); color: var(--paper); font-weight: 900; font-size: 15px; text-align: left; }
-.wb-chk i { flex: none; width: 24px; height: 24px; border-radius: 8px; border: 2px solid var(--muted); display: grid; place-items: center; }
-.wb-chk[aria-pressed="true"] { background: color-mix(in srgb, var(--yuru) 22%, transparent); }
-.wb-chk[aria-pressed="true"] i { background: var(--yuru); border-color: var(--yuru); }
-.wb-chk[aria-pressed="true"] i::after { content: ""; width: 6px; height: 11px; border: solid var(--ink); border-width: 0 3px 3px 0; transform: rotate(45deg) translate(-1px, -1px); }
-.wb-rows { display: flex; flex-direction: column; gap: 8px; }
-.wb-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 14px; background: rgba(247,243,234,.08); border-left: 6px solid var(--mc); }
-.wb-row b { font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wb-row div { display: flex; gap: 6px; flex: none; }
-.wb-row button { position: relative; min-width: 76px; min-height: 44px; border-radius: 12px; background: rgba(247,243,234,.12); color: var(--paper); font-weight: 900; font-size: 14px; }
-.wb-row button[aria-pressed="true"] { background: var(--yuru); color: var(--ink); }
-.wb .big:disabled { opacity: .4; }
 
 .next-pick { margin: 14px 0 4px; }
 .next-h { margin: 0 0 8px; font-size: 14px; font-weight: 900; color: var(--muted); }
@@ -4955,94 +4942,6 @@ function vMedIntro() {
     ${rest.length ? `<button class="text-btn" data-act="medNext">このゲームをとばす</button>` : ""}</div>`;
 }
 
-// ---------- 見てるだけ減らす・安全の一言 ----------
-// 1人ずつ遊ぶスマホ系：番の前に、見てる人が「できる／できへん」に1タップで賭ける。外した人は軽い罰（ゆるい罰）。
-// 傾け・シェイク・声デカは、1日1回だけ「グラスを置いた？」の安全確認も。
-S.watchBet = store.get("nd_wbet", true) !== false;
-const WB_SHAKE = { yurume: 25, futsu: 30, jigoku: 35 };
-const WB_WHACK = 8;
-const WB = {
-  tilt: { start: "tiltReady", bet: () => "10秒キープできる？", safe: "tilt" },
-  shake: { start: "skReady", bet: () => `${WB_SHAKE[S.level] || 30}回以上振れる？`, safe: "shake" },
-  stop: { start: "spReady", bet: () => "0.2秒以内でピタッと止められる？" },
-  whack: { start: "wkGo", bet: () => `${WB_WHACK}点以上取れる？` },
-  voice: { start: "vcGo", safe: "voice" },
-};
-const WB_SAFE = {
-  tilt: ["グラスは机に置いた", "周りの人とぶつからへん", "落としても大丈夫な場所や"],
-  shake: ["グラスは机に置いた", "周りの人とぶつからへん", "ストラップを手首に通した"],
-  voice: ["夜中の近所に響かん場所や", "お店の人に迷惑かからへん", "喉を痛めん程度でやる"],
-};
-const wbToday = () => new Date().toDateString();
-const wbWatchers = () => {
-  const g = S.game, w = S.wb;
-  const out = new Set([w.who]);
-  if (g.mode === "tilt" && g.tl?.mate != null) out.add(g.tl.mate);
-  return S.members.map((_, i) => i).filter((i) => !out.has(i));
-};
-// スタートのボタンが押された時：確認が要るなら出して、押した処理は止める（true）
-function wbIntercept(b) {
-  const g = S.game, d = g && WB[g.mode];
-  if (!d || S._wbPass || b.dataset.act !== d.start || S.isExample === "shot") return false;
-  const who = g.doer;
-  const needSafe = !!(d.safe && store.get("nd_safe_" + d.safe, "") !== wbToday());
-  const watchers = S.members.map((_, i) => i).filter((i) => i !== who && !(g.mode === "tilt" && g.tl?.mate === i));
-  const hasBet = !!(d.bet && S.watchBet && watchers.length >= 2);
-  if (!needSafe && !hasBet) return false;
-  S.wb = { who, act: d.start, ds: { ...b.dataset }, picks: {}, checks: [], needSafe, hasBet, safeKey: d.safe, q: hasBet ? d.bet() : "" };
-  render();
-  return true;
-}
-function wbReady() {
-  const w = S.wb; if (!w) return false;
-  return !w.needSafe || w.checks.length === WB_SAFE[w.safeKey].length;
-}
-function wbGo(skipBet) {
-  const g = S.game, w = S.wb; if (!w || !wbReady()) return;
-  if (w.needSafe) store.set("nd_safe_" + w.safeKey, wbToday());
-  g.wbet = w.hasBet && !skipBet && Object.keys(w.picks).length ? { mode: g.mode, who: w.who, picks: { ...w.picks }, turn: g.turn } : null;
-  const act = w.act, ds = w.ds;
-  S.wb = null; render();
-  // 押されるはずやった処理をそのまま流す
-  const fb = document.createElement("button");
-  Object.assign(fb.dataset, ds);
-  S._wbPass = true;
-  try { onClick({ target: fb }); } finally { S._wbPass = false; }
-}
-// 結果が出た時：予想を外した人にゆるい罰
-function wbResolve(ok) {
-  const g = S.game, bt = g?.wbet; if (!bt || bt.mode !== g.mode) return;
-  g.wbet = null;
-  const miss = Object.keys(bt.picks).map(Number).filter((i) => (bt.picks[i] === "y") !== ok);
-  if (!miss.length) { toast("予想はみんな当たり！"); return; }
-  miss.forEach((i) => { g.pen[i]++; g.rev[i] = true; if (g.st) g.st.why[i].wbet = (g.st.why[i].wbet || 0) + 1; });
-  const names = miss.map((i) => S.members[i].name).join("・");
-  const pool = (DATA.batsu.pass || []).filter(contentOk);
-  const t = pool.length ? pick(pool).replace(/\{X\}/g, S.members[pick(S.members.map((_, i) => i).filter((i) => !miss.includes(i)).concat(miss))].name) : "";
-  toast(`予想はずれ：${names}に罰1回（ゆるいやつ）${t ? "　" + t : ""}`);
-}
-(() => {
-  const o = {};
-  o.tiltOut = tiltOut; tiltOut = function () { o.tiltOut(); wbResolve(false); };
-  o.tiltSafe = tiltSafe; tiltSafe = function () { o.tiltSafe(); wbResolve(true); };
-  o.skDone = skDone; skDone = function () { o.skDone(); const sk = S.game.sk; wbResolve(sk.cur >= (WB_SHAKE[S.level] || 30)); };
-  o.spStop = spStop; spStop = function (a) { o.spStop(a); const sp = S.game.sp, r = sp.res[sp.who]; if (r) wbResolve(!r.over && r.diff <= 0.2); };
-  o.wkEnd = wkEnd; wkEnd = function () { o.wkEnd(); const wk = S.game.wk; wbResolve(wk.score[wk.who] >= WB_WHACK); };
-})();
-function vWBet() {
-  const w = S.wb, g = S.game; if (!w) return "";
-  const nm = esc(S.members[w.who].name), ready = wbReady();
-  const checks = w.needSafe ? `<p class="sheet-sec">先に確認（今日1回だけ）</p><div class="wb-checks">${WB_SAFE[w.safeKey].map((t, k) => `<button class="wb-chk" data-act="wbChk" data-k="${k}" aria-pressed="${w.checks.includes(k)}"><i></i><span>${esc(t)}</span></button>`).join("")}</div>` : "";
-  const bets = w.hasBet ? `<p class="sheet-sec">みんなの予想（見てる人だけ）</p><p class="sheet-note">${nm}は、${esc(w.q)}　外した人は軽い罰</p>
-    <div class="wb-rows">${wbWatchers().map((i) => `<div class="wb-row" style="--mc:${colorOf(i)}"><b>${esc(S.members[i].name)}</b><div><button data-act="wbPick" data-i="${i}" data-v="y" aria-pressed="${w.picks[i] === "y"}">できる</button><button data-act="wbPick" data-i="${i}" data-v="n" aria-pressed="${w.picks[i] === "n"}">できへん</button></div></div>`).join("")}</div>` : "";
-  return `<div class="sheet-back" data-act="wbCancel"><div class="sheet menu wb" role="dialog" aria-label="始める前に" data-stop>
-    <div class="sheet-grip"></div><h2>${w.needSafe ? (g.mode === "voice" ? "叫ぶ前に確認" : g.mode === "tilt" ? "スマホを持つ前に確認" : "振る前に確認") : `${nm}の番の前に`}</h2>
-    ${checks}${bets}
-    <button class="big" data-act="wbGo" ${ready ? "" : "disabled"}>${ready ? "スタート" : "全部チェックしてな"}</button>
-    ${w.hasBet ? `<button class="ghost" data-act="wbSkip" ${ready ? "" : "disabled"}>予想なしで始める</button>` : ""}
-  </div></div>`;
-}
-
 // ---------- ゲームが終わったら「次はこれどう？」 ----------
 // 今の人数に合う短めのゲームを、今と違う種類から2つ（メドレー中は出さへん）
 function nextPicks() {
@@ -5192,7 +5091,6 @@ const HOST_FACE = `<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2"
 // ゲームが始まる時：実況・写真を数え直し、選手入場
 const _newGame0 = newGame;
 newGame = function (mode, again = false) {
-  S.wb = null; // 前のゲームの「番の前の確認」は持ち越さへん
   S.lv = { n: 0, last: -9, lead: -1, clean: new Set() };
   S.photos = [];
   spunGacha = new WeakSet();
@@ -6037,8 +5935,7 @@ function vSheet() {
       <button class="toggle" data-act="sober" role="switch" aria-checked="${S.sober}" aria-pressed="${S.sober}"><span>お酒なし<small>「飲む」罰やお題を出さへん</small></span><b>${S.sober ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="voice" role="switch" aria-checked="${S.voice}" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
       <p class="sheet-sec">まとまりごと</p>
-      ${sgGroup("rule", "遊びのルール", 6, "見てる人の予想・体に触るのなし・パス券・駆け引き・帰る時間・お水タイム", `
-      <button class="toggle" data-act="wbet" role="switch" aria-checked="${S.watchBet}" aria-pressed="${S.watchBet}"><span>見てる人の予想<small>傾け・シェイク・ストップ・ワニの番の前に、見てる人が「できる？できへん？」に賭ける</small></span><b>${S.watchBet ? "ON" : "OFF"}</b></button>
+      ${sgGroup("rule", "遊びのルール", 6, "体に触るのなし・パス券・駆け引き・帰る時間・お水タイム", `
       <button class="toggle" data-act="gamble" role="switch" aria-checked="${S.gamble}" aria-pressed="${S.gamble}"><span>駆け引きあり<small>ハイ&ローで降りられる・ロシアンタップで1回パス</small></span><b>${S.gamble ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="noTouch" role="switch" aria-checked="${S.noTouch}" aria-pressed="${S.noTouch}"><span>体に触るのなし<small>くすぐり・ハグ・肩もみ系の罰と命令を出さへん</small></span><b>${S.noTouch ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="passOn" role="switch" aria-checked="${S.passOn}" aria-pressed="${S.passOn}"><span>パス券<small>1人1回、罰をゆるい罰に替えられる</small></span><b>${S.passOn ? "ON" : "OFF"}</b></button>
@@ -8366,7 +8263,7 @@ function render(anim) {
   drSetup();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); if (mvFrom && S.navFrom === "home" + 2 && key !== "home2" && dir === "fwd") mvExpand("fwd"); else if (mvFrom && key === "home2" && dir === "back") { mvExpand("back"); mvFrom = null; } }
   if (anim && sc === "result") countUpRank(app);
-  overlay.innerHTML = S.wb && onStage ? vWBet() : S.inout && onStage ? vInout() : S.kanji ? vKanji() : S.prl ? vPrl() : S.qr ? vQr() : S.shareSheet ? vShareSheet() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
+  overlay.innerHTML = S.inout && onStage ? vInout() : S.kanji ? vKanji() : S.prl ? vPrl() : S.qr ? vQr() : S.shareSheet ? vShareSheet() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   jaWrap(overlay);
   if (onStage) { fixHeight(); fitCard(); }
   if (anim) { window.scrollTo(0, 0); cue(); if (S.gIntro) { clearTimeout(S.speakT); S.speakT = setTimeout(speakNow, GACHA_T * 1000); } else speakNow(); postFx(); }
@@ -8684,7 +8581,6 @@ function onClick(e) {
     if (S._advT && now - S._advT < 350) return;
     S._advT = now;
   }
-  if (wbIntercept(b)) return;
   // シートの中身をタップしても閉じないように
   if ((b.dataset.act === "sheetClose" || b.dataset.act === "menuClose" || b.dataset.act === "scoresClose" || b.dataset.act === "rulesClose" || b.dataset.act === "bombLookClose" || b.dataset.act === "inoutClose" || b.dataset.act === "kanjiClose" || b.dataset.act === "prlClose" || b.dataset.act === "qrClose") && b.classList.contains("sheet-back") && e.target.closest("[data-stop]")) return;
   SFX.unlock();
@@ -8705,12 +8601,6 @@ function onClick(e) {
     case "home": stopTimer(); S.menu = false; S.ask = null; S.screen = "home"; S.step = 2; render(); break;
     case "again": S.shareMsg = ""; newGame(g.mode, true); break;
     // 上のバーの「結果」：「もう結果出す？」の確認を出す
-    case "wbChk": { const k = +b.dataset.k, c = S.wb.checks; S.wb.checks = c.includes(k) ? c.filter((x) => x !== k) : [...c, k]; render(); break; }
-    case "wbPick": { const w = S.wb; w.picks[i] === b.dataset.v ? delete w.picks[i] : (w.picks[i] = b.dataset.v); render(); break; }
-    case "wbCancel": S.wb = null; render(); break;
-    case "wbGo": wbGo(false); break;
-    case "wbSkip": wbGo(true); break;
-    case "wbet": S.watchBet = !S.watchBet; store.set("nd_wbet", S.watchBet); render(); break;
     case "sgMini": S.sgMini = b.dataset.v === "1"; store.set("nd_sgmini", S.sgMini); sgSetBoard(); render(); break;
     case "medOpen": S.medOpen = !S.medOpen; render(); break;
     case "medStart": medStart(); break;

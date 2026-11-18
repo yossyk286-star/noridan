@@ -436,8 +436,7 @@ function vSheet() {
       <button class="toggle" data-act="sober" role="switch" aria-checked="${S.sober}" aria-pressed="${S.sober}"><span>お酒なし<small>「飲む」罰やお題を出さへん</small></span><b>${S.sober ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="voice" role="switch" aria-checked="${S.voice}" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
       <p class="sheet-sec">まとまりごと</p>
-      ${sgGroup("rule", "遊びのルール", 6, "見てる人の予想・体に触るのなし・パス券・駆け引き・帰る時間・お水タイム", `
-      <button class="toggle" data-act="wbet" role="switch" aria-checked="${S.watchBet}" aria-pressed="${S.watchBet}"><span>見てる人の予想<small>傾け・シェイク・ストップ・ワニの番の前に、見てる人が「できる？できへん？」に賭ける</small></span><b>${S.watchBet ? "ON" : "OFF"}</b></button>
+      ${sgGroup("rule", "遊びのルール", 6, "体に触るのなし・パス券・駆け引き・帰る時間・お水タイム", `
       <button class="toggle" data-act="gamble" role="switch" aria-checked="${S.gamble}" aria-pressed="${S.gamble}"><span>駆け引きあり<small>ハイ&ローで降りられる・ロシアンタップで1回パス</small></span><b>${S.gamble ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="noTouch" role="switch" aria-checked="${S.noTouch}" aria-pressed="${S.noTouch}"><span>体に触るのなし<small>くすぐり・ハグ・肩もみ系の罰と命令を出さへん</small></span><b>${S.noTouch ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="passOn" role="switch" aria-checked="${S.passOn}" aria-pressed="${S.passOn}"><span>パス券<small>1人1回、罰をゆるい罰に替えられる</small></span><b>${S.passOn ? "ON" : "OFF"}</b></button>
@@ -2765,7 +2764,7 @@ function render(anim) {
   drSetup();
   if (moved) { app.classList.remove("enter-fwd", "enter-back"); void app.offsetWidth; app.classList.add("enter-" + dir); window.scrollTo(0, 0); if (mvFrom && S.navFrom === "home" + 2 && key !== "home2" && dir === "fwd") mvExpand("fwd"); else if (mvFrom && key === "home2" && dir === "back") { mvExpand("back"); mvFrom = null; } }
   if (anim && sc === "result") countUpRank(app);
-  overlay.innerHTML = S.wb && onStage ? vWBet() : S.inout && onStage ? vInout() : S.kanji ? vKanji() : S.prl ? vPrl() : S.qr ? vQr() : S.shareSheet ? vShareSheet() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
+  overlay.innerHTML = S.inout && onStage ? vInout() : S.kanji ? vKanji() : S.prl ? vPrl() : S.qr ? vQr() : S.shareSheet ? vShareSheet() : S.sheet ? vSheet() : S.menu ? vMenu() : S.scores && onStage ? vScores() : S.bombLook && onStage ? vBombLook() : S.ruleSheet && onStage ? vRuleSheet() : S.rules ? vRules() : "";
   jaWrap(overlay);
   if (onStage) { fixHeight(); fitCard(); }
   if (anim) { window.scrollTo(0, 0); cue(); if (S.gIntro) { clearTimeout(S.speakT); S.speakT = setTimeout(speakNow, GACHA_T * 1000); } else speakNow(); postFx(); }
@@ -3083,7 +3082,6 @@ function onClick(e) {
     if (S._advT && now - S._advT < 350) return;
     S._advT = now;
   }
-  if (wbIntercept(b)) return;
   // シートの中身をタップしても閉じないように
   if ((b.dataset.act === "sheetClose" || b.dataset.act === "menuClose" || b.dataset.act === "scoresClose" || b.dataset.act === "rulesClose" || b.dataset.act === "bombLookClose" || b.dataset.act === "inoutClose" || b.dataset.act === "kanjiClose" || b.dataset.act === "prlClose" || b.dataset.act === "qrClose") && b.classList.contains("sheet-back") && e.target.closest("[data-stop]")) return;
   SFX.unlock();
@@ -3104,12 +3102,6 @@ function onClick(e) {
     case "home": stopTimer(); S.menu = false; S.ask = null; S.screen = "home"; S.step = 2; render(); break;
     case "again": S.shareMsg = ""; newGame(g.mode, true); break;
     // 上のバーの「結果」：「もう結果出す？」の確認を出す
-    case "wbChk": { const k = +b.dataset.k, c = S.wb.checks; S.wb.checks = c.includes(k) ? c.filter((x) => x !== k) : [...c, k]; render(); break; }
-    case "wbPick": { const w = S.wb; w.picks[i] === b.dataset.v ? delete w.picks[i] : (w.picks[i] = b.dataset.v); render(); break; }
-    case "wbCancel": S.wb = null; render(); break;
-    case "wbGo": wbGo(false); break;
-    case "wbSkip": wbGo(true); break;
-    case "wbet": S.watchBet = !S.watchBet; store.set("nd_wbet", S.watchBet); render(); break;
     case "sgMini": S.sgMini = b.dataset.v === "1"; store.set("nd_sgmini", S.sgMini); sgSetBoard(); render(); break;
     case "medOpen": S.medOpen = !S.medOpen; render(); break;
     case "medStart": medStart(); break;

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { usePreTurn } from '../components/PreTurn';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { CountCard, CountHint, HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { useReady } from '../lib/useReady';
@@ -31,7 +30,6 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
   const n = members.length;
   const lv = LV[level];
   const P = usePenalty(members, level, night, 'whack');
-  const pre = usePreTurn(members, P.bump);
   const scoreRef = useRef<number[]>([]);
   const H = useHold();
   const RV = useReveal();
@@ -127,7 +125,6 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
     clock.stop();
     clear();
     play('timeup');
-    pre.resolve((scoreRef.current[who] ?? 0) >= 8);
     setTurns((t) => t + 1);
     setPhase('turn');
   };
@@ -173,7 +170,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
           <Text style={[s.lim, { color: fg }]}>{SEC}秒</Text>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label="3・2・1でスタート" onPress={() => pre.ask({ who, q: '8点以上取れる？', go: () => ready.run(go) })} />;
+      controls = <BigButton pal={pal} label="3・2・1でスタート" onPress={() => ready.run(go)} />;
       break;
     case 'play':
       card = (
@@ -257,7 +254,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
   return (
     <StageShell
       pal={pal} members={members} pen={P.pen} doer={phase === 'hand' || phase === 'play' ? who : -1} frame={phase === 'intro' ? C.muted : colorOf(who)}
-      rules={HELP.whack.rules} meta={`ワニワニタップ・${LEVEL_LABEL[level]}・${round}回戦`} onEnd={() => finish()} onQuit={() => { clock.stop(); clear(); onQuit(); }} onSettings={onSettings} card={card} controls={<>{controls}{pre.node}</>}
+      rules={HELP.whack.rules} meta={`ワニワニタップ・${LEVEL_LABEL[level]}・${round}回戦`} onEnd={() => finish()} onQuit={() => { clock.stop(); clear(); onQuit(); }} onSettings={onSettings} card={card} controls={controls}
     />
   );
 }

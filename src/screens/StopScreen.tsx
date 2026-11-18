@@ -3,7 +3,6 @@ import type React from 'react';
 import { Animated, ScrollView, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Vibration } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
-import { usePreTurn } from '../components/PreTurn';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { Tap } from '../components/Tap';
@@ -68,7 +67,6 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const [losers, setLosers] = useState<number[]>([]);
   const [exactAny, setExactAny] = useState(false);
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
-  const pre = usePreTurn(members, (ids) => setPen((p) => p.map((v, i) => (ids.includes(i) ? v + 1 : v))));
   const [turns, setTurns] = useState(0);
   const [gacha, setGacha] = useState<GachaItem[]>([]);
   const [pick, setPick] = useState<BatsuPick | null>(null);
@@ -176,7 +174,6 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
     R.el += ((performance.now() - R.prev) / 1000) * R.rate;
     const diff = Math.round((target - R.el) * 100) / 100;
     const r: Res = { v: shown(R.el), diff, over: diff < 0, exact: diff === 0 };
-    pre.resolve(diff >= 0 && diff <= 0.2);
     const nr = res.slice();
     nr[who] = r;
     setRes(nr);
@@ -345,7 +342,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
           <Note fg={fg}>{`${level === 'jigoku' ? '数字が消えたり邪魔が入ったりする。' : ''}行き過ぎたらオーバーでアウト`}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={() => pre.ask({ who, q: '0.2秒以内でピタッと止められる？', go: countdown })} />;
+      controls = <BigButton pal={pal} label="スタート" onPress={() => countdown()} />;
       break;
     case 'count':
       card = (
@@ -447,7 +444,6 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>
-      {pre.node}
       <Frame color={frame} />
       <RulesSheet visible={rules} custom={HELP.stop.rules} onClose={() => setRules(false)} />
       <GameMenu
