@@ -37,12 +37,18 @@ export default function KingScreen({ members, level, night, onQuit, onSettings, 
   const [refuse, setRefuse] = useState<number[]>([]);
   const [turns, setTurns] = useState(0);
   const kings = useRef<number[]>(Array(n).fill(0)).current;
+  const recent = useRef<number[]>([]);
   useEffect(() => {
     if (skipIntro) deal();
   }, []);
 
   const deal = () => {
-    const order = shuffle(members.map((_, i) => i));
+    // 同じ人が王様を続けへんように、直近2回（3人なら1回）の王様は外す
+    const skip = n >= 4 ? 2 : n === 3 ? 1 : 0;
+    let order = shuffle(members.map((_, i) => i));
+    const fresh = order.filter((i) => !recent.current.slice(-skip).includes(i));
+    if (skip && fresh.length) order = [fresh[0], ...order.filter((i) => i !== fresh[0])];
+    recent.current = [...recent.current, order[0]].slice(-3);
     const nu = Array(n).fill(0);
     order.slice(1).forEach((i, j) => (nu[i] = j + 1));
     setRound((r) => r + 1);
@@ -67,7 +73,9 @@ export default function KingScreen({ members, level, night, onQuit, onSettings, 
       }
     }
     const two = pool.length >= 2;
-    const tpl = pick(okList(K[kind].filter((t) => two || !t.includes('{B}'))));
+    // 地獄度が「地獄」の時は、ちょっと恥ずかしい命令も混ざる（触らへん系だけ）
+    const hot = kind === 'normal' && level === 'jigoku' && Math.random() < 0.45;
+    const tpl = pick(okList(((hot ? (K as unknown as Record<string, string[]>).jigoku : K[kind]) as string[]).filter((t) => two || !t.includes('{B}'))));
     const a = pick(pool);
     const b = two ? (kind === 'shinya' ? pick(sexPrefer(members, a, pool.filter((i) => i !== a))) : pick(pool.filter((i) => i !== a))) : -1;
     setCmd({ tpl, kind, A: nu[a], B: b >= 0 ? nu[b] : null });
@@ -198,7 +206,7 @@ const s = StyleSheet.create({
   bigSub: { fontSize: 22 },
   call: { fontFamily: F.display, fontSize: 40, lineHeight: 52, textAlign: 'center' },
   king: { fontSize: 22, fontWeight: '900', textAlign: 'center' },
-  small: { fontSize: 12, fontWeight: '800', opacity: 0.6 },
+  small: { fontSize: 13, fontWeight: '800', opacity: 0.6 },
   cmd: { fontFamily: F.display, fontSize: 24, lineHeight: 34, textAlign: 'center' },
   row: { flexDirection: 'row', gap: 8 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, borderLeftWidth: 6, backgroundColor: 'rgba(136,136,136,0.08)' },

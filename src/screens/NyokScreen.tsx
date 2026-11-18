@@ -40,11 +40,17 @@ export default function NyokScreen({ members, level, night, onQuit, onSettings, 
   const [losers, setLosers] = useState<number[]>([]);
   const [why, setWhy] = useState('');
   const live = useRef({ phase: 'intro' as Phase, taps: [] as TapRec[], heat: [] as number[] });
+  const groups = useRef<number[][]>([]);
   const endT = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const newRound = (r: number) => {
     const all = members.map((_, i) => i);
-    const h = n <= MAX ? all : shuffle(all).slice(0, MAX).sort((a, b) => a - b);
+    // 9人以上は自動で2組に分けて、1回戦ごとに組を交代
+    if (n > MAX && groups.current.flat().length !== n) {
+      const sh = shuffle(all), half = Math.ceil(n / 2);
+      groups.current = [sh.slice(0, half).sort((a, b) => a - b), sh.slice(half).sort((a, b) => a - b)];
+    }
+    const h = n <= MAX ? all : groups.current[(r - 1) % 2];
     if (endT.current) clearTimeout(endT.current);
     live.current = { phase: 'hand', taps: [], heat: h };
     setRound(r);
@@ -137,7 +143,7 @@ export default function NyokScreen({ members, level, night, onQuit, onSettings, 
     case 'intro':
       card = (
         <IntroCard pal={pal} mode="nyok" tag={`${n}人`}>
-          <LevelBox pal={pal} text={`0.6秒以内に押したら「かぶり」。${n > MAX ? `${MAX}人ずつ遊ぶ（毎回入れ替え）` : '全員で遊ぶ'}`} />
+          <LevelBox pal={pal} text={`0.6秒以内に押したら「かぶり」。${n > MAX ? `自動で2組に分けて交代で遊ぶ` : '全員で遊ぶ'}`} />
         </IntroCard>
       );
       controls = <BigButton onBack={onQuit} pal={pal} label="スタート" onPress={() => newRound(1)} />;
@@ -199,5 +205,5 @@ const s = StyleSheet.create({
   count: { position: 'absolute', alignSelf: 'center', top: '45%', fontFamily: F.display, fontSize: 40, color: '#fff', textShadowColor: 'rgba(0,0,0,0.35)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 },
   why: { fontFamily: F.display, fontSize: 48, color: '#ff3b3b', marginBottom: 8 },
   lose: { color: '#f7f3ea', fontFamily: F.display, fontSize: 22, marginTop: 10 },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
 });

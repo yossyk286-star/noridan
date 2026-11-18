@@ -101,7 +101,7 @@ export default function DoubtScreen({ members, level, night, onQuit, onSettings,
         <ModeCard pal={pal} center>
           <Prog fg={fg}>{`第${round}回戦・${k + 1}/${n}人目`}</Prog>
           <HandWho members={members} i={who} sub="が話す" fg={fg} />
-          <Note fg={fg}>{`${members[who].name}だけ長押しで見て。ほかの人は見たらアカン`}</Note>
+          <Note fg={fg}>{`${members[who].name}だけ長押しで見て。ほかの人は見たらアカン\n話を考える準備は15秒の目安`}</Note>
           <Peek fg={fg}>
             <Text style={[s.label, { color: fg }]}>お題</Text>
             <Text style={[s.topic, { color: fg }]}>{topic}</Text>
@@ -181,7 +181,7 @@ export default function DoubtScreen({ members, level, night, onQuit, onSettings,
 }
 
 const s = StyleSheet.create({
-  label: { fontSize: 12, fontWeight: '800', opacity: 0.6, textAlign: 'center' },
+  label: { fontSize: 13, fontWeight: '800', opacity: 0.6, textAlign: 'center' },
   topic: { fontFamily: F.display, fontSize: 26, lineHeight: 34, textAlign: 'center' },
   mode: { alignSelf: 'center', marginTop: 8, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, overflow: 'hidden', color: '#fff', fontSize: 18, fontWeight: '900' },
   lead: { fontFamily: F.display, fontSize: 26, lineHeight: 34, textAlign: 'center' },

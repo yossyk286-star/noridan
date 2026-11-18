@@ -168,7 +168,7 @@ export default function TickleScreen({ members, level, night, onQuit, onSettings
 }
 
 const s = StyleSheet.create({
-  label: { fontSize: 12, fontWeight: '800', color: '#fff', opacity: 0.6 },
+  label: { fontSize: 13, fontWeight: '800', color: '#fff', opacity: 0.6 },
   by: { fontSize: 22, fontWeight: '900', color: '#fff' },
   part: { fontFamily: F.display, fontSize: 30, lineHeight: 38, color: C.deep, textShadowColor: C.deep, textShadowRadius: 10 },
   count: { fontFamily: F.display, fontSize: 130, lineHeight: 140, color: '#fff' },

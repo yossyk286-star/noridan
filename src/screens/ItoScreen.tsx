@@ -346,7 +346,7 @@ const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
   title: { fontFamily: F.display, fontSize: 22 },
   how: { fontSize: 16, fontWeight: '700', lineHeight: 24 },
-  small: { fontSize: 12, fontWeight: '700', opacity: 0.7, lineHeight: 18 },
+  small: { fontSize: 13, fontWeight: '700', opacity: 0.7, lineHeight: 18 },
   lvBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, gap: 2 },
   lvText: { fontSize: 14, fontWeight: '900' },
   num: { fontFamily: F.display, fontSize: 120, lineHeight: 132 },
@@ -366,6 +366,6 @@ const s = StyleSheet.create({
   verdictBad: { backgroundColor: 'rgba(255,59,59,0.14)', color: '#ff3b3b' },
   modeBtn: { flex: 1, paddingVertical: 10, borderRadius: 14, borderWidth: 2, alignItems: 'center' },
   modeBtnT: { fontWeight: '900', fontSize: 17 },
-  modeBtnS: { fontWeight: '700', fontSize: 11, opacity: 0.75, marginTop: 2 },
+  modeBtnS: { fontWeight: '700', fontSize: 13, opacity: 0.75, marginTop: 2 },
   verdictGood: { backgroundColor: 'rgba(60,180,110,0.18)', color: '#2fbf6f' },
 });

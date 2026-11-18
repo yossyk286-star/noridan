@@ -5,7 +5,8 @@ import { Haptics } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
-import { HandWho, IntroCard, Lead, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
+import { HandWho, IntroCard, Lead, LevelBox, ModeCard, Note, Outline, Prog } from '../components/ModeParts';
+import { usePreTurn } from '../components/PreTurn';
 import { HELP } from '../lib/help';
 import { useHold } from '../components/Reveal';
 import GameMenu from '../components/GameMenu';
@@ -72,6 +73,10 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   const [manual, setManual] = useState(false);
   const [sensor, setSensor] = useState<'unknown' | 'ok' | 'none'>('unknown');
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
+  const pre = usePreTurn(members, (ids) => setPen((p) => p.map((v, i) => (ids.includes(i) ? v + 1 : v))));
+  const practice = useRef(false); // 0°合わせの練習（罰なし・5秒）
+  const [practiceMsg, setPracticeMsg] = useState('');
+  const secNow = () => (practice.current ? 5 : SEC);
   const [tries, setTries] = useState(0);
   const [gacha, setGacha] = useState<GachaItem[]>([]);
   const stats = useRef<Stats>(newStats(n)).current;
@@ -169,13 +174,13 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     base.current = live ? latest.current : null;
     startAt.current = Date.now();
     peakRef.current = 0;
-    setLeft(SEC);
-    lastSec.current = SEC;
+    setLeft(secNow());
+    lastSec.current = secNow();
     setPhase('play');
     phaseRef.current = 'play';
     play('coin');
     const tick = () => {
-      const ms = SEC * 1000 - (Date.now() - startAt.current);
+      const ms = secNow() * 1000 - (Date.now() - startAt.current);
       if (phaseRef.current !== 'play') return;
       if (ms <= 0) return safe();
       setLeft(ms / 1000);
@@ -196,8 +201,19 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
     setPeak(peakRef.current);
     setTries((t) => t + 1);
   };
+  /** 練習が終わった：数えへんで準備の画面に戻る */
+  const endPractice = (wasOut: boolean) => {
+    practice.current = false;
+    phaseRef.current = 'hand';
+    clear();
+    setPracticeMsg(wasOut ? '練習はここまで。これくらいで傾いたらアウトやで' : 'ええ感じ！ほな本番いこか');
+    setPhase('hand');
+    play(wasOut ? 'pop' : 'coin');
+  };
   const out = () => {
     if (phaseRef.current !== 'play') return;
+    if (practice.current) return endPractice(true);
+    pre.resolve(false);
     phaseRef.current = 'out';
     clear();
     setOutSec((Date.now() - startAt.current) / 1000);
@@ -208,6 +224,8 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
   };
   const safe = () => {
     if (phaseRef.current !== 'play') return;
+    if (practice.current) return endPractice(false);
+    pre.resolve(true);
     phaseRef.current = 'safe';
     clear();
     record(!base.current);
@@ -315,7 +333,13 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
           </ModeCard>
         )
       );
-      controls = <BigButton pal={pal} label="準備OK → カウントダウン" onPress={countdown} />;
+      controls = (
+        <View style={{ gap: 10 }}>
+          <BigButton pal={pal} label="準備OK → カウントダウン" onPress={() => { practice.current = false; pre.ask({ who, exclude: mate != null ? [mate] : [], safe: 'tilt', q: '10秒キープできる？', go: countdown }); }} />
+          {tries === 0 && !pair && <Outline label="0°合わせの練習（罰なし・5秒）" fg={pal.fg} onPress={() => { practice.current = true; setPracticeMsg(''); countdown(); }} />}
+          {!!practiceMsg && <Text style={{ color: pal.fg, fontSize: 14, fontWeight: '800', textAlign: 'center' }}>{practiceMsg}</Text>}
+        </View>
+      );
       break;
     case 'count':
       card = (
@@ -430,6 +454,7 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
         {controls}
       </View>
       {heat > 0 && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `rgba(255,30,30,${(heat * heat * 0.22).toFixed(3)})`, zIndex: 9 }]} />}
+      {pre.node}
       <Frame color={frame} />
       {heat > 0 && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderWidth: 3 + 13 * heat, borderColor: frame, opacity: edge ? 0.9 : 1, zIndex: 10 }]} />}
       <RulesSheet visible={rules} custom={HELP.tilt.rules} onClose={() => setRules(false)} />
@@ -451,8 +476,8 @@ export default function TiltScreen({ members, level, night, onQuit, onSettings, 
 
 const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
-  small: { fontSize: 12, fontWeight: '700', opacity: 0.65, lineHeight: 18, textAlign: 'center' },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  small: { fontSize: 13, fontWeight: '700', opacity: 0.65, lineHeight: 18, textAlign: 'center' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   lim: { fontFamily: F.display, fontSize: 44, lineHeight: 50 },
   count: { fontFamily: F.display, fontSize: 130, lineHeight: 140 },
   clock: { width: '100%', alignItems: 'center', gap: 8, paddingTop: 4 },

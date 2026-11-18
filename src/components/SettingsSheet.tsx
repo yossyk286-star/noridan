@@ -4,6 +4,7 @@ import { LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, Te
 import { Icon } from './Icon';
 import { isCalm, Switch, SwipeSheet } from './Motion';
 import { Tap } from './Tap';
+import { getWatchBet, setWatchBet } from '../lib/watchbet';
 import { ALLOW_SHINYA } from '../lib/game';
 import { useSeen } from '../lib/coach';
 import { C, F } from '../theme';
@@ -67,6 +68,7 @@ function Group({ title, count, sub, children }: { title: string; count: number; 
 export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, sober, onSober, noTouch, onNoTouch, passOn, onPass, gamble, onGamble, goHome, onGoHome, water, onWater, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
   const { resetSeen } = useSeen();
   const [privacy, setPrivacy] = useState(false);
+  const [wbet, setWbet] = useState(getWatchBet());
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={s.back} onPress={onClose}>
@@ -88,7 +90,8 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
             <Toggle label="お酒なし" sub="「飲む」罰やお題を出さへん" on={sober} onPress={() => onSober(!sober)} />
             <Toggle label="お題の読み上げ" sub="札が出たら声で読む（爆弾の中身は読まへん）" on={voice} onPress={() => onVoice(!voice)} />
             <Text style={s.sec}>まとまりごと</Text>
-            <Group title="遊びのルール" count={5} sub="体に触るのなし・パス券・駆け引き・帰る時間・お水タイム">
+            <Group title="遊びのルール" count={6} sub="見てる人の予想・体に触るのなし・パス券・駆け引き・帰る時間・お水タイム">
+              <Toggle label="見てる人の予想" sub="傾け・シェイク・ストップ・ワニの番の前に、見てる人が「できる？できへん？」に賭ける" on={wbet} onPress={() => { setWbet(!wbet); setWatchBet(!wbet); }} />
               <Toggle label="駆け引きあり" sub="ハイ&ローで降りられる・ロシアンタップで1回パス" on={gamble} onPress={() => onGamble(!gamble)} />
               <Toggle label="体に触るのなし" sub="くすぐり・ハグ・肩もみ系の罰と命令を出さへん" on={noTouch} onPress={() => onNoTouch(!noTouch)} />
               <Toggle label="パス券" sub="1人1回、罰をゆるい罰に替えられる" on={passOn} onPress={() => onPass(!passOn)} />
@@ -216,8 +219,8 @@ function Toggle({ label, sub, on, onPress }: { label: string; sub: string; on: b
 const s = StyleSheet.create({
   grp: { borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.05)' },
   grpHead: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
-  grpCount: { color: C.muted, fontSize: 12, fontWeight: '800' },
-  sec: { color: C.paper, opacity: 0.6, fontSize: 12, fontWeight: '900', letterSpacing: 1, marginTop: 4 },
+  grpCount: { color: C.muted, fontSize: 13, fontWeight: '800' },
+  sec: { color: C.paper, opacity: 0.6, fontSize: 13, fontWeight: '900', letterSpacing: 1, marginTop: 4 },
   volRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   volLabel: { color: C.muted, fontSize: 13, fontWeight: '800', paddingHorizontal: 4 },
   volBtn: { flex: 1, paddingVertical: 9, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', alignItems: 'center' },
@@ -229,20 +232,20 @@ const s = StyleSheet.create({
   title: { fontFamily: F.display, fontSize: 24, color: C.paper },
   toggle: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)' },
   toggleText: { color: C.paper, fontWeight: '900', fontSize: 15 },
-  toggleSub: { color: C.muted, fontSize: 12, fontWeight: '700', marginTop: 2 },
-  state: { color: C.paper, fontWeight: '900', fontSize: 12, paddingVertical: 5, paddingHorizontal: 12, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },
+  toggleSub: { color: C.muted, fontSize: 13, fontWeight: '700', marginTop: 2 },
+  state: { color: C.paper, fontWeight: '900', fontSize: 13, paddingVertical: 5, paddingHorizontal: 12, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },
   stateOn: { backgroundColor: C.yuru, color: C.ink },
   nightBox: { borderWidth: 1, borderColor: C.night, borderRadius: 12, padding: 14, gap: 10 },
-  nightHead: { color: C.night, fontSize: 12, fontWeight: '900', letterSpacing: 3 },
+  nightHead: { color: C.night, fontSize: 13, fontWeight: '900', letterSpacing: 3 },
   nightHeadRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  age: { color: C.ink, backgroundColor: C.night, fontSize: 12, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
-  foot: { color: C.muted, fontSize: 12, fontWeight: '700', textAlign: 'center', textDecorationLine: 'underline' },
+  age: { color: C.ink, backgroundColor: C.night, fontSize: 13, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
+  foot: { color: C.muted, fontSize: 13, fontWeight: '700', textAlign: 'center', textDecorationLine: 'underline' },
   row: { flexDirection: 'row', gap: 8 },
   lv: { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   lvText: { color: C.paper, fontWeight: '900', fontSize: 16 },
-  lvSub: { color: C.paper, fontSize: 12, fontWeight: '700' },
-  note: { color: C.muted, fontSize: 12, lineHeight: 20 },
+  lvSub: { color: C.paper, fontSize: 13, fontWeight: '700' },
+  note: { color: C.muted, fontSize: 13, lineHeight: 20 },
   ghost: { borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 14, padding: 14, alignItems: 'center' },
   ghostText: { color: C.paper, fontWeight: '900' },
-  ghostSub: { color: C.muted, fontSize: 12, fontWeight: '700', marginTop: 2 },
+  ghostSub: { color: C.muted, fontSize: 13, fontWeight: '700', marginTop: 2 },
 });

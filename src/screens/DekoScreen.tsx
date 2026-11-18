@@ -264,7 +264,7 @@ export default function DekoScreen({ members, level, night, onQuit, onSettings, 
 const s = StyleSheet.create({
   lim: { fontFamily: F.display, fontSize: 44, lineHeight: 50 },
   count: { fontFamily: F.display, fontSize: 130, lineHeight: 140 },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   time: { fontSize: 16, fontWeight: '900', opacity: 0.8 },
   cat: { fontSize: 14, fontWeight: '800', opacity: 0.6 },
   word: { fontFamily: F.display, fontSize: 64, lineHeight: 76, textAlign: 'center' },

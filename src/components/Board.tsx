@@ -265,7 +265,7 @@ const s = StyleSheet.create({
   },
   no: { position: 'absolute', left: 5, top: 3, fontSize: 9, fontWeight: '900', opacity: 0.5 },
   label: { fontFamily: F.display, fontSize: 17, textAlign: 'center' },
-  labelSmall: { fontSize: 12, fontWeight: '900', textAlign: 'center' },
+  labelSmall: { fontSize: 13, fontWeight: '900', textAlign: 'center' },
   bubble: {
     position: 'absolute', zIndex: 5, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 14, borderWidth: 3, borderColor: '#141210',
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 8,
@@ -274,10 +274,10 @@ const s = StyleSheet.create({
   token: { position: 'absolute', alignItems: 'center', justifyContent: 'center', borderColor: '#141210' },
   tokText: { color: '#141210', fontWeight: '900' },
   rank: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  rankName: { width: 72, fontSize: 12, fontWeight: '900' },
+  rankName: { width: 72, fontSize: 13, fontWeight: '900' },
   rankBar: { flex: 1, height: 8, borderRadius: 4, overflow: 'hidden' },
   rankFill: { height: '100%', borderRadius: 4 },
-  rankPos: { width: 40, textAlign: 'right', fontSize: 12, fontWeight: '900', fontVariant: ['tabular-nums'] },
+  rankPos: { width: 40, textAlign: 'right', fontSize: 13, fontWeight: '900', fontVariant: ['tabular-nums'] },
   die: {
     width: 84, height: 84, borderRadius: 18, backgroundColor: '#fff', padding: 12, alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 7 }, elevation: 5,

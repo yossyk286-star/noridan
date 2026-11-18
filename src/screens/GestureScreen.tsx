@@ -177,7 +177,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
       );
       controls = (
         <View style={{ gap: 10 }}>
-          <Text style={[s.q, { color: pal.fg }]}>当てたのは？<Text style={{ color: pal.muted, fontSize: 12 }}>　タップで1点</Text></Text>
+          <Text style={[s.q, { color: pal.fg }]}>当てたのは？<Text style={{ color: pal.muted, fontSize: 13 }}>　タップで1点</Text></Text>
           <NameTiles members={members} list={members.map((_, i) => i).filter((i) => i !== actor)} fg={pal.fg} count={(i) => `${score[i]}点`} onPress={hit} />
           <Outline label="パス（次のお題）" fg={pal.fg} onPress={() => { setWord(decks.gesture(level, night, members)); play('tick'); }} style={{ flex: 0 }} />
         </View>
@@ -195,7 +195,7 @@ export default function GestureScreen({ members, level, night, onQuit, onSetting
                 <View style={[s.quota, { backgroundColor: alpha('#888888', 0.12) }]}>
                   <Text style={[s.small, { color: fg, opacity: 0.65 }]}>{`ノルマ ${quota}問`}</Text>
                   <Text style={[s.timer, { color: fg, fontSize: 60, lineHeight: 66 }]}>{got}<Text style={{ fontSize: 16 }}>問正解</Text></Text>
-                  <Text style={[s.quotaRes, { color: ok ? '#1f9d55' : '#ff3b3b' }]}>{ok ? '達成！' : '未達成…'}</Text>
+                  <Text style={[s.quotaRes, { color: ok ? '#1f9d55' : '#ff3b3b' }]}>{ok ? '達成！' : `未達成…あと${Math.max(0, quota - got)}問`}</Text>
                 </View>
                 <Note fg={fg}>{ok ? `当てた数が一番少ない${L.who.map((i) => members[i].name).join('・')}に罰（${L.min}問）` : `ノルマに届かへんかったので、演じた${members[actor].name}に罰`}</Note>
               </>
@@ -271,7 +271,7 @@ const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
   title: { fontFamily: F.display, fontSize: 22 },
   how: { fontSize: 16, fontWeight: '700', lineHeight: 24 },
-  small: { fontSize: 12, fontWeight: '700', opacity: 0.7, lineHeight: 18 },
+  small: { fontSize: 13, fontWeight: '700', opacity: 0.7, lineHeight: 18 },
   lvBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, gap: 2 },
   lvText: { fontSize: 14, fontWeight: '900' },
   sec: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 11, alignItems: 'center' },

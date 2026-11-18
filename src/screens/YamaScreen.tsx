@@ -134,7 +134,7 @@ export default function YamaScreen({ members, level, night, onQuit, onSettings, 
 
 const s = StyleSheet.create({
   topic: { alignSelf: 'stretch', backgroundColor: '#4dd4ff', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 18, alignItems: 'center' },
-  topicSmall: { fontSize: 12, fontWeight: '900', color: '#141210' },
+  topicSmall: { fontSize: 13, fontWeight: '900', color: '#141210' },
   topicText: { fontFamily: F.display, fontSize: 28, color: '#141210', textAlign: 'center' },
   swap: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 999, borderWidth: 1.5, marginTop: 12 },
   swapText: { fontWeight: '900', fontSize: 14 },

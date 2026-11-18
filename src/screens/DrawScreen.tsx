@@ -24,7 +24,7 @@ const W = 300; // 絵の座標（0〜300 の正方形）
 const norm = (t: string) => t.replace(/[\s　・ー〜~、。!！?？]/g, '').toLowerCase();
 
 /** 手描きのキャンバス。線は「M x y L x y …」の文字列で覚える */
-function Canvas({ onChange, clearKey }: { onChange: (paths: string[]) => void; clearKey: number }) {
+function Canvas({ onChange, clearKey, undoKey }: { onChange: (paths: string[]) => void; clearKey: number; undoKey: number }) {
   const [paths, setPaths] = useState<string[]>([]);
   const cur = useRef('');
   const size = useRef(1);
@@ -32,6 +32,15 @@ function Canvas({ onChange, clearKey }: { onChange: (paths: string[]) => void; c
     setPaths([]);
     onChange([]);
   }, [clearKey]);
+  // 「戻す」：最後の1本だけ消す
+  useEffect(() => {
+    if (!undoKey) return;
+    setPaths((p) => {
+      const n = p.slice(0, -1);
+      onChange(n);
+      return n;
+    });
+  }, [undoKey]);
   const pr = useMemo(
     () =>
       PanResponder.create({
@@ -91,6 +100,7 @@ export default function DrawScreen({ members, level, night, onQuit, onSettings, 
   const [turns, setTurns] = useState(0);
   const [guess, setGuess] = useState('');
   const [clearKey, setClearKey] = useState(0);
+  const [undoKey, setUndoKey] = useState(0);
   const paths = useRef<string[]>([]);
   const clock = useCountdown(() => submit('pic', JSON.stringify(paths.current)));
   useEffect(() => {
@@ -176,14 +186,15 @@ export default function DrawScreen({ members, level, night, onQuit, onSettings, 
       card = (
         <ModeCard pal={pal}>
           <Text style={[s.src, { color: fg }]}>{step === 0 ? `お題：${word}` : `「${chain[step - 1].val}」を描いて`}</Text>
-          <Canvas clearKey={clearKey} onChange={(p) => (paths.current = p)} />
+          <Canvas clearKey={clearKey} undoKey={undoKey} onChange={(p) => (paths.current = p)} />
           <Text style={[s.time, { color: fg }]}>{`のこり ${clock.left} 秒`}</Text>
         </ModeCard>
       );
       controls = (
         <View style={s.row}>
-          <Outline label="全部消す" fg={pal.fg} onPress={() => { paths.current = []; setClearKey((x) => x + 1); }} style={{ flex: 1 }} />
-          <View style={{ flex: 1 }}><BigButton pal={pal} label="完成！" onPress={() => submit('pic', JSON.stringify(paths.current))} /></View>
+          <Outline label="戻す" fg={pal.fg} onPress={() => setUndoKey((x) => x + 1)} style={{ flex: 1 }} />
+          <Outline label="全部消す" fg={pal.fg} onPress={() => { paths.current = []; setClearKey((x) => x + 1); }} style={{ flex: 1.1 }} />
+          <View style={{ flex: 1.3 }}><BigButton pal={pal} label="完成！" onPress={() => submit('pic', JSON.stringify(paths.current))} /></View>
         </View>
       );
       break;
@@ -259,7 +270,7 @@ const s = StyleSheet.create({
   time: { fontSize: 15, fontWeight: '900', textAlign: 'center' },
   input: { borderWidth: 2, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14, fontSize: 20, fontWeight: '900', textAlign: 'center' },
   row: { flexDirection: 'row', gap: 8 },
-  by: { fontSize: 12, fontWeight: '900' },
+  by: { fontSize: 13, fontWeight: '900' },
   word: { fontFamily: F.display, fontSize: 26, lineHeight: 34 },
   verdict: { fontFamily: F.display, fontSize: 44, lineHeight: 52 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },

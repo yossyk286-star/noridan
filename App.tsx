@@ -1,6 +1,6 @@
 import { ExpandLayer, shrinkBack } from './src/components/Motion';
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, BackHandler, Easing, Modal, StyleSheet, Text, View } from 'react-native';
 import { Tap } from './src/components/Tap';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -50,7 +50,7 @@ import { PrefsContext } from './src/lib/prefs';
 import { Decks, PASS, setContent } from './src/lib/game';
 import { markFirstOpen, maybeAskReview } from './src/lib/review';
 import { getTally, makeTeams, minsLeft, recordTally, setToastHandler, toast, type Tally } from './src/lib/extras';
-import { InoutSheet, KanjiSheet, LeftResult, QrSheet, RouletteSheet, TallyResult, TeamPick, TeamResult, Toast, ToolButton, tallyText } from './src/components/Extras';
+import { InoutSheet, KanjiSheet, LeftResult, QrSheet, RouletteSheet, TallyResult, TeamCols, TeamResult, Toast, tallyText } from './src/components/Extras';
 import { MODE_TITLE } from './src/components/ModeParts';
 import { speak, stopSpeak } from './src/lib/speech';
 import type { Stats } from './src/lib/titles';
@@ -81,8 +81,8 @@ type Screen = { name: 'home'; step?: 1 | 2 } | { name: Mode; key: number; again?
 
 export default function App() {
   useFonts({ DelaGothicOne_400Regular }); // 読み込み前はシステムフォントで表示
-  const [members, setMembers] = useState<Member[]>(EXAMPLE);
-  const [isExample, setIsExample] = useState(true);
+  const [members, setMembers] = useState<Member[]>([]); // 最初は空。例の3人は「例で試す」を押した時だけ
+  const [isExample, setIsExample] = useState(false);
   const [level, setLevel] = useState<Level>('futsu');
   const [night, setNight] = useState<Night>(false);
   const [sound, setSound] = useState(true);
@@ -124,6 +124,7 @@ export default function App() {
   const teamDecks = useRef(new Decks()).current;
   const live = useLive();
   /** 選手入場（ゲームの最初だけ） */
+  const entSeen = useRef('');
   const [entrance, setEntrance] = useState<{ mode: Mode; k: number } | null>(null);
 
   useEffect(() => {
@@ -350,6 +351,7 @@ export default function App() {
 
   const start = (mode: Mode, again = false) => {
     if (screen.name === 'home') rememberGroup();
+    const fromMed = medKeep.current;
     if (medKeep.current) medKeep.current = false;
     else setMedley(null); // 普通に始めた時はメドレーをやめる
     setCarry(null); // 普通に始めた時は引き継ぎなし
@@ -359,7 +361,11 @@ export default function App() {
     cancelFx();
     PASS.used.clear(); // パス券はゲームごとに1人1枚
     setScreen({ name: mode, key: Date.now(), again });
-    setEntrance(!again && liveNow().entrance && members.length >= 2 ? { mode, k: Date.now() } : null);
+    // 選手入場は、その日そのメンバーでの最初のゲームだけ（2ゲーム目から・メドレー中は出さへん）
+    const entKey = new Date().toDateString() + '|' + members.map((m) => m.name).join(',');
+    const showEnt = !again && !fromMed && entSeen.current !== entKey;
+    if (showEnt) entSeen.current = entKey;
+    setEntrance(showEnt && liveNow().entrance && members.length >= 2 ? { mode, k: Date.now() } : null);
   };
   /** おまかせメドレー：人数に合う長くないゲームを、種類が続かんように並べる */
   const startMedley = () => {
@@ -406,6 +412,19 @@ export default function App() {
     setScreen({ name: 'home', step: 2 });
   };
 
+  // Androidの「戻る」：遊び中は確認を出して、ゲームを守る（ホームでは今まで通り）
+  const [backAsk, setBackAsk] = useState(false);
+  const stageRef = useRef(false);
+  stageRef.current = isStage(screen.name);
+  useEffect(() => {
+    const h = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!stageRef.current) return false;
+      setBackAsk(true);
+      return true;
+    });
+    return () => h.remove();
+  }, []);
+
   // 画面が変わったらスッとスライドして入ってくる（進む時は右から、戻る時は左から）
   const ORDER = (name: string) => (name === 'home' ? 0 : name === 'result' ? 3 : 2);
   const slide = useRef(new Animated.Value(1)).current;
@@ -442,6 +461,10 @@ export default function App() {
               night={night}
               initialStep={members.length >= 2 ? screen.step : 1}
               onMembers={updateMembers}
+              onExample={() => { setMembers(EXAMPLE); setIsExample(true); }}
+              onKanji={() => setKanji(true)}
+              onRoulette={() => setRoul(true)}
+              team={{ on: teamOn, onToggle: updateTeam }}
               onLevel={updateLevel}
               onNight={updateNight}
               onStart={start}
@@ -452,13 +475,7 @@ export default function App() {
               groups={groups}
               nightAskReq={nightAskReq}
               lastNote={tallyText(tally, (m) => MODE_TITLE[m as Mode] ?? '')}
-              tools={
-                <>
-                  <ToolButton label="幹事の道具" sub="席替え・役割・順番・二次会" onPress={() => setKanji(true)} />
-                  <ToolButton icon="target" label="誰が罰か決める" sub="ルーレットで1人だけ選ぶ" onPress={() => setRoul(true)} />
-                  <TeamPick members={members} on={teamOn} teams={teams} onToggle={updateTeam} onShuffle={() => setTeams(makeTeams(members.length))} />
-                </>
-              }
+              tools={teamOn && members.length >= 4 ? <TeamCols members={members} teams={teams} onShuffle={() => setTeams(makeTeams(members.length))} /> : null}
             />
           )}
           {screen.name !== 'home' && screen.name !== 'result' && (() => {
@@ -479,6 +496,7 @@ export default function App() {
               onHome={home}
               onMembers={() => { stopSpeak(); setScreen({ name: 'home', step: 1 }); }}
               onAgain={() => start(screen.mode, true)}
+              onStart={medley ? undefined : (m) => start(m)}
               extraTop={
                 <>
                   <Tap style={s.qrBtn} onPress={() => setQrOpen(true)}>
@@ -536,6 +554,16 @@ export default function App() {
         <KanjiSheet visible={kanji} members={members} onClose={() => setKanji(false)} />
         <RouletteSheet visible={roul} members={members} onClose={() => setRoul(false)} />
         <QrSheet visible={qrOpen} onClose={() => setQrOpen(false)} />
+        <Modal visible={backAsk && stageRef.current} transparent animationType="fade" onRequestClose={() => setBackAsk(false)}>
+          <View style={s.askBack}>
+            <View style={s.askBox}>
+              <Text style={s.askTitle}>ゲームをやめる？</Text>
+              <Text style={s.askSub}>罰の記録は消える</Text>
+              <Tap style={s.askKeep} onPress={() => setBackAsk(false)}><Text style={s.askKeepText}>続ける</Text></Tap>
+              <Tap style={s.askQuit} onPress={() => { setBackAsk(false); home(); }}><Text style={s.askQuitText}>やめてホームへ</Text></Tap>
+            </View>
+          </View>
+        </Modal>
         <Toast text={toastMsg.text} kind={toastMsg.kind} onHide={() => setToastMsg({ text: '', kind: '' })} />
       </SafeAreaView>
       <ExpandLayer />
@@ -548,4 +576,12 @@ const s = StyleSheet.create({
   root: { flex: 1 },
   qrBtn: { borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 14, padding: 14, alignItems: 'center' },
   qrText: { color: '#f7f3ea', fontWeight: '900' },
+  askBack: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  askBox: { width: '100%', maxWidth: 340, backgroundColor: '#211e1a', borderRadius: 20, padding: 20, gap: 10 },
+  askTitle: { color: '#f7f3ea', fontSize: 18, fontWeight: '900', textAlign: 'center' },
+  askSub: { color: 'rgba(247,243,234,0.6)', fontSize: 14, textAlign: 'center', marginBottom: 6 },
+  askKeep: { backgroundColor: '#ffd23f', borderRadius: 14, minHeight: 52, alignItems: 'center', justifyContent: 'center' },
+  askKeepText: { color: '#141210', fontSize: 17, fontWeight: '900' },
+  askQuit: { borderWidth: 1.5, borderColor: 'rgba(247,243,234,0.3)', borderRadius: 14, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  askQuitText: { color: '#f7f3ea', fontSize: 15, fontWeight: '900' },
 });

@@ -84,6 +84,25 @@ export function TeamPick({ members, on, teams, onToggle, onShuffle }: { members:
   );
 }
 
+/** ホームのチーム戦：ONの時だけ、分かれ方を出す（ON/OFFは上の細いボタンで） */
+export function TeamCols({ members, teams, onShuffle }: { members: Member[]; teams: number[]; onShuffle: () => void }) {
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {[0, 1].map((t) => (
+          <View key={t} style={[s.teamCol, { borderColor: TEAM[t].color, backgroundColor: TEAM[t].color + '24' }]}>
+            <Text style={[s.teamHead, { color: TEAM[t].color }]}>{TEAM[t].name}チーム</Text>
+            <Text style={s.teamNames}>{members.filter((_, i) => teams[i] === t).map((m) => m.name).join('　')}</Text>
+          </View>
+        ))}
+      </View>
+      <Tap onPress={onShuffle} style={{ alignSelf: 'flex-end', padding: 4 }}>
+        <Text style={s.link}>チームを組み直す</Text>
+      </Tap>
+    </View>
+  );
+}
+
 export function TeamResult({ members, teams, pen, batsu }: { members: Member[]; teams: number[]; pen: number[]; batsu: string }) {
   const sc = teamScore(teams, pen);
   const uneven = sc[0].who.length !== sc[1].who.length;
@@ -439,12 +458,12 @@ const s = StyleSheet.create({
   ghostText: { color: C.paper, fontWeight: '900' },
   big: { backgroundColor: C.paper, borderRadius: 16, padding: 16, alignItems: 'center' },
   bigText: { fontFamily: F.display, fontSize: 18, color: C.ink },
-  link: { color: C.futsu, fontSize: 12, fontWeight: '900' },
-  h2: { color: C.muted, fontSize: 12, fontWeight: '900', marginTop: 18 },
+  link: { color: C.futsu, fontSize: 13, fontWeight: '900' },
+  h2: { color: C.muted, fontSize: 13, fontWeight: '900', marginTop: 18 },
   toggle: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)' },
   toggleText: { color: C.paper, fontWeight: '900', fontSize: 15 },
-  toggleSub: { color: C.muted, fontSize: 12, fontWeight: '700', marginTop: 2 },
-  state: { color: C.paper, fontWeight: '900', fontSize: 12, paddingVertical: 5, paddingHorizontal: 12, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },
+  toggleSub: { color: C.muted, fontSize: 13, fontWeight: '700', marginTop: 2 },
+  state: { color: C.paper, fontWeight: '900', fontSize: 13, paddingVertical: 5, paddingHorizontal: 12, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },
   stateOn: { backgroundColor: C.yuru, color: C.ink },
   teamCol: { flex: 1, borderWidth: 2, borderRadius: 14, padding: 10, gap: 4 },
   teamHead: { fontSize: 13, fontWeight: '900' },
@@ -453,22 +472,22 @@ const s = StyleSheet.create({
   tv: { flex: 1, borderWidth: 3, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center', gap: 2 },
   tvHead: { fontWeight: '900', fontSize: 13 },
   tvNum: { fontFamily: F.display, fontSize: 44, color: C.paper, lineHeight: 52 },
-  tvNames: { color: C.muted, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  tvNames: { color: C.muted, fontSize: 13, fontWeight: '700', textAlign: 'center' },
   tvRes: { color: C.paper, fontWeight: '900', paddingHorizontal: 12, paddingVertical: 2, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden', marginTop: 4 },
   teamBatsu: { padding: 12, borderRadius: 14, backgroundColor: '#1a0606', borderWidth: 2, borderColor: '#e8202a', gap: 2 },
-  teamBatsuHead: { color: '#ff6b62', fontSize: 12, fontWeight: '900' },
+  teamBatsuHead: { color: '#ff6b62', fontSize: 13, fontWeight: '900' },
   teamBatsuText: { color: C.paper, fontWeight: '900', fontSize: 15, lineHeight: 22 },
   input: { flex: 1, fontSize: 16, padding: 13, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', backgroundColor: 'rgba(247,243,234,0.06)', color: C.paper },
   addBtn: { width: 50, borderRadius: 12, backgroundColor: C.yuru, alignItems: 'center', justifyContent: 'center' },
   inRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 8, paddingRight: 8, paddingLeft: 14, borderRadius: 12, backgroundColor: 'rgba(247,243,234,0.06)', borderLeftWidth: 6 },
   inName: { flex: 1, color: C.paper, fontWeight: '900', fontSize: 15 },
-  inPen: { color: C.muted, fontSize: 12 },
+  inPen: { color: C.muted, fontSize: 13 },
   smBtn: { borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12 },
   smText: { color: C.paper, fontWeight: '900', fontSize: 13 },
   tallyN: { fontFamily: F.display, fontSize: 18, color: C.paper },
   tool: { padding: 12, borderRadius: 16, borderWidth: 1.5, borderColor: 'rgba(247,243,234,0.16)', gap: 6 },
   toolHead: { color: C.paper, fontWeight: '900', fontSize: 14 },
-  toolSub: { color: C.muted, fontSize: 12, fontWeight: '700' },
+  toolSub: { color: C.muted, fontSize: 13, fontWeight: '700' },
   step: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(247,243,234,0.1)', alignItems: 'center', justifyContent: 'center' },
   stepText: { color: C.paper, fontSize: 20, fontWeight: '900' },
   time: { flex: 1, textAlign: 'center', fontFamily: F.display, fontSize: 24, color: C.paper },
@@ -477,7 +496,7 @@ const s = StyleSheet.create({
   toastText: { color: C.ink, fontWeight: '900', fontSize: 15, lineHeight: 22 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingLeft: 4, paddingRight: 10, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.08)', maxWidth: '100%' },
   chipDot: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  chipIni: { color: C.ink, fontWeight: '900', fontSize: 12 },
+  chipIni: { color: C.ink, fontWeight: '900', fontSize: 13 },
   chipName: { color: C.paper, fontWeight: '900', fontSize: 14, flexShrink: 1 },
   table: { width: 44, borderRadius: 12, backgroundColor: '#5a3d27' },
   seg: { flex: 1, paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', alignItems: 'center' },

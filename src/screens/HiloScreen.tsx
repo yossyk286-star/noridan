@@ -214,5 +214,5 @@ const s = StyleSheet.create({
   dot: { width: 14, height: 14, borderRadius: 7 },
   stop: { minHeight: 54, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(247,243,234,0.2)', alignItems: 'center', justifyContent: 'center', padding: 10 },
   stopText: { fontWeight: '900', fontSize: 16 },
-  stopSub: { fontWeight: '700', fontSize: 12, marginTop: 2 },
+  stopSub: { fontWeight: '700', fontSize: 13, marginTop: 2 },
 });

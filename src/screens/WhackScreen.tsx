@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
+import { usePreTurn } from '../components/PreTurn';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { CountCard, CountHint, HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { useReady } from '../lib/useReady';
@@ -30,6 +31,8 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
   const n = members.length;
   const lv = LV[level];
   const P = usePenalty(members, level, night, 'whack');
+  const pre = usePreTurn(members, P.bump);
+  const scoreRef = useRef<number[]>([]);
   const H = useHold();
   const RV = useReveal();
   const [phase, setPhase] = useState<Phase>('intro');
@@ -117,12 +120,14 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
     play('pop');
     Haptics.selectionAsync().catch(() => {});
   };
+  scoreRef.current = score;
   const end = () => {
     if (phaseRef.current !== 'play') return;
     phaseRef.current = 'turn';
     clock.stop();
     clear();
     play('timeup');
+    pre.resolve((scoreRef.current[who] ?? 0) >= 8);
     setTurns((t) => t + 1);
     setPhase('turn');
   };
@@ -168,7 +173,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
           <Text style={[s.lim, { color: fg }]}>{SEC}秒</Text>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label="3・2・1でスタート" onPress={() => ready.run(go)} />;
+      controls = <BigButton pal={pal} label="3・2・1でスタート" onPress={() => pre.ask({ who, q: '8点以上取れる？', go: () => ready.run(go) })} />;
       break;
     case 'play':
       card = (
@@ -252,7 +257,7 @@ export default function WhackScreen({ members, level, night, onQuit, onSettings,
   return (
     <StageShell
       pal={pal} members={members} pen={P.pen} doer={phase === 'hand' || phase === 'play' ? who : -1} frame={phase === 'intro' ? C.muted : colorOf(who)}
-      rules={HELP.whack.rules} meta={`ワニワニタップ・${LEVEL_LABEL[level]}・${round}回戦`} onEnd={() => finish()} onQuit={() => { clock.stop(); clear(); onQuit(); }} onSettings={onSettings} card={card} controls={controls}
+      rules={HELP.whack.rules} meta={`ワニワニタップ・${LEVEL_LABEL[level]}・${round}回戦`} onEnd={() => finish()} onQuit={() => { clock.stop(); clear(); onQuit(); }} onSettings={onSettings} card={card} controls={<>{controls}{pre.node}</>}
     />
   );
 }
@@ -261,7 +266,7 @@ const s = StyleSheet.create({
   lim: { fontFamily: F.display, fontSize: 44, lineHeight: 50 },
   hud: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   pill: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 9, borderRadius: 16, backgroundColor: '#141210', overflow: 'hidden' },
-  lbl: { color: 'rgba(247,243,234,0.65)', fontSize: 12, fontWeight: '900', marginBottom: 3, maxWidth: 64 },
+  lbl: { color: 'rgba(247,243,234,0.65)', fontSize: 13, fontWeight: '900', marginBottom: 3, maxWidth: 64 },
   pillNum: { color: '#f7f3ea', fontFamily: F.display, fontSize: 26, lineHeight: 28 },
   tbar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 4, backgroundColor: 'rgba(255,255,255,0.12)' },
   tbarIn: { height: 4 },
@@ -272,7 +277,7 @@ const s = StyleSheet.create({
   face: { position: 'absolute', left: '12%', right: '12%', top: '4%', bottom: '17%' },
   lip: { position: 'absolute', left: '6%', right: '6%', bottom: '2%', height: '16%', borderBottomLeftRadius: 999, borderBottomRightRadius: 999, backgroundColor: '#3aa0e0', borderTopWidth: 2, borderTopColor: 'rgba(255,255,255,0.55)' },
   skull: { width: '74%', height: '74%', marginBottom: '8%', alignItems: 'center', justifyContent: 'center' },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   verdict: { fontFamily: F.display, fontSize: 44, lineHeight: 52 },
   num: { fontFamily: F.display, fontSize: 84, lineHeight: 92 },
   unit: { fontSize: 20, opacity: 0.6 },

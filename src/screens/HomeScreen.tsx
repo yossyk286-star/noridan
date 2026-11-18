@@ -21,6 +21,8 @@ type Props = {
   level: Level;
   night: Night;
   onMembers: (m: Member[]) => void;
+  /** 例の3人で試す（最初は空） */
+  onExample?: () => void;
   onLevel: (l: Level) => void;
   onNight: (n: Night) => void;
   onStart: (m: Mode) => void;
@@ -33,6 +35,10 @@ type Props = {
   nightAskReq?: number;
   /** モード選択の上に出す道具（帰る時間・幹事の道具・チーム戦） */
   tools?: React.ReactNode;
+  /** 上の細いボタン列（幹事の道具・誰が罰・チーム戦） */
+  onKanji?: () => void;
+  onRoulette?: () => void;
+  team?: { on: boolean; onToggle: () => void };
   /** 「前回のメンバー」に出すひとこと（前回の戦犯・通算） */
   lastNote?: string;
   /** おまかせメドレー：ゲームの数と、始める */
@@ -107,7 +113,7 @@ function Gear({ onPress }: { onPress: () => void }) {
   );
 }
 
-function StepMembers({ members, isExample, night, groups, restored, onMembers, onSettings, onNext, lastNote }: Props & { restored: boolean; onNext: () => void }) {
+function StepMembers({ members, isExample, night, groups, restored, onExample, onMembers, onSettings, onNext, lastNote }: Props & { restored: boolean; onNext: () => void }) {
   const [name, setName] = useState('');
   const input = useRef<TextInput>(null);
   const [addMsg, setAddMsg] = useState('');
@@ -180,11 +186,15 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
 
         <View style={s.memHead}>
           <StepHead title="メンバー" sub={`${members.length}人`} />
-          {isExample && (
-            <Tap onPress={() => onMembers([])} hitSlop={8}>
+          {isExample ? (
+            <Tap onPress={() => onMembers([])}>
               <Text style={s.textBtn}>例を全部消す</Text>
             </Tap>
-          )}
+          ) : !members.length && onExample ? (
+            <Tap onPress={onExample}>
+              <Text style={s.textBtn}>例の3人で試す</Text>
+            </Tap>
+          ) : null}
         </View>
         <View style={s.row}>
           <TextInput
@@ -193,7 +203,7 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
             value={name}
             onChangeText={(t) => { setName(t); if (addMsg) setAddMsg(""); }}
             maxLength={10}
-            placeholder="名前を入れて Enter"
+            placeholder={members.length ? '名前を入れて Enter' : '名前を入れてな'}
             placeholderTextColor={C.muted}
             returnKeyType="done"
             blurOnSubmit={false}
@@ -265,8 +275,19 @@ function StepMembers({ members, isExample, night, groups, restored, onMembers, o
   );
 }
 
-function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings, onBack, onAskDeep, tools, medN, onMedN, onMedley }: Props & { onBack: () => void; onAskDeep: () => void }) {
+function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings, onBack, onAskDeep, tools, medN, onMedN, onMedley, onKanji, onRoulette, team }: Props & { onBack: () => void; onAskDeep: () => void }) {
+  const [medOpen, setMedOpen] = useState(false);
   const hero = (() => {
+    // 人数で出し分け：2〜3人は傾け・ハイロー、6人以上はウルフ・投票（深夜は時間のおすすめを優先）
+    const n = members.length;
+    if (!(todNow()?.k === 'late' && !night)) {
+      const pair: Mode[] | null = n <= 3 ? ['tilt', 'hilo'] : n >= 6 ? ['wolf', 'vote'] : null;
+      if (pair) {
+        const m = pair[new Date().getDate() % 2];
+        const e = MODE_LIST.find((x) => x.m === m);
+        if (e && !(e.min && n < e.min)) return { m, label: `${n}人のおすすめ` };
+      }
+    }
     const t = night ? null : todNow();
     const e = t && t.hero !== 'odai' ? MODE_LIST.find((x) => x.m === t.hero) : null;
     if (!t || !e || (e.min && members.length < e.min)) return { m: 'odai' as Mode, label: '迷ったらこれ' };
@@ -290,7 +311,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
       </View>
 
       {/* 地獄度：細い切り替えスイッチ（お題・罰の攻め具合） */}
-      <Text style={s.lvNote}>地獄度：お題と罰のキツさ</Text>
+      <Text style={s.lvNote}>地獄度：お題と罰のキツさ<Text style={{ color: C.paper, fontWeight: '700' }}>{`　${LEVEL_SUB[level]}`}</Text></Text>
       <View style={s.seg} accessibilityLabel="地獄度（お題・罰の攻め具合）">
         {LEVELS.map((l) => {
           const on = level === l;
@@ -303,13 +324,38 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
               style={[s.segBtn, on && { backgroundColor: look.bg }, on && l === 'jigoku' && { borderWidth: 2, borderColor: C.blood }]}
             >
               <Text style={[s.segText, on && { color: look.fg }]}>{LEVEL_LABEL[l]}</Text>
-              <Text style={[s.segSub, on && { color: look.fg }]}>{LEVEL_SUB[l]}</Text>
             </Tap>
           );
         })}
       </View>
 
-      {onMedley && (
+      {/* 迷ったらこれ（夜は時間でおすすめが変わる） */}
+      <View ref={heroRef} collapsable={false}><Tap style={s.hero} onPress={() => go(heroRef, C.yuru, 22, () => onStart(hero.m))} accessibilityLabel={`${hero.label}：${MODE_TITLE[hero.m]}`}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={s.heroHead}>{hero.label}</Text>
+          <Text style={s.heroTitle}>{MODE_TITLE[hero.m]}</Text>
+          <Text style={s.heroDesc}>{HELP[hero.m].desc}</Text>
+        </View>
+        <View style={s.heroGo}>
+          <Icon name="play" color={C.yuru} size={26} />
+        </View>
+      </Tap></View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }} accessibilityLabel="ゲーム以外の道具">
+        {onMedley && (
+          <Tap onPress={() => setMedOpen((v) => !v)} accessibilityState={{ selected: medOpen }} style={[s.quick, medOpen && { backgroundColor: C.paper }]}>
+            <Text style={[s.quickText, medOpen && { color: C.ink }]}>メドレー</Text>
+          </Tap>
+        )}
+        {onKanji && <Tap onPress={onKanji} style={s.quick}><Text style={s.quickText}>幹事の道具</Text></Tap>}
+        {onRoulette && <Tap onPress={onRoulette} style={s.quick}><Text style={s.quickText}>誰が罰？</Text></Tap>}
+        {team && members.length >= 4 && (
+          <Tap onPress={team.onToggle} accessibilityState={{ selected: team.on }} style={[s.quick, team.on && { backgroundColor: C.paper }]}>
+            <Text style={[s.quickText, team.on && { color: C.ink }]}>{team.on ? 'チーム戦 ON' : 'チーム戦'}</Text>
+          </Tap>
+        )}
+      </ScrollView>
+      {onMedley && medOpen && (
         <View style={s.medBox} accessibilityLabel="おまかせメドレー">
           <Text style={s.medTitle}>おまかせメドレー</Text>
           <Text style={s.medSub}>ゲームを選ぶ手間をなくして、次々流す</Text>
@@ -330,18 +376,6 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
         </View>
       )}
       {tools}
-      {/* 迷ったらこれ（夜は時間でおすすめが変わる） */}
-      <View ref={heroRef} collapsable={false}><Tap style={s.hero} onPress={() => go(heroRef, C.yuru, 22, () => onStart(hero.m))} accessibilityLabel={`${hero.label}：${MODE_TITLE[hero.m]}`}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={s.heroHead}>{hero.label}</Text>
-          <Text style={s.heroTitle}>{MODE_TITLE[hero.m]}</Text>
-          <Text style={s.heroDesc}>{HELP[hero.m].desc}</Text>
-        </View>
-        <View style={s.heroGo}>
-          <Icon name="play" color={C.yuru} size={26} />
-        </View>
-      </Tap></View>
-
       <ModeTabs members={members} night={night} onStart={onStart} />
 
       {night && (
@@ -384,7 +418,7 @@ function StepHead({ title, sub }: { title: string; sub?: string }) {
 
 // 遊び方の一覧（タブで分ける）。cat: basic=定番 / phone=スマホで勝負 / talk=話す・ノリ / brain=頭を使う / deep=深夜。min=最低人数、ok=下ネタOKの人の最低人数、t=目安時間
 type Cat = 'basic' | 'phone' | 'talk' | 'brain' | 'deep';
-const MODE_LIST: { m: Mode; ic: IconName; cat: Cat; t: string; min?: number; ok?: number }[] = [
+export const MODE_LIST: { m: Mode; ic: IconName; cat: Cat; t: string; min?: number; ok?: number }[] = [
   { m: 'odai', ic: 'cards', cat: 'basic', t: '好きなだけ' },
   { m: 'king', ic: 'king', cat: 'basic', t: '1回 2分', min: 3 },
   { m: 'sugoroku', ic: 'dice', cat: 'basic', t: '15〜30分' },
@@ -473,6 +507,7 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
                 </View>
                 <View style={{ flex: big ? 1 : undefined, gap: 3 }}>
                   <Text style={[s.tileTitle, big && { fontSize: 20 }]}>{MODE_TITLE[x.m]}</Text>
+                  <Text style={s.tileDesc} numberOfLines={2}>{HELP[x.m].desc}</Text>
                   <Text style={s.tileMeta}>{why || `${x.t}・${x.ok ? `OK${x.ok}人〜` : `${x.min ?? 2}人〜`}`}</Text>
                 </View>
               </Tap>
@@ -485,7 +520,7 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
 }
 
 /** 36 遊び方の種類ごとの色（タイル全体とアイコンの色で見分ける。上に線は付けへん）：定番=黄・スマホ=水色・話す=ピンク・頭=緑・深夜=紫 */
-const CAT_COLOR: Record<Cat, string> = { basic: '#ffd23f', phone: '#4dd4ff', talk: '#ff6fa0', brain: '#7cf06b', deep: C.deep };
+export const CAT_COLOR: Record<Cat, string> = { basic: '#efe6d2', phone: '#4dd4ff', talk: '#ff6fa0', brain: '#7cf06b', deep: C.deep };
 
 function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () => void; onCancel: () => void }) {
   if (kind === 'shinya')
@@ -550,41 +585,44 @@ const s = StyleSheet.create({
   tiles: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
   tileHalf: { width: '48.5%' },
   tileFull: { width: '100%' },
-  tile: { minHeight: 112, padding: 14, borderRadius: 20, justifyContent: 'space-between', gap: 12 },
+  tile: { minHeight: 0, padding: 12, borderRadius: 20, justifyContent: 'space-between', gap: 8 },
   tileBig: { minHeight: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', padding: 16, gap: 14 },
   tileIc: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   tileTitle: { color: C.paper, fontSize: 16, fontWeight: '900', lineHeight: 20 },
-  tileMeta: { color: 'rgba(247,243,234,0.72)', fontSize: 12, fontWeight: '700' },
+  tileDesc: { color: 'rgba(247,243,234,0.88)', fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  quick: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.1)' },
+  quickText: { color: C.paper, fontSize: 14, fontWeight: '900' },
+  tileMeta: { color: 'rgba(247,243,234,0.72)', fontSize: 13, fontWeight: '700' },
   medBox: { gap: 10, padding: 14, borderRadius: 18, backgroundColor: 'rgba(247,243,234,0.07)' },
   medTitle: { color: C.paper, fontFamily: F.display, fontSize: 22 },
-  medSub: { color: C.muted, fontSize: 12, fontWeight: '700', marginTop: -6 },
+  medSub: { color: C.muted, fontSize: 13, fontWeight: '700', marginTop: -6 },
   medN: { flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', alignItems: 'center' },
   medNText: { color: C.paper, fontWeight: '900', fontSize: 15 },
-  tabCount: { fontSize: 12, opacity: 0.6 },
+  tabCount: { fontSize: 13, opacity: 0.6 },
   rowItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.06)' },
   rowIc: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { color: C.paper, fontSize: 16, fontWeight: '900' },
-  rowDesc: { color: C.muted, fontSize: 12.5, marginTop: 2 },
+  rowDesc: { color: C.muted, fontSize: 13.5, marginTop: 2 },
   rowMetaBox: { alignItems: 'flex-end', gap: 4 },
-  rowBadge: { color: C.paper, fontSize: 12, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.14)', overflow: 'hidden' },
-  rowMeta: { color: C.muted, fontSize: 12, fontWeight: '700', textAlign: 'right' },
+  rowBadge: { color: C.paper, fontSize: 13, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.14)', overflow: 'hidden' },
+  rowMeta: { color: C.muted, fontSize: 13, fontWeight: '700', textAlign: 'right' },
   memPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingLeft: 6, paddingRight: 12, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.08)' },
   memPillText: { color: C.paper, fontWeight: '900', fontSize: 14, marginLeft: 4 },
-  memPillSub: { color: C.muted, fontWeight: '700', fontSize: 12, marginLeft: 'auto' },
+  memPillSub: { color: C.muted, fontWeight: '700', fontSize: 13, marginLeft: 'auto' },
   lastNote: { color: '#141210', fontSize: 13, fontWeight: '700', lineHeight: 19 },
   seg: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.08)' },
   segBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   segText: { color: C.muted, fontWeight: '900', fontSize: 15 },
-  lvNote: { color: C.muted, fontWeight: '700', fontSize: 12, opacity: 0.75, marginBottom: -4 },
-  segSub: { color: C.muted, fontWeight: '700', fontSize: 12, opacity: 0.8 },
+  lvNote: { color: C.muted, fontWeight: '700', fontSize: 13, opacity: 0.75, marginBottom: -4 },
+  segSub: { color: C.muted, fontWeight: '700', fontSize: 13, opacity: 0.8 },
   hero: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 22, backgroundColor: C.yuru, shadowColor: '#b8901a', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
-  heroHead: { color: C.ink, fontSize: 12, fontWeight: '900', letterSpacing: 1 },
+  heroHead: { color: C.ink, fontSize: 13, fontWeight: '900', letterSpacing: 1 },
   heroTitle: { color: C.ink, fontFamily: F.display, fontSize: 28, lineHeight: 34 },
   heroDesc: { color: C.ink, fontSize: 13, fontWeight: '700' },
   heroGo: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center' },
   heroGoText: { color: C.yuru, fontSize: 22 },
   lastGroup: { gap: 8, padding: 16, borderRadius: 20, backgroundColor: C.paper, shadowColor: '#a89f8c', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
-  lastHead: { color: C.ink, fontSize: 12, fontWeight: '900', letterSpacing: 1 },
+  lastHead: { color: C.ink, fontSize: 13, fontWeight: '900', letterSpacing: 1 },
   lastRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   lastDot: { borderRadius: 17, borderWidth: 2, borderColor: C.ink },
   lastNames: { flex: 1, color: C.ink, fontWeight: '900', fontSize: 16, marginLeft: 6 },
@@ -594,7 +632,7 @@ const s = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.08)', borderWidth: 1.5, borderColor: 'transparent' },
   chipName: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 5, paddingLeft: 5, paddingRight: 2 },
   chipText: { color: C.paper, fontWeight: '900', fontSize: 16, maxWidth: 160 },
-  chipSub: { color: C.muted, fontWeight: '900', fontSize: 12 },
+  chipSub: { color: C.muted, fontWeight: '900', fontSize: 13 },
   detail: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, paddingLeft: 14, borderRadius: 14, borderWidth: 1.5 },
   tab: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: 999, backgroundColor: 'rgba(247,243,234,0.08)' },
   tabText: { color: C.muted, fontWeight: '900', fontSize: 13 },
@@ -602,29 +640,29 @@ const s = StyleSheet.create({
   card2: { width: '48.5%', minHeight: 120, padding: 12, borderRadius: 16, backgroundColor: C.paper, gap: 4, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   modeIc2: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(20,18,16,0.08)' },
-  time: { fontSize: 12, fontWeight: '900', color: '#8d857a', backgroundColor: 'rgba(20,18,16,0.06)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999, overflow: 'hidden' },
+  time: { fontSize: 13, fontWeight: '900', color: '#8d857a', backgroundColor: 'rgba(20,18,16,0.06)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999, overflow: 'hidden' },
   cardTitle: { fontSize: 17, fontWeight: '900', color: C.ink },
-  cardDesc: { fontSize: 12, lineHeight: 16, color: '#5d564c' },
+  cardDesc: { fontSize: 13, lineHeight: 16, color: '#5d564c' },
   guide: { gap: 6, padding: 14, borderRadius: 14, backgroundColor: 'rgba(77,212,255,0.1)', borderWidth: 1, borderColor: 'rgba(77,212,255,0.4)' },
   guideHead: { color: ROLE.info, fontWeight: '900', fontSize: 14 },
   guideText: { color: C.paper, fontSize: 13, lineHeight: 20, fontWeight: '700' },
   guideBtn: { alignSelf: 'flex-end', borderRadius: 999, backgroundColor: C.yuru, paddingVertical: 8, paddingHorizontal: 14 },
-  guideBtnText: { color: C.ink, fontSize: 12, fontWeight: '900' },
+  guideBtnText: { color: C.ink, fontSize: 13, fontWeight: '900' },
   wrap: { padding: 16, paddingBottom: 40, gap: 14, maxWidth: 560, width: '100%', alignSelf: 'center' },
   top: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   logo: { fontFamily: F.display, fontSize: 60, lineHeight: 68 },
-  todSub: { fontWeight: '900', fontSize: 12, letterSpacing: 2 },
+  todSub: { fontWeight: '900', fontSize: 13, letterSpacing: 2 },
   catch: { color: C.muted, fontWeight: '900', fontSize: 13, letterSpacing: 1, marginTop: 4 },
   iconBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(247,243,234,0.08)', alignItems: 'center', justifyContent: 'center' },
   iconText: { color: C.paper, fontSize: 22, fontWeight: '900' },
   steps: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center' },
   stepBar: { width: 22, height: 4, borderRadius: 2, backgroundColor: 'rgba(247,243,234,0.16)' },
   stepOn: { backgroundColor: C.paper },
-  stepLabel: { color: C.muted, fontSize: 12, fontWeight: '900', letterSpacing: 1.5 },
+  stepLabel: { color: C.muted, fontSize: 13, fontWeight: '900', letterSpacing: 1.5 },
   h2: { color: C.muted, fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
   stepNum: { color: ROLE.info, fontSize: 18, fontWeight: '900' },
   stepTitle: { color: C.paper, fontSize: 18, fontWeight: '900' },
-  stepSub: { color: C.muted, fontSize: 12, fontWeight: '700' },
+  stepSub: { color: C.muted, fontSize: 13, fontWeight: '700' },
   modeIc: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(20,18,16,0.08)', alignItems: 'center', justifyContent: 'center' },
   mem: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, paddingRight: 6, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 12 },
   dot: { alignItems: 'center', justifyContent: 'center' },
@@ -636,9 +674,9 @@ const s = StyleSheet.create({
   sex: { flexDirection: 'row', borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', borderRadius: 999, overflow: 'hidden' },
   sexBtn: { width: 44, height: 34, alignItems: 'center', justifyContent: 'center' },
   sexSep: { borderLeftWidth: 1, borderLeftColor: 'rgba(247,243,234,0.16)' },
-  sexText: { color: C.muted, fontSize: 12, fontWeight: '900' },
+  sexText: { color: C.muted, fontSize: 13, fontWeight: '900' },
   ngOn: { backgroundColor: C.night, borderColor: C.night },
-  ngText: { color: C.muted, fontSize: 12, fontWeight: '900' },
+  ngText: { color: C.muted, fontSize: 13, fontWeight: '900' },
   row: { flexDirection: 'row', gap: 8 },
   input: {
     color: C.paper, fontSize: 16, padding: 13, borderRadius: 12,
@@ -648,7 +686,7 @@ const s = StyleSheet.create({
   addBtn: { backgroundColor: C.paper, borderRadius: 12, paddingHorizontal: 18, justifyContent: 'center' },
   plus: { width: 54, borderRadius: 14, backgroundColor: C.yuru, alignItems: 'center', justifyContent: 'center' },
   memHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  textBtn: { color: C.yuru, fontSize: 12, fontWeight: '900' },
+  textBtn: { color: C.yuru, fontSize: 13, fontWeight: '900' },
   group: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(247,243,234,0.16)' },
   groupText: { flex: 1, color: C.paper, fontWeight: '900', fontSize: 14 },
   addText: { color: C.ink, fontWeight: '900' },
@@ -663,22 +701,22 @@ const s = StyleSheet.create({
   mchipText: { color: C.paper, fontWeight: '900', fontSize: 14 },
   lv: { flex: 1, borderRadius: 14, paddingVertical: 18, alignItems: 'center' },
   lvText: { fontWeight: '900', fontSize: 17 },
-  lvSub: { fontSize: 12, fontWeight: '700', opacity: 0.75, marginTop: 2 },
+  lvSub: { fontSize: 13, fontWeight: '700', opacity: 0.75, marginTop: 2 },
   mode: {
     flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.paper, borderRadius: 16, padding: 18,
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4,
   },
   modeTitle: { fontSize: 22, fontWeight: '900', color: C.ink },
-  modeDesc: { fontSize: 12, color: '#5d564c', lineHeight: 18 },
+  modeDesc: { fontSize: 13, color: '#5d564c', lineHeight: 18 },
   go: { backgroundColor: C.ink, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 14 },
   goText: { fontFamily: F.display, fontSize: 15, color: C.paper },
-  nightNote: { fontSize: 12, fontWeight: '900' },
+  nightNote: { fontSize: 13, fontWeight: '900' },
   nightLv: { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   nightLvText: { color: C.paper, fontWeight: '900', fontSize: 16 },
-  nightLvSub: { color: C.paper, fontSize: 12, fontWeight: '700' },
+  nightLvSub: { color: C.paper, fontSize: 13, fontWeight: '700' },
   whisper: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
-  whisperText: { fontSize: 12, fontWeight: '700', letterSpacing: 1 },
-  note: { color: C.muted, fontSize: 12, lineHeight: 20 },
+  whisperText: { fontSize: 13, fontWeight: '700', letterSpacing: 1 },
+  note: { color: C.muted, fontSize: 13, lineHeight: 20 },
   nightTitle: { fontFamily: F.display, fontSize: 72, lineHeight: 80, color: C.night },
   nightLead: { color: C.paper, fontSize: 16, lineHeight: 28, fontWeight: '700' },
   nightRule: { color: C.muted, fontSize: 14, lineHeight: 22 },

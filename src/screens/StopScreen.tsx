@@ -3,6 +3,7 @@ import type React from 'react';
 import { Animated, ScrollView, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Vibration } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
+import { usePreTurn } from '../components/PreTurn';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { Tap } from '../components/Tap';
@@ -67,6 +68,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
   const [losers, setLosers] = useState<number[]>([]);
   const [exactAny, setExactAny] = useState(false);
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
+  const pre = usePreTurn(members, (ids) => setPen((p) => p.map((v, i) => (ids.includes(i) ? v + 1 : v))));
   const [turns, setTurns] = useState(0);
   const [gacha, setGacha] = useState<GachaItem[]>([]);
   const [pick, setPick] = useState<BatsuPick | null>(null);
@@ -174,6 +176,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
     R.el += ((performance.now() - R.prev) / 1000) * R.rate;
     const diff = Math.round((target - R.el) * 100) / 100;
     const r: Res = { v: shown(R.el), diff, over: diff < 0, exact: diff === 0 };
+    pre.resolve(diff >= 0 && diff <= 0.2);
     const nr = res.slice();
     nr[who] = r;
     setRes(nr);
@@ -342,7 +345,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
           <Note fg={fg}>{`${level === 'jigoku' ? '数字が消えたり邪魔が入ったりする。' : ''}行き過ぎたらオーバーでアウト`}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label="スタート" onPress={countdown} />;
+      controls = <BigButton pal={pal} label="スタート" onPress={() => pre.ask({ who, q: '0.2秒以内でピタッと止められる？', go: countdown })} />;
       break;
     case 'count':
       card = (
@@ -444,6 +447,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>
+      {pre.node}
       <Frame color={frame} />
       <RulesSheet visible={rules} custom={HELP.stop.rules} onClose={() => setRules(false)} />
       <GameMenu
@@ -464,7 +468,7 @@ export default function StopScreen({ members, level, night, onQuit, onSettings, 
 
 const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   count: { fontFamily: F.display, fontSize: 130, lineHeight: 140 },
   goalLead: { fontSize: 15, fontWeight: '800', marginTop: 6 },
   goal: { fontFamily: F.display, fontSize: 40, lineHeight: 48 },
@@ -475,7 +479,7 @@ const s = StyleSheet.create({
   stopBtn: { minHeight: 84, borderRadius: 20, backgroundColor: '#ff3b3b', alignItems: 'center', justifyContent: 'center' },
   stopText: { color: '#fff', fontSize: 26, fontWeight: '900' },
   resNum: { fontFamily: F.display, fontSize: 84, lineHeight: 92, fontVariant: ['tabular-nums'] },
-  verdict: { fontFamily: F.display, fontSize: 30, lineHeight: 36 },
+  verdict: { fontFamily: F.display, fontSize: 44, lineHeight: 50 },
   boardScroll: { alignSelf: 'stretch', flexGrow: 0, flexShrink: 1 },
   board: { gap: 6, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 2, borderColor: 'transparent', borderRadius: 8, paddingHorizontal: 4, paddingVertical: 2 },
@@ -485,10 +489,10 @@ const s = StyleSheet.create({
   d: { fontSize: 13, fontWeight: '800' },
   lose: { fontFamily: F.display, fontSize: 24, lineHeight: 30, textAlign: 'center', marginTop: 8 },
   rateBox: { alignItems: 'center', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 16, marginTop: 6 },
-  rateSmall: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  rateSmall: { color: '#fff', fontSize: 13, fontWeight: '800' },
   rateBig: { color: '#fff', fontFamily: F.display, fontSize: 44, lineHeight: 50 },
   dirRow: { flexDirection: 'row', gap: 8 },
   dirBtn: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 12, paddingHorizontal: 4, borderRadius: 14, borderWidth: 2 },
   dirT: { fontSize: 16, fontWeight: '900' },
-  dirS: { fontSize: 12, opacity: 0.65 },
+  dirS: { fontSize: 13, opacity: 0.65 },
 });

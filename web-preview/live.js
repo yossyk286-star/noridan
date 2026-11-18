@@ -16,11 +16,14 @@ const HOST_FACE = `<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2"
 // ゲームが始まる時：実況・写真を数え直し、選手入場
 const _newGame0 = newGame;
 newGame = function (mode, again = false) {
+  S.wb = null; // 前のゲームの「番の前の確認」は持ち越さへん
   S.lv = { n: 0, last: -9, lead: -1, clean: new Set() };
   S.photos = [];
   spunGacha = new WeakSet();
   _newGame0(mode, again);
-  if (!again) entranceFx(mode);
+  // 選手入場は、その日そのメンバーでの最初のゲームだけ（2ゲーム目から・メドレー中は出さへん）
+  const entKey = new Date().toDateString() + "|" + S.members.map((m) => m.name).join(",");
+  if (!again && !S.medley && store.get("nd_entkey", "") !== entKey) { store.set("nd_entkey", entKey); entranceFx(mode); }
   if (S.meter) meterStart();
   if (S.faceDeal) tiltListenIfOk();
 };
@@ -377,6 +380,15 @@ function todNow() {
   return k ? { k, ...LIVE.night[k] } : null;
 }
 function todHero() {
+  // 人数で出し分け：2〜3人は傾け・ハイロー、6人以上はウルフ・投票（深夜は時間のおすすめを優先）
+  const n = S.members.length, tn = todNow();
+  if (!(tn && tn.k === "late")) {
+    const pair = n <= 3 ? ["tilt", "hilo"] : n >= 6 ? ["wolf", "vote"] : null;
+    if (pair) {
+      const m = pair[new Date().getDate() % 2], e = MODE_LIST.find((x) => x.m === m);
+      if (e && !(e.min && n < e.min)) return { m, label: `${n}人のおすすめ` };
+    }
+  }
   const t = todNow();
   if (!t || t.hero === "odai") return { m: "odai", label: "迷ったらこれ" };
   const e = MODE_LIST.find((x) => x.m === t.hero);

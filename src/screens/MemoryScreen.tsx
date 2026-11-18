@@ -26,7 +26,8 @@ type Props = {
 };
 type MCard = { id: number; ch: string; tpl?: string; yoru?: boolean; deep?: boolean; skull?: boolean; up: boolean; gone: boolean; owner: number | null };
 type Phase = 'intro' | 'pick' | 'miss' | 'match' | 'skull' | 'fail' | 'over' | 'low' | 'end';
-const PAIRS = 7;
+/** 人数で枚数を自動で調整（12・16・20枚） */
+const pairsFor = (n: number) => (n <= 2 ? 5 : n >= 6 ? 9 : 7);
 const SKULLS = 2;
 
 
@@ -41,7 +42,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
   decks.night = night;
   decks.level = level;
   const deal = (): MCard[] => {
-    const pairs = decks.memoryPairs(level, night, members, PAIRS);
+    const pairs = decks.memoryPairs(level, night, members, pairsFor(n));
     const cs: MCard[] = [];
     pairs.forEach((p, id) => {
       for (let k = 0; k < 2; k++) cs.push({ id, ch: p.ch, tpl: p.tpl, yoru: p.yoru, deep: p.deep, up: false, gone: false, owner: null });
@@ -177,7 +178,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
   let controls: React.ReactNode = null;
   if (phase === 'intro') {
     body = (
-      <IntroCard pal={pal} mode="memory" tag={`${PAIRS}ペア`}>
+      <IntroCard pal={pal} mode="memory" tag={`${pairsFor(n)}ペア`}>
         <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
       </IntroCard>
     );
@@ -204,7 +205,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
     body = (
       <View style={s.grid}>
         {cards.map((c, k) => (
-          <View key={k} style={s.cell}>
+          <View key={k} style={[s.cell, { height: `${100 / Math.ceil(cards.length / 4)}%` }]}>
             {c.gone ? (
               <View style={[s.mc, s.gone, { borderColor: alpha('#f7f3ea', 0.15) }]}>{c.owner != null && c.owner >= 0 && <View style={[s.ownerDot, { backgroundColor: colorOf(c.owner) }]} />}</View>
             ) : c.up ? (
@@ -318,7 +319,7 @@ const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, gap: 10, maxWidth: 560, width: '100%', alignSelf: 'center' },
   title: { fontFamily: F.display, fontSize: 24 },
   how: { fontSize: 16, fontWeight: '700', lineHeight: 24 },
-  small: { fontSize: 12, fontWeight: '700', opacity: 0.7, lineHeight: 18 },
+  small: { fontSize: 13, fontWeight: '700', opacity: 0.7, lineHeight: 18 },
   lvBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, gap: 2 },
   lvText: { fontSize: 14, fontWeight: '900' },
   info: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
@@ -331,14 +332,14 @@ const s = StyleSheet.create({
   scText: { fontSize: 13, fontWeight: '900' },
   scV: { fontFamily: F.display, fontSize: 15 },
   grid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'stretch' },
-  cell: { width: '25%', height: '25%', padding: 4 },
+  cell: { width: '25%', padding: 4 },
   mc: { flex: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   down: { borderWidth: 3, borderColor: 'rgba(0,0,0,0.18)' },
   q: { fontFamily: F.display, fontSize: 26, color: 'rgba(0,0,0,0.35)' },
   ch: { fontSize: 44 },
   gone: { borderWidth: 1.5, borderStyle: 'dashed' },
   ownerDot: { width: 14, height: 14, borderRadius: 7, opacity: 0.7 },
-  foot: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  foot: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 14, borderLeftWidth: 6 },
   rowName: { fontWeight: '900', fontSize: 16, flexShrink: 1 },
   rowV: { fontFamily: F.display, fontSize: 22 },

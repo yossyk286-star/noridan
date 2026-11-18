@@ -18,7 +18,10 @@ import { usePhotos } from '../lib/live';
 import { StoryPolas } from '../components/Live';
 import { C, F, LEVEL_LABEL, ROLE, colorOf } from '../theme';
 import type { Level, Member, Mode, Night } from '../types';
-import { iniFit, initialOf } from '../lib/game';
+import { iniFit, initialOf, shuffle } from '../lib/game';
+import { MED_POOL, MODE_CAT, MODE_MIN } from '../lib/medley';
+import { CAT_COLOR, MODE_LIST } from './HomeScreen';
+import { MODE_TITLE } from '../components/ModeParts';
 
 type Props = {
   members: Member[];
@@ -37,6 +40,8 @@ type Props = {
   /** 罰ランキングの下に出すもの（先に帰った人・通算） */
   extraBottom?: React.ReactNode;
   onAgain: () => void;
+  /** 「次はこれどう？」から別のゲームを始める（メドレー中は渡さへん） */
+  onStart?: (m: Mode) => void;
   /** NGワードの時：最後のみんなのワード */
   words?: string[];
   /** 神経衰弱の点数 */
@@ -45,11 +50,19 @@ type Props = {
 
 const MODE_LABEL: Record<Mode, string> = { odai: 'アホお題', sugoroku: 'すごろく', memory: '神経衰弱', ito: '価値観ナンバー', gesture: '早押しジェスチャー', homeru: '褒め殺し', ngword: 'NGワード', vote: 'ぶっちゃけ投票', wolf: 'ワードウルフ', pittari: 'ピッタリ予想', tilt: '傾けたらアウト', shake: '全力シェイク', stop: 'ピタッとストップ', rtap: 'ロシアンタップ', yama: '山手線ゲーム', nyok: 'たけのこニョッキ', bpass: '爆弾パス', hilo: 'ハイ&ロー', reflex: '反射神経バトル', voice: '声デカ選手権', blind: '目隠し当て', pocky: 'ポッキーゲーム', tickle: 'こしょばし我慢', hug: 'ハグタイム当て', quiz: '早押し雑学クイズ', face: 'テンション伝言', deko: 'おでこ当て', doubt: 'ダウト', king: '王様ゲーム', draw: 'お絵かき伝言', whack: 'ワニワニタップ' };
 
-export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onMembers, onAgain, words, scores, extraTop, extraBottom }: Props) {
+export default function ResultScreen({ members, pen, turns, stats, night, mode, level, onHome, onMembers, onAgain, onStart, words, scores, extraTop, extraBottom }: Props) {
   const rows = members.map((m, i) => ({ m, i, n: pen[i] ?? 0 })).sort((a, b) => b.n - a.n);
   const top = rows[0]?.n ?? 0;
   const who = top === 0 ? '該当者なし' : rows.filter((r) => r.n === top).map((r) => r.m.name).join('・');
   const ts = titles(pen, stats);
+  // 次はこれどう？：今の人数に合う短めのゲームを、今と違う種類から2つ
+  const [nextP] = useState<Mode[]>(() => {
+    const ok = shuffle(MED_POOL.filter((m) => m !== mode && members.length >= (MODE_MIN[m] ?? 2)));
+    const cat = (m: Mode) => MODE_CAT[m];
+    const first = ok.find((m) => cat(m) !== MODE_CAT[mode]) ?? ok[0];
+    const second = ok.find((m) => m !== first && cat(m) !== cat(first) && cat(m) !== MODE_CAT[mode]) ?? ok.find((m) => m !== first && cat(m) !== cat(first)) ?? ok.find((m) => m !== first);
+    return [first, second].filter((m): m is Mode => !!m);
+  });
   const [tip] = useState(() => resultTip(night ?? false));
   const { voice } = usePrefs();
   const line = mode === 'ngword' ? `NGワード・${LEVEL_LABEL[level]}・アウト${turns}回` : `${MODE_LABEL[mode]}・${LEVEL_LABEL[level]}・${turns}${mode === 'vote' || mode === 'ito' || mode === 'pittari' ? '問' : mode === 'wolf' ? '回戦' : mode === 'tilt' ? '回挑戦' : ['shake', 'stop', 'rtap', 'yama', 'nyok', 'bpass', 'hilo', 'reflex', 'voice', 'blind', 'pocky', 'tickle', 'hug', 'quiz', 'face', 'deko', 'doubt', 'draw', 'whack'].includes(mode) ? '回戦' : mode === 'king' ? '回' : mode === 'memory' ? 'ペア' : mode === 'gesture' ? '問正解' : mode === 'homeru' ? '回' : 'ターン'}`;
@@ -144,6 +157,7 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
           <>
             <Podium members={members} rows={rows} landed={landed} land={land} />
             <Animated.View style={[s.mvp, mvpAnim]}>
+              <View pointerEvents="none" style={s.mvpIn} />
               <Text style={s.mvpLabel}>MVP（悪い意味で）</Text>
               <Text style={s.mvpName}>{shown}</Text>
               <Text style={[s.mvpCount, !landed && { opacity: 0 }]}>{`罰 ${top}回${rows.filter((r) => r.n === top).length === 1 && whyText(stats, rows[0].i) ? `（${whyText(stats, rows[0].i)}）` : ''}`}</Text>
@@ -152,6 +166,23 @@ export default function ResultScreen({ members, pen, turns, stats, night, mode, 
         )}
       </View>
       <View style={[{ gap: 10 }, !landed && { opacity: 0 }]} pointerEvents={landed ? 'auto' : 'none'}>
+        {onStart && nextP.length > 0 && (
+          <View style={{ gap: 8 }}>
+            <Text style={s.nextH}>{`次はこれどう？　${members.length}人`}</Text>
+            <View style={s.row}>
+              {nextP.map((m) => {
+                const x = MODE_LIST.find((y) => y.m === m)!;
+                const cc = CAT_COLOR[x.cat];
+                return (
+                  <Tap key={m} onPress={() => onStart(m)} style={[s.nextTile, { backgroundColor: cc + '3d' }]}>
+                    <Text style={s.nextName}>{MODE_TITLE[m]}</Text>
+                    <Text style={s.nextMeta}>{`${x.t}・${x.min ?? 2}人〜`}</Text>
+                  </Tap>
+                );
+              })}
+            </View>
+          </View>
+        )}
         <Tap style={({ pressed }) => [s.againBig, pressed && { transform: [{ translateY: 4 }] }]} onPress={onAgain}>
           <Text style={s.againText}>もう1回</Text>
           <Text style={s.againSub}>同じメンバー・同じ遊び方</Text>
@@ -438,35 +469,35 @@ const st = StyleSheet.create({
   glow: { position: 'absolute', left: -60, top: 60, width: 480, height: 420, borderRadius: 240, backgroundColor: 'rgba(232,32,42,0.28)' },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   logo: { fontFamily: F.display, fontSize: 24, color: C.yuru },
-  date: { color: C.muted, fontSize: 12, fontWeight: '900' },
-  line: { color: C.muted, fontSize: 12, fontWeight: '900', marginTop: 2 },
+  date: { color: C.muted, fontSize: 13, fontWeight: '900' },
+  line: { color: C.muted, fontSize: 13, fontWeight: '900', marginTop: 2 },
   title: { fontFamily: F.display, fontSize: 48, lineHeight: 60, color: '#e8202a', marginTop: 14, transform: [{ rotate: '-2deg' }], textShadowColor: C.yuru, textShadowRadius: 1, textShadowOffset: { width: 2, height: 2 } },
   mvpWrap: { marginTop: 22, transform: [{ rotate: '-1.5deg' }] },
   mvpShadow: { position: 'absolute', left: 4, top: 8, right: -4, bottom: -8, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.5)' },
   mvp: { backgroundColor: C.paper, borderRadius: 16, borderWidth: 2, borderColor: '#141210', paddingVertical: 16, paddingHorizontal: 20, gap: 2 },
-  mvpLabel: { color: '#141210', fontSize: 12, fontWeight: '900' },
+  mvpLabel: { color: '#141210', fontSize: 13, fontWeight: '900' },
   mvpName: { fontFamily: F.display, fontSize: 40, lineHeight: 50, color: '#141210', marginRight: 70 },
   mvpCount: { color: '#141210', fontSize: 15, fontWeight: '900' },
-  mvpWhy: { color: 'rgba(20,18,16,0.6)', fontSize: 12, fontWeight: '900' },
+  mvpWhy: { color: 'rgba(20,18,16,0.6)', fontSize: 13, fontWeight: '900' },
   skull: { position: 'absolute', right: -14, top: -26, transform: [{ rotate: '10deg' }] },
-  h2: { color: C.muted, fontSize: 12, fontWeight: '900', marginTop: 26, marginBottom: 4 },
+  h2: { color: C.muted, fontSize: 13, fontWeight: '900', marginTop: 26, marginBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 22 },
   no: { width: 18, height: 18, borderRadius: 9, backgroundColor: 'rgba(247,243,234,0.12)', alignItems: 'center', justifyContent: 'center' },
-  noText: { fontFamily: F.display, fontSize: 12, color: C.paper },
+  noText: { fontFamily: F.display, fontSize: 13, color: C.paper },
   dot: { width: 9, height: 9, borderRadius: 5 },
   name: { width: 100, color: C.paper, fontWeight: '900', fontSize: 14 },
   track: { flex: 1, height: 9, borderRadius: 5, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 5 },
   ct: { width: 26, textAlign: 'right', fontFamily: F.display, fontSize: 17, color: C.paper },
-  more: { color: C.muted, fontSize: 12, fontWeight: '900', marginLeft: 44 },
+  more: { color: C.muted, fontSize: 13, fontWeight: '900', marginLeft: 44 },
   tsHead: { fontFamily: F.display, fontSize: 16, color: ROLE.info, marginTop: 14, marginBottom: 6 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   badge: { width: '48%', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,210,63,0.45)', backgroundColor: 'rgba(247,243,234,0.08)', paddingVertical: 6, paddingHorizontal: 9 },
-  badgeTitle: { color: ROLE.info, fontSize: 12, fontWeight: '900' },
+  badgeTitle: { color: ROLE.info, fontSize: 13, fontWeight: '900' },
   badgeWho: { color: C.paper, fontSize: 15, fontWeight: '900' },
   foot: { flexDirection: 'row', alignItems: 'baseline', gap: 12, borderTopWidth: 1, borderTopColor: 'rgba(247,243,234,0.18)', paddingTop: 10, marginBottom: 30 },
   footLogo: { fontFamily: F.display, fontSize: 17, color: C.paper },
-  footText: { color: C.muted, fontSize: 12, fontWeight: '900' },
+  footText: { color: C.muted, fontSize: 13, fontWeight: '900' },
 });
 
 /** 結果画面のひとこと（豆知識） */
@@ -476,7 +507,7 @@ function resultTip(_night: Night) {
 }
 
 const s = StyleSheet.create({
-  why: { color: C.muted, fontSize: 12, fontWeight: '700' },
+  why: { color: C.muted, fontSize: 13, fontWeight: '700' },
   back: { position: 'absolute', top: 14, left: 16, zIndex: 5, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(247,243,234,0.1)' },
   link: { color: C.muted, fontSize: 13, fontWeight: '900', textDecorationLine: 'underline' },
   tipRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -495,10 +526,10 @@ const s = StyleSheet.create({
   podName: { fontFamily: F.display, fontSize: 16, color: C.paper, maxWidth: '100%' },
   podBlock: { alignSelf: 'stretch', borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 4, borderBottomRightRadius: 4, alignItems: 'center', paddingTop: 6, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   podRank: { fontFamily: F.display, fontSize: 30, lineHeight: 34, color: C.ink },
-  podPen: { fontSize: 12, fontWeight: '900', color: 'rgba(20,18,16,0.75)' },
+  podPen: { fontSize: 13, fontWeight: '900', color: 'rgba(20,18,16,0.75)' },
   av: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   avText: { color: C.ink, fontWeight: '900', fontSize: 14 },
-  noText: { color: C.paper, fontWeight: '900', fontSize: 12 },
+  noText: { color: C.paper, fontWeight: '900', fontSize: 13 },
   track: { width: '28%', height: 12, borderRadius: 6, backgroundColor: 'rgba(247,243,234,0.1)', overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 6 },
   shBack: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
@@ -507,10 +538,10 @@ const s = StyleSheet.create({
   shPrev: { width: 180, height: 320, alignSelf: 'center', borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)' },
   shOpt: { flex: 1, paddingVertical: 10, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', alignItems: 'center' },
   shOptT: { color: C.paper, fontWeight: '900', fontSize: 16 },
-  shOptS: { color: C.muted, fontWeight: '700', fontSize: 11, marginTop: 2 },
+  shOptS: { color: C.muted, fontWeight: '700', fontSize: 13, marginTop: 2 },
   shBig: { backgroundColor: C.paper, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   shBigText: { fontFamily: F.display, fontSize: 19, color: C.ink },
-  shNote: { color: C.muted, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  shNote: { color: C.muted, fontSize: 13, fontWeight: '700', textAlign: 'center' },
   offscreen: { position: 'absolute', left: -2000, top: 0, width: 360, height: 640 },
   brand: { fontFamily: F.display, fontSize: 28, color: C.yuru },
   share: {
@@ -520,11 +551,12 @@ const s = StyleSheet.create({
   head: { fontFamily: F.display, fontSize: 52, lineHeight: 60, color: C.blood, marginTop: 12 },
   sub: { color: C.muted, fontWeight: '700' },
   mvp: {
-    alignSelf: 'stretch', alignItems: 'center', backgroundColor: C.paper, borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16, gap: 2,
+    alignSelf: 'stretch', alignItems: 'center', backgroundColor: C.paper, borderRadius: 20, borderWidth: 2, borderColor: '#141210', paddingVertical: 12, paddingHorizontal: 16, gap: 2,
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 0, shadowOffset: { width: 0, height: 10 }, elevation: 6,
   },
   pc: { width: 12, height: 12, borderRadius: 6 },
-  mvpLabel: { color: C.ink, fontSize: 12, fontWeight: '900', letterSpacing: 3 },
+  mvpIn: { position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(20,18,16,0.5)' },
+  mvpLabel: { color: C.ink, fontSize: 13, fontWeight: '900', letterSpacing: 3 },
   mvpName: { fontFamily: F.display, fontSize: 40, lineHeight: 48, color: C.ink },
   mvpCount: { color: C.ink, fontWeight: '700' },
   rank: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(247,243,234,0.16)' },
@@ -535,14 +567,18 @@ const s = StyleSheet.create({
   ngRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 14, borderLeftWidth: 6, backgroundColor: 'rgba(247,243,234,0.06)' },
   ngName: { color: C.paper, fontWeight: '900', fontSize: 15, flexShrink: 1 },
   ngWord: { color: C.paper, fontFamily: F.display, fontSize: 22 },
-  h2: { color: C.muted, fontSize: 12, fontWeight: '900', letterSpacing: 3 },
+  h2: { color: C.muted, fontSize: 13, fontWeight: '900', letterSpacing: 3 },
   titles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   title: { flexBasis: '48%', flexGrow: 1, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(247,243,234,0.16)', gap: 2 },
-  titleName: { color: ROLE.info, fontWeight: '900', fontSize: 12 },
+  titleName: { color: ROLE.info, fontWeight: '900', fontSize: 13 },
   titleWho: { fontFamily: F.display, color: C.paper, fontSize: 20, lineHeight: 26 },
-  titleDesc: { color: C.muted, fontSize: 12, fontWeight: '700' },
+  titleDesc: { color: C.muted, fontSize: 13, fontWeight: '700' },
   ghost: { flex: 1, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(247,243,234,0.16)', padding: 16, alignItems: 'center' },
   ghostText: { color: C.paper, fontWeight: '900' },
+  nextH: { color: C.muted, fontSize: 14, fontWeight: '900' },
+  nextTile: { flex: 1, minHeight: 64, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, justifyContent: 'center', gap: 3 },
+  nextName: { color: C.paper, fontSize: 16, fontWeight: '900' },
+  nextMeta: { color: 'rgba(247,243,234,0.75)', fontSize: 13, fontWeight: '700' },
   againBig: { borderRadius: 16, backgroundColor: C.yuru, paddingVertical: 16, alignItems: 'center', shadowColor: '#b8901a', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   againSub: { color: C.ink, fontSize: 13, fontWeight: '900', opacity: 0.75, marginTop: 2 },
   againText: { fontFamily: F.display, fontSize: 20, color: C.ink },

@@ -1,7 +1,9 @@
 const DATA = /*DATA*/null;
 const COLORS = ["#ffd23f", "#ff5d8f", "#4dd4ff", "#7cf06b", "#ff9a3c", "#b69cff", "#ffffff", "#ff4f4f", "#3cffc8", "#f5a3ff", "#c8ff3c", "#9ab0ff"];
 const LV = { yurume: "ゆるめ", futsu: "普通", jigoku: "地獄" };
-const GOAL = DATA.board.length - 1;
+const BOARD_FULL = DATA.board;
+const BOARD_MINI = [...BOARD_FULL.slice(0, 19), BOARD_FULL[BOARD_FULL.length - 1]]; // マス20のミニ（15分くらい）
+let GOAL = DATA.board.length - 1;
 const CHANCE = { event: 0.14, double: 0.2, minna: 0.25, bomb: 0.12, yoru: 0.35, lucky: 0.15 };
 
 // ---------- storage (best effort) ----------
@@ -32,8 +34,8 @@ const EXAMPLE = [
 
 const S = {
   screen: "home", hist: [], ask: null,
-  members: cleanMembers(store.get("nd_members", null)) || EXAMPLE.map((m) => ({ ...m })),
-  isExample: cleanMembers(store.get("nd_members", null)) === null,
+  members: cleanMembers(store.get("nd_members", null)) || [], // 最初は空。例の3人は「例で試す」を押した時だけ
+  isExample: false,
   restored: cleanMembers(store.get("nd_members", null)) !== null, // 前回のメンバーが残ってる（いじったら false）
   memOpen: null, // メンバー入力で男/女を開いてる人
   level: ((v) => (v in LV ? v : "futsu"))(store.get("nd_level", "futsu")),
@@ -938,7 +940,8 @@ function tiltGo() {
   tl.base = tl.manual ? null : tiltVec(tiltSensor.beta, tiltSensor.gamma);
   tl.phase = "play"; tl.angle = 0; tl.peak = 0; tl.startAt = Date.now();
   play("coin");
-  tl.endAt = Date.now() + TILT_SEC * 1000; tl.sec = TILT_SEC;
+  const sec0 = tl.practice ? 5 : TILT_SEC; // 練習は5秒（罰なし）
+  tl.endAt = Date.now() + sec0 * 1000; tl.sec = sec0;
   render(true);
   tiltClock(tl);
 }
@@ -1004,8 +1007,16 @@ function tiltPaint() {
     dot.classList.toggle("crit", rem <= r);
   }
 }
+// 練習が終わった：数えへんで準備の画面に戻る
+function tiltPracticeEnd(out) {
+  const tl = S.game.tl;
+  stopTimer(); tiltHeat(0); tl.practice = false; tl.phase = "hand"; tl.angle = 0; tl.peak = 0;
+  play(out ? "pop" : "coin"); toast(out ? "練習はここまで。これくらいで傾いたらアウトやで" : "ええ感じ！ほな本番いこか");
+  render(true);
+}
 function tiltOut() {
   const g = S.game, tl = g.tl;
+  if (tl.practice) { tiltPracticeEnd(true); return; }
   stopTimer();
   tiltHeat(1);
   tl.phase = "judge"; tl.outAt = Date.now();
@@ -1017,6 +1028,7 @@ function tiltOut() {
 }
 function tiltSafe() {
   const g = S.game, tl = g.tl;
+  if (tl.practice) { tiltPracticeEnd(false); return; }
   stopTimer();
   tiltHeat(0);
   tl.phase = "judge";
@@ -1295,7 +1307,9 @@ function nyRound() {
   const g = S.game, ny = g.ny, n = S.members.length;
   ny.round++; g.turn = ny.round;
   const all = S.members.map((_, i) => i);
-  ny.heat = n <= NY_MAX ? all : shuffle(all).slice(0, NY_MAX).sort((a, b) => a - b);
+  // 9人以上は自動で2組に分けて、1回戦ごとに組を交代（見てるだけの人が出ても次は出る番）
+  if (n > NY_MAX && (!ny.groups || ny.groups.flat().length !== n)) { const sh = shuffle(all), h = Math.ceil(n / 2); ny.groups = [sh.slice(0, h).sort((a, b) => a - b), sh.slice(h).sort((a, b) => a - b)]; }
+  ny.heat = n <= NY_MAX ? all : ny.groups[(ny.round - 1) % 2];
   ny.taps = []; ny.losers = []; ny.why = ""; clearTimeout(ny.endT);
   g.doer = -1; ny.phase = "hand";
 }
@@ -1378,7 +1392,12 @@ function bpBoom() {
 function kgRound() {
   const g = S.game, kg = g.kg, n = S.members.length;
   kg.round++;
-  const order = shuffle(S.members.map((_, i) => i));
+  // 同じ人が王様を続けへんように、直近2回（3人なら1回）の王様は外す
+  const rec = (kg.recent = kg.recent || []), skip = n >= 4 ? 2 : n === 3 ? 1 : 0;
+  let order = shuffle(S.members.map((_, i) => i));
+  const fresh = order.filter((i) => !rec.slice(-skip || n).includes(i) || !skip);
+  if (skip && fresh.length) order = [fresh[0], ...order.filter((i) => i !== fresh[0])];
+  rec.push(order[0]); if (rec.length > 3) rec.shift();
   kg.king = order[0]; kg.num = Array(n).fill(0); order.slice(1).forEach((i, k) => (kg.num[i] = k + 1));
   kg.k = 0; kg.cmd = null; kg.refuse = []; g.doer = 0; kg.phase = "deal";
 }
@@ -1391,8 +1410,10 @@ function kgPick() {
   let pool = nums;
   if (kind !== "normal") { pool = nums.filter(okForYoru); if (pool.length < 2) kind = "normal", pool = nums; }
   const two = pool.length >= 2;
-  const list = DATA.king[kind].filter((t) => two || !t.includes("{B}"));
-  const tpl = draw("king_" + kind + (two ? "" : "1"), list);
+  // 地獄度が「地獄」の時は、ちょっと恥ずかしい命令も混ざる（触らへん系だけ）
+  const hot = kind === "normal" && S.level === "jigoku" && Math.random() < 0.45;
+  const list = DATA.king[hot ? "jigoku" : kind].filter((t) => two || !t.includes("{B}"));
+  const tpl = draw("king_" + (hot ? "jigoku" : kind) + (two ? "" : "1"), list);
   const a = pick(pool);
   const b = two ? (kind === "shinya" ? pick(sexPrefer(a, pool.filter((i) => i !== a))) : pick(pool.filter((i) => i !== a))) : -1;
   kg.cmd = { tpl, kind, A: kg.num[a], B: b >= 0 ? kg.num[b] : null };
@@ -1436,12 +1457,21 @@ function drSetup() {
   c.scale(r, r); c.fillStyle = "#fff"; c.fillRect(0, 0, w, h);
   c.lineCap = "round"; c.lineJoin = "round"; c.lineWidth = 4; c.strokeStyle = "#141210";
   const pos = (e) => { const b = cv.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
-  cv.addEventListener("pointerdown", (e) => { e.preventDefault(); cv.setPointerCapture(e.pointerId); drPen = pos(e); c.beginPath(); c.moveTo(...drPen); c.lineTo(drPen[0] + 0.1, drPen[1]); c.stroke(); });
-  cv.addEventListener("pointermove", (e) => { if (!drPen) return; const p = pos(e); c.beginPath(); c.moveTo(...drPen); c.lineTo(...p); c.stroke(); drPen = p; });
+  // 1本ずつ覚えとく（「1つ戻す」で最後の1本だけ消せるように）
+  const strokes = []; let cur = null, col = "#141210", wd = 4;
+  cv.addEventListener("pointerdown", (e) => { e.preventDefault(); cv.setPointerCapture(e.pointerId); drPen = pos(e); cur = { col, wd, pts: [drPen] }; strokes.push(cur); c.beginPath(); c.moveTo(...drPen); c.lineTo(drPen[0] + 0.1, drPen[1]); c.stroke(); });
+  cv.addEventListener("pointermove", (e) => { if (!drPen) return; const p = pos(e); cur?.pts.push(p); c.beginPath(); c.moveTo(...drPen); c.lineTo(...p); c.stroke(); drPen = p; });
   const up = () => { drPen = null; };
   cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
-  cv.drColor = (col, wd) => { c.strokeStyle = col; c.lineWidth = wd; };
-  cv.drClear = () => { c.fillStyle = "#fff"; c.fillRect(0, 0, w, h); };
+  cv.drColor = (cl, w2) => { col = cl; wd = w2; c.strokeStyle = cl; c.lineWidth = w2; };
+  cv.drClear = () => { strokes.length = 0; c.fillStyle = "#fff"; c.fillRect(0, 0, w, h); };
+  cv.drUndo = () => {
+    if (!strokes.length) return;
+    strokes.pop();
+    c.fillStyle = "#fff"; c.fillRect(0, 0, w, h);
+    for (const st of strokes) { c.strokeStyle = st.col; c.lineWidth = st.wd; c.beginPath(); c.moveTo(...st.pts[0]); c.lineTo(st.pts[0][0] + 0.1, st.pts[0][1]); for (const q of st.pts.slice(1)) c.lineTo(...q); c.stroke(); }
+    c.strokeStyle = col; c.lineWidth = wd;
+  };
 }
 function drFinishPic() { const cv = document.getElementById("drCanvas"); drSubmit(cv ? cv.toDataURL("image/jpeg", 0.7) : ""); }
 
@@ -1959,8 +1989,9 @@ function vcLevel() {
   vcMic.an.getByteTimeDomainData(vcMic.buf); // Float版より古いiPhoneでも動く
   let sum = 0; for (const b of vcMic.buf) { const v = (b - 128) / 128; sum += v * v; }
   const db = 20 * Math.log10(Math.sqrt(sum / vcMic.buf.length) || 1e-6);
-  return Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
+  return Math.max(0, Math.min(100, ((db + 60) / (S.vcQuiet ? 36 : 60)) * 100)); // 小声版は小さい音も大きめに拾う
 }
+S.vcQuiet = store.get("nd_vcquiet", false) === true;
 function vcRound() {
   const vc = S.game.vc;
   vc.round++; vc.k = 0; vc.res = Array(S.members.length).fill(null); vc.losers = [];
@@ -2046,7 +2077,8 @@ function ptReveal() {
 // ---------- 神経衰弱 ----------
 // 裏向きのカードに「お題に関係するマーク」だけ（スマホのマークならスマホ系のお題）。同じお題の2枚を揃えたら全文が出て、答えたら+1点でもう1回。
 // 答えられへんかったら罰ガチャ。ドクロはめくった瞬間に罰ガチャ（天使なら続けてめくれる）。最後に点数が一番低い人が罰
-const MM_PAIRS = 7, MM_SKULLS = 2;
+const MM_SKULLS = 2;
+const MM_PAIRS_N = () => (S.members.length <= 2 ? 5 : S.members.length >= 6 ? 9 : 7); // 人数で枚数を自動で調整（12・16・20枚）
 // マークにできるお題：「{P}、」で始まる1人用のお題で、マーク表のどれかの言葉が入ってるもの
 const MARK_RE = DATA.marks.map(([re, m]) => [new RegExp(re), m]);
 function markOf(t) {
@@ -2063,7 +2095,7 @@ function mmDeal() {
   if (S.night && !S.members.some((m) => m.ng)) pools.push(DATA.odai.yoru);
   if (S.night === "shinya" && !S.members.some((m) => m.ng)) pools.push(DATA.odai.shinya, DATA.odai.shinya);
   const used = new Set(), pairs = [];
-  for (let k = 0; k < 400 && pairs.length < MM_PAIRS; k++) {
+  for (let k = 0; k < 400 && pairs.length < MM_PAIRS_N(); k++) {
     const pool = pick(pools), t = pick(pool);
     if (!mmOk(t)) continue;
     const ch = markOf(t);

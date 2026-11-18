@@ -127,7 +127,7 @@ export function Entrance({ members, tally, mode, onDone }: { members: Member[]; 
                 </View>
                 <View style={[{ flexShrink: 1 }, right && { alignItems: 'flex-end' }]}>
                   <Text style={[ls.enName, many && { fontSize: 17 }]} numberOfLines={1}>{m.name}</Text>
-                  <Text style={[ls.enNick, { color: colorOf(i) }, many && { fontSize: 12 }]} numberOfLines={1}>{nicks[i]}</Text>
+                  <Text style={[ls.enNick, { color: colorOf(i) }, many && { fontSize: 13 }]} numberOfLines={1}>{nicks[i]}</Text>
                 </View>
               </Animated.View>
             );
@@ -366,7 +366,7 @@ export function MeterHost({ active, screen, level, onLevel }: { active: boolean;
               <HostFace size={48} />
               <View style={ls.qBubble}>
                 <Text style={{ fontWeight: '900', color: C.ink }}>{LIVE.meter.quiet[Math.floor(Math.random() * LIVE.meter.quiet.length)]}</Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: C.ink, opacity: 0.6 }}>ここ5分、声が小さめ</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink, opacity: 0.6 }}>ここ5分、声が小さめ</Text>
               </View>
             </View>
             <Text style={ls.qH}>{up ? `地獄度、\n「${LEVEL_LABEL[up]}」に上げる？` : '声を出す系のゲームも\nおすすめやで'}</Text>
@@ -464,7 +464,7 @@ const ls = StyleSheet.create({
   enAvText: { fontFamily: F.display, fontSize: 24, color: C.ink },
   enName: { fontFamily: F.display, fontSize: 26, color: C.paper },
   enNick: { fontWeight: '900', fontSize: 13 },
-  enSkip: { marginTop: 16, color: C.muted, fontSize: 12, fontWeight: '900' },
+  enSkip: { marginTop: 16, color: C.muted, fontSize: 13, fontWeight: '900' },
   faceCard: { flex: 1, borderRadius: 26, borderWidth: 3, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 20 },
   prog: { fontWeight: '900', fontSize: 13, opacity: 0.7 },
   ph: { width: 66, height: 110, borderRadius: 14, borderWidth: 3.5, alignItems: 'center', justifyContent: 'center' },
@@ -483,12 +483,12 @@ const ls = StyleSheet.create({
   pola: { width: '48%', backgroundColor: '#fff', padding: 7, paddingBottom: 10, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 10, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
   polaImg: { width: '100%', aspectRatio: 4 / 3, backgroundColor: '#333' },
   polaName: { color: C.ink, fontWeight: '900', fontSize: 14, marginTop: 5 },
-  polaTxt: { color: C.ink, opacity: 0.7, fontSize: 12, fontWeight: '700' },
-  small: { color: C.muted, fontSize: 12, fontWeight: '700' },
+  polaTxt: { color: C.ink, opacity: 0.7, fontSize: 13, fontWeight: '700' },
+  small: { color: C.muted, fontSize: 13, fontWeight: '700' },
   storyHead: { fontFamily: F.display, fontSize: 16, color: ROLE.info, marginTop: 14 },
   spola: { width: '31%', backgroundColor: '#fff', padding: 4, paddingBottom: 5 },
-  spName: { color: C.ink, fontWeight: '900', fontSize: 12, marginTop: 2 },
-  spTxt: { color: C.ink, opacity: 0.6, fontSize: 9, fontWeight: '700' },
+  spName: { color: C.ink, fontWeight: '900', fontSize: 13, marginTop: 2 },
+  spTxt: { color: C.ink, opacity: 0.6, fontSize: 13, fontWeight: '700' },
   strip: { position: 'absolute', left: 0, right: 0, top: 0, height: 4, backgroundColor: 'rgba(0,0,0,0.15)', zIndex: 30 },
   stripIn: { height: '100%', borderTopRightRadius: 4, borderBottomRightRadius: 4 },
   qBack: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },

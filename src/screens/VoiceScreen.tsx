@@ -3,6 +3,7 @@ import type React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
+import { usePreTurn } from '../components/PreTurn';
 import { BigButton, DeckStack, GachaCard, RoundEnd } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { soleBest } from '../lib/game';
@@ -29,6 +30,7 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
   useKeepAwake();
   const n = members.length;
   const P = usePenalty(members, level, night, 'voice');
+  const pre = usePreTurn(members, P.bump);
   const H = useHold();
   const RV = useReveal();
   const recorder = useAudioRecorder({ ...RecordingPresets.LOW_QUALITY, isMeteringEnabled: true });
@@ -225,7 +227,7 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
           <Note fg={fg}>{`スマホに向かって${SEC}秒間、全力で叫ぶ。\nなんでもOK（「ノリダーン！」とか）`}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label="叫ぶ！スタート" onPress={go} />;
+      controls = <BigButton pal={pal} label="叫ぶ！スタート" onPress={() => pre.ask({ who, safe: 'voice', go })} />;
       break;
     case 'count':
       card = (
@@ -298,13 +300,13 @@ export default function VoiceScreen({ members, level, night, onQuit, onSettings,
   return (
     <StageShell
       pal={pal} members={members} pen={P.pen} doer={phase === 'hand' || phase === 'play' || phase === 'done' ? who : -1} frame={phase === 'intro' ? C.muted : phase === 'rank' ? '#ff2a2a' : colorOf(who)}
-      rules={HELP.voice.rules} meta={`声デカ選手権・${LEVEL_LABEL[level]}・${round}回戦`} onEnd={() => finish()} onQuit={() => { stopAll(); phaseRef.current = 'intro'; onQuit(); }} onSettings={onSettings} card={card} controls={controls}
+      rules={HELP.voice.rules} meta={`声デカ選手権・${LEVEL_LABEL[level]}・${round}回戦`} onEnd={() => finish()} onQuit={() => { stopAll(); phaseRef.current = 'intro'; onQuit(); }} onSettings={onSettings} card={card} controls={<>{controls}{pre.node}</>}
     />
   );
 }
 
 const s = StyleSheet.create({
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   count: { fontFamily: F.display, fontSize: 130, lineHeight: 140 },
   lead: { fontFamily: F.display, fontSize: 22, lineHeight: 30, textAlign: 'center', marginVertical: 8 },
   pickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', alignSelf: 'stretch' },

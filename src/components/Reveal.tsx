@@ -157,7 +157,7 @@ export function RevealItem({ k, rv, lose, children }: { k: number; rv: ReturnTyp
 }
 
 const s = StyleSheet.create({
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   holdT: { fontFamily: F.display, fontSize: 52, lineHeight: 62, textAlign: 'center' },
   bar: { width: 220, height: 6, borderRadius: 3, overflow: 'hidden', marginVertical: 14 },
 });

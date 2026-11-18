@@ -172,9 +172,9 @@ export default function BlindScreen({ members, level, night, onQuit, onSettings,
 
 const s = StyleSheet.create({
   lead: { fontFamily: F.display, fontSize: 30, lineHeight: 38, color: '#fff', textAlign: 'center' },
-  label: { fontSize: 12, fontWeight: '800', color: '#fff', opacity: 0.6 },
+  label: { fontSize: 13, fontWeight: '800', color: '#fff', opacity: 0.6 },
   touch: { fontFamily: F.display, fontSize: 30, lineHeight: 38, color: C.deep, textAlign: 'center', textShadowColor: C.deep, textShadowRadius: 10 },
   count: { fontFamily: F.display, fontSize: 130, lineHeight: 140, color: '#fff' },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   verdict: { fontFamily: F.display, fontSize: 40, lineHeight: 48 },
 });

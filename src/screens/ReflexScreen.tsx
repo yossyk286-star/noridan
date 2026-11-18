@@ -270,7 +270,7 @@ export default function ReflexScreen({ members, level, night, onQuit, onSettings
               return (
                 <Tap key={v} onPress={() => pickStyle(v)} style={[s.styleBtn, { borderColor: on ? pal.cardEdge : alpha('#888888', 0.4), backgroundColor: on ? alpha(pal.cardEdge, 0.2) : 'transparent' }]}>
                   <Text style={[s.styleT, { color: fg }]}>{v === 'solo' ? '1人ずつ' : 'みんな同時'}</Text>
-                  <Text style={[s.styleS, { color: fg }]}>{v === 'solo' ? '順番にじっくり' : n > 4 ? `4人までの${heats.length}組に分けて` : '画面を分けて一斉に'}</Text>
+                  <Text style={[s.styleS, { color: fg }]}>{v === 'solo' ? (n >= 5 ? '5人以上はこっちがおすすめ' : '順番にじっくり') : n > 4 ? `4人までの${heats.length}組に分けて` : '画面を分けて一斉に'}</Text>
                 </Tap>
               );
             })}
@@ -399,9 +399,9 @@ const s = StyleSheet.create({
   styleRow: { flexDirection: 'row', gap: 8 },
   styleBtn: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 12, paddingHorizontal: 6, borderRadius: 14, borderWidth: 2 },
   styleT: { fontSize: 17, fontWeight: '900' },
-  styleS: { fontSize: 12, opacity: 0.65 },
+  styleS: { fontSize: 13, opacity: 0.65 },
   boxText: { fontFamily: F.display, fontSize: 60, lineHeight: 70 },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   big: { fontFamily: F.display, fontSize: 64, lineHeight: 72 },
   boardScroll: { alignSelf: 'stretch', flexGrow: 0, flexShrink: 1 },
   board: { gap: 6, marginTop: 8 },

@@ -51,8 +51,12 @@ export function usePenalty(members: Member[], level: Level, night: Night, why: W
     setGacha([]);
     return np;
   };
+  /** 予想を外した人に軽い罰を1つ（見てる人の予想） */
+  const bump = (ids: number[]) => {
+    setPen((p) => p.map((v, i) => (ids.includes(i) ? v + 1 : v)));
+  };
   const lucky = gacha.length > 0 && gacha.every((x) => x.lucky);
-  return { pen, gacha, stats, draw, apply, lucky, decks, pick, choose };
+  return { pen, gacha, stats, draw, apply, lucky, decks, pick, choose, bump };
 }
 
 /** 1位の特権の画面（選んでる間は「もう1回戦」とかのボタンを出さへん）。選ぶものが無ければ null */

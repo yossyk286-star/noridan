@@ -146,7 +146,7 @@ const s = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' },
   tile: { aspectRatio: 1, borderRadius: 14, borderWidth: 3, borderColor: 'rgba(136,136,136,0.35)', alignItems: 'center', justifyContent: 'center' },
   tileText: { fontFamily: F.display, fontSize: 26, color: '#141210' },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   pass: { minHeight: 54, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(247,243,234,0.2)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
   passText: { fontWeight: '900', fontSize: 16 },
 });

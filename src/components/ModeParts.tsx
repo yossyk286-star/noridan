@@ -83,7 +83,7 @@ export function IntroCard({ pal, mode, tag, children }: { pal: Pal; mode: Mode; 
               </View>
             </View>
             <View style={{ padding: 10, borderRadius: 12, backgroundColor: alpha('#888888', 0.1) }}>
-              <Text style={{ color: fg, fontSize: 11, fontWeight: '700', opacity: 0.65 }}>このあと</Text>
+              <Text style={{ color: fg, fontSize: 13, fontWeight: '700', opacity: 0.65 }}>このあと</Text>
               <Text style={{ color: fg, fontSize: 14, fontWeight: '800' }}>{medley.rest.length ? medley.rest.join(' → ') : '最後のゲーム'}</Text>
             </View>
             {medley.rest.length > 0 && !!onMedNext && (
@@ -251,7 +251,7 @@ export function WordList({ members, words, skip, fg, big, compact }: { members: 
         {members.map((m, j) =>
           j === skip ? null : (
             <View key={j} style={[s.wordCell, { borderLeftColor: colorOf(j), backgroundColor: alpha(fg.length === 7 ? fg : '#141210', 0.07) }]}>
-              <Text style={[s.wordName, { color: fg, fontSize: 12 }]} numberOfLines={1}>{m.name}</Text>
+              <Text style={[s.wordName, { color: fg, fontSize: 13 }]} numberOfLines={1}>{m.name}</Text>
               <Text style={[s.word, { color: fg, fontSize: 18 }]} numberOfLines={2}>{words[j]}</Text>
             </View>
           ),
@@ -321,7 +321,7 @@ const s = StyleSheet.create({
   note: { fontSize: 13, fontWeight: '700', opacity: 0.7, lineHeight: 20, textAlign: 'center' },
   lead: { fontFamily: F.display, fontSize: 26, lineHeight: 36, textAlign: 'center' },
   count: { fontFamily: F.display, fontSize: 130, lineHeight: 140 },
-  countHint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  countHint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   handDot: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   handDotText: { fontFamily: F.display, fontSize: 32, color: '#141210' },
   handName: { fontFamily: F.display, fontSize: 40, maxWidth: '100%' },
@@ -332,17 +332,17 @@ const s = StyleSheet.create({
   tileDot: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   tileIni: { fontSize: 14, fontWeight: '900', color: '#141210' },
   tileName: { fontSize: 16, fontWeight: '900' },
-  tileCount: { fontSize: 12, fontWeight: '900', opacity: 0.7, alignSelf: 'flex-end' },
+  tileCount: { fontSize: 13, fontWeight: '900', opacity: 0.7, alignSelf: 'flex-end' },
   wordCell: { width: '48.5%', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12, borderLeftWidth: 5 },
   peek: { alignSelf: 'stretch', minHeight: 120, justifyContent: 'center', alignItems: 'center' },
   peekCover: { borderRadius: 18, borderWidth: 2.5, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4 },
   peekText: { fontFamily: F.display, fontSize: 22 },
-  peekSub: { fontSize: 12, fontWeight: '900', opacity: 0.6 },
+  peekSub: { fontSize: 13, fontWeight: '900', opacity: 0.6 },
   wordRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 14, borderLeftWidth: 6 },
   wordName: { fontWeight: '900', fontSize: 15, flexShrink: 1 },
   word: { fontFamily: F.display, fontSize: 22 },
   introTitle: { fontFamily: F.display, fontSize: 22 },
-  introTag: { fontSize: 12, fontWeight: '900', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
+  introTag: { fontSize: 13, fontWeight: '900', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
   ho: { ...StyleSheet.absoluteFillObject, zIndex: 30, paddingHorizontal: 22, paddingTop: 20, paddingBottom: 24 },
   hoTop: { flexDirection: 'row', justifyContent: 'space-between' },
   hoTopText: { fontWeight: '900', fontSize: 14, color: '#141210', opacity: 0.75 },
@@ -358,7 +358,7 @@ const s = StyleSheet.create({
   hoAfter: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 16, flexWrap: 'wrap' },
   hoAfterText: { fontWeight: '900', fontSize: 14, color: '#141210' },
   hoAv: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#141210' },
-  hoAvText: { fontWeight: '900', fontSize: 12, color: '#141210' },
+  hoAvText: { fontWeight: '900', fontSize: 13, color: '#141210' },
   komaRow: { flexDirection: 'row', gap: 14, alignItems: 'center', borderRadius: 18, paddingVertical: 10, paddingHorizontal: 12 },
   komaIc: { width: 58, height: 58, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   komaNo: { position: 'absolute', left: -7, top: -7, width: 24, height: 24, borderRadius: 12, overflow: 'hidden', backgroundColor: '#141210', color: '#fff8e7', fontFamily: F.display, fontSize: 13, lineHeight: 24, textAlign: 'center' },
@@ -367,7 +367,7 @@ const s = StyleSheet.create({
   komaMore: { fontSize: 13, fontWeight: '900', opacity: 0.7, textDecorationLine: 'underline', paddingVertical: 4 },
   lvBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, gap: 2 },
   lvText: { fontSize: 14, fontWeight: '900' },
-  lvNote: { fontSize: 12, fontWeight: '700', opacity: 0.75 },
+  lvNote: { fontSize: 13, fontWeight: '700', opacity: 0.75 },
   roul: { borderWidth: 2, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center', gap: 4 },
   roulDot: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   roulDotText: { fontFamily: F.display, fontSize: 20, color: '#141210' },

@@ -230,16 +230,17 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
       controls =
         phase === 'play' ? (
           <View style={{ gap: 10 }}>
-            <Text style={[s.q, { color: pal.fg }]}>言うてもうたのは？<Text style={{ color: pal.muted, fontSize: 12 }}>　タップでアウト</Text></Text>
+            <Text style={[s.q, { color: pal.fg }]}>言うてもうたのは？<Text style={{ color: pal.muted, fontSize: 13 }}>　タップでアウト</Text></Text>
             <NameTiles members={members} list={members.map((_, i) => i)} fg={pal.fg} count={(i) => `アウト${pen[i]}`} onPress={(i) => { pause(); setOut(i); setPhase('confirm'); play('warn'); }} />
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Outline label="ワードを見直す" fg={pal.fg} onPress={() => { pause(); setPhase('who'); }} />
               <Outline label="話題を出す" fg={pal.fg} onPress={() => setTopic(decks.ngTopic())} />
             </View>
+            <Outline label="ギブアップ（ここでワード当てへ）" fg={pal.fg} onPress={() => { endAt.current = 0; left.current = 0; setPhase('over'); play('timeup'); }} />
           </View>
         ) : (
           <View style={{ gap: 10 }}>
-            <Text style={[s.q, { color: pal.muted, fontSize: 12 }]}>誰がワードを見直す？</Text>
+            <Text style={[s.q, { color: pal.muted, fontSize: 13 }]}>誰がワードを見直す？</Text>
             <NameTiles members={members} list={members.map((_, i) => i)} fg={pal.fg} onPress={(i) => { setViewer(i); setPhase('hand'); }} />
             <Outline label="やめる" fg={pal.fg} onPress={resume} style={{ flex: 0 }} />
           </View>
@@ -390,11 +391,11 @@ const s = StyleSheet.create({
   gRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, borderLeftWidth: 4 },
   gName: { width: 70, fontSize: 15, fontWeight: '800' },
   gWord: { flex: 1, fontSize: 16, fontWeight: '700' },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   gRes: { fontSize: 13, fontWeight: '900' },
   title: { fontFamily: F.display, fontSize: 24 },
   how: { fontSize: 17, fontWeight: '700', lineHeight: 26 },
-  small: { fontSize: 12, fontWeight: '700', opacity: 0.65, lineHeight: 18 },
+  small: { fontSize: 13, fontWeight: '700', opacity: 0.65, lineHeight: 18 },
   mins: { flexDirection: 'row', gap: 6 },
   min: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 11, alignItems: 'center' },
   lvBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, gap: 2 },
@@ -404,7 +405,7 @@ const s = StyleSheet.create({
   lookSub: { fontFamily: undefined, fontSize: 13, fontWeight: '900' },
   timer: { fontFamily: F.display, fontSize: 80, lineHeight: 92, fontVariant: ['tabular-nums'] },
   topic: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center' },
-  topicLabel: { fontSize: 12, fontWeight: '900', opacity: 0.6, letterSpacing: 2 },
+  topicLabel: { fontSize: 13, fontWeight: '900', opacity: 0.6, letterSpacing: 2 },
   topicText: { fontSize: 17, fontWeight: '900' },
   q: { fontSize: 15, fontWeight: '900' },
   reveal: { fontFamily: F.display, fontSize: 40, textAlign: 'center' },

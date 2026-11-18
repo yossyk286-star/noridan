@@ -68,6 +68,7 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
   const [minutes, setMinutes] = useState(3);
   const [count, setCount] = useState(0);
   const [peace, setPeace] = useState(true);
+  const [setOpen, setSetOpen] = useState(false);
   cfg.current = { count, peace };
   const [dealt, setDealt] = useState(0); // 何人目に配ってるか
   const [dealing, setDealing] = useState(true);
@@ -260,9 +261,18 @@ export default function WolfScreen({ members, level, night, onQuit, onSettings, 
       card = (
         <IntroCard pal={pal} mode="wolf" tag={`${n}人`}>
           <LevelBox pal={pal} text={`地獄度は「${LEVEL_LABEL[level]}」`} note={night ? `${night === 'shinya' ? '深夜' : '夜'}モードのお題も出る${members.some((m) => m.ng) ? '（下ネタNGの人がおるので今回は混ぜへん）' : ''}` : undefined} />
+          <Text style={{ color: fg, fontSize: 14, fontWeight: '800' }}>{`おまかせ：話し合い${minutes}分・ウルフ${Math.min(wolfCount(), maxCount(n))}人${n >= 4 && peace ? '・全員市民の回もたまにある' : ''}`}</Text>
+          {!setOpen ? (
+            <Tap onPress={() => setSetOpen(true)} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
+              <Text style={{ color: pal.cardEdge, fontSize: 13, fontWeight: '900' }}>細かく変える</Text>
+            </Tap>
+          ) : (
+            <>
           <SetRow label="話し合い" fg={fg} bg={pal.cardBg} opts={MINUTES.map((m) => ({ label: `${m}分`, on: minutes === m, press: () => { setMinutes(m); save('nd_wf_min', m); } }))} />
           <SetRow label="ウルフ" fg={fg} bg={pal.cardBg} opts={[{ label: `おまかせ(${Math.min(autoCount(n), maxCount(n))})`, on: !count, press: () => { setCount(0); save('nd_wf_n', 0); } }, ...[1, 2, 3].filter((c) => c <= maxCount(n)).map((c) => ({ label: `${c}人`, on: count === c, press: () => { setCount(c); save('nd_wf_n', c); } }))]} />
           {n >= 4 && <SetRow label="全員市民の回" fg={fg} bg={pal.cardBg} opts={[{ label: 'たまに', on: peace, press: () => { setPeace(true); save('nd_wf_peace', true); } }, { label: 'なし', on: !peace, press: () => { setPeace(false); save('nd_wf_peace', false); } }]} />}
+            </>
+          )}
         </IntroCard>
       );
       controls = <BigButton onBack={onQuit} pal={pal} label="お題を配る" onPress={() => startRound(1)} />;
@@ -663,7 +673,7 @@ function Bar({ name, color, v, max, red, fg }: { name: string; color: string; v:
 const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
   no: { fontFamily: F.display, fontSize: 22 },
-  small: { fontSize: 12, fontWeight: '700', opacity: 0.65, lineHeight: 18 },
+  small: { fontSize: 13, fontWeight: '700', opacity: 0.65, lineHeight: 18 },
   mins: { flexDirection: 'row', gap: 8 },
   min: { flex: 1, borderWidth: 2, borderRadius: 12, paddingVertical: 10, alignItems: 'center' },
   minText: { fontWeight: '900', fontSize: 15 },
@@ -675,15 +685,15 @@ const s = StyleSheet.create({
   rule: { alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, fontSize: 13, fontWeight: '900', overflow: 'hidden' },
   ruleBad: { backgroundColor: 'rgba(255,59,59,0.14)', color: '#ff3b3b' },
   ruleGood: { backgroundColor: 'rgba(60,180,110,0.18)', color: '#2fbf6f' },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   words: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },
   wordBox: { flex: 1, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center', gap: 2 },
-  wordLab: { fontSize: 12, fontWeight: '900', opacity: 0.7 },
+  wordLab: { fontSize: 13, fontWeight: '900', opacity: 0.7 },
   wordText: { fontFamily: F.display, fontSize: 22, lineHeight: 30, textAlign: 'center' },
   wordWho: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%' },
   dot: { width: 9, height: 9, borderRadius: 5 },
   setRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  setLabel: { fontSize: 12, fontWeight: '900', opacity: 0.7 },
+  setLabel: { fontSize: 13, fontWeight: '900', opacity: 0.7 },
   seg: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 4, flexShrink: 1 },
   segBtn: { borderWidth: 1.5, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 10 },
   segText: { fontSize: 13, fontWeight: '900' },
@@ -695,7 +705,7 @@ const s = StyleSheet.create({
   verdict: { flexDirection: 'row', gap: 10 },
   vd: { flex: 1, borderRadius: 18, paddingVertical: 14, alignItems: 'center' },
   vdText: { fontFamily: F.display, fontSize: 22 },
-  vdSub: { fontSize: 12, fontWeight: '900', opacity: 0.85 },
+  vdSub: { fontSize: 13, fontWeight: '900', opacity: 0.85 },
   groupHead: { fontFamily: F.display, fontSize: 26 },
   groupText: { fontFamily: F.display, fontSize: 22, lineHeight: 32, textAlign: 'center' },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

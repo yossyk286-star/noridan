@@ -195,7 +195,7 @@ const s = StyleSheet.create({
   count: { fontFamily: F.display, fontSize: 130, lineHeight: 140 },
   lead: { fontFamily: F.display, fontSize: 26, lineHeight: 34, textAlign: 'center' },
   verdict: { fontFamily: F.display, fontSize: 36, lineHeight: 44 },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   opt: { borderWidth: 2, borderBottomWidth: 6, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 14 },
   optDown: { borderBottomWidth: 3, marginTop: 3 },
   optT: { fontSize: 16, fontWeight: '900' },

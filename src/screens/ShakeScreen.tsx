@@ -4,6 +4,7 @@ import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { Vibration } from '../lib/vibe';
 import { useKeepAwake } from 'expo-keep-awake';
 import { DeviceMotion } from 'expo-sensors';
+import { usePreTurn } from '../components/PreTurn';
 import { BigButton, RoundEnd, Frame, GachaCard, RulesSheet, ScoreBar, DeckStack } from '../components/Stage';
 import { HandWho, IntroCard, LevelBox, ModeCard, Note, Prog } from '../components/ModeParts';
 import { Icon } from '../components/Icon';
@@ -68,6 +69,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
   const [cnt, setCnt] = useState<(number | null)[]>(() => Array(n).fill(null));
   const [losers, setLosers] = useState<number[]>([]);
   const [pen, setPen] = useState<number[]>(() => Array(n).fill(0));
+  const pre = usePreTurn(members, (ids) => setPen((p) => p.map((v, i) => (ids.includes(i) ? v + 1 : v))));
   const [turns, setTurns] = useState(0);
   const [gacha, setGacha] = useState<GachaItem[]>([]);
   const [pick, setPick] = useState<BatsuPick | null>(null);
@@ -207,6 +209,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     const nc = cnt.slice();
     nc[who] = c;
     setCnt(nc);
+    pre.resolve(c >= (level === 'yurume' ? 25 : level === 'jigoku' ? 35 : 30));
     if (c > (best[who] ?? -1)) best[who] = c;
     if (manualRef.current) tapped[who] = true;
     setTurns((t) => t + 1);
@@ -328,7 +331,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
           <Note fg={fg}>{`3・2・1のあと${SEC}秒間、ひたすら振る`}</Note>
         </ModeCard>
       );
-      controls = <BigButton pal={pal} label="ガッチリ握った → カウントダウン" onPress={countdown} />;
+      controls = <BigButton pal={pal} label="ガッチリ握った → カウントダウン" onPress={() => pre.ask({ who, safe: 'shake', q: `${level === 'yurume' ? 25 : level === 'jigoku' ? 35 : 30}回以上振れる？`, go: countdown })} />;
       break;
     case 'count':
       card = (
@@ -430,6 +433,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
         <View style={{ flex: 1 }}>{card}</View>
         {controls}
       </View>
+      {pre.node}
       <Frame color={frame} />
       <RulesSheet visible={rules} custom={HELP.shake.rules} onClose={() => setRules(false)} />
       <GameMenu
@@ -450,8 +454,8 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
 
 const s = StyleSheet.create({
   wrap: { flex: 1, padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
-  small: { fontSize: 12, fontWeight: '700', opacity: 0.65, lineHeight: 18, textAlign: 'center' },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  small: { fontSize: 13, fontWeight: '700', opacity: 0.65, lineHeight: 18, textAlign: 'center' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   safe: { alignSelf: 'stretch', gap: 4, padding: 12, borderRadius: 12, borderWidth: 2, borderColor: '#ffb02e', backgroundColor: 'rgba(255,176,46,0.16)' },
   safeTitle: { color: '#e8780a', fontSize: 14, fontWeight: '900' },
   safeText: { fontSize: 13, lineHeight: 20, fontWeight: '600' },
@@ -475,6 +479,6 @@ const s = StyleSheet.create({
   barBox: { flex: 1, height: 12 },
   bar: { height: 12, borderRadius: 6 },
   num: { minWidth: 36, textAlign: 'right', fontFamily: F.display, fontSize: 20 },
-  tapTag: { fontSize: 12, opacity: 0.6 },
+  tapTag: { fontSize: 13, opacity: 0.6 },
   lose: { fontFamily: F.display, fontSize: 26, lineHeight: 32, textAlign: 'center', marginTop: 8 },
 });

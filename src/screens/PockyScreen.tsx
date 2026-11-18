@@ -179,7 +179,7 @@ const s = StyleSheet.create({
   x: { fontFamily: F.display, fontSize: 28, color: C.deep },
   count: { fontFamily: F.display, fontSize: 130, lineHeight: 140, color: '#fff' },
   go: { fontFamily: F.display, fontSize: 44, lineHeight: 52, color: C.deep },
-  hint: { textAlign: 'center', fontSize: 12, fontWeight: '700' },
+  hint: { textAlign: 'center', fontSize: 13, fontWeight: '700' },
   verdict: { fontFamily: F.display, fontSize: 56, lineHeight: 64 },
   row: { flexDirection: 'row', gap: 8 },
 });
