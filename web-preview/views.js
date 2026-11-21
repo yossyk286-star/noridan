@@ -391,7 +391,7 @@ function vHome2() {
     <div class="night-lv three">
       <button data-act="nightPick" data-v="off">通常<small>夜モードをやめる</small></button>
       <button data-act="nightPick" data-v="yoru" aria-pressed="${S.night === "yoru"}">夜<small>たまに下ネタ</small></button>
-      <button data-act="nightPick" data-v="shinya" aria-pressed="${S.night === "shinya"}">深夜<small>${S.night === "shinya" ? "全部下ネタ" : "？？？"}</small></button>
+      <button data-act="nightPick" data-v="shinya" aria-pressed="${S.night === "shinya"}">深夜<small>全部下ネタ</small></button>
     </div>
   </section>` : ""}
   <p class="note">お酒は20歳になってから。飲めへん人はソフドリでOK、無理は絶対させんこと。</p>`;
@@ -400,13 +400,13 @@ function vHome2() {
 function vNightAsk() {
   if (S.nightAsk === "shinya") return `
   <div class="night-ask deep">
-    <p class="h2">さらに奥へ…</p>
+    <p class="h2">20歳以上だけ・さらに奥へ…</p>
     <h1 class="night-title is-deep">深夜モード<small>（エロがりモード）</small></h1>
     <p class="night-lead">お題が<b>全部</b>下ネタになる。ハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</p>
     <ul class="night-rules">
       <li>全員20歳以上で、全員がOKしてること</li>
       <li>触られるのが嫌な人は「下ネタNG」に。NGの人には振られへん</li>
-      <li>戻りたくなったらモード選択の「夜」で戻れる</li>
+      <li>戻りたくなったらモード選択の「夜」「通常」で戻れる</li>
     </ul>
     <div class="row2"><button class="ghost" data-act="nightCancel">やめとく</button><button class="big" data-act="nightOn">全員OK</button></div>
   </div>`;
@@ -455,14 +455,17 @@ function vSheet() {
       <button class="toggle" data-act="big" role="switch" aria-checked="${S.big}" aria-pressed="${S.big}"><span>大画面モード<small>テレビやパソコンに映す時。文字を大きく、横に罰ランキング</small></span><b>${S.big ? "ON" : "OFF"}</b></button>`)}
       ${!S.night ? `<div class="night-box off">
         <p class="h2">夜モード<span class="age">20歳以上</span></p>
-        <p class="note">恋愛・下ネタ寄りのお題が混ざる。全員が20歳以上で、全員OKの時だけ。</p>
-        ${S.screen === "home" ? `<button class="ghost" data-act="nightAskOpen">夜モードをオンにする</button>` : `<p class="note">ゲームが終わってから、最初の画面の設定でオンにできる</p>`}
+        <p class="note">恋愛・下ネタ寄りのお題が混ざる。全員が20歳以上で、全員OKの時だけ。選んだら確認画面が出る。</p>
+        ${S.screen === "home" ? `<div class="night-lv pick">
+          <button data-act="nightAskOpen" data-v="yoru">夜をオン<small>たまに下ネタ・しゃべるだけ</small></button>
+          <button data-act="nightAskOpen" data-v="shinya">深夜をオン<small>全部下ネタ・軽いタッチあり</small></button>
+        </div>` : `<p class="note">ゲームが終わってから、最初の画面の設定でオンにできる</p>`}
       </div>` : ""}
       ${S.night ? `<div class="night-box">
         <p class="h2">夜モード<span class="age">20歳以上</span></p>
         <div class="night-lv">
           <button data-act="nightLv" data-v="yoru" aria-pressed="${S.night === "yoru"}">夜<small>たまに下ネタ</small></button>
-          <button data-act="nightLv" data-v="shinya" aria-pressed="${S.night === "shinya"}">深夜<small>全部下ネタ</small></button>
+          <button data-act="nightLv" data-v="shinya" aria-pressed="${S.night === "shinya"}"${S.night !== "shinya" && S.screen !== "home" ? " disabled" : ""}>深夜<small>${S.night !== "shinya" && S.screen !== "home" ? "最初の画面で選べる" : "全部下ネタ"}</small></button>
         </div>
         <p class="note">夜はしゃべるだけ、深夜は軽いタッチあり（脱ぐは無し）。下ネタNGの人には振られへん。夜お題は「無理」で罰なしパス。</p>
         <button class="ghost" data-act="nightOff">夜モードをやめる</button>
@@ -3588,9 +3591,11 @@ function onClick(e) {
       if (b.dataset.v === "shinya" && S.night !== "shinya") { S.nightAsk = "shinya"; render(); window.scrollTo(0, 0); }
       else { S.night = b.dataset.v; store.set("nd_night", S.night); render(); }
       break;
-    case "nightAskOpen": S.sheet = false; S.nightAsk = "yoru"; render(); window.scrollTo(0, 0); break;
+    case "nightAskOpen": S.sheet = false; S.nightAsk = b.dataset.v === "shinya" ? "shinya" : "yoru"; render(); window.scrollTo(0, 0); break;
     case "nightOn": S.night = S.nightAsk || "yoru"; S.nightAsk = false; store.set("nd_night", S.night); render(); break;
-    case "nightLv": S.night = b.dataset.v; store.set("nd_night", S.night); render(); break;
+    case "nightLv": // 深夜に上げる時は確認画面をはさむ（最初の画面だけ）
+      if (b.dataset.v === "shinya" && S.night !== "shinya") { if (S.screen === "home") { S.sheet = false; S.nightAsk = "shinya"; render(); window.scrollTo(0, 0); } break; }
+      S.night = b.dataset.v; store.set("nd_night", S.night); render(); break;
     case "nightOff": S.night = false; S.nightAsk = false; S.sheet = false; store.set("nd_night", false); render(); break;
     case "nightCancel": S.nightAsk = false; render(); break;
     case "ng": S.members[i].ng = !S.members[i].ng; saveMembers(); render(); break;

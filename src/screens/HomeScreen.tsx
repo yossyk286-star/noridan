@@ -32,7 +32,7 @@ type Props = {
   /** 2=モード選択から始める（ゲームから戻ってきた時） */
   initialStep?: 1 | 2;
   /** 設定の「夜モードをオンにする」が押されたら増える（確認画面を出す合図） */
-  nightAskReq?: number;
+  nightAskReq?: { n: number; kind: 'yoru' | 'shinya' } | null;
   /** モード選択の上に出す道具（帰る時間・幹事の道具・チーム戦） */
   tools?: React.ReactNode;
   /** 上の細いボタン列（幹事の道具・誰が罰・チーム戦） */
@@ -58,7 +58,7 @@ export default function HomeScreen(props: Props) {
   /** メンバーをいじったら「前回のメンバー」の大きいボタンは引っ込める */
   const [edited, setEdited] = useState(false);
   useEffect(() => {
-    if (nightAskReq) setAsking('yoru');
+    if (nightAskReq) setAsking(nightAskReq.kind);
   }, [nightAskReq]);
 
   if (asking)
@@ -415,7 +415,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
                   style={[s.nightLv, { borderColor: col }, on && { backgroundColor: col }]}
                 >
                   <Text style={[s.nightLvText, on && { color: C.ink }]}>{v === 'off' ? '通常' : v === 'yoru' ? '夜' : '深夜'}</Text>
-                  <Text style={[s.nightLvSub, on && { color: C.ink }]}>{v === 'off' ? '夜モードをやめる' : v === 'yoru' ? 'たまに下ネタ' : night === 'shinya' ? '全部下ネタ' : '？？？'}</Text>
+                  <Text style={[s.nightLvSub, on && { color: C.ink }]}>{v === 'off' ? '夜モードをやめる' : v === 'yoru' ? 'たまに下ネタ' : '全部下ネタ'}</Text>
                 </Tap>
               );
             })}
@@ -552,12 +552,12 @@ function NightAsk({ kind, onOk, onCancel }: { kind: 'yoru' | 'shinya'; onOk: () 
   if (kind === 'shinya')
     return (
       <ScrollView contentContainerStyle={s.wrap}>
-        <Text style={[s.h2, { color: C.deep, marginTop: 24 }]}>さらに奥へ…</Text>
+        <Text style={[s.h2, { color: C.deep, marginTop: 24 }]}>20歳以上だけ・さらに奥へ…</Text>
         <Neon color={C.deep} style={s.nightTitle}>深夜モード</Neon>
         <Neon color={C.deep} style={[s.nightTitle, { fontSize: 28, lineHeight: 34, marginTop: -6 }]}>（エロがりモード）</Neon>
         <Text style={s.nightLead}>お題が全部下ネタになる。ハグや手つなぎくらいの軽いタッチもあり（脱ぐ系はなし）。嫌なお題は罰なしでパスできる。</Text>
         <View style={{ gap: 8 }}>
-          {['全員20歳以上で、全員がOKしてること', '触られるのが嫌な人は「下ネタNG」に。NGの人には振られへん', '戻りたくなったらモード選択の「夜」で戻れる'].map((r) => (
+          {['全員20歳以上で、全員がOKしてること', '触られるのが嫌な人は「下ネタNG」に。NGの人には振られへん', '戻りたくなったらモード選択の「夜」「通常」で戻れる'].map((r) => (
             <Text key={r} style={s.nightRule}>・{r}</Text>
           ))}
         </View>

@@ -43,7 +43,8 @@ type Props = {
   onVoice: (on: boolean) => void;
   onNight: (n: Night) => void;
   /** ホーム画面の時だけ：夜モードの確認画面を出す */
-  onNightAsk?: () => void;
+  /** 最初の画面の時だけ。夜・深夜の確認画面を出す */
+  onNightAsk?: (kind: 'yoru' | 'shinya') => void;
   onClose: () => void;
 };
 
@@ -114,11 +115,19 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
                   <Text style={s.nightHead}>夜モード</Text>
                   <Text style={s.age}>20歳以上</Text>
                 </View>
-                <Text style={s.note}>恋愛・下ネタ寄りのお題が混ざる。全員が20歳以上で、全員OKの時だけ。</Text>
+                <Text style={s.note}>恋愛・下ネタ寄りのお題が混ざる。全員が20歳以上で、全員OKの時だけ。選んだら確認画面が出る。</Text>
                 {onNightAsk ? (
-                  <Tap style={s.ghost} onPress={onNightAsk}>
-                    <Text style={s.ghostText}>夜モードをオンにする</Text>
-                  </Tap>
+                  <View style={s.row}>
+                    {(['yoru', 'shinya'] as const).map((v) => {
+                      const col = v === 'shinya' ? C.deep : C.night;
+                      return (
+                        <Tap key={v} onPress={() => onNightAsk(v)} style={[s.lv, { borderColor: col, minHeight: 64, justifyContent: 'center' }]}>
+                          <Text style={[s.lvText, { color: col }]}>{v === 'yoru' ? '夜をオン' : '深夜をオン'}</Text>
+                          <Text style={s.lvSub}>{v === 'yoru' ? 'たまに下ネタ・しゃべるだけ' : '全部下ネタ・軽いタッチあり'}</Text>
+                        </Tap>
+                      );
+                    })}
+                  </View>
                 ) : (
                   <Text style={s.note}>ゲームが終わってから、最初の画面の設定でオンにできる</Text>
                 )}
@@ -135,15 +144,19 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
                     {(['yoru', 'shinya'] as const).map((v) => {
                       const on = night === v;
                       const col = v === 'shinya' ? C.deep : C.night;
+                      // 深夜に上げる時は確認画面をはさむ（最初の画面だけ）
+                      const up = v === 'shinya' && night !== 'shinya';
+                      const locked = up && !onNightAsk;
                       return (
                         <Tap
                           key={v}
-                          onPress={() => onNight(v)}
-                          accessibilityState={{ selected: on }}
-                          style={[s.lv, { borderColor: col, opacity: on ? 1 : 0.55 }, on && { backgroundColor: col }]}
+                          disabled={locked}
+                          onPress={() => (up ? onNightAsk?.('shinya') : onNight(v))}
+                          accessibilityState={{ selected: on, disabled: locked }}
+                          style={[s.lv, { borderColor: col, opacity: on ? 1 : locked ? 0.35 : 0.55 }, on && { backgroundColor: col }]}
                         >
                           <Text style={[s.lvText, on && { color: C.ink }]}>{v === 'yoru' ? '夜' : '深夜'}</Text>
-                          <Text style={[s.lvSub, on && { color: C.ink }]}>{v === 'yoru' ? 'たまに下ネタ' : '全部下ネタ'}</Text>
+                          <Text style={[s.lvSub, on && { color: C.ink }]}>{v === 'yoru' ? 'たまに下ネタ' : locked ? '最初の画面で選べる' : '全部下ネタ'}</Text>
                         </Tap>
                       );
                     })}

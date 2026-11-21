@@ -161,6 +161,9 @@ body:not(.stage) .frame { display: none; }
 .night-lv button small { display: block; font-size: 13px; font-weight: 700; margin-top: 2px; }
 .night-lv button[aria-pressed="true"] { opacity: 1; background: var(--night); color: var(--ink); }
 .night-lv button[data-v="shinya"][aria-pressed="true"] { background: var(--deep); border-color: var(--deep); }
+.night-lv.pick button { opacity: 1; min-height: 64px; }
+.night-lv.pick button[data-v="shinya"] { border-color: var(--deep); color: var(--deep); }
+.night-lv button:disabled { opacity: .35; }
 .sheet .ghost { border-color: rgba(247,243,234,.16); }
 
 /* night ask */

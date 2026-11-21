@@ -103,7 +103,7 @@ export default function App() {
   const medKeep = useRef(false); // メドレーから始めた時だけメドレーを続ける
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
   const [sheet, setSheet] = useState(false);
-  const [nightAskReq, setNightAskReq] = useState(0);
+  const [nightAskReq, setNightAskReq] = useState<{ n: number; kind: 'yoru' | 'shinya' } | null>(null);
   const [groups, setGroups] = useState<Member[][]>([]);
   const [stageBg, setStageBg] = useState<string | null>(null);
   // ===== 第3弾 =====
@@ -567,7 +567,7 @@ export default function App() {
           onDual={updateDual}
           onVoice={updateVoice}
           onNight={updateNight}
-          onNightAsk={screen.name === 'home' ? () => { setSheet(false); setNightAskReq((n) => n + 1); } : undefined}
+          onNightAsk={screen.name === 'home' ? (kind) => { setSheet(false); setNightAskReq((r) => ({ n: (r?.n ?? 0) + 1, kind })); } : undefined}
           onClose={() => setSheet(false)}
         />
         <InoutSheet visible={inout && onStageNow} members={members} pen={totals()} left={left} onJoin={join} onLeave={leave} onClose={() => setInout(false)} />
