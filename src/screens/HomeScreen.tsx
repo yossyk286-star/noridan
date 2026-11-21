@@ -6,7 +6,7 @@ import { Tap } from '../components/Tap';
 import { Animated, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { C, F, LEVEL_LABEL, LEVEL_SUB, ROLE, alpha, colorOf } from '../theme';
 import { Icon } from '../components/Icon';
-import { Pop, expandFrom, useBootOnce } from '../components/Motion';
+import { Pop, Switch, expandFrom, useBootOnce } from '../components/Motion';
 import { ALLOW_SHINYA } from '../lib/game';
 import { HELP } from '../lib/help';
 import { usePrefs } from '../lib/prefs';
@@ -277,7 +277,11 @@ function StepMembers({ members, isExample, night, groups, restored, onExample, o
 
 function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings, onBack, onAskDeep, tools, medN, onMedN, onMedley, onKanji, onRoulette, team }: Props & { onBack: () => void; onAskDeep: () => void }) {
   const [medOpen, setMedOpen] = useState(false);
+  const { date, setDate } = usePrefs();
+  // デートモード：2人の時だけ、オンなら2人用のお題と罰
+  const dateMode = members.length === 2 && date !== false;
   const hero = (() => {
+    if (dateMode) return { m: 'odai' as Mode, label: 'デートのおすすめ' };
     // 人数で出し分け：2〜3人は傾け・ハイロー、6人以上はウルフ・投票（深夜は時間のおすすめを優先）
     const n = members.length;
     if (!(todNow()?.k === 'late' && !night)) {
@@ -329,6 +333,23 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
         })}
       </View>
 
+      {members.length === 2 && setDate && (
+        <Tap
+          onPress={() => setDate(!(date !== false))}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: dateMode }}
+          accessibilityLabel="デートモード"
+          style={s.dateSw}
+        >
+          <View style={s.dateIc}><Icon name="heart" color="#fff" size={20} /></View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={s.dateTitle}>デートモード</Text>
+            <Text style={s.dateSub}>{dateMode ? '2人用のお題と罰。初デートならゆるめで' : 'オフ：いつものお題と罰で遊ぶ'}</Text>
+          </View>
+          <Switch on={dateMode} color={ROLE.turn} />
+        </Tap>
+      )}
+
       {/* 迷ったらこれ（夜は時間でおすすめが変わる） */}
       <View ref={heroRef} collapsable={false}><Tap style={s.hero} onPress={() => go(heroRef, C.yuru, 22, () => onStart(hero.m))} accessibilityLabel={`${hero.label}：${MODE_TITLE[hero.m]}`}>
         <View style={{ flex: 1, gap: 2 }}>
@@ -376,7 +397,7 @@ function StepMode({ members, level, night, onLevel, onNight, onStart, onSettings
         </View>
       )}
       {tools}
-      <ModeTabs members={members} night={night} onStart={onStart} />
+      <ModeTabs members={members} night={night} onStart={onStart} dateMode={dateMode} />
 
       {night && (
         <View style={{ gap: 10 }}>
@@ -451,6 +472,8 @@ export const MODE_LIST: { m: Mode; ic: IconName; cat: Cat; t: string; min?: numb
   { m: 'tickle', ic: 'tickle', cat: 'deep', t: '1回 30秒', ok: 2 },
   { m: 'hug', ic: 'hug', cat: 'deep', t: '1回 30秒', ok: 2 },
 ];
+/** デートモードの「デート向け」タブに並べるゲーム（この順） */
+const DATE_MODES: Mode[] = ['odai', 'ito', 'homeru', 'quiz', 'hilo', 'stop', 'deko', 'rtap', 'reflex', 'bpass'];
 const TABS: [string, string][] = [['fav', '★ よく遊ぶ'], ['all', 'すべて'], ['basic', '定番'], ['phone', 'スマホで勝負'], ['talk', '話す・ノリ'], ['brain', '頭を使う'], ['deep', '深夜']];
 
 /** 遊んだ回数を数える（「よく遊ぶ」タブ用）。App がゲームを始める時に呼ぶ */
@@ -461,7 +484,7 @@ export async function countPlay(m: Mode) {
   save('nd_plays', pl);
 }
 
-function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night; onStart: (m: Mode) => void }) {
+function ModeTabs({ members, night, onStart, dateMode }: { members: Member[]; night: Night; onStart: (m: Mode) => void; dateMode?: boolean }) {
   const [plays, setPlays] = useState<Record<string, number>>({});
   const [tab, setTab] = useState<string | null>(null);
   useEffect(() => {
@@ -473,9 +496,11 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
   const deep = night === 'shinya' && !noTouch;
   const list = MODE_LIST.filter((x) => x.cat !== 'deep' || deep);
   const favs = list.filter((x) => (plays[x.m] ?? 0) > 0).sort((a, b) => plays[b.m] - plays[a.m]).slice(0, 6);
-  const tabs = TABS.filter(([k]) => (k !== 'deep' || deep) && (k !== 'fav' || favs.length));
-  const cur = tabs.some(([k]) => k === tab) ? tab! : favs.length ? 'fav' : 'all';
-  const shown = cur === 'fav' ? favs : cur === 'all' ? list : list.filter((x) => x.cat === cur);
+  // デートモード：先頭に「デート向け」（この順で並べる）
+  const dl = dateMode ? DATE_MODES.map((m) => list.find((x) => x.m === m)).filter((x): x is (typeof MODE_LIST)[number] => !!x) : [];
+  const tabs = [...(dl.length ? [['date', 'デート向け'] as [string, string]] : []), ...TABS.filter(([k]) => (k !== 'deep' || deep) && (k !== 'fav' || favs.length))];
+  const cur = tabs.some(([k]) => k === tab) ? tab! : dl.length ? 'date' : favs.length ? 'fav' : 'all';
+  const shown = cur === 'date' ? dl : cur === 'fav' ? favs : cur === 'all' ? list : list.filter((x) => x.cat === cur);
   const okN = members.filter((m) => !m.ng).length;
   return (
     <View style={{ gap: 10 }}>
@@ -483,10 +508,11 @@ function ModeTabs({ members, night, onStart }: { members: Member[]; night: Night
         {tabs.map(([k, t]) => {
           const on = k === cur;
           const isDeep = k === 'deep';
-          const n = k === 'fav' ? favs.length : k === 'all' ? list.length : list.filter((x) => x.cat === k).length;
+          const isDate = k === 'date';
+          const n = k === 'date' ? dl.length : k === 'fav' ? favs.length : k === 'all' ? list.length : list.filter((x) => x.cat === k).length;
           return (
-            <Tap key={k} onPress={() => { setTab(k); save('nd_tab', k); }} accessibilityState={{ selected: on }} style={[s.tab, isDeep && { borderWidth: 1.5, borderColor: C.deep }, on && { backgroundColor: isDeep ? C.deep : C.yuru }]}>
-              <Text style={[s.tabText, isDeep && { color: C.deep }, on && { color: isDeep ? '#fff' : C.ink }]}>
+            <Tap key={k} onPress={() => { setTab(k); save('nd_tab', k); }} accessibilityState={{ selected: on }} style={[s.tab, isDeep && { borderWidth: 1.5, borderColor: C.deep }, isDate && !on && { borderWidth: 1.5, borderColor: ROLE.turn }, on && { backgroundColor: isDeep ? C.deep : isDate ? ROLE.turn : C.yuru }]}>
+              <Text style={[s.tabText, isDeep && { color: C.deep }, isDate && !on && { color: ROLE.turn }, on && { color: isDeep ? '#fff' : C.ink }]}>
                 {t}
                 <Text style={s.tabCount}>{` ${n}`}</Text>
               </Text>
@@ -613,6 +639,10 @@ const s = StyleSheet.create({
   seg: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.08)' },
   segBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   segText: { color: C.muted, fontWeight: '900', fontSize: 15 },
+  dateSw: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, borderWidth: 2, borderColor: alpha(ROLE.turn, 0.45), backgroundColor: alpha(ROLE.turn, 0.1) },
+  dateIc: { width: 36, height: 36, borderRadius: 18, backgroundColor: ROLE.turn, alignItems: 'center', justifyContent: 'center' },
+  dateTitle: { color: C.paper, fontSize: 16, fontWeight: '900' },
+  dateSub: { color: C.muted, fontSize: 13, fontWeight: '700' },
   lvNote: { color: C.muted, fontWeight: '700', fontSize: 13, opacity: 0.75, marginBottom: -4 },
   segSub: { color: C.muted, fontWeight: '700', fontSize: 13, opacity: 0.8 },
   hero: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 22, backgroundColor: C.yuru, shadowColor: '#b8901a', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },

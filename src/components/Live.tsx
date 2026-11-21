@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Animated, Easing, Image, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { DeviceMotion } from 'expo-sensors';
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
@@ -27,8 +28,9 @@ export function HostFace({ size = 52 }: { size?: number }) {
   );
 }
 
-// ---------- 20 実況ひとこと：画面の下にキャラのツッコミ ----------
+// ---------- 20 実況ひとこと：画面の上（ボタンに被らんように）にキャラのツッコミ ----------
 export function HostSay({ text, onDone }: { text: string; onDone: () => void }) {
+  const inset = useSafeAreaInsets();
   const v = useRef(new Animated.Value(0)).current;
   const bob = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -40,7 +42,7 @@ export function HostSay({ text, onDone }: { text: string; onDone: () => void }) 
     Animated.loop(Animated.sequence([Animated.timing(bob, { toValue: 1, duration: 450, useNativeDriver: true }), Animated.timing(bob, { toValue: 0, duration: 450, useNativeDriver: true })]), { iterations: 2 }).start();
   }, []);
   return (
-    <Animated.View pointerEvents="none" style={[ls.host, { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
+    <Animated.View pointerEvents="none" style={[ls.host, { top: 64 + inset.top, opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-30, 0] }) }] }]}>
       <Animated.View style={{ transform: [{ rotate: bob.interpolate({ inputRange: [0, 1], outputRange: ['-6deg', '6deg'] }) }] }}>
         <HostFace />
       </Animated.View>
@@ -450,8 +452,8 @@ export function LiveSettings({ Toggle, hideHead }: { hideHead?: boolean; Toggle:
 }
 
 const ls = StyleSheet.create({
-  host: { position: 'absolute', left: 16, right: 16, bottom: 120, flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
-  bubble: { flex: 1, backgroundColor: C.paper, borderRadius: 18, borderBottomLeftRadius: 4, paddingVertical: 11, paddingHorizontal: 15, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  host: { position: 'absolute', left: 16, right: 16, top: 64, flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  bubble: { flex: 1, backgroundColor: C.paper, borderRadius: 18, borderTopLeftRadius: 4, paddingVertical: 11, paddingHorizontal: 15, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 0, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   bubbleText: { color: C.ink, fontWeight: '900', fontSize: 16, lineHeight: 22 },
   rare: { position: 'absolute', left: 0, right: 0, top: '56%', textAlign: 'center', fontFamily: F.display, fontSize: 30, color: '#ffd23f', textShadowColor: '#141210', textShadowRadius: 1, textShadowOffset: { width: 0, height: 3 } },
   en: { backgroundColor: '#1c0f17', zIndex: 50 },

@@ -19,6 +19,7 @@ import { Icon } from './Icon';
 import { HELP } from '../lib/help';
 import { capOf, isSpun, markSpun, useLive } from '../lib/live';
 import { releaseCue } from '../lib/fx';
+import { setClockPaused, useClockHold } from '../lib/useCountdown';
 import { CAP_COLOR, CamButton, RareLabel, SpinWait } from './Live';
 
 type Pal = (typeof STAGE)[Level];
@@ -67,10 +68,22 @@ export function ScoreBar({
   };
   const pressEnd = () => {
     if (!onEnd) return;
-    Alert.alert('もう結果出す？', 'ゲームはここで終わり。罰が一番多い人を発表するで', [
-      { text: 'まだ続ける', style: 'cancel' },
-      { text: '結果発表する', onPress: onEnd },
-    ]);
+    // 確認を出してる間は時計も止める（閉じ方が何通りあっても1回だけ戻す）
+    let held = true;
+    const release = () => {
+      if (held) setClockPaused(false);
+      held = false;
+    };
+    setClockPaused(true);
+    Alert.alert(
+      'もう結果出す？',
+      'ゲームはここで終わり。罰が一番多い人を発表するで',
+      [
+        { text: 'まだ続ける', style: 'cancel', onPress: release },
+        { text: '結果発表する', onPress: () => { release(); onEnd(); } },
+      ],
+      { onDismiss: release },
+    );
   };
   const { width } = useWindowDimensions();
   const [all, setAll] = useState(false);
@@ -696,6 +709,8 @@ function PenGrid({ pal, members, flow }: { pal: Pal; members: Member[]; flow: Tu
                 many && { width: '23.5%', minHeight: 46, paddingVertical: 5 },
                 { backgroundColor: on ? onRed : pal.chip, borderColor: on ? onRed : colorOf(i) },
                 pressed && { borderBottomWidth: 3, marginTop: 3 },
+                // 罰の判子が名前に被らんように、右を空けとく
+                (on || pressed) && { paddingRight: 40 },
               ]}
             >
               <Text style={[styles.penName, { color: on ? onText : pal.fg }]} numberOfLines={1}>{m.name}</Text>
@@ -930,6 +945,7 @@ export function Coach({ flow }: { flow: TurnFlow }) {
 
 /** ルール早見表（⋯メニューから） */
 export function RulesSheet({ visible, night, onClose, custom }: { visible: boolean; night?: boolean; onClose: () => void; /** モードごとのルール（NGワード・投票） */ custom?: [string, string][] }) {
+  useClockHold(visible); // ルールを見てる間は時計を止める
   const items: [string, string][] = [...(custom ?? HELP.odai.rules)];
   if (night) items.push(['夜モード', '夜・深夜のお題や罰も混ざる。下ネタNGの人には振られへん。夜お題は「無理！」で罰なしパス']);
   return (
@@ -1176,8 +1192,8 @@ const styles = StyleSheet.create({
   penTile: { width: '31.5%', minHeight: 64, borderRadius: 14, borderWidth: 2, borderBottomWidth: 6, paddingVertical: 8, paddingHorizontal: 10, justifyContent: 'center', overflow: 'hidden' },
   penName: { fontSize: 17, fontWeight: '900' },
   penMeta: { fontSize: 13, fontWeight: '900', opacity: 0.7 },
-  stamp: { position: 'absolute', right: 6, top: '50%', marginTop: -18, width: 36, height: 36, borderRadius: 18, borderWidth: 3, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-14deg' }] },
-  stampText: { fontFamily: F.display, fontSize: 18 },
+  stamp: { position: 'absolute', right: 6, top: '50%', marginTop: -15, width: 30, height: 30, borderRadius: 15, borderWidth: 3, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-14deg' }] },
+  stampText: { fontFamily: F.display, fontSize: 15 },
   penHead: { fontSize: 13, fontWeight: '900', letterSpacing: 1.5, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingVertical: 10, paddingRight: 14, paddingLeft: 10, borderRadius: 999 },

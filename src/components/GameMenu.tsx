@@ -5,6 +5,7 @@ import { C } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { SwipeSheet } from './Motion';
 import { usePrefs } from '../lib/prefs';
+import { isClockRunning, useClockHold } from '../lib/useCountdown';
 
 type Props = {
   visible: boolean;
@@ -26,6 +27,7 @@ type Props = {
 /** ゲーム中の「⋯」メニュー。画面をスッキリさせるために、たまにしか使わん操作はここに寄せる */
 export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRules, onSettings, onQuit, onClose, rulesSub, onUndo }: Props) {
   const { dual, setDual, onInout } = usePrefs();
+  useClockHold(visible); // メニューを開いてる間は時計を止める
   // 結果発表・やめるは押し間違えたら戻れへんので、1回だけ確認を挟む
   const [ask, setAsk] = useState<null | 'end' | 'quit'>(null);
   useEffect(() => {
@@ -65,6 +67,12 @@ export default function GameMenu({ visible, meta, flipped, onFlip, onEnd, onRule
       <Pressable style={s.back} onPress={onClose}>
         <SwipeSheet style={s.sheet} onClose={onClose}>
           <Text style={s.meta}>{meta}</Text>
+          {isClockRunning() && (
+            <View style={s.hold}>
+              <Icon name="timer" size={16} color={C.muted} />
+              <Text style={s.holdText}>時計は止めてる。閉じたら続きから</Text>
+            </View>
+          )}
           {ask ? (
             <>
               <Text style={s.askTitle}>{ask === 'end' ? 'ここで結果発表する？' : 'ゲームをやめる？'}</Text>
@@ -115,6 +123,8 @@ const s = StyleSheet.create({
   sheet: { backgroundColor: '#1d1a17', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 34, gap: 8, width: '100%', maxWidth: 560, alignSelf: 'center' },
   grip: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(247,243,234,0.25)', alignSelf: 'center', marginBottom: 6 },
   meta: { color: C.muted, fontSize: 13, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
+  hold: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
+  holdText: { color: C.muted, fontSize: 13, fontWeight: '800' },
   item: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: 14, backgroundColor: 'rgba(247,243,234,0.06)' },
   hot: { backgroundColor: '#ffd23f' },
   askTitle: { color: C.paper, fontSize: 22, fontWeight: '900' },

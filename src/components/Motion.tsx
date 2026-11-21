@@ -13,13 +13,13 @@ AccessibilityInfo.addEventListener?.('reduceMotionChanged', (v) => { calm = v; }
 export const isCalm = () => calm;
 
 // ---------- 34 本物のスイッチ（つまみが0.15秒で滑る） ----------
-export function Switch({ on }: { on: boolean }) {
+export function Switch({ on, color }: { on: boolean; color?: string }) {
   const v = useRef(new Animated.Value(on ? 1 : 0)).current;
   useEffect(() => {
     Animated.timing(v, { toValue: on ? 1 : 0, duration: calm ? 0 : 150, easing: Easing.out(Easing.back(1.6)), useNativeDriver: true }).start();
   }, [on]);
   return (
-    <View style={[sw.track, on && sw.trackOn]}>
+    <View style={[sw.track, on && sw.trackOn, on && color ? { backgroundColor: color } : null]}>
       <Animated.View style={[sw.knob, on && { backgroundColor: C.ink }, { transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) }] }]} />
     </View>
   );

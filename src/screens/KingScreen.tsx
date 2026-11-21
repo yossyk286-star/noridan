@@ -169,7 +169,7 @@ export default function KingScreen({ members, level, night, onQuit, onSettings, 
             {cand.map((w) => {
               const on = refuse.includes(w);
               return (
-                <Pressable key={w} onPress={() => setRefuse(on ? refuse.filter((x) => x !== w) : [...refuse, w])} style={[s.chip, { borderColor: colorOf(w) }, on && { backgroundColor: '#e8202a', borderColor: '#e8202a' }]}>
+                <Pressable key={w} hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }} onPress={() => setRefuse(on ? refuse.filter((x) => x !== w) : [...refuse, w])} style={[s.chip, { borderColor: colorOf(w) }, on && { backgroundColor: '#e8202a', borderColor: '#e8202a' }]}>
                   <Text style={[s.chipT, { color: on ? '#fff' : fg }]}>{members[w].name}</Text>
                 </Pressable>
               );

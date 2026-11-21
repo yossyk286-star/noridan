@@ -57,7 +57,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
     flow.st.cur = who;
     setHandoff(prefs.handoff !== false && members.length >= 2);
     setFace(liveNow().faceDeal ? 'down' : null);
-    if (t > 2 && Math.random() < CHANCE.event) {
+    if (t > 2 && decks.allowExtras(members) && Math.random() < CHANCE.event) {
       const ev = decks.event(members, who);
       if (ev.rule) flow.addRule(ev.rule);
       flow.show(ev.card, who);

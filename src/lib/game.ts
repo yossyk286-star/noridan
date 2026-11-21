@@ -1,6 +1,7 @@
 import odai from '../data/odai.json';
 import events from '../data/events.json';
 import batsu from '../data/batsu.json';
+import dateJson from '../data/date.json';
 import bombs from '../data/bombs.json';
 import boardJson from '../data/board.json';
 import ngwords from '../data/ngwords.json';
@@ -43,7 +44,12 @@ export const okList = (list: string[]) => {
   const c = list.filter(contentOk);
   return c.length ? c : list;
 };
-const CONTENT_KEY = /^(yurume|futsu|jigoku|minna|yoru|shinya|ev|bomb|batsu|lucky)/;
+const CONTENT_KEY = /^(yurume|futsu|jigoku|minna|yoru|shinya|ev|bomb|batsu|lucky|date)/;
+
+/** デートモードの設定（App が設定を読んだ時・変えた時に入れる）。メンバーがちょうど2人の時だけ効く */
+export const DATE = { on: true };
+export const dateOn = (members: { length: number }) => DATE.on && members.length === 2;
+const DATE_DATA = dateJson as unknown as { odai: Record<Level, string[]>; batsu: string[] };
 
 /** パス券：1人1回、罰ガチャの罰をゆるい罰に替える（ゲームを始めるたびに App が空にする） */
 export const PASS = { on: true, used: new Set<number>() };
@@ -123,6 +129,9 @@ export const isSituational = (tpl?: string) => !!tpl && SITUATIONAL.test(tpl);
 
 /** 神経衰弱のマーク：お題の文にこの言葉が入ってたらそのマーク（上から順に） */
 const MARKS = (marksJson.marks as string[][]).map(([re, m]) => [new RegExp(re), m] as const);
+const MARK_COLOR: Record<string, string> = Object.fromEntries((marksJson.marks as string[][]).map(([, m, c]) => [m, c || '#141210']));
+/** マーク（漢字1文字）の色 */
+export const markColor = (m: string) => MARK_COLOR[m] || '#141210';
 export function markOf(t: string): string | null {
   const s = t.replace(/\{[PXY]\}/g, '誰か');
   const hit = MARKS.find(([re]) => re.test(s));
@@ -205,7 +214,7 @@ function canYoru(tpl: string, members: Member[], p: number) {
 }
 
 /** 3人以上おらんと成立せえへんお題（2人やと必ず引き分け・全員該当になる） */
-const NEEDS_3 = /少数派|被らへんかった|多数決|一番指された|指差せ|一番似てない|一番低い点|ひとりぼっち|被ったら/;
+const NEEDS_3 = /この中で|少数派|被らへんかった|多数決|一番指された|指差せ|一番似てない|一番低い点|ひとりぼっち|被ったら/;
 
 export function usable(t: string, n: number) {
   if (NEEDS_3.test(t) && n < 3) return false;
@@ -262,11 +271,18 @@ export class Decks {
         if (tpl && canYoru(tpl, members, p)) return makeCard(deep ? '深夜お題' : '夜お題', tpl, members, p, { noNg: true, yoru: true, shinya });
       }
     }
+    // デートモード：2人用のお題（全員参加はなし）
+    if (dateOn(members)) return makeCard(`デート・${LEVEL_LABEL[level]}`, this.str('date_' + level, DATE_DATA.odai[level], n)!, members, p);
     if (Math.random() < CHANCE.minna) {
       const t = this.str('minna', odai.minna, n);
       if (t) return makeCard('全員参加', t, members, p, { solo: false });
     }
     return makeCard(`アホお題・${LEVEL_LABEL[level]}`, this.str(level, odai[level], n)!, members, p);
+  }
+
+  /** 緊急指令・時限爆弾を出していいか（デートモードでは出さへん） */
+  allowExtras(members: Member[]): boolean {
+    return !dateOn(members);
   }
 
   event(members: Member[], p: number): { card: Card; rule: Rule | null } {
@@ -404,7 +420,7 @@ export class Decks {
       const fo = { noNg: true, shinya: this.night === 'shinya' };
       if (tpl && (!tpl.includes('{X}') || okX)) return { segments: fill(tpl, members, p, fo), lucky: false, night: list, tpl, fo };
     }
-    const tpl = pickFrom('batsu', batsu.bad)!;
+    const tpl = dateOn(members) ? pickFrom('batsu_date', DATE_DATA.batsu)! : pickFrom('batsu', batsu.bad)!;
     return { segments: fill(tpl, members, p), lucky: false, tpl, fo: {} };
   }
 

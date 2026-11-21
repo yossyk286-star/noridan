@@ -11,6 +11,9 @@ export type Prefs = {
   livePen?: { current: number[] };
   /** ⋯メニューの「メンバーの出入り」 */
   onInout?: () => void;
+  /** デートモード（2人の時だけ。2人用のお題と罰）。ホームで切り替える */
+  date?: boolean;
+  setDate?: (on: boolean) => void;
   /** 駆け引きあり：ハイ&ローで降りられる・ロシアンタップで1回パス */
   gamble?: boolean;
   /** 価値観ナンバーを協力型（みんなで並べてライフ制）にする */

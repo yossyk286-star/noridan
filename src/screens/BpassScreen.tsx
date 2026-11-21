@@ -13,7 +13,9 @@ import { C, F, LEVEL_LABEL, STAGE, colorOf } from '../theme';
 import type { Level, Member, Night } from '../types';
 import bpassJson from '../data/bpass.json';
 import { bigBoom } from '../lib/fx';
+import { BombArt } from '../components/Fx';
 import { Icon } from '../components/Icon';
+import { clockRunning, isClockPaused, subscribeClock } from '../lib/useCountdown';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
 type Phase = 'intro' | 'ready' | 'play' | 'boom' | 'batsu';
@@ -79,33 +81,69 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
     setPasses(0);
     setPhase('ready');
   };
-  const go = () => {
-    const [a, b] = SEC[level];
-    const start = Date.now();
-    const end = start + (a + Math.random() * (b - a)) * 1000;
-    setPhase('play');
-    phaseRef.current = 'play';
-    play('coin');
+  /** 導火線：いつ爆発するか（裏で決めた時間）。メニューを開いてる間は止めて、閉じたら続きから */
+  const fuse = useRef({ start: 0, end: 0, on: false });
+  const setFuseOn = (on: boolean) => {
+    if (fuse.current.on === on) return;
+    fuse.current.on = on;
+    clockRunning(on);
+  };
+  const arm = () => {
+    const { end } = fuse.current;
     // 爆発は裏で決めた時間ぴったりに（チクタクの間隔に関係なく）
     if (boomT.current) clearTimeout(boomT.current);
     boomT.current = setTimeout(() => {
       if (phaseRef.current !== 'play') return;
       if (timer.current) clearTimeout(timer.current);
       phaseRef.current = 'boom';
+      setFuseOn(false);
       setPhase('boom');
       bigBoom(); // 画面ごと吹っ飛ぶ演出
-    }, end - start);
+    }, Math.max(0, end - Date.now()));
     // チクタク：経過時間でだんだん速くなる（残り時間はバレへん）
     const tick = () => {
       if (phaseRef.current !== 'play') return;
       const now = Date.now();
-      if (now >= end) return;
+      if (now >= fuse.current.end) return;
       tk.current = !tk.current;
       play(tk.current ? 'tik' : 'tok'); // チクタク
-      const el = (now - start) / 1000;
+      const el = (now - fuse.current.start) / 1000;
       timer.current = setTimeout(tick, Math.max(140, 650 - el * (level === 'jigoku' ? 45 : 28)));
     };
+    if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(tick, 400);
+  };
+  // メニューを開いたら導火線を止めて、閉じたら止めた分だけ延ばして続きから
+  useEffect(() => {
+    let at = 0;
+    const off = subscribeClock((p, now) => {
+      if (phaseRef.current !== 'play') return;
+      if (p) {
+        at = now;
+        if (timer.current) clearTimeout(timer.current);
+        if (boomT.current) clearTimeout(boomT.current);
+      } else {
+        const d = now - at;
+        fuse.current.start += d;
+        fuse.current.end += d;
+        arm();
+      }
+    });
+    return () => {
+      off();
+      setFuseOn(false);
+    };
+  }, []);
+  const go = () => {
+    const [a, b] = SEC[level];
+    const start = Date.now();
+    fuse.current.start = start;
+    fuse.current.end = start + (a + Math.random() * (b - a)) * 1000;
+    setPhase('play');
+    phaseRef.current = 'play';
+    play('coin');
+    setFuseOn(true);
+    if (!isClockPaused()) arm();
   };
   const pass = () => {
     if (phaseRef.current !== 'play') return;
@@ -120,6 +158,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
     if (timer.current) clearTimeout(timer.current);
     if (boomT.current) clearTimeout(boomT.current);
     phaseRef.current = 'intro';
+    setFuseOn(false);
     onFinish(p, turns, P.stats);
   };
 
@@ -162,7 +201,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
             <Text style={[s.tier, { backgroundColor: TIER_COLOR[tier] }]}>{TIER_LABEL[tier]}</Text>
           </View>
           <Text style={[s.topic, { color: fg }]}>{topic}</Text>
-          <Animated.View style={[s.bombBox, { transform: [{ rotate: wob.interpolate({ inputRange: [-1, 1], outputRange: ['-8deg', '8deg'] }) }] }]}><Icon name="bomb" color={fg} size={72} /></Animated.View>
+          <Animated.View style={[s.bombBox, { transform: [{ rotate: wob.interpolate({ inputRange: [-1, 1], outputRange: ['-8deg', '8deg'] }) }] }]}><BombArt /></Animated.View>
           <HandWho members={members} i={holder} sub="が持ってる" fg={fg} />
           <Note fg={fg}>{`${passes}回パス`}</Note>
         </ModeCard>
@@ -195,7 +234,7 @@ export default function BpassScreen({ members, level, night, onQuit, onSettings,
   return (
     <StageShell
       pal={pal} members={members} pen={P.pen} doer={phase === 'ready' || phase === 'play' ? holder : -1} frame={phase === 'intro' ? C.muted : phase === 'boom' ? '#ff2a2a' : colorOf(holder)}
-      rules={HELP.bpass.rules} meta={`爆弾パス・${LEVEL_LABEL[level]}・${round}回戦`} onEnd={() => finish()} onQuit={() => { phaseRef.current = 'intro'; if (timer.current) clearTimeout(timer.current); if (boomT.current) clearTimeout(boomT.current); onQuit(); }} onSettings={onSettings} card={card} controls={controls}
+      rules={HELP.bpass.rules} meta={`爆弾パス・${LEVEL_LABEL[level]}・${round}回戦`} onEnd={() => finish()} onQuit={() => { phaseRef.current = 'intro'; setFuseOn(false); if (timer.current) clearTimeout(timer.current); if (boomT.current) clearTimeout(boomT.current); onQuit(); }} onSettings={onSettings} card={card} controls={controls}
     />
   );
 }

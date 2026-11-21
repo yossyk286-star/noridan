@@ -228,7 +228,7 @@ export default function DrawScreen({ members, level, night, onQuit, onSettings, 
                 <Text style={[s.src, { color: fg }]}>どこでズレた？</Text>
                 <View style={s.chips}>
                   {[...new Set(chain.map((x) => x.by))].map((w) => (
-                    <Pressable key={w} onPress={() => setCulprit(culprit === w ? null : w)} style={[s.chip, { borderColor: colorOf(w) }, culprit === w && { backgroundColor: '#e8202a', borderColor: '#e8202a' }]}>
+                    <Pressable key={w} hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }} onPress={() => setCulprit(culprit === w ? null : w)} style={[s.chip, { borderColor: colorOf(w) }, culprit === w && { backgroundColor: '#e8202a', borderColor: '#e8202a' }]}>
                       <Text style={[s.chipT, { color: culprit === w ? '#fff' : fg }]}>{members[w].name}</Text>
                     </Pressable>
                   ))}

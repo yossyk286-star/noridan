@@ -218,7 +218,7 @@ export default function ItoScreen({ members, level, night, onQuit, onSettings, o
         <ModeCard pal={pal}>
           <Text style={[s.title, { color: fg }]}>第{round}問{nightQ ? `（${nightQ === 'shinya' ? '深夜' : '夜'}のお題）` : ''}</Text>
           <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
-            <Text style={[s.big, { color: fg }]}>{topic.t}</Text>
+            <Text style={[s.big, { color: fg }, Array.from(topic.t).length > 9 && { fontSize: 29, lineHeight: 37 }]}>{topic.t}</Text>
             {scale}
             <Text style={[s.small, { color: fg, textAlign: 'center' }]}>1人ずつ、自分の数字っぽい「{topic.t}」を言え。数字は言うたらアカン</Text>
             {coop && <Life n={life} fg={fg} />}

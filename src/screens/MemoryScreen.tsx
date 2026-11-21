@@ -9,7 +9,7 @@ import { IntroCard, LevelBox, ModeCard } from '../components/ModeParts';
 import { HELP } from '../lib/help';
 import { Skull } from '../components/Fx';
 import GameMenu from '../components/GameMenu';
-import { Decks, PERSONAL, makeCard, shuffle } from '../lib/game';
+import { Decks, PERSONAL, makeCard, markColor, shuffle } from '../lib/game';
 import { play } from '../lib/sound';
 import { newStats, type Stats, type Why } from '../lib/titles';
 import { C, F, LEVEL_LABEL, STAGE, alpha, colorOf } from '../theme';
@@ -210,7 +210,7 @@ export default function MemoryScreen({ members, level, night, onQuit, onSettings
               <View style={[s.mc, s.gone, { borderColor: alpha('#f7f3ea', 0.15) }]}>{c.owner != null && c.owner >= 0 && <View style={[s.ownerDot, { backgroundColor: colorOf(c.owner) }]} />}</View>
             ) : c.up ? (
               <View style={[s.mc, { backgroundColor: c.skull ? '#1a0606' : c.yoru ? '#1c1328' : pal.cardBg, borderColor: c.skull ? '#e8202a' : c.yoru ? C.night : colorOf(cur), borderWidth: 3 }]}>
-                {c.skull ? <View style={{ transform: [{ scale: 0.55 }] }}><Skull /></View> : <Text style={[s.ch, { color: c.yoru ? '#f1e8ff' : pal.cardFg }]}>{c.ch}</Text>}
+                {c.skull ? <View style={{ transform: [{ scale: 0.55 }] }}><Skull /></View> : <View style={[s.mk, { borderColor: markColor(c.ch), backgroundColor: alpha(markColor(c.ch), 0.12) }]}><Text style={[s.ch, { color: c.yoru ? alpha('#ffffff', 0.92) : markColor(c.ch) }]}>{c.ch}</Text></View>}
               </View>
             ) : (
               <Tap onPress={() => flip(k)} disabled={phase !== 'pick'} style={({ pressed }) => [s.mc, s.down, { backgroundColor: pal.cardEdge, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
@@ -336,7 +336,8 @@ const s = StyleSheet.create({
   mc: { flex: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   down: { borderWidth: 3, borderColor: 'rgba(0,0,0,0.18)' },
   q: { fontFamily: F.display, fontSize: 26, color: 'rgba(0,0,0,0.35)' },
-  ch: { fontSize: 44 },
+  ch: { fontFamily: F.display, fontSize: 34, lineHeight: 40 },
+  mk: { width: '72%', aspectRatio: 1, maxHeight: '80%', borderRadius: 999, borderWidth: 3, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-8deg' }] },
   gone: { borderWidth: 1.5, borderStyle: 'dashed' },
   ownerDot: { width: 14, height: 14, borderRadius: 7, opacity: 0.7 },
   foot: { textAlign: 'center', fontSize: 13, fontWeight: '700' },

@@ -87,13 +87,13 @@ export function IntroCard({ pal, mode, tag, children }: { pal: Pal; mode: Mode; 
               <Text style={{ color: fg, fontSize: 14, fontWeight: '800' }}>{medley.rest.length ? medley.rest.join(' → ') : '最後のゲーム'}</Text>
             </View>
             {medley.rest.length > 0 && !!onMedNext && (
-              <Pressable onPress={onMedNext} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+              <Pressable onPress={onMedNext} hitSlop={{ top: 14, bottom: 14, left: 12, right: 12 }} style={{ alignSelf: 'flex-start' }}>
                 <Text style={[s.komaMore, { color: fg }]}>このゲームをとばす</Text>
               </Pressable>
             )}
           </View>
         )}
-        <Pressable onPress={() => setRules(true)} hitSlop={8} style={{ alignSelf: 'flex-end' }}>
+        <Pressable onPress={() => setRules(true)} hitSlop={{ top: 14, bottom: 14, left: 12, right: 12 }} style={{ alignSelf: 'flex-end' }}>
           <Text style={[s.komaMore, { color: fg }]}>細かいルール ›</Text>
         </Pressable>
       </View>

@@ -134,7 +134,7 @@ export default function DoubtScreen({ members, level, night, onQuit, onSettings,
                 {(['T', 'L'] as const).map((v) => {
                   const on = votes[i] === v;
                   return (
-                    <Pressable key={v} onPress={() => setVotes({ ...votes, [i]: v })} style={[s.vbtn, on && { backgroundColor: v === 'T' ? '#1f9d55' : '#e8202a', borderColor: 'transparent' }]}>
+                    <Pressable key={v} hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} onPress={() => setVotes({ ...votes, [i]: v })} style={[s.vbtn, on && { backgroundColor: v === 'T' ? '#1f9d55' : '#e8202a', borderColor: 'transparent' }]}>
                       <Text style={[s.vbtnT, { color: on ? '#fff' : fg }]}>{v === 'T' ? '本当' : '嘘'}</Text>
                     </Pressable>
                   );

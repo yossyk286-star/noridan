@@ -47,7 +47,7 @@ import FxLayer from './src/components/FxLayer';
 import { Entrance, MeterGraph, MeterHost, Polaroids } from './src/components/Live';
 import { liveNow, loadLive, setLiveLevel, useLive } from './src/lib/live';
 import { PrefsContext } from './src/lib/prefs';
-import { Decks, PASS, setContent } from './src/lib/game';
+import { DATE, Decks, PASS, setContent } from './src/lib/game';
 import { markFirstOpen, maybeAskReview } from './src/lib/review';
 import { getTally, makeTeams, minsLeft, recordTally, setToastHandler, toast, type Tally } from './src/lib/extras';
 import { InoutSheet, KanjiSheet, LeftResult, QrSheet, RouletteSheet, TallyResult, TeamCols, TeamResult, Toast, tallyText } from './src/components/Extras';
@@ -94,6 +94,7 @@ export default function App() {
   const [sober, setSober] = useState(false); // お酒なし
   const [noTouch, setNoTouch] = useState(false); // 体に触るのなし
   const [passOn, setPassOn] = useState(true); // パス券（1人1回）
+  const [date, setDate] = useState(true); // デートモード（2人の時だけ）
   const [gamble, setGamble] = useState(true); // 駆け引きあり
   const [itCoop, setItCoop] = useState(false); // 価値観ナンバーの協力型
   const [medN, setMedN] = useState(5); // おまかせメドレーのゲーム数
@@ -161,6 +162,9 @@ export default function App() {
       setPassOn(po);
       setContent(so, nt);
       PASS.on = po;
+      const dt = (await load<unknown>('nd_date', true)) !== false;
+      setDate(dt);
+      DATE.on = dt;
       setGamble((await load<unknown>('nd_gamble', true)) !== false);
       setItCoop((await load<unknown>('nd_itcoop', false)) === true);
       const mn = await load<number>('nd_medn', 5);
@@ -227,6 +231,11 @@ export default function App() {
     setPassOn(on);
     PASS.on = on;
     save('nd_pass', on);
+  };
+  const updateDate = (on: boolean) => {
+    setDate(on);
+    DATE.on = on;
+    save('nd_date', on);
   };
   const updateGamble = (on: boolean) => {
     setGamble(on);
@@ -448,7 +457,7 @@ export default function App() {
   }, [onStage]);
 
   return (
-    <PrefsContext.Provider value={{ gamble, itCoop, setItCoop: updateItCoop, medley: medley ? { idx: medley.idx, total: medley.list.length, rest: medley.list.slice(medley.idx + 1).map((m) => MODE_TITLE[m]) } : undefined, onMedNext: medNext, dual, voice, handoff, noTouch, setDual: updateDual, teams: teamOn ? teams : undefined, carry: carry ? carryArr : undefined, livePen, onInout: () => setTimeout(() => setInout(true), 400) }}>
+    <PrefsContext.Provider value={{ date, setDate: updateDate, gamble, itCoop, setItCoop: updateItCoop, medley: medley ? { idx: medley.idx, total: medley.list.length, rest: medley.list.slice(medley.idx + 1).map((m) => MODE_TITLE[m]) } : undefined, onMedNext: medNext, dual, voice, handoff, noTouch, setDual: updateDual, teams: teamOn ? teams : undefined, carry: carry ? carryArr : undefined, livePen, onInout: () => setTimeout(() => setInout(true), 400) }}>
     <SafeAreaProvider>
       <SafeAreaView style={[s.root, { backgroundColor: bg }]}>
         <StatusBar style="light" />

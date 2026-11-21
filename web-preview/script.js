@@ -53,6 +53,7 @@ const S = {
   voice: store.get("nd_voice", false) === true, // お題の読み上げ
   sober: store.get("nd_sober", false) === true, // お酒なし：「飲む」罰・お題を出さへん
   noTouch: store.get("nd_notouch", false) === true, // 体に触るのなし：くすぐり・ハグ・肩もみ系を出さへん
+  date: store.get("nd_date", true) !== false, // デートモード：2人の時だけ。2人用のお題と罰にする（最初からON、ホームで切り替え）
   gamble: store.get("nd_gamble", true) !== false, // 駆け引きあり：ハイ&ローで降りられる・ロシアンタップで1回パス
   medN: [3, 5, 7].includes(store.get("nd_medn", 5)) ? store.get("nd_medn", 5) : 5, // おまかせメドレーのゲーム数
   medley: null, // メドレー中 {list:[モード名], idx}
@@ -99,7 +100,7 @@ function fill(tpl, pIdx, opts = {}) {
 }
 const textOf = (t) => (typeof t === "string" ? t : t?.text ?? "");
 // 3人以上おらんと成立せえへんお題（2人やと必ず引き分け・全員該当になる）
-const NEEDS_3 = /少数派|被らへんかった|多数決|一番指された|指差せ|一番似てない|一番低い点|ひとりぼっち|被ったら/;
+const NEEDS_3 = /この中で|少数派|被らへんかった|多数決|一番指された|指差せ|一番似てない|一番低い点|ひとりぼっち|被ったら/;
 function usable(t) {
   const s = textOf(t), n = S.members.length;
   if (NEEDS_3.test(s) && n < 3) return false;
@@ -117,7 +118,7 @@ const decks = {};
 // お酒なし・体に触るのなし：お題・罰・指令・王様の命令から外す言葉（ワードウルフの言葉などは外さへん）
 const SOBER_NG = /お酌|ひと口|ふた口|飲む|飲め|飲ませ|飲んで|飲んだ|一気|お酒|酒豪|酒癖|朝まで飲/;
 const TOUCH_NG = /肩を(10秒)?(揉|もむ|もん|組|トントン)|肩(組|もみ)|もんでもら|デコピン|お姫様|手を握|握手|ハイタッチ|耳元|手をつな|ハグ|くすぐ|こしょば|膝枕|キス(?!顔)|触る|触って|密着|おんぶ|抱き/;
-const CONTENT_KEY = /^(yurume|futsu|jigoku|minna|yoru|shinya|ev|bomb|batsu|lucky|king|passb)/;
+const CONTENT_KEY = /^(yurume|futsu|jigoku|minna|yoru|shinya|ev|bomb|batsu|lucky|king|passb|date)/;
 function contentOk(t) {
   const s = typeof t === "string" ? t : t?.text || "";
   return !(S.sober && SOBER_NG.test(s)) && !(S.noTouch && TOUCH_NG.test(s));
@@ -178,6 +179,8 @@ function canYoru(tpl, p) {
   if (tpl.includes("{X}") && ok < 1) return false;
   return true;
 }
+// デートモード：メンバーがちょうど2人で、ホームの「デートモード」がオンの時
+const dateOn = () => !!S.date && S.members.length === 2;
 function drawOdai(p) {
   // 夜は3回に1回くらい、深夜は毎回下ネタ（NGの人の番だけ普通のお題）
   const rate = S.night === "shinya" ? 1 : CHANCE.yoru;
@@ -189,6 +192,7 @@ function drawOdai(p) {
       if (tpl && canYoru(tpl, p)) return makeCard(deep ? "深夜お題" : "夜お題", tpl, p, { noNg: true }, { yoru: true });
     }
   }
+  if (dateOn()) return makeCard(`デート・${LV[S.level]}`, draw("date_" + S.level, DATA.date.odai[S.level]), p);
   if (Math.random() < CHANCE.minna) { const t = draw("minna", DATA.odai.minna); if (t) return makeCard("全員参加", t, p, {}, { solo: false }); }
   return makeCard(`アホお題・${LV[S.level]}`, draw(S.level, DATA.odai[S.level]), p);
 }
@@ -292,7 +296,7 @@ function startOdaiTurn() {
   g.doer = g.cur;
   g.handoff = S.handoff && S.members.length >= 2;
   g.face = S.faceDeal ? "down" : null; // 伏せて出す（起こしたらお題）
-  if (g.turn > 2 && Math.random() < CHANCE.event) {
+  if (!dateOn() && g.turn > 2 && Math.random() < CHANCE.event) {
     const e = drawEvent(g.cur);
     if (e.rule) addRule(e.rule);
     g.double = false; g.phase = "play"; g.card = e.card;
@@ -381,7 +385,7 @@ function drawBatsu(i, n = 1, noLucky = false) {
     // 巻き込む相手（{X}）も下ネタNGやない人だけ。おらへんかったら普通の罰
     if (tpl && (!tpl.includes("{X}") || others(i).some(okForYoru))) return { lucky: false, night: list, tpl, fo: { noNg: true }, html: fill(tpl, i, { noNg: true }) };
   }
-  const tpl = drawBatsuFrom("batsu", DATA.batsu.bad, n);
+  const tpl = dateOn() ? drawBatsuFrom("batsu_date", DATA.date.batsu, n) : drawBatsuFrom("batsu", DATA.batsu.bad, n);
   return { lucky: false, tpl, fo: {}, html: fill(tpl, i) };
 }
 // 1位の特権：1位が1人に決まってる時は、罰を2つ見せて「最下位にやらせる方」を1位が選ぶ（天使が出たらいつも通りセーフ）
@@ -449,7 +453,7 @@ function advance() {
         html: `仕掛け人${nm(b.owner)}が発表！爆弾が仕掛けられてから<mark>${esc(b.cond)}</mark>奴は全員罰。自首するか告発しろ` };
       render(true); return;
     }
-  } else if (!g.bombJust && !g.done && g.cards >= 2 && Math.random() < CHANCE.bomb) {
+  } else if (!dateOn() && !g.bombJust && !g.done && g.cards >= 2 && Math.random() < CHANCE.bomb) {
     const owner = rnd(S.members.length);
     g.bomb = { cond: draw("bomb", DATA.bombs), owner, left: 3 + rnd(3) };
     g.bombJust = true; g.doer = owner; g.double = false; g.phase = "bombSet";
@@ -755,6 +759,7 @@ function hurryOff() { hurrySec = -1; document.body.classList.remove("hurry10"); 
 const fmtTime = (ms) => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
 setInterval(() => {
   const g = S.game;
+  if (clockPausedAt) return;
   if (S.screen !== "ngword" || !g?.ng || g.ng.phase !== "play" || !g.ng.endAt) { if (!modeTimer && document.body.classList.contains("hurry10")) hurryOff(); return; }
   const left = g.ng.endAt - Date.now();
   hurryFx(left);
@@ -1358,9 +1363,12 @@ function bpGo() {
   const g = S.game, bp = g.bp, [a, b] = BP_SEC[S.level] || BP_SEC.futsu;
   bp.phase = "play"; bp.startAt = Date.now(); bp.endAt = bp.startAt + (a + Math.random() * (b - a)) * 1000;
   play("coin"); render(true);
+  bpArm(bp);
+}
+function bpArm(bp) {
   // 爆発は裏で決めた時間ぴったりに（チクタクの間隔に関係なく）
-  clearTimeout(bp.boomT);
-  bp.boomT = setTimeout(() => { if (S.game?.bp === bp && bp.phase === "play") bpBoom(); }, bp.endAt - bp.startAt);
+  clearTimeout(bp.boomT); clearTimeout(bp.t);
+  bp.boomT = setTimeout(() => { if (S.game?.bp === bp && bp.phase === "play") bpBoom(); }, Math.max(0, bp.endAt - Date.now()));
   // チクタク：経過時間でだんだん速くなる（残り時間はバレへん）
   const tick = () => {
     if (S.game?.bp !== bp || bp.phase !== "play") return;
@@ -2081,6 +2089,7 @@ const MM_SKULLS = 2;
 const MM_PAIRS_N = () => (S.members.length <= 2 ? 5 : S.members.length >= 6 ? 9 : 7); // 人数で枚数を自動で調整（12・16・20枚）
 // マークにできるお題：「{P}、」で始まる1人用のお題で、マーク表のどれかの言葉が入ってるもの
 const MARK_RE = DATA.marks.map(([re, m]) => [new RegExp(re), m]);
+const MARK_COLOR = Object.fromEntries(DATA.marks.map(([, m, c]) => [m, c || "#141210"])); // マークの漢字ごとの色
 function markOf(t) {
   const s = t.replace(/\{[PXY]\}/g, "誰か");
   const hit = MARK_RE.find(([re]) => re.test(s));
@@ -2225,12 +2234,14 @@ function itCheck() {
 
 // ---------- 時計（ジェスチャー・褒め殺し共通） ----------
 // endAt まで数えて、0になったら onEnd を呼ぶ。画面は #modeTimer の数字だけ書き換える
-let modeTimer = null;
+let modeTimer = null, timerEnd = 0, clockPausedAt = 0;
 function startTimer(sec, onEnd, fmt, quiet = false) {
   stopTimer();
   const endAt = Date.now() + sec * 1000;
+  timerEnd = endAt;
   modeTimer = setInterval(() => {
-    const left = endAt - Date.now();
+    if (clockPausedAt) return; // メニューを開いてる間は止める
+    const left = timerEnd - Date.now();
     const el = document.getElementById("modeTimer");
     if (!quiet) hurryFx(left);
     if (left <= 0) { stopTimer(); if (!quiet) play("timeup"); vib([80, 40, 160]); onEnd(); return; }
@@ -2238,7 +2249,25 @@ function startTimer(sec, onEnd, fmt, quiet = false) {
   }, 200);
   return endAt;
 }
-function stopTimer() { if (modeTimer) { clearInterval(modeTimer); modeTimer = null; } hurryOff(); }
+function stopTimer() { if (modeTimer) { clearInterval(modeTimer); modeTimer = null; } timerEnd = 0; hurryOff(); }
+// 今の時計の残り秒（描き直しても数字が最初の秒数に戻らんように）。時計が動いてへん時は def
+const timerSec = (def) => (modeTimer && timerEnd ? Math.max(0, Math.ceil((timerEnd - (clockPausedAt || Date.now())) / 1000)) : def);
+// メニュー・設定・ルールを開いてる間は、話し合いや持ち時間の時計と爆弾を止める。閉じたら続きから
+function clockHold(on) {
+  const bp = S.game?.bp;
+  if (on && !clockPausedAt) {
+    clockPausedAt = Date.now();
+    if (bp?.phase === "play") { clearTimeout(bp.boomT); clearTimeout(bp.t); }
+    hurryOff();
+  } else if (!on && clockPausedAt) {
+    const d = Date.now() - clockPausedAt;
+    clockPausedAt = 0;
+    if (timerEnd) timerEnd += d;
+    const g = S.game;
+    if (g) for (const k of ["ng", "wf", "gs", "hm"]) if (g[k]?.endAt) g[k].endAt += d;
+    if (bp?.phase === "play") { bp.endAt += d; bp.startAt += d; bpArm(bp); }
+  }
+}
 
 // ---------- 最初の人ルーレット（ジェスチャー・褒め殺し） ----------
 // 名前のタイルを光らせながら回して、だんだん遅くなって1人に止まる

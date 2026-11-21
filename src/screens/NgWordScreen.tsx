@@ -13,6 +13,7 @@ import { HELP } from '../lib/help';
 import { Skull, Angel } from '../components/Fx';
 import GameMenu from '../components/GameMenu';
 import { Decks } from '../lib/game';
+import { clockRunning, clockNow, isClockPaused, subscribeClock } from '../lib/useCountdown';
 import { load, save } from '../lib/storage';
 import { play } from '../lib/sound';
 import { newStats, type Stats } from '../lib/titles';
@@ -77,7 +78,9 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
   }, []);
   useEffect(() => {
     if (phase !== 'play' || !endAt.current) return;
+    clockRunning(true);
     const t = setInterval(() => {
+      if (isClockPaused()) return; // メニューを開いてる間は止める
       setNow(Date.now());
       if (Date.now() >= endAt.current) {
         endAt.current = 0;
@@ -87,8 +90,22 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       }
     }, 250);
-    return () => clearInterval(t);
+    return () => {
+      clearInterval(t);
+      clockRunning(false);
+    };
   }, [phase]);
+  // 閉じたら止めてた分だけ終わりを後ろにずらす
+  useEffect(() => {
+    let at = 0;
+    return subscribeClock((p, t) => {
+      if (p) at = t;
+      else if (endAt.current) {
+        endAt.current += t - at;
+        setNow(Date.now());
+      }
+    });
+  }, []);
 
   const resume = () => {
     endAt.current = minutes ? Date.now() + left.current : 0;
@@ -96,7 +113,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
     setPhase('play');
   };
   const pause = () => {
-    if (endAt.current) left.current = Math.max(0, endAt.current - Date.now());
+    if (endAt.current) left.current = Math.max(0, endAt.current - clockNow());
     endAt.current = 0;
   };
   const deal = () => {
@@ -158,7 +175,7 @@ export default function NgWordScreen({ members, level, night, onQuit, onSettings
     finish(np);
   };
 
-  const remaining = endAt.current ? endAt.current - now : left.current;
+  const remaining = endAt.current ? endAt.current - (isClockPaused() ? clockNow() : now) : left.current;
   const hurry = useHurry(Math.ceil(remaining / 1000), phase === 'play' && !!endAt.current);
   const frame = ['hand', 'look'].includes(phase) ? colorOf(viewer) : ['confirm', 'out', 'eyes', 'newword'].includes(phase) ? colorOf(out) : C.muted;
 

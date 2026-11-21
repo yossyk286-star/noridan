@@ -34,7 +34,7 @@
 * { touch-action: manipulation; }
 html, body { height: 100%; }
 html { height: 100%; background: var(--ink); }
-html { word-break: keep-all; overflow-wrap: anywhere; } /* 日本語は文節（jaWrap が入れた区切り）でだけ折り返す */
+html { word-break: keep-all; overflow-wrap: anywhere; text-wrap: pretty; } /* 日本語は文節（jaWrap が入れた区切り）でだけ折り返す */
 body {
   margin: 0; min-height: 100%; min-height: 100dvh;
   background: var(--bg); color: var(--fg);
@@ -453,6 +453,7 @@ body.stage .odai.board-card { overflow-y: auto; justify-content: flex-start !imp
   .bp-card .hand-who b, .hl-cardwrap .hand-who b { font-size: 28px; }
   .bp-card .bp-topic { font-size: clamp(24px, 8vw, 32px); }
   .bp-card .bp-bomb { font-size: 48px; }
+  .bp-card .bp-bomb .bomb-art { width: 72px; height: 72px; }
   .bp-card .hand-note { font-size: 13px; }
   .hl-cardwrap .hl-card { width: clamp(72px, 24vw, 96px); }
   .hl-cardwrap .hl-card span { font-size: clamp(34px, 11vw, 48px); }
@@ -635,6 +636,8 @@ body.tl-hot .tl-ring { border-width: calc(3px + 3px * var(--tr)); }
 .pen-tile[aria-pressed="true"] { background: #e8202a; border-color: #e8202a; color: #fff; }
 .pen-tile .stamp { position: absolute; right: 6px; top: 50%; transform: translateY(-50%) rotate(-14deg); width: 36px; height: 36px; border-radius: 50%; border: 3px solid #fff; display: grid; place-items: center; font-family: var(--display); font-size: 18px; color: #fff; animation: stamp .22s cubic-bezier(.3,1.6,.5,1); }
 .pen-tile[aria-pressed="true"] .meta em { visibility: hidden; }
+.pen-tile[aria-pressed="true"] { padding-right: 40px; }
+.pen-tile .stamp { width: 30px; height: 30px; font-size: 15px; left: auto; right: -34px; grid-column: 1 / -1; grid-row: 1 / -1; } /* グリッドの中の絶対配置は右の余白(40px)の内側が基準になるので、その分だけ外へ */
 @keyframes stamp { from { transform: translateY(-50%) rotate(-14deg) scale(2.2); opacity: 0; } }
 .big.has-pen { background: #e8202a; color: #fff; }
 body[data-level="jigoku"] .pen-tile[aria-pressed="true"] { background: var(--blood); color: #000; border-color: var(--blood); }
@@ -675,10 +678,10 @@ body[data-level="jigoku"] .big.has-pen { background: var(--blood); color: #000; 
 .sg-arrow::after { content: ""; position: absolute; left: -4px; top: -4px; width: 0; height: 0; border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-left: 7px solid #141210; }
 .sg-cell { position: absolute; box-sizing: border-box; padding: 4px; }
 .sg-cell .in { width: 100%; height: 100%; box-sizing: border-box; border-radius: 12px; background: var(--card-bg); color: var(--card-fg); display: grid; place-items: center; position: relative; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
-.sg-cell .no { position: absolute; left: 5px; top: 3px; font-size: 9px; font-weight: 900; opacity: .45; font-variant-numeric: tabular-nums; }
+.sg-cell .no { position: absolute; left: 5px; top: 3px; font-size: 10px; font-weight: 900; opacity: .45; font-variant-numeric: tabular-nums; }
 .sg-cell b { font-family: var(--display); font-weight: 400; font-size: clamp(11px, 3.6vw, 17px); line-height: 1.05; text-align: center; padding: 0 2px; overflow-wrap: anywhere; }
-.c-odai b { font-family: var(--body); font-weight: 900; font-size: clamp(10px, 2.8vw, 13px); opacity: .55; }
-.c-text b { font-family: var(--body); font-weight: 900; font-size: clamp(8px, 2.4vw, 11px); }
+.c-odai b { font-family: var(--body); font-weight: 900; font-size: clamp(11px, 3.3vw, 15px); opacity: .6; }
+.c-text b { font-family: var(--body); font-weight: 900; font-size: clamp(10px, 3.2vw, 14px); letter-spacing: -.04em; }
 .c-plus .in { background: #3fd16b; color: #062a12; }
 .c-minus .in { background: #ff5a4f; color: #fff; }
 .c-skip .in { background: #7b8db8; color: #fff; }
@@ -841,6 +844,8 @@ body[data-level="jigoku"] .sg-cell .in { box-shadow: 0 0 0 1px rgba(255,42,42,.3
 .menu-btn { width: 42px; height: 42px; border-radius: 50%; }
 .menu-btn svg { width: 20px; height: 20px; }
 .sheet.menu { gap: 8px; }
+.menu-pause { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--c-info, #4cc9f0) 16%, transparent); color: var(--c-info, #4cc9f0); font-size: 13px; font-weight: 900; }
+.menu-pause svg { width: 16px; height: 16px; flex: none; }
 .menu-meta { margin: 0 0 4px; font-size: 13px; font-weight: 900; letter-spacing: .14em; color: var(--muted); }
 .menu-item { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 14px; background: rgba(247,243,234,.06); text-align: left; font-weight: 900; font-size: 16px; }
 .menu-item svg { width: 22px; height: 22px; flex: none; }
@@ -1044,6 +1049,22 @@ body.stage.neon .coach { background: #1a1228; border: 1px solid var(--nc); }
 .rules dt { font-weight: 900; color: var(--yuru); font-size: 14px; }
 .rules dd { margin: 2px 0 0; font-size: 13px; line-height: 1.6; color: rgba(247,243,234,.85); }
 .rules-sheet h2 { margin: 0; }
+/* デートモード（2人の時だけ出るスイッチ） */
+.date-switch { display: flex; align-items: center; gap: 12px; width: 100%; margin: 10px 0 0; padding: 12px 14px; border-radius: 16px; border: 2px solid color-mix(in srgb, var(--c-turn) 45%, transparent); background: color-mix(in srgb, var(--c-turn) 10%, transparent); color: var(--fg, var(--paper)); text-align: left; min-height: 60px; }
+.date-switch > i { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--c-turn); color: #fff; }
+.date-switch > i svg { width: 20px; height: 20px; }
+.date-switch span { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.date-switch b { font-size: 16px; font-weight: 900; }
+.date-switch small { font-size: 13px; font-weight: 700; opacity: .75; }
+.date-switch .sw { width: 46px; height: 28px; flex: none; border-radius: 999px; background: rgba(247,243,234,.2); position: relative; transition: background .15s; }
+.date-switch .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.date-switch[aria-pressed="true"] .sw { background: var(--c-turn); }
+.date-switch[aria-pressed="true"] .sw::after { transform: translateX(18px); }
+.date-switch[aria-pressed="false"] { border-color: var(--line, rgba(247,243,234,.16)); background: transparent; }
+.date-switch[aria-pressed="false"] > i { background: rgba(247,243,234,.16); color: var(--paper); }
+.mode-tabs button.date[aria-selected="true"] { background: var(--c-turn); color: #fff; }
+/* 長いシートでも「閉じる」はいつも下に見えてる（下までスクロールせんでいい） */
+.rules-sheet > .ghost:last-child, .sheet.menu > .ghost:last-child { position: sticky; bottom: 0; background: #1d1a17; box-shadow: 0 0 0 8px #1d1a17, 0 -10px 18px 6px #1d1a17; flex: none; z-index: 1; }
 .rank .nm { display: flex; flex-direction: column; min-width: 0; }
 .rank .nm small { font-size: 13px; font-weight: 700; color: var(--muted); }
 
@@ -1327,7 +1348,8 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 /* 価値観ナンバー */
 .it-num { margin: 0; font-family: var(--display); font-size: clamp(90px, 30vw, 150px); line-height: 1; font-variant-numeric: tabular-nums; }
 .it-topic { margin: 0; font-size: 18px; font-weight: 900; }
-.it-big { margin: 0; font-family: var(--display); font-size: clamp(30px, 9vw, 44px); line-height: 1.25; text-align: center; line-break: strict; }
+.it-big { margin: 0; font-family: var(--display); font-size: clamp(30px, 9vw, 44px); line-height: 1.25; text-align: center; line-break: strict; text-wrap: balance; }
+.it-big.long { font-size: clamp(24px, 7.2vw, 36px); }
 .it-scale { width: 100%; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; font-size: 13px; font-weight: 900; }
 .it-scale span { display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: 7.5em; text-align: center; line-break: strict; }
 .it-scale span b { font-family: var(--display); font-weight: 400; font-size: 22px; }
@@ -1359,7 +1381,9 @@ body.stage .pen-grid.vote-grid { margin-top: auto; grid-template-columns: repeat
 .mm-card.down:active { transform: translateY(3px); box-shadow: inset 0 0 0 3px rgba(0,0,0,.18), 0 1px 0 rgba(0,0,0,.35); }
 .mm-card.down[disabled] { opacity: .85; }
 .mm-card.up { background: var(--card-bg); color: var(--card-fg); box-shadow: 0 0 0 3px var(--pc); animation: mmflip .28s ease-out; }
-.mm-card.up b { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; font-weight: 400; font-size: clamp(34px, 11vw, 56px); line-height: 1; }
+/* マークは漢字1文字のハンコ（絵文字は機種で見た目が変わるので使わへん） */
+.mm-card.up b.mm-mk { font-family: var(--display); font-weight: 400; font-size: clamp(28px, 9vw, 44px); line-height: 1; color: var(--mk); width: 72%; aspect-ratio: 1; max-height: 80%; border-radius: 50%; display: grid; place-items: center; border: 3px solid var(--mk); background: color-mix(in srgb, var(--mk) 12%, transparent); transform: rotate(-8deg); }
+.mm-card.up.yoru b.mm-mk { color: color-mix(in srgb, var(--mk) 55%, #fff); border-color: color-mix(in srgb, var(--mk) 55%, #fff); }
 .mm-card.up.yoru { background: #1c1328; color: #f1e8ff; box-shadow: 0 0 0 3px var(--night); }
 .mm-card.up.is-skull { background: #1a0606; box-shadow: 0 0 0 3px #e8202a; }
 .mm-card.up.is-skull svg { width: 70% !important; height: 70% !important; max-width: 70%; max-height: 70%; position: static; }
@@ -1869,20 +1893,21 @@ body.bigscreen #app { max-width: 560px; min-height: var(--app-h); }
 .ho-pass svg { width: 18px; height: 18px; vertical-align: -3px; margin-right: 4px; }
 .rt-tile svg { width: 60%; height: 60%; display: block; margin: auto; }
 .rt-tile.bomb { color: #fff; }
-.bp-bomb svg { width: 72px; height: 72px; display: block; margin: 0 auto; }
+.bp-bomb svg, .odai .bp-bomb .bomb-art { width: 112px; height: 112px; display: block; margin: 0 auto; }
+.bp-card .bp-bomb .bomb-art { margin-top: 0; }
 .sk-safe b svg { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
 .skull-wrap .quip { font-size: 14px; font-weight: 900; color: #8a6a00; opacity: .85; animation: reveal .3s .55s ease-out both; }
 .odai.drum .skull-wrap .quip { animation-delay: calc(var(--gt) + .55s); }
 
 /* ===== 第4弾：動きと演出 ===== */
 /* 20 実況ひとこと：キャラのツッコミ */
-.host-say { position: fixed; left: 50%; bottom: calc(118px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 40; width: min(92vw, 520px); display: flex; align-items: flex-end; gap: 10px; padding: 0; text-align: left; animation: hostIn .42s cubic-bezier(.3,1.6,.5,1) both; }
+.host-say { position: fixed; left: 50%; top: calc(64px + env(safe-area-inset-top)); bottom: auto; align-items: flex-start !important; transform: translateX(-50%); z-index: 40; width: min(92vw, 520px); display: flex; align-items: flex-end; gap: 10px; padding: 0; text-align: left; animation: hostIn .42s cubic-bezier(.3,1.6,.5,1) both; }
 .host-say i { width: 54px; height: 54px; flex: none; transform: rotate(-6deg); animation: hostBob .9s ease-in-out .4s 2; }
 .host-say i svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 0 rgba(0,0,0,.35)); }
-.host-say span { flex: 1; background: var(--paper); color: var(--ink); border-radius: 18px 18px 18px 4px; padding: 11px 15px; font-weight: 900; font-size: 16px; line-height: 1.4; box-shadow: 0 6px 0 rgba(0,0,0,.3); }
+.host-say span { flex: 1; background: var(--paper); color: var(--ink); border-radius: 4px 18px 18px 18px; padding: 11px 15px; font-weight: 900; font-size: 16px; line-height: 1.4; box-shadow: 0 6px 0 rgba(0,0,0,.3); }
 .host-say.out { animation: hostOut .35s ease-in forwards; }
-@keyframes hostIn { from { opacity: 0; transform: translateX(-50%) translateY(30px) scale(.9); } }
-@keyframes hostOut { to { opacity: 0; transform: translateX(-50%) translateY(20px); } }
+@keyframes hostIn { from { opacity: 0; transform: translateX(-50%) translateY(-24px) scale(.9); } }
+@keyframes hostOut { to { opacity: 0; transform: translateX(-50%) translateY(-16px); } }
 @keyframes hostBob { 50% { transform: rotate(6deg) translateY(-4px); } }
 /* 21 カプセルの色 */
 .g-machine.cap-white .gm-cap .t { background: #f7f3ea; }
@@ -2218,6 +2243,12 @@ body.boot .last-group .lg-row > *:nth-child(4) { animation-delay: .39s; }
 .wf-sum { margin: 0 0 4px; font-size: 14px; font-weight: 800; }
 /* 結果の「賞状」風：内側にもう1本、細い枠（上だけの線にはしない） */
 .res-hero .mvp { border: 2px solid var(--ink); outline: 1.5px solid color-mix(in srgb, var(--ink) 55%, transparent); outline-offset: -8px; }
+
+/* 押せる範囲は最低44px（第3弾の見直し）：見た目の大きさは変えずに、当たり判定だけ広げる */
+.seg-lv button, .du-votes button, .kg-list button, .wf-set .seg button, .ya-swap, .revenge { min-height: 44px; }
+.koma-more, .link, .res-link, .rule-out, .coach button, .av.more { position: relative; }
+.koma-more::after, .link::after, .res-link::after, .rule-out::after, .coach button::after, .av.more::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+.pen-tile .doer-lbl, .pen-tile .meta em { white-space: nowrap; }
 </style>
 
 <div class="frame" aria-hidden="true"></div>

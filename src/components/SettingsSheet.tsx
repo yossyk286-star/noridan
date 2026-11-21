@@ -10,6 +10,7 @@ import { C, F } from '../theme';
 import type { Night } from '../types';
 import { GoHome } from './Extras';
 import { LiveSettings } from './Live';
+import { useClockHold } from '../lib/useCountdown';
 
 type Props = {
   visible: boolean;
@@ -66,6 +67,7 @@ function Group({ title, count, sub, children }: { title: string; count: number; 
 /** 歯車から開く設定。夜モード（20歳以上）もここからオンにする */
 export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, sober, onSober, noTouch, onNoTouch, passOn, onPass, gamble, onGamble, goHome, onGoHome, water, onWater, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
   const { resetSeen } = useSeen();
+  useClockHold(visible); // 設定を開いてる間は時計を止める
   const [privacy, setPrivacy] = useState(false);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>

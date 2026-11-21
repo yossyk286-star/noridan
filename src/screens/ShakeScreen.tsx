@@ -249,8 +249,10 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     });
     return np;
   };
+  /** 全員同じ回数（引き分け）の時は誰も罰にせえへん */
+  const tie = losers.length > 0 && losers.length === n;
   const accept = () => {
-    setPen(applyGacha());
+    setPen(tie ? pen : applyGacha());
     setRound((r) => r + 1);
     setK(0);
     setCnt(Array(n).fill(null));
@@ -267,7 +269,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
 
   const pal = STAGE[level];
   const fg = pal.cardFg;
-  const frame = phase === 'intro' ? C.muted : phase === 'rank' && losers.length ? '#ff2a2a' : colorOf(who);
+  const frame = phase === 'intro' ? C.muted : phase === 'rank' && losers.length && !tie ? '#ff2a2a' : colorOf(who);
   const nextWho = (k + 1 + round - 1) % n;
 
   // 順位発表の時だけ、1行ずつ出す
@@ -277,7 +279,7 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     const done = members.map((_, i) => i).filter((i) => cnt[i] != null).sort((a, b) => (cnt[b] as number) - (cnt[a] as number));
     const wait = members.map((_, i) => i).filter((i) => cnt[i] == null);
     const max = Math.max(1, ...done.map((i) => cnt[i] as number));
-    const lose = phase === 'rank' || phase === 'batsu' ? losers : [];
+    const lose = (phase === 'rank' || phase === 'batsu') && !tie ? losers : [];
     return (
       <ScrollView style={s.boardScroll} contentContainerStyle={s.board}>
         {done.map((i, r) => {
@@ -399,14 +401,16 @@ export default function ShakeScreen({ members, level, night, onQuit, onSettings,
     case 'rank':
       card = (
         <Pressable style={{ flex: 1 }} onPress={RV.skip}>
-          <ModeCard pal={pal} center bg="#1a0606" edge="#e8202a">
-            <Prog fg="#f7f3ea">{`第${round}回戦の結果`}</Prog>
+          <ModeCard pal={pal} center {...(tie ? {} : { bg: '#1a0606', edge: '#e8202a' })}>
+            <Prog fg={tie ? fg : '#f7f3ea'}>{`第${round}回戦の結果`}</Prog>
             {board(-1)}
-            {RV.ready && <Text style={[s.lose, { color: '#ff3b3b' }]}>{`${losers.map((i) => members[i].name).join('・')}が最下位${level === 'jigoku' ? '（罰2倍）' : ''}`}</Text>}
+            {RV.ready && (tie
+              ? <Text style={[s.lose, { color: fg }]}>全員同じ回数！引き分け</Text>
+              : <Text style={[s.lose, { color: '#ff3b3b' }]}>{`${losers.map((i) => members[i].name).join('・')}が最下位${level === 'jigoku' ? '（罰2倍）' : ''}`}</Text>)}
           </ModeCard>
         </Pressable>
       );
-      controls = RV.ready ? <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={doGacha} /> : <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text>;
+      controls = RV.ready ? (tie ? <BigButton pal={pal} label="罰なしで、もう1回戦" onPress={accept} /> : <BigButton pal={pal} danger label={`${losers.map((i) => members[i].name).join('・')}に罰ガチャ`} onPress={doGacha} />) : <Text style={[s.hint, { color: pal.muted }]}>タップで飛ばす</Text>;
       break;
     case 'batsu':
       card = (

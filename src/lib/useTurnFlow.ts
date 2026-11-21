@@ -132,7 +132,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
         rerender();
         return;
       }
-    } else if (!st.bombJust && !st.noPlant && st.cards >= 2 && Math.random() < CHANCE.bomb) {
+    } else if (!st.bombJust && !st.noPlant && decks.allowExtras(members) && st.cards >= 2 && Math.random() < CHANCE.bomb) {
       const owner = Math.floor(Math.random() * n);
       st.bomb = { cond: decks.bomb(n), owner, left: 3 + Math.floor(Math.random() * 3) };
       st.bombJust = true;
