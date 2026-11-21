@@ -618,7 +618,7 @@ function vCard() {
   const deal = g.deal && !g.face; // 番の交代：名前つきで札がすべって来て、名前がスッと消えてお題になる
   return `<div class="odai ${cardClass(c)} ${deal ? "deal" : anim}" id="card">
     ${deal ? `<div class="deal-name" style="--mc:${colorOf(g.doer)}" aria-hidden="true"><small>つぎは</small><i>${ini(g.doer)}</i><b>${mName(g.doer)}</b><small class="deal-pass">${ICON.handoff}スマホ渡してな</small></div>` : ""}
-    <div class="head">${vWho()}<span class="meta">${plainKind(c) ? "" : `<span class="kind">${esc(shortKind(c.kind))}</span>`}${cardTag(c) && g.phase === "play" ? `<i class="tag" data-t="${cardTag(c)}">${cardTag(c)}</i>` : ""}${badge}</span></div>
+    <div class="head">${vWho()}<span class="meta">${plainKind(c) ? "" : `<span class="kind">${esc(shortKind(c.kind))}</span>`}${cardTag(c) && g.phase === "play" ? `<i class="tag" data-t="${cardTag(c)}" style="--mc:${g.doer >= 0 ? colorOf(g.doer) : "#ff5d8f"}">${esc(tagLabel(cardTag(c), g.doer))}</i>` : ""}${badge}</span></div>
     ${c.solo && !needsPick(c.tpl) && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
     ${art}
     ${dual ? `<p class="txt mirror" aria-hidden="true" style="font-size:${fitSize(c.html, g.mode === "sugoroku", 0.74)}"><span>${c.html}</span></p><hr class="dual-line">` : ""}
@@ -834,6 +834,12 @@ function cardTag(c) {
   if (mustPick(c.tpl)) return "勝負";
   if (!c.solo) return "全員";
   return needsPick(c.tpl) ? "みんなで判定" : "ひとり";
+}
+// 札の右上に出す言葉：だれが何をするか分かるように（「ひとり」は名前を入れて「よしだけ」）
+const TAG_LABEL = { 全員: "みんなでやる", 勝負: "誰かと勝負", みんなで判定: "みんなが判定" };
+function tagLabel(t, doer) {
+  if (t === "ひとり") return doer >= 0 && S.members[doer] ? `${S.members[doer].name}だけ` : "ひとりで";
+  return TAG_LABEL[t] || t;
 }
 // 初めて出てきた仕組みだけ、札の下にひとこと説明（1回見たら二度と出えへん）
 const COACH = {

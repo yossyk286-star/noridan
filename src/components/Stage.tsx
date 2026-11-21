@@ -406,9 +406,12 @@ export function OdaiCard({
           {!plainKind(card) && (
             <Text style={[styles.kind, { color: neon ? look.edge : look.fg, opacity: neon ? 1 : undefined, flexShrink: 1 }, textGlow]} numberOfLines={1}>{card.kind.match(/（(.*)）$/)?.[1] ?? card.kind}</Text>
           )}
-          {!!cardTag(card) && art === undefined && (
-            <Text style={[styles.tag, TAG_BG[cardTag(card)] ? { color: cardTag(card) === '緊急' ? '#fff' : '#141210', backgroundColor: TAG_BG[cardTag(card)], borderColor: TAG_BG[cardTag(card)], opacity: 1 } : { color: neon ? look.edge : look.fg, borderColor: neon ? look.edge : look.fg }]} numberOfLines={1}>{cardTag(card)}</Text>
-          )}
+          {!!cardTag(card) && art === undefined && (() => {
+            const t = cardTag(card);
+            // 「ひとり」はその人の色で「よしだけ」
+            const bg = t === 'ひとり' && who ? who.color : TAG_BG[t];
+            return <Text style={[styles.tag, bg ? { color: t === '緊急' ? '#fff' : '#141210', backgroundColor: bg, borderColor: bg, opacity: 1 } : { color: neon ? look.edge : look.fg, borderColor: neon ? look.edge : look.fg }]} numberOfLines={1}>{tagLabel(t, who?.name)}</Text>;
+          })()}
           {doubled ? (
             <View style={[styles.badge, { backgroundColor: look.fg, flexShrink: 0 }]}>
               <Text style={[styles.badgeText, { color: look.bg }]} numberOfLines={1}>倍プッシュ中</Text>
@@ -893,6 +896,12 @@ function plainKind(c: Card) {
 /** 札の種類タグの色（ひとり・全員…が一目でわかるように） */
 const TAG_BG: Record<string, string> = { ひとり: '#ff5d8f', 全員: '#f7f3ea', 勝負: '#4dd4ff', みんなで判定: '#7cf06b', ルール: '#ff9a3c', 緊急: '#ff2a2a' };
 /** 札の種類タグ（誰が動くお題か） */
+/** 札の右上に出す言葉：だれが何をするか分かるように（「ひとり」は名前を入れて「よしだけ」） */
+const TAG_LABEL: Record<string, string> = { 全員: 'みんなでやる', 勝負: '誰かと勝負', みんなで判定: 'みんなが判定' };
+export function tagLabel(t: string, name?: string): string {
+  if (t === 'ひとり') return name ? `${name}だけ` : 'ひとりで';
+  return TAG_LABEL[t] ?? t;
+}
 export function cardTag(c: Card): string {
   if (!c || c.bomb || !c.tpl) return '';
   if (c.ruleCard) return 'ルール';
