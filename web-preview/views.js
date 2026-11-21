@@ -1615,8 +1615,15 @@ function vDraw() {
   } else if (dr.phase === "reveal") {
     const items = [{ type: "word", val: dr.word, by: -1 }, ...dr.chain];
     const last = dr.chain[dr.chain.length - 1], same = last.type === "guess" && drNorm(last.val) === drNorm(dr.word);
-    card = `<div class="odai mode-card board-card dr-reveal" id="card"><p class="prog">答え合わせ</p><ol class="dr-chain">${items.map((x) => `<li>${x.by < 0 ? `<span class="dr-by">お題</span>` : `<span class="dr-by" style="--mc:${colorOf(x.by)}">${mName(x.by)}</span>`}${x.type === "pic" ? `<img src="${x.val}" alt="">` : `<b>${esc(x.val)}</b>`}</li>`).join("")}</ol>${same ? `<p class="tl-big sp-verdict q-ok">完璧！</p>` : `<p class="ng-lead">どこでズレた？</p><div class="kg-refuse">${[...new Set(dr.chain.map((x) => x.by))].map((w) => `<button data-act="drBlame" data-i="${w}" aria-pressed="${dr.culprit === w}" style="--mc:${colorOf(w)}">${mName(w)}</button>`).join("")}</div>`}</div>`;
-    controls = same ? roundEnd("drNext") : dr.culprit != null ? `<button class="big has-pen" data-act="drGacha">ズラした${mName(dr.culprit)}に罰ガチャ</button>` : `<button class="ghost" data-act="drNext">みんなセーフにする → 次の回戦</button>`;
+    card = `<div class="odai mode-card board-card dr-reveal" id="card"><p class="prog">答え合わせ</p><ol class="dr-chain">${items.map((x) => `<li>${x.by < 0 ? `<span class="dr-by">お題</span>` : `<span class="dr-by" style="--mc:${colorOf(x.by)}">${mName(x.by)}</span>`}${x.type === "pic" ? `<img src="${x.val}" alt="">` : `<b>${esc(x.val)}</b>`}</li>`).join("")}</ol>${same ? `<p class="tl-big sp-verdict q-ok">完璧！</p>` : ""}</div>`;
+    controls = same ? roundEnd("drNext") : `<button class="big" data-act="drJudge">戦犯を決める →</button>`;
+  } else if (dr.phase === "judge") {
+    // お題が終わるたびに「戦犯は誰？」。ズラした人を何人でも選べる。だれも選ばんかったら全員セーフ
+    const last = dr.chain[dr.chain.length - 1];
+    const who = [...new Set(dr.chain.map((x) => x.by))];
+    const did = (w) => dr.chain.filter((x) => x.by === w).map((x) => (x.type === "pic" ? "絵" : `「${esc(x.val)}」`)).join("・");
+    card = `<div class="odai mode-card center dr-judge" id="card"><p class="prog">第${dr.round}回戦</p><p class="dr-flow">お題「<b>${esc(dr.word)}</b>」→ 最後は「<b>${esc(last.type === "guess" ? last.val : "絵")}</b>」</p><p class="dr-q">戦犯は誰？</p><p class="hand-note">ズラしたと思う人を押して（何人でも）</p><div class="dr-pick">${who.map((w) => `<button data-act="drBlame" data-i="${w}" aria-pressed="${dr.culprits.includes(w)}" style="--mc:${colorOf(w)}"><b>${mName(w)}</b><small>${did(w)}</small></button>`).join("")}</div><button class="link dr-back" data-act="drBack">答えをもう1回見る</button></div>`;
+    controls = dr.culprits.length ? `<button class="big has-pen" data-act="drGacha">戦犯の${dr.culprits.map(mName).join("・")}に罰ガチャ</button>` : `<button class="big" data-act="drNext">戦犯なし！全員セーフ → 次の回戦</button>`;
   }
   return stageWrap(card, controls);
 }
@@ -3444,8 +3451,10 @@ function onClick(e) {
     case "drClear": document.getElementById("drCanvas")?.drClear?.(); break;
     case "drDone": if (g.dr.phase === "pic") drFinishPic(); break;
     case "drGuess": { const v = (document.getElementById("drIn")?.value || "").trim().slice(0, 20); if (!v) { document.getElementById("drIn")?.focus(); break; } drSubmit(v); break; }
-    case "drBlame": g.dr.culprit = g.dr.culprit === i ? null : i; render(); break;
-    case "drGacha": startGacha([g.dr.culprit], 1, "draw", g.dr); render(true); break;
+    case "drJudge": g.dr.phase = "judge"; g.dr.culprits = []; render(true); break;
+    case "drBack": g.dr.phase = "reveal"; render(); break;
+    case "drBlame": { const c = g.dr.culprits; g.dr.culprits = c.includes(i) ? c.filter((x) => x !== i) : [...c, i]; play("tick"); render(); break; }
+    case "drGacha": if (g.dr.culprits.length) { startGacha([...g.dr.culprits], 1, "draw", g.dr); render(true); } break;
     case "drNext": drRound(); render(true); break;
     case "drAccept": applyAdds(); g.gacha = []; g.phase = "play"; drRound(); render(true); break;
     // ワニワニタップ

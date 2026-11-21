@@ -1443,7 +1443,7 @@ function drRound() {
   dr.order = S.members.map((_, k) => (s0 + k) % n);
   if (n % 2) dr.order.push(dr.order[1]); // 奇数人数やと最後が絵で終わるので、2番目の人がもう1回だけ言葉で答える
   dr.word = draw("deko", Object.values(DATA.deko).flat());
-  dr.chain = []; dr.step = 0; dr.culprit = null;
+  dr.chain = []; dr.step = 0; dr.culprits = [];
   g.doer = dr.order[0]; dr.phase = "hand";
 }
 const drKind = (step) => (step % 2 === 0 ? "pic" : "guess"); // 0番目の人は絵、次は言葉…

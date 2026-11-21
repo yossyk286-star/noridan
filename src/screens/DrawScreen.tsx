@@ -16,7 +16,7 @@ import type { Level, Member, Night } from '../types';
 import dekoJson from '../data/deko.json';
 
 type Props = { members: Member[]; level: Level; night: Night; onQuit: () => void; onSettings: () => void; onFinish: (pen: number[], turns: number, stats: Stats) => void; skipIntro?: boolean };
-type Phase = 'intro' | 'hand' | 'pic' | 'guess' | 'reveal' | 'batsu';
+type Phase = 'intro' | 'hand' | 'pic' | 'guess' | 'reveal' | 'judge' | 'batsu';
 type Step = { by: number; type: 'pic' | 'guess'; val: string };
 const SEC: Record<Level, number> = { yurume: 60, futsu: 40, jigoku: 25 };
 const WORDS: string[] = Object.values((dekoJson as { cats: Record<string, string[]> }).cats).flat();
@@ -96,7 +96,8 @@ export default function DrawScreen({ members, level, night, onQuit, onSettings, 
   const [word, setWord] = useState('');
   const [chain, setChain] = useState<Step[]>([]);
   const [step, setStep] = useState(0);
-  const [culprit, setCulprit] = useState<number | null>(null);
+  /** 戦犯（何人でも。空なら全員セーフ） */
+  const [culprits, setCulprits] = useState<number[]>([]);
   const [turns, setTurns] = useState(0);
   const [guess, setGuess] = useState('');
   const [clearKey, setClearKey] = useState(0);
@@ -118,7 +119,7 @@ export default function DrawScreen({ members, level, night, onQuit, onSettings, 
     setWord(deck.current.pop()!);
     setChain([]);
     setStep(0);
-    setCulprit(null);
+    setCulprits([]);
     setPhase('hand');
     play('flip');
   };
@@ -223,27 +224,51 @@ export default function DrawScreen({ members, level, night, onQuit, onSettings, 
                 {x.type === 'pic' ? <View style={[s.canvas, { width: '70%' }]}><Pic val={x.val} /></View> : <Text style={[s.word, { color: fg }]}>{x.val}</Text>}
               </View>
             ))}
-            {same ? <Text style={[s.verdict, { color: '#1f9d55' }]}>完璧！</Text> : (
-              <>
-                <Text style={[s.src, { color: fg }]}>どこでズレた？</Text>
-                <View style={s.chips}>
-                  {[...new Set(chain.map((x) => x.by))].map((w) => (
-                    <Pressable key={w} hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }} onPress={() => setCulprit(culprit === w ? null : w)} style={[s.chip, { borderColor: colorOf(w) }, culprit === w && { backgroundColor: '#e8202a', borderColor: '#e8202a' }]}>
-                      <Text style={[s.chipT, { color: culprit === w ? '#fff' : fg }]}>{members[w].name}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </>
-            )}
+            {same && <Text style={[s.verdict, { color: '#1f9d55' }]}>完璧！</Text>}
           </ScrollView>
         </ModeCard>
       );
       controls = same ? (
         <RoundEnd pal={pal} next="もう1回戦" onNext={newRound} onEnd={() => finish()} />
-      ) : culprit != null ? (
-        <BigButton pal={pal} danger label={`ズラした${members[culprit].name}に罰ガチャ`} onPress={() => { P.draw([culprit]); setPhase('batsu'); }} />
       ) : (
-        <Outline label="みんなセーフにする → 次の回戦" fg={pal.fg} onPress={newRound} />
+        <BigButton pal={pal} label="戦犯を決める →" onPress={() => { setCulprits([]); setPhase('judge'); play('flip'); }} />
+      );
+      break;
+    }
+    case 'judge': {
+      // お題が終わるたびに「戦犯は誰？」。ズラした人を何人でも選べる。だれも選ばんかったら全員セーフ
+      const last = chain[chain.length - 1];
+      const ws = [...new Set(chain.map((x) => x.by))];
+      const did = (w: number) => chain.filter((x) => x.by === w).map((x) => (x.type === 'pic' ? '絵' : `「${x.val}」`)).join('・');
+      card = (
+        <ModeCard pal={pal}>
+          <ScrollView contentContainerStyle={{ gap: 10, alignItems: 'center' }}>
+            <Prog fg={fg}>{`第${round}回戦`}</Prog>
+            <Text style={[s.by, { color: fg, fontSize: 15, opacity: 0.8 }]}>{`お題「${word}」→ 最後は「${last?.type === 'guess' ? last.val : '絵'}」`}</Text>
+            <Text style={s.q}>戦犯は誰？</Text>
+            <Text style={[s.by, { color: fg, opacity: 0.75 }]}>ズラしたと思う人を押して（何人でも）</Text>
+            <View style={s.pick}>
+              {ws.map((w) => {
+                const on = culprits.includes(w);
+                return (
+                  <Pressable key={w} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => { play('tick'); setCulprits(on ? culprits.filter((x) => x !== w) : [...culprits, w]); }} style={[s.pickBtn, { borderColor: on ? '#e8202a' : colorOf(w) }, on && { backgroundColor: '#e8202a' }]}>
+                    {on && <Text style={s.pickTag}>戦犯</Text>}
+                    <Text style={[s.pickName, { color: on ? '#fff' : fg }]} numberOfLines={1} adjustsFontSizeToFit>{members[w].name}</Text>
+                    <Text style={[s.pickSub, { color: on ? '#fff' : fg }]} numberOfLines={1}>{did(w)}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable onPress={() => setPhase('reveal')} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>
+              <Text style={[s.by, { color: fg, textDecorationLine: 'underline' }]}>答えをもう1回見る</Text>
+            </Pressable>
+          </ScrollView>
+        </ModeCard>
+      );
+      controls = culprits.length ? (
+        <BigButton pal={pal} danger label={`戦犯の${culprits.map((w) => members[w].name).join('・')}に罰ガチャ`} onPress={() => { P.draw([...culprits]); setPhase('batsu'); }} />
+      ) : (
+        <BigButton pal={pal} label="戦犯なし！全員セーフ → 次の回戦" onPress={newRound} />
       );
       break;
     }
@@ -276,4 +301,10 @@ const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
   chip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5 },
   chipT: { fontSize: 14, fontWeight: '900' },
+  q: { fontFamily: F.display, fontSize: 40, lineHeight: 48, color: '#e8202a', textAlign: 'center' },
+  pick: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, width: '100%' },
+  pickBtn: { width: '48%', flexGrow: 1, minHeight: 64, borderRadius: 14, borderWidth: 2.5, paddingVertical: 8, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  pickTag: { fontSize: 11, fontWeight: '900', color: '#e8202a', backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 8, overflow: 'hidden' },
+  pickName: { fontFamily: F.display, fontSize: 20, lineHeight: 26 },
+  pickSub: { fontSize: 12, fontWeight: '900', opacity: 0.75 },
 });

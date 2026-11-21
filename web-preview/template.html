@@ -1611,6 +1611,16 @@ body[data-level="yurume"] .qz-tip b, body[data-level="futsu"] .qz-tip b { color:
 .kg-list li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; border-left: 6px solid var(--mc); background: color-mix(in srgb, var(--card-fg) 6%, transparent); }
 .kg-list b { font-family: var(--display); font-weight: 400; font-size: 24px; min-width: 2.6em; }
 .kg-list span { font-size: 20px; font-weight: 900; }
+.dr-judge { gap: 10px; }
+.dr-flow { margin: 0; font-weight: 900; font-size: 15px; opacity: .8; }
+.dr-q { margin: 6px 0 0; font-family: "Dela Gothic One", sans-serif; font-size: clamp(34px, 10vw, 48px); line-height: 1.15; color: #e8202a; }
+.dr-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; margin-top: 4px; }
+.dr-pick button { min-height: 64px; border-radius: 14px; border: 2.5px solid var(--mc); padding: 8px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--card-fg); }
+.dr-pick button b { font-family: "Dela Gothic One", sans-serif; font-weight: 400; font-size: 20px; }
+.dr-pick button small { font-weight: 900; font-size: 12px; opacity: .7; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dr-pick button[aria-pressed="true"] { background: #e8202a; border-color: #e8202a; color: #fff; }
+.dr-pick button[aria-pressed="true"]::before { content: "戦犯"; font-weight: 900; font-size: 11px; background: #fff; color: #e8202a; border-radius: 999px; padding: 0 8px; }
+.dr-back { min-height: 44px; color: var(--card-fg) !important; opacity: .75; text-decoration: underline; font-weight: 900; }
 .kg-refuse { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .kg-refuse button { padding: 8px 12px; border-radius: 999px; border: 1.5px solid var(--mc); font-weight: 900; font-size: 14px; color: var(--card-fg); }
 .kg-refuse button[aria-pressed="true"] { background: #e8202a; border-color: #e8202a; color: #fff; }
