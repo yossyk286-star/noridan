@@ -1,6 +1,6 @@
 import { useReducer, useRef } from 'react';
 import { Haptics } from './vibe';
-import { CHANCE, Decks, PASS, PERSONAL, makeCard, nameSeg, othersOf, pick } from './game';
+import { CHANCE, DOUBLE, Decks, PASS, PERSONAL, makeCard, nameSeg, othersOf, pick } from './game';
 import { play } from './sound';
 import { newStats, type Why } from './titles';
 import type { Bomb, Card, GachaItem, Member, Phase, Rule, Segment } from '../types';
@@ -190,7 +190,7 @@ export function useTurnFlow(members: Member[], decks: Decks, onAdvance: () => vo
     present(card: Card, doer: number, allowDouble: boolean) {
       st.doer = doer;
       st.double = false;
-      if (allowDouble && card.solo && Math.random() < CHANCE.double) {
+      if (allowDouble && DOUBLE.on && card.solo && Math.random() < CHANCE.double) {
         st.pending = card;
         st.phase = 'offer';
         st.card = OFFER_CARD(members, doer);

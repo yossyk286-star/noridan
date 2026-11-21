@@ -47,7 +47,7 @@ import FxLayer from './src/components/FxLayer';
 import { Entrance, MeterGraph, MeterHost, Polaroids } from './src/components/Live';
 import { liveNow, loadLive, setLiveLevel, useLive } from './src/lib/live';
 import { PrefsContext } from './src/lib/prefs';
-import { DATE, Decks, PASS, setContent } from './src/lib/game';
+import { DATE, DOUBLE, Decks, PASS, setContent } from './src/lib/game';
 import { markFirstOpen, maybeAskReview } from './src/lib/review';
 import { getTally, makeTeams, minsLeft, recordTally, setToastHandler, toast, type Tally } from './src/lib/extras';
 import { InoutSheet, KanjiSheet, LeftResult, QrSheet, RouletteSheet, TallyResult, TeamCols, TeamResult, Toast, tallyText } from './src/components/Extras';
@@ -93,6 +93,7 @@ export default function App() {
   const [handoff, setHandoff] = useState(true); // お題の前に「つぎは○○」をはさむ
   const [sober, setSober] = useState(false); // お酒なし
   const [noTouch, setNoTouch] = useState(false); // 体に触るのなし
+  const [dblOn, setDblOn] = useState(true); // 倍プッシュ
   const [passOn, setPassOn] = useState(true); // パス券（1人1回）
   const [date, setDate] = useState(true); // デートモード（2人の時だけ）
   const [gamble, setGamble] = useState(true); // 駆け引きあり
@@ -162,6 +163,9 @@ export default function App() {
       setPassOn(po);
       setContent(so, nt);
       PASS.on = po;
+      const db = (await load<unknown>('nd_double', true)) !== false;
+      setDblOn(db);
+      DOUBLE.on = db;
       const dt = (await load<unknown>('nd_date', true)) !== false;
       setDate(dt);
       DATE.on = dt;
@@ -226,6 +230,11 @@ export default function App() {
     setNoTouch(on);
     setContent(sober, on);
     save('nd_notouch', on);
+  };
+  const updateDbl = (on: boolean) => {
+    setDblOn(on);
+    DOUBLE.on = on;
+    save('nd_double', on);
   };
   const updatePass = (on: boolean) => {
     setPassOn(on);
@@ -542,6 +551,8 @@ export default function App() {
           onSober={updateSober}
           noTouch={noTouch}
           onNoTouch={updateNoTouch}
+          dblOn={dblOn}
+          onDbl={updateDbl}
           passOn={passOn}
           onPass={updatePass}
           gamble={gamble}

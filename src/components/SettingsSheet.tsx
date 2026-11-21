@@ -26,6 +26,8 @@ type Props = {
   onSober: (on: boolean) => void;
   noTouch: boolean;
   onNoTouch: (on: boolean) => void;
+  dblOn: boolean;
+  onDbl: (on: boolean) => void;
   passOn: boolean;
   onPass: (on: boolean) => void;
   gamble: boolean;
@@ -65,7 +67,7 @@ function Group({ title, count, sub, children }: { title: string; count: number; 
 }
 
 /** 歯車から開く設定。夜モード（20歳以上）もここからオンにする */
-export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, sober, onSober, noTouch, onNoTouch, passOn, onPass, gamble, onGamble, goHome, onGoHome, water, onWater, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
+export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe, dual, handoff, onHandoff, sober, onSober, noTouch, onNoTouch, dblOn, onDbl, passOn, onPass, gamble, onGamble, goHome, onGoHome, water, onWater, voice, night, onSound, onDual, onVoice, onNight, onNightAsk, onClose }: Props) {
   const { resetSeen } = useSeen();
   useClockHold(visible); // 設定を開いてる間は時計を止める
   const [privacy, setPrivacy] = useState(false);
@@ -90,7 +92,8 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
             <Toggle label="お酒なし" sub="「飲む」罰やお題を出さへん" on={sober} onPress={() => onSober(!sober)} />
             <Toggle label="お題の読み上げ" sub="札が出たら声で読む（爆弾の中身は読まへん）" on={voice} onPress={() => onVoice(!voice)} />
             <Text style={s.sec}>まとまりごと</Text>
-            <Group title="遊びのルール" count={5} sub="体に触るのなし・パス券・駆け引き・帰る時間・お水タイム">
+            <Group title="遊びのルール" count={6} sub="倍プッシュ・体に触るのなし・パス券・駆け引き・帰る時間・お水タイム">
+              <Toggle label="倍プッシュ" sub="お題の前にたまに「倍プッシュするか？」が出る" on={dblOn} onPress={() => onDbl(!dblOn)} />
               <Toggle label="駆け引きあり" sub="ハイ&ローで降りられる・ロシアンタップで1回パス" on={gamble} onPress={() => onGamble(!gamble)} />
               <Toggle label="体に触るのなし" sub="くすぐり・ハグ・肩もみ系の罰と命令を出さへん" on={noTouch} onPress={() => onNoTouch(!noTouch)} />
               <Toggle label="パス券" sub="1人1回、罰をゆるい罰に替えられる" on={passOn} onPress={() => onPass(!passOn)} />

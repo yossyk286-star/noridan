@@ -51,6 +51,9 @@ export const DATE = { on: true };
 export const dateOn = (members: { length: number }) => DATE.on && members.length === 2;
 const DATE_DATA = dateJson as unknown as { odai: Record<Level, string[]>; batsu: string[] };
 
+/** 倍プッシュ：お題の前にたまに「倍プッシュするか？」を出す（設定 nd_double） */
+export const DOUBLE = { on: true };
+
 /** パス券：1人1回、罰ガチャの罰をゆるい罰に替える（ゲームを始めるたびに App が空にする） */
 export const PASS = { on: true, used: new Set<number>() };
 export function passItem(members: Member[], i: number): GachaItem {

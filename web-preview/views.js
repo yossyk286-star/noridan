@@ -440,7 +440,8 @@ function vSheet() {
       <button class="toggle" data-act="sober" role="switch" aria-checked="${S.sober}" aria-pressed="${S.sober}"><span>お酒なし<small>「飲む」罰やお題を出さへん</small></span><b>${S.sober ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="voice" role="switch" aria-checked="${S.voice}" aria-pressed="${S.voice}"><span>お題の読み上げ<small>札が出たら声で読む（爆弾の中身は読まへん）</small></span><b>${S.voice ? "ON" : "OFF"}</b></button>
       <p class="sheet-sec">まとまりごと</p>
-      ${sgGroup("rule", "遊びのルール", 6, "体に触るのなし・パス券・駆け引き・帰る時間・お水タイム", `
+      ${sgGroup("rule", "遊びのルール", 6, "倍プッシュ・体に触るのなし・パス券・駆け引き・帰る時間・お水タイム", `
+      <button class="toggle" data-act="dblOn" role="switch" aria-checked="${S.dblOn}" aria-pressed="${S.dblOn}"><span>倍プッシュ<small>お題の前にたまに「倍プッシュするか？」が出る</small></span><b>${S.dblOn ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="gamble" role="switch" aria-checked="${S.gamble}" aria-pressed="${S.gamble}"><span>駆け引きあり<small>ハイ&ローで降りられる・ロシアンタップで1回パス</small></span><b>${S.gamble ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="noTouch" role="switch" aria-checked="${S.noTouch}" aria-pressed="${S.noTouch}"><span>体に触るのなし<small>くすぐり・ハグ・肩もみ系の罰と命令を出さへん</small></span><b>${S.noTouch ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="passOn" role="switch" aria-checked="${S.passOn}" aria-pressed="${S.passOn}"><span>パス券<small>1人1回、罰をゆるい罰に替えられる</small></span><b>${S.passOn ? "ON" : "OFF"}</b></button>
@@ -3298,6 +3299,7 @@ function onClick(e) {
     case "handoff": S.handoff = !S.handoff; store.set("nd_handoff", S.handoff); render(); break;
     case "sober": S.sober = !S.sober; store.set("nd_sober", S.sober); resetDecks(); render(); break;
     case "noTouch": S.noTouch = !S.noTouch; store.set("nd_notouch", S.noTouch); resetDecks(); render(); break;
+    case "dblOn": S.dblOn = !S.dblOn; store.set("nd_double", S.dblOn); render(); break;
     case "passOn": S.passOn = !S.passOn; store.set("nd_pass", S.passOn); render(); break;
     case "pass": usePass(+b.dataset.k); render(); break;
     case "vBegin": startVoteRound(); render(true); break;

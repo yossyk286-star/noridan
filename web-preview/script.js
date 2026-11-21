@@ -59,6 +59,7 @@ const S = {
   medley: null, // メドレー中 {list:[モード名], idx}
   shareAnon: store.get("nd_shareanon", false) === true, // 結果画像に名前を出さん（Aさん・Bさん）
   itCoop: store.get("nd_itcoop", false) === true, // 価値観ナンバーを協力型（みんなで並べてライフ制）にする
+  dblOn: store.get("nd_double", true) !== false, // 倍プッシュ：お題の前にたまに「倍プッシュするか？」を出す
   passOn: store.get("nd_pass", true) !== false, // パス券：1人1回、罰をゆるい罰に替えられる
   step: 1,          // ホーム: 1=メンバー 2=モード選択
   sheet: false,     // 設定シート
@@ -280,7 +281,7 @@ function newGame(mode, again = false) {
 function present(card) {
   const g = S.game;
   g.double = false;
-  if (card.solo && g.turn > 1 && Math.random() < CHANCE.double) {
+  if (S.dblOn && card.solo && g.turn > 1 && Math.random() < CHANCE.double) {
     g.pending = card;
     g.phase = "offer";
     g.card = { kind: "倍プッシュのチャンス", html: `${nm(g.doer)}、お題を見る前に倍プッシュするか？` };
