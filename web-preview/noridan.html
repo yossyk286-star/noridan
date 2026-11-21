@@ -1788,6 +1788,20 @@ body[data-level="jigoku"] .odai { --tile-fg: #f7f3ea; }
 /* 番の交代画面 */
 .handoff { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; padding: max(20px, env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom)); background: var(--mc); color: #141210; text-align: center; animation: hoIn .28s ease-out; }
 @keyframes hoIn { from { opacity: 0; transform: scale(1.04); } }
+/* 番の交代：前の札が左へ飛んで、名前つきの次の札が右からすべって来る。名前は少ししたら消えてお題になる */
+.odai.deal { position: relative; overflow: hidden; animation: dealIn .45s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes dealIn { from { transform: translateX(110%) rotate(12deg); opacity: .5; } }
+.deal-name { position: absolute; inset: 0; z-index: 6; border-radius: inherit; background: var(--mc); color: #141210; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 16px; pointer-events: none; animation: dealName 1.5s ease both; }
+.deal-name i { width: min(110px, 14vh); height: min(110px, 14vh); border-radius: 50%; background: #141210; color: var(--mc); display: grid; place-items: center; font: 400 min(56px, 7vh) "Dela Gothic One", sans-serif; font-style: normal; }
+.deal-name b { font-family: "Dela Gothic One", sans-serif; font-weight: 400; font-size: clamp(40px, 8vh, 64px); line-height: 1.1; max-width: 100%; overflow-wrap: anywhere; }
+.deal-name small { font-weight: 900; font-size: 18px; letter-spacing: .1em; }
+.deal-name .deal-pass { font-size: 16px; letter-spacing: 0; background: rgba(20,18,16,.12); padding: 6px 16px; border-radius: 999px; }
+.deal-name .deal-pass svg { width: 18px; height: 18px; vertical-align: -3px; margin-right: 4px; }
+@keyframes dealName { 0%, 72% { opacity: 1; transform: none; } 100% { opacity: 0; transform: scale(1.06); visibility: hidden; } }
+.deal-out { position: fixed; z-index: 25; margin: 0; pointer-events: none; animation: dealOut .45s ease-in forwards; }
+@keyframes dealOut { to { transform: translateX(-125%) rotate(-16deg); opacity: 0; } }
+body.dealing .controls, body.dealing .dock, body.dealing #card { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .odai.deal { animation: none; } .deal-out { display: none; } }
 .ho-top { display: flex; justify-content: space-between; font-weight: 900; font-size: 14px; opacity: .75; }
 .ho-mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 0; }
 .ho-next { font-weight: 900; font-size: 22px; letter-spacing: .2em; }
@@ -2560,7 +2574,10 @@ function startOdaiTurn() {
   const g = S.game;
   g.turn++;
   g.doer = g.cur;
-  g.handoff = S.handoff && S.members.length >= 2;
+  // 番の交代：前の札がシュッと飛んで、次の人の名前つき札がすべって来る（タップなし）
+  g.handoff = false;
+  g.deal = S.handoff && S.members.length >= 2;
+  g.dealFly = g.deal && g.turn > 1;
   g.face = S.faceDeal ? "down" : null; // 伏せて出す（起こしたらお題）
   if (!dateOn() && g.turn > 2 && Math.random() < CHANCE.event) {
     const e = drawEvent(g.cur);
@@ -6013,7 +6030,7 @@ function vSheet() {
       ${sgGroup("live", "演出", 6, "実況・入場・伏せて出す・振ってガチャ・カメラ・メーター", vLiveSettings())}
       ${sgGroup("view", "音と画面", 4, "バイブ・番の交代・向かい合わせ・大画面", `
       <button class="toggle" data-act="vibe" role="switch" aria-checked="${S.vibe}" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="handoff" role="switch" aria-checked="${S.handoff}" aria-pressed="${S.handoff}"><span>番の交代画面<small>アホお題で「つぎは○○」を1枚はさむ</small></span><b>${S.handoff ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="handoff" role="switch" aria-checked="${S.handoff}" aria-pressed="${S.handoff}"><span>番の交代<small>アホお題で札が飛んで、次の人の名前つき札が来る</small></span><b>${S.handoff ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="dual" role="switch" aria-checked="${S.dual}" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="big" role="switch" aria-checked="${S.big}" aria-pressed="${S.big}"><span>大画面モード<small>テレビやパソコンに映す時。文字を大きく、横に罰ランキング</small></span><b>${S.big ? "ON" : "OFF"}</b></button>`)}
       ${!S.night ? `<div class="night-box off">
@@ -6178,7 +6195,9 @@ function vCard() {
     : g.phase === "offer" ? `<div class="coin-wrap"><div class="coin">倍</div></div>` : "";
   // 向かい合わせ：同じお題を上下逆さにもう1枚（仕掛け人だけが見る爆弾の中身は出さない）
   const dual = S.dual && g.phase !== "bombPeek" && g.phase !== "bombSet";
-  return `<div class="odai ${cardClass(c)} ${anim}" id="card">
+  const deal = g.deal && !g.face; // 番の交代：名前つきで札がすべって来て、名前がスッと消えてお題になる
+  return `<div class="odai ${cardClass(c)} ${deal ? "deal" : anim}" id="card">
+    ${deal ? `<div class="deal-name" style="--mc:${colorOf(g.doer)}" aria-hidden="true"><small>つぎは</small><i>${ini(g.doer)}</i><b>${mName(g.doer)}</b><small class="deal-pass">${ICON.handoff}スマホ渡してな</small></div>` : ""}
     <div class="head">${vWho()}<span class="meta">${plainKind(c) ? "" : `<span class="kind">${esc(shortKind(c.kind))}</span>`}${cardTag(c) && g.phase === "play" ? `<i class="tag" data-t="${cardTag(c)}">${cardTag(c)}</i>` : ""}${badge}</span></div>
     ${c.solo && !needsPick(c.tpl) && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
     ${art}
@@ -8331,7 +8350,21 @@ function render(anim) {
   const dir = moved && ORDER[key] < ORDER[S.navKey] ? "back" : "fwd";
   S.navFrom = S.navKey; S.navKey = key;
   if (S.hold && S.hold.sc !== sc) { clearTimeout(S.holdT); S.hold = null; }
+  // 番の交代：前の札を写しとって、新しい札が来る間に横へ飛ばす
+  const gm = onStage ? S.game : null;
+  let dealGhost = null;
+  if (sc === "odai" && gm?.dealFly) {
+    const old = document.getElementById("card");
+    if (old) { const r = old.getBoundingClientRect(); dealGhost = old.cloneNode(true); dealGhost.removeAttribute("id"); dealGhost.classList.remove("in", "deal", "shake"); dealGhost.classList.add("deal-out"); Object.assign(dealGhost.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" }); }
+    gm.dealFly = false;
+  }
   app.innerHTML = onStage && S.hold ? vHold() : (VIEWS[sc] || vResult)();
+  if (sc === "odai" && gm?.deal && !gm.intro) {
+    gm.deal = false; // 次の再描画ではもう出さへん
+    document.body.classList.add("dealing"); clearTimeout(S.dealT);
+    S.dealT = setTimeout(() => document.body.classList.remove("dealing"), 1100); // 渡す人の押しまちがい防止
+    if (dealGhost) { document.body.appendChild(dealGhost); setTimeout(() => dealGhost.remove(), 600); }
+  }
   jaWrap(app);
   rvSetup(anim);
   drSetup();

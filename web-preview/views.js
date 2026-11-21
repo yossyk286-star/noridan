@@ -450,7 +450,7 @@ function vSheet() {
       ${sgGroup("live", "演出", 6, "実況・入場・伏せて出す・振ってガチャ・カメラ・メーター", vLiveSettings())}
       ${sgGroup("view", "音と画面", 4, "バイブ・番の交代・向かい合わせ・大画面", `
       <button class="toggle" data-act="vibe" role="switch" aria-checked="${S.vibe}" aria-pressed="${S.vibe}"><span>バイブ<small>罰・爆発・ボタンでブルッ（Androidのみ）</small></span><b>${S.vibe ? "ON" : "OFF"}</b></button>
-      <button class="toggle" data-act="handoff" role="switch" aria-checked="${S.handoff}" aria-pressed="${S.handoff}"><span>番の交代画面<small>アホお題で「つぎは○○」を1枚はさむ</small></span><b>${S.handoff ? "ON" : "OFF"}</b></button>
+      <button class="toggle" data-act="handoff" role="switch" aria-checked="${S.handoff}" aria-pressed="${S.handoff}"><span>番の交代<small>アホお題で札が飛んで、次の人の名前つき札が来る</small></span><b>${S.handoff ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="dual" role="switch" aria-checked="${S.dual}" aria-pressed="${S.dual}"><span>向かい合わせ表示<small>机の真ん中に置いて両側から読める</small></span><b>${S.dual ? "ON" : "OFF"}</b></button>
       <button class="toggle" data-act="big" role="switch" aria-checked="${S.big}" aria-pressed="${S.big}"><span>大画面モード<small>テレビやパソコンに映す時。文字を大きく、横に罰ランキング</small></span><b>${S.big ? "ON" : "OFF"}</b></button>`)}
       ${!S.night ? `<div class="night-box off">
@@ -615,7 +615,9 @@ function vCard() {
     : g.phase === "offer" ? `<div class="coin-wrap"><div class="coin">倍</div></div>` : "";
   // 向かい合わせ：同じお題を上下逆さにもう1枚（仕掛け人だけが見る爆弾の中身は出さない）
   const dual = S.dual && g.phase !== "bombPeek" && g.phase !== "bombSet";
-  return `<div class="odai ${cardClass(c)} ${anim}" id="card">
+  const deal = g.deal && !g.face; // 番の交代：名前つきで札がすべって来て、名前がスッと消えてお題になる
+  return `<div class="odai ${cardClass(c)} ${deal ? "deal" : anim}" id="card">
+    ${deal ? `<div class="deal-name" style="--mc:${colorOf(g.doer)}" aria-hidden="true"><small>つぎは</small><i>${ini(g.doer)}</i><b>${mName(g.doer)}</b><small class="deal-pass">${ICON.handoff}スマホ渡してな</small></div>` : ""}
     <div class="head">${vWho()}<span class="meta">${plainKind(c) ? "" : `<span class="kind">${esc(shortKind(c.kind))}</span>`}${cardTag(c) && g.phase === "play" ? `<i class="tag" data-t="${cardTag(c)}">${cardTag(c)}</i>` : ""}${badge}</span></div>
     ${c.solo && !needsPick(c.tpl) && g.phase === "play" && !g.double ? `<i class="sw-stamp ok">セーフ</i><i class="sw-stamp ng">アウト</i>` : ""}
     ${art}
@@ -2768,7 +2770,21 @@ function render(anim) {
   const dir = moved && ORDER[key] < ORDER[S.navKey] ? "back" : "fwd";
   S.navFrom = S.navKey; S.navKey = key;
   if (S.hold && S.hold.sc !== sc) { clearTimeout(S.holdT); S.hold = null; }
+  // 番の交代：前の札を写しとって、新しい札が来る間に横へ飛ばす
+  const gm = onStage ? S.game : null;
+  let dealGhost = null;
+  if (sc === "odai" && gm?.dealFly) {
+    const old = document.getElementById("card");
+    if (old) { const r = old.getBoundingClientRect(); dealGhost = old.cloneNode(true); dealGhost.removeAttribute("id"); dealGhost.classList.remove("in", "deal", "shake"); dealGhost.classList.add("deal-out"); Object.assign(dealGhost.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" }); }
+    gm.dealFly = false;
+  }
   app.innerHTML = onStage && S.hold ? vHold() : (VIEWS[sc] || vResult)();
+  if (sc === "odai" && gm?.deal && !gm.intro) {
+    gm.deal = false; // 次の再描画ではもう出さへん
+    document.body.classList.add("dealing"); clearTimeout(S.dealT);
+    S.dealT = setTimeout(() => document.body.classList.remove("dealing"), 1100); // 渡す人の押しまちがい防止
+    if (dealGhost) { document.body.appendChild(dealGhost); setTimeout(() => dealGhost.remove(), 600); }
+  }
   jaWrap(app);
   rvSetup(anim);
   drSetup();

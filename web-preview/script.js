@@ -295,7 +295,10 @@ function startOdaiTurn() {
   const g = S.game;
   g.turn++;
   g.doer = g.cur;
-  g.handoff = S.handoff && S.members.length >= 2;
+  // 番の交代：前の札がシュッと飛んで、次の人の名前つき札がすべって来る（タップなし）
+  g.handoff = false;
+  g.deal = S.handoff && S.members.length >= 2;
+  g.dealFly = g.deal && g.turn > 1;
   g.face = S.faceDeal ? "down" : null; // 伏せて出す（起こしたらお題）
   if (!dateOn() && g.turn > 2 && Math.random() < CHANCE.event) {
     const e = drawEvent(g.cur);

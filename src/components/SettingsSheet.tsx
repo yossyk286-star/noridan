@@ -106,7 +106,7 @@ export default function SettingsSheet({ visible, sound, vol, vibe, onVol, onVibe
             </Group>
             <Group title="音と画面" count={3} sub="バイブ・番の交代・向かい合わせ">
               <Toggle label="バイブ" sub="罰・爆発・ボタンでブルッ" on={vibe} onPress={() => onVibe(!vibe)} />
-              <Toggle label="番の交代画面" sub="アホお題で「つぎは○○」を1枚はさむ" on={handoff} onPress={() => onHandoff(!handoff)} />
+              <Toggle label="番の交代" sub="アホお題で札が飛んで、次の人の名前つき札が来る" on={handoff} onPress={() => onHandoff(!handoff)} />
               <Toggle label="向かい合わせ表示" sub="机の真ん中に置いて両側から読める" on={dual} onPress={() => onDual(!dual)} />
             </Group>
             {!night && (

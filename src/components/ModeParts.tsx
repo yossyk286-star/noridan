@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { iniFit, initialOf } from '../lib/game';
 import type React from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Dimensions, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Haptics } from '../lib/vibe';
 import { play } from '../lib/sound';
 import { Tap } from './Tap';
@@ -121,6 +121,68 @@ export function HandWho({ members, i, sub, fg }: { members: Member[]; i: number;
       </View>
       <Text style={[s.handName, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>{members[i].name}</Text>
       {!!sub && <Text style={[s.handSub, { color: fg }]}>{sub}</Text>}
+    </View>
+  );
+}
+
+/**
+ * 番の交代（タップなし）：前の札がシュッと左へ飛んで、次の人の名前つき札が右からすべって来る。
+ * 名前は1秒ほどで消えてお題になる。k が変わるたびに1回だけ動く（0 なら何もせん）
+ */
+export function DealIn({ k, name, initial, color, ghost, onDone, children }: { k: number; name: string; initial: string; color: string; ghost?: React.ReactNode; onDone?: () => void; children: React.ReactNode }) {
+  const W = Dimensions.get('window').width;
+  const inV = useRef(new Animated.Value(1)).current;
+  const outV = useRef(new Animated.Value(1)).current;
+  const coverV = useRef(new Animated.Value(0)).current;
+  const [cover, setCover] = useState(false);
+  const [gh, setGh] = useState<React.ReactNode>(null);
+  // 描画の前に位置をリセットして、お題が一瞬見えてしまわんようにする
+  useLayoutEffect(() => {
+    if (!k) return;
+    let alive = true;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    setCover(true);
+    setGh(ghost ?? null);
+    coverV.setValue(1);
+    inV.setValue(0);
+    outV.setValue(0);
+    AccessibilityInfo.isReduceMotionEnabled().catch(() => false).then((reduce) => {
+      if (!alive) return;
+      inV.setValue(reduce ? 1 : 0);
+      outV.setValue(reduce ? 1 : 0);
+      if (!reduce) {
+        Animated.timing(inV, { toValue: 1, duration: 450, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+        Animated.timing(outV, { toValue: 1, duration: 450, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => alive && setGh(null));
+      } else setGh(null);
+      t = setTimeout(() => {
+        Animated.timing(coverV, { toValue: 0, duration: 350, useNativeDriver: true }).start(() => {
+          if (!alive) return;
+          setCover(false);
+          onDone?.();
+        });
+      }, 1050);
+    });
+    return () => { alive = false; if (t) clearTimeout(t); };
+  }, [k]);
+  if (!k) return <>{children}</>;
+  const inStyle = { transform: [{ translateX: inV.interpolate({ inputRange: [0, 1], outputRange: [W * 1.1, 0] }) }, { rotate: inV.interpolate({ inputRange: [0, 1], outputRange: ['12deg', '0deg'] }) }] };
+  const outStyle = { opacity: outV.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ translateX: outV.interpolate({ inputRange: [0, 1], outputRange: [0, -W * 1.25] }) }, { rotate: outV.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-16deg'] }) }] };
+  return (
+    <View style={{ flex: 1 }} pointerEvents={cover ? 'none' : 'auto'}>
+      <Animated.View style={[{ flex: 1 }, inStyle]}>
+        {children}
+        {cover && (
+          <Animated.View style={[s.dealCover, { backgroundColor: color, opacity: coverV }]} accessibilityLabel={`つぎは${name}。スマホ渡してな`}>
+            <Text style={s.hoNext}>つぎは</Text>
+            <View style={[s.dealDot, { backgroundColor: '#141210' }]}>
+              <Text style={[s.dealDotText, { color }]}>{initial}</Text>
+            </View>
+            <Text style={s.dealName} numberOfLines={1} adjustsFontSizeToFit>{name}</Text>
+            <View style={s.hoPassBox}><Icon name="handoff" color="#141210" size={20} /><Text style={s.hoPass}>スマホ渡してな</Text></View>
+          </Animated.View>
+        )}
+      </Animated.View>
+      {!!gh && <Animated.View style={[StyleSheet.absoluteFillObject, outStyle]} pointerEvents="none">{gh}</Animated.View>}
     </View>
   );
 }
@@ -359,6 +421,10 @@ const s = StyleSheet.create({
   hoAfterText: { fontWeight: '900', fontSize: 14, color: '#141210' },
   hoAv: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#141210' },
   hoAvText: { fontWeight: '900', fontSize: 13, color: '#141210' },
+  dealCover: { ...StyleSheet.absoluteFillObject, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 8, padding: 16 },
+  dealDot: { width: 104, height: 104, borderRadius: 52, alignItems: 'center', justifyContent: 'center' },
+  dealDotText: { fontFamily: F.display, fontSize: 52 },
+  dealName: { fontFamily: F.display, fontSize: 60, lineHeight: 72, color: '#141210', maxWidth: '100%' },
   komaRow: { flexDirection: 'row', gap: 14, alignItems: 'center', borderRadius: 18, paddingVertical: 10, paddingHorizontal: 12 },
   komaIc: { width: 58, height: 58, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   komaNo: { position: 'absolute', left: -7, top: -7, width: 24, height: 24, borderRadius: 12, overflow: 'hidden', backgroundColor: '#141210', color: '#fff8e7', fontFamily: F.display, fontSize: 13, lineHeight: 24, textAlign: 'center' },

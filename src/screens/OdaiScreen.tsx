@@ -5,13 +5,13 @@ import { useKeepAwake } from 'expo-keep-awake';
 import type { Stats } from '../lib/titles';
 import { BombBanner, Coach, Controls, RuleSheet, RulesSheet, SwipeCard, canVerdict, DeckStack, Frame, GachaCard, OdaiCard, RuleBanner, ScoreBar, BigButton } from '../components/Stage';
 import GameMenu from '../components/GameMenu';
-import { Handoff, IntroCard, LevelBox } from '../components/ModeParts';
+import { DealIn, IntroCard, LevelBox } from '../components/ModeParts';
 import { FaceDeal } from '../components/Live';
 import { liveNow } from '../lib/live';
 import { usePrefs } from '../lib/prefs';
 import { HELP } from '../lib/help';
 import { Flash } from '../components/Fx';
-import { CHANCE, Decks } from '../lib/game';
+import { CHANCE, Decks, initialOf } from '../lib/game';
 import { useTurnFlow } from '../lib/useTurnFlow';
 import { useStageCues } from '../lib/useStageCues';
 import { LEVEL_LABEL, STAGE, colorOf, C, NEON_BG, neonPal } from '../theme';
@@ -45,8 +45,13 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
   const [rules, setRules] = useState(false);
   const [intro, setIntro] = useState(!skipIntro);
   const prefs = usePrefs();
-  /** 番の交代画面（「つぎは○○」）を出してる間 */
-  const [handoff, setHandoff] = useState(false);
+  /** 番の交代：札が飛んで、次の人の名前つき札が来る（ターンごとに数字が変わる。0=出さへん） */
+  const [deal, setDeal] = useState(0);
+  /** 名前が出てる間は、渡す人の押しまちがいを防ぐ */
+  const [dealing, setDealing] = useState(false);
+  /** いま出てる札（次の札が来る時に、これを左へ飛ばす） */
+  const shown = useRef<React.ReactNode>(null);
+  const prevCard = useRef<React.ReactNode>(null);
   /** 伏せて出す：伏せる → 起こす → お題 */
   const [face, setFace] = useState<'down' | 'up' | null>(null);
   /** ルール違反のシート（誰を選ぶか → 罰ガチャの結果） */
@@ -55,8 +60,11 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
   /** ターン開始：たまに割り込み、たまにダブルアップ */
   const startTurn = (who: number, t: number) => {
     flow.st.cur = who;
-    setHandoff(prefs.handoff !== false && members.length >= 2);
-    setFace(liveNow().faceDeal ? 'down' : null);
+    const fd = liveNow().faceDeal;
+    const on = prefs.handoff !== false && members.length >= 2 && !fd;
+    setDeal(on ? t : 0);
+    setDealing(on);
+    setFace(fd ? 'down' : null);
     if (t > 2 && decks.allowExtras(members) && Math.random() < CHANCE.event) {
       const ev = decks.event(members, who);
       if (ev.rule) flow.addRule(ev.rule);
@@ -73,6 +81,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
     decks,
     () => {
       const nc = (cur + 1) % members.length;
+      prevCard.current = shown.current;
       flow.tickRules(nc);
       setCur(nc);
       setTurn(turn + 1);
@@ -83,7 +92,9 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
       set: (v: { cur: number; turn: number }) => {
         setCur(v.cur);
         setTurn(v.turn);
-        setHandoff(false);
+        setDeal(0);
+        setDealing(false);
+        prevCard.current = null;
         setFace(null);
       },
     },
@@ -106,7 +117,7 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
   // 夜お題の間だけ照明が落ちてネオン看板に
   const neon = !!st.card.yoru && st.phase !== 'batsu';
   const pal = neon ? neonPal(st.card.kind.includes('深夜') ? C.deep : C.night) : basePal;
-  useEffect(() => onBg?.(handoff && !intro ? colorOf(cur) : neon ? NEON_BG : null), [neon, handoff, intro, cur]);
+  useEffect(() => onBg?.(neon ? NEON_BG : null), [neon]);
   const art = st.phase === 'bombSet' || st.phase === 'bombPeek' ? 'bomb' : st.phase === 'offer' ? 'coin' : undefined;
   // 始める前の説明（「もう1回」の時は出さへん）
   if (intro)
@@ -127,13 +138,6 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
       </View>
     );
 
-  // 番の交代画面（設定でオフにできる）
-  if (handoff)
-    return (
-      <View style={{ flex: 1, backgroundColor: colorOf(cur) }}>
-        <Handoff members={members} i={cur} left={`アホお題・${LEVEL_LABEL[level]}`} right={`${turn}枚目`} label="タップでお題を見る" onGo={() => setHandoff(false)} />
-      </View>
-    );
 
   // 伏せて出す：伏せたスマホを起こしたらお題が出る（ボタンでも出せる）
   if (face && st.phase === 'play')
@@ -159,21 +163,27 @@ export default function OdaiScreen({ members, level, night, onQuit, onSettings, 
           {st.phase === 'batsu' ? (
             <GachaCard pal={pal} members={members} items={st.gacha} />
           ) : (
-            <SwipeCard enabled={canVerdict(flow)} flipped={flipped} onSwipe={(d) => (d > 0 ? flow.clear() : flow.fail())}>
-              <OdaiCard
-                pal={pal}
-                card={st.card}
-                no={st.cards + 1}
-                doubled={st.double && st.phase === 'play'}
-                art={art}
-                underline={level === 'jigoku'}
-                who={who}
-              />
-            </SwipeCard>
+            <DealIn k={deal} name={members[cur].name} initial={initialOf(members, cur)} color={colorOf(cur)} ghost={deal > 1 ? prevCard.current : null} onDone={() => setDealing(false)}>
+              <SwipeCard enabled={canVerdict(flow) && !dealing} flipped={flipped} onSwipe={(d) => (d > 0 ? flow.clear() : flow.fail())}>
+                {(shown.current = (
+                  <OdaiCard
+                    pal={pal}
+                    card={st.card}
+                    no={st.cards + 1}
+                    doubled={st.double && st.phase === 'play'}
+                    art={art}
+                    underline={level === 'jigoku'}
+                    who={who}
+                  />
+                ))}
+              </SwipeCard>
+            </DealIn>
           )}
         </DeckStack>
         <Coach flow={flow} />
-        <Controls pal={pal} members={members} flow={flow} nextLabel="次へ" next={(cur + 1) % members.length} />
+        <View pointerEvents={dealing ? 'none' : 'auto'}>
+          <Controls pal={pal} members={members} flow={flow} nextLabel="次へ" next={(cur + 1) % members.length} />
+        </View>
       </View>
       <Frame color={colorOf(st.doer)} />
       <Flash trigger={flash} />
